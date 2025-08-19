@@ -18,7 +18,7 @@ CXXFLAGS := -Wfatal-errors
 UASMFLAGS := -q -0 -Zm
 # DOS C compiler: no stack probes, debug mode
 C_TOOLCHAIN ?= msc510
-MSC_CFLAGS ?= /Gs /Zi /Id:\f15-se2
+MSC_CFLAGS ?= /Fc /Gs /Zi /Id:\f15-se2 /Id:\f15-se2\src /Zp1
 # DOS assembler
 ASM_TOOLCHAIN ?= masm510
 # masm: suppress output in case of successful assembly
@@ -26,7 +26,7 @@ ASFLAGS := /t
 # DOS linker
 LINK_TOOLCHAIN ?= msc510
 # ms link: verbose, create mapfile, no default libs
-LINKFLAGS := /M /I
+LINKFLAGS := /M /INFORMATION
 DOSDIR := dos
 TOOLCHAIN_DIR := $(DOSDIR)/$(C_TOOLCHAIN)
 VERIFY_FLAGS := --verbose --loose --ctx 20 --asm
@@ -52,7 +52,7 @@ MAIN_SRCS := f15.c dosfunc.c biosfunc.c output.c overlay.c util.c
 MAIN_OBJS := $(call cobj,$(BUILDDIR),$(MAIN_SRCS))
 
 $(MAIN_EXE): $(BUILDDIR) $(MAIN_OBJS)
-	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(MAIN_OBJS) -o $@ -f "$(LINKFLAGS)"
+	$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(MAIN_OBJS) -o $@ -f "$(LINKFLAGS)"
 
 #
 # start.exe reconstruction (rc)
@@ -93,7 +93,7 @@ $(BUILDDIR)/start4.obj: MSC_CFLAGS := /Gs /Zi /Id:\f15-se2
 
 $(START_EXE): | $(BUILDDIR)
 $(START_EXE): $(START_OBJ)
-	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(START_OBJ) -o $@ -f "$(LINKFLAGS)"
+	$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(START_OBJ) -o $@ -f "$(LINKFLAGS)"
 
 # start.exe debug build
 START_DEBUG := $(DEBUGDIR)/start.exe
@@ -133,20 +133,20 @@ $(STARTRE_EXE): $(STARTRE_OBJ)
 #
 # egame.exe reconstruction (rc)
 #
-EGAME_EXE := $(BUILDDIR)/egame.exe
+EGAME_EXE := $(BUILDDIR)/EGAME.EXE
 EGAME_LST := $(LSTDIR)/egame.lst
 EGAME_INC := $(LSTDIR)/egame.inc
 EGAME_CONF := $(CONFDIR)/egame_rc.json
 EGAME_BASE := egame_rc.asm
 EGAME_ASM := $(EGAME_BASE)
-EGAME_SRC := egame0.c egame1.c egame2.c egame3.c
+EGAME_SRC := egame0.c egame1.c egame2.c egame3.c egame4.c egame5.c egame6.c egame7.c
 EGAME_BASEHDR = $(SRCDIR)/egame.h
 EGAME_COBJ := $(call cobj,$(BUILDDIR),$(EGAME_SRC))
 EGAME_OBJ := $(EGAME_COBJ) $(call asmobj,$(BUILDDIR),$(EGAME_ASM))
 $(EGAME_COBJ): $(EGAME_BASEHDR)
 $(EGAME_EXE): | $(BUILDDIR)
 $(EGAME_EXE): $(EGAME_OBJ)
-	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(EGAME_OBJ) -o $@ -f "$(LINKFLAGS)"
+	$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(EGAME_OBJ) -o $@ -f "$(LINKFLAGS)"
 
 # generate C header file from ida listing
 $(EGAME_BASEHDR): $(EGAME_LST) $(EGAME_INC) $(EGAME_CONF) $(LST2CH)
@@ -230,7 +230,7 @@ $(MZDIFF):
 	cd $(MZRE) && ./build.sh
 
 $(DEBUGDIR)/%.obj $(BUILDDIR)/%.obj: $(SRCDIR)/%.c $(HDRS)
-	@$(DOSBUILD) cc $(C_TOOLCHAIN) -i $< -o $@ -f "$(MSC_CFLAGS)"
+	$(DOSBUILD) cc $(C_TOOLCHAIN) -i $< -o $@ -f "$(MSC_CFLAGS)"
 
 $(DEBUGDIR)/%.obj $(BUILDDIR)/%.obj: $(SRCDIR)/%.asm
 	$(UASM) $(UASMFLAGS) -Fo$@ $<

@@ -5,14 +5,16 @@ EXTRN _sub_155AB:PROC
 EXTRN _sub_18E50:PROC
 EXTRN _sub_21A7A:PROC
 EXTRN _otherKeyDispatch:PROC
+EXTRN _setupOverlaySlots:PROC
+EXTRN _installCBreakHandler:PROC
+EXTRN _setupDac:PROC
+EXTRN _loadF15DgtlBin:PROC
 PUBLIC _commData
 PUBLIC _gameData
 PUBLIC _hercFlag
-PUBLIC _setupOverlaySlots
 PUBLIC _gfxModeUnset
 PUBLIC _noJoy80
 PUBLIC _copyJoystickData
-PUBLIC _installCBreakHandler
 PUBLIC _gfxBufPtr
 PUBLIC _restoreJoystickData
 PUBLIC _regs
@@ -26,7 +28,6 @@ PUBLIC _byte_34197
 PUBLIC _aCockpit_pic
 PUBLIC _a256pit_pic
 PUBLIC _byte_32933
-PUBLIC _setupDac
 PUBLIC _restoreTimerIrqHandler
 PUBLIC _audio_jump_64
 PUBLIC _audio_jump_65
@@ -53,7 +54,6 @@ PUBLIC _fileHandle
 PUBLIC _aOpenErrorOn_3d3_0
 PUBLIC _flt15_size
 PUBLIC _picBlit
-PUBLIC _loadF15DgtlBin
 PUBLIC _byte_3B7FC
 PUBLIC _byte_3790C
 PUBLIC _farPointer
@@ -154,10 +154,10 @@ PUBLIC _word_3C03A
 PUBLIC _word_330C4
 PUBLIC _word_336F4
 PUBLIC _stru_335C4
-PUBLIC _sub_1D008
+PUBLIC _ARCTAN
 PUBLIC _word_3A940
 PUBLIC _word_3370E
-PUBLIC _sub_1CFA6
+PUBLIC _xydist
 PUBLIC _word_3C02E
 PUBLIC _word_3C45C
 PUBLIC _word_336F2
@@ -178,7 +178,7 @@ PUBLIC _sub_2152A
 PUBLIC _off_38364
 PUBLIC _word_330BC
 PUBLIC _unk_3806E
-PUBLIC _sub_1A8C8
+PUBLIC _TransformAndProjectObject
 PUBLIC _a256left_pic
 PUBLIC _a256right_pic
 PUBLIC _a256rear_pic
@@ -236,7 +236,7 @@ PUBLIC _waypointIndex
 PUBLIC _aAutopilot
 PUBLIC _word_38FEA
 PUBLIC _word_3BE92
-PUBLIC _sub_1A25C
+PUBLIC _MakeRotationMatrix
 PUBLIC _word_3C16A
 PUBLIC _word_380D0
 PUBLIC _tempString
@@ -258,148 +258,186 @@ PUBLIC _gfx_jump_4b_storeBufPtr
 PUBLIC _gfx_jump_4c
 PUBLIC _gfx_jump_4f
 PUBLIC _gfx_jump_52
+PUBLIC _otherDacValues
+PUBLIC _byte_37116
+PUBLIC _dacValues1
+PUBLIC _gfx_jump_32
+PUBLIC _byte_36D86
+PUBLIC _dacValues
 ; ---------------------------------------------------------------------------
 
-SREGS		struc ;	(sizeof=0x8, align=0x2,	copyof_10) ; XREF: load15Flt3d3/r
-					; load3D3/r
-_es		dw ?
-_cs		dw ?
-_ss		dw ?
-_ds		dw ?			; XREF:	load3D3+13E/r load3D3+399/r ...
-SREGS		ends
-
-; ---------------------------------------------------------------------------
-
-struc_1		struc ;	(sizeof=0x10, mappedto_11) ; XREF: dseg:stru_3A95A/r
-field_0		dd ?
-field_4		dd ?
-field_8		dw ?
-field_A		dw ?
-field_C		dw ?
-field_E		dw ?
-struc_1		ends
+SREGS           struc ; (sizeof=0x8, align=0x2, copyof_10)
+                                        ; XREF: load15Flt3d3/r
+                                        ; load3D3/r
+_es             dw ?
+_cs             dw ?
+_ss             dw ?
+_ds             dw ?                    ; XREF: load3D3+13E/r
+                                        ; load3D3+399/r ...
+SREGS           ends
 
 ; ---------------------------------------------------------------------------
 
-struc_2		struc ;	(sizeof=0x18, mappedto_12) ; XREF: dseg:stru_335C4/r
-field_0		dw ?
-field_2		dw ?
-field_4		dw ?
-field_6		dw ?
-field_8		dw ?
-field_A		dw ?
-field_C		dw ?
-field_E		dw ?
-field_10	db 8 dup(?)
-struc_2		ends
+struc_1         struc ; (sizeof=0x10, mappedto_11)
+                                        ; XREF: dseg:stru_3A95A/r
+field_0         dd ?                    ; XREF: otherKeyDispatch+1198/w
+                                        ; otherKeyDispatch+119C/w
+field_4         dd ?                    ; XREF: otherKeyDispatch+11A7/w
+                                        ; otherKeyDispatch+11AB/w
+field_8         dw ?                    ; XREF: otherKeyDispatch+11B2/w
+field_A         dw ?                    ; XREF: otherKeyDispatch+117F/w
+                                        ; otherKeyDispatch+121D/r
+field_C         dw ?                    ; XREF: otherKeyDispatch+1186/w
+                                        ; otherKeyDispatch+1227/r
+field_E         dw ?                    ; XREF: otherKeyDispatch+118D/w
+struc_1         ends
 
 ; ---------------------------------------------------------------------------
 
-struc_3		struc ;	(sizeof=0x24, mappedto_13) ; XREF: dseg:stru_3B208/r
-field_0		dw ?
-field_2		dd ?
-field_6		dd ?
-field_A		db 26 dup(?)		; XREF:	sub_10720+DA8/r	sub_10720+DB0/r	...
-struc_3		ends
+struc_2         struc ; (sizeof=0x18, mappedto_12)
+                                        ; XREF: dseg:stru_335C4/r
+field_0         dw ?
+field_2         dw ?
+field_4         dw ?
+field_6         dw ?
+field_8         dw ?
+field_A         dw ?
+field_C         dw ?
+field_E         dw ?
+field_10        db 8 dup(?)
+struc_2         ends
 
 ; ---------------------------------------------------------------------------
 
-struc_4		struc ;	(sizeof=0x10, mappedto_14) ; XREF: dseg:stru_3AA5E/r
-field_0		dw ?			; XREF:	sub_11841+60/r sub_11F3E+60/r ...
-field_2		dw ?			; XREF:	sub_11841+68/r sub_11F3E+40/r ...
-field_4		dw ?
-field_6		dw ?			; XREF:	sub_10720+D7F/r
-					; otherKeyDispatch+6C/r	...
-field_8		db 4 dup(?)		; XREF:	sub_10720+D77/r
-field_C		dw ?			; XREF:	placeString+A/r	placeString+43/r ...
-field_E		dw ?
-struc_4		ends
+struc_3         struc ; (sizeof=0x24, mappedto_13)
+                                        ; XREF: dseg:stru_3B208/r
+field_0         dw ?
+field_2         dd ?
+field_6         dd ?
+field_A         db 26 dup(?)            ; XREF: UpdatePlayerAndWorldState+DA8/r
+                                        ; UpdatePlayerAndWorldState+DB0/r ...
+struc_3         ends
 
 ; ---------------------------------------------------------------------------
 
-Waypoint	struc ;	(sizeof=0x4, mappedto_15) ; XREF: dseg:waypoints/r
-field_0		dw ?
-field_2		dw ?
-Waypoint	ends
+struc_4         struc ; (sizeof=0x10, mappedto_14)
+                                        ; XREF: dseg:stru_3AA5E/r
+field_0         dw ?                    ; XREF: sub_11841+60/r
+                                        ; sub_11F3E+60/r ...
+field_2         dw ?                    ; XREF: sub_11841+68/r
+                                        ; sub_11F3E+40/r ...
+field_4         dw ?
+field_6         dw ?                    ; XREF: UpdatePlayerAndWorldState+D7F/r
+                                        ; otherKeyDispatch+6C/r ...
+field_8         db 4 dup(?)             ; XREF: UpdatePlayerAndWorldState+D77/r
+field_C         dw ?                    ; XREF: placeString+A/r
+                                        ; placeString+43/r ...
+field_E         dw ?
+struc_4         ends
 
 ; ---------------------------------------------------------------------------
 
-Missile		struc ;	(sizeof=0x1A, mappedto_16) ; XREF: dseg:missiles/r
-field_0		db 10 dup(?)		; string(C)
-field_A		db 12 dup(?)		; string(C)
-field_16	dw ?
-field_18	dw ?
-Missile		ends
+Waypoint        struc ; (sizeof=0x4, mappedto_15)
+                                        ; XREF: dseg:waypoints/r
+field_0         dw ?
+field_2         dw ?
+Waypoint        ends
 
 ; ---------------------------------------------------------------------------
 
-Sam		struc ;	(sizeof=0x12, mappedto_17) ; XREF: dseg:sams/r
-field_0		db 8 dup(?)		; string(C)
-field_8		dw ?
-field_A		dw ?
-field_C		dw ?
-field_E		dw ?
-field_10	dw ?
-Sam		ends
+Missile         struc ; (sizeof=0x1A, mappedto_16)
+                                        ; XREF: dseg:missiles/r
+field_0         db 10 dup(?)            ; string(C)
+field_A         db 12 dup(?)            ; string(C)
+field_16        dw ?
+field_18        dw ?
+Missile         ends
 
 ; ---------------------------------------------------------------------------
 
-MissileSpec	struc ;	(sizeof=0x4, mappedto_18) ; XREF: dseg:missileSpec/r
-field_0		dw ?
-field_2		dw ?
-MissileSpec	ends
+Sam             struc ; (sizeof=0x12, mappedto_17) ; XREF: dseg:sams/r
+field_0         db 8 dup(?)             ; string(C)
+field_8         dw ?
+field_A         dw ?
+field_C         dw ?
+field_E         dw ?
+field_10        dw ?
+Sam             ends
+
+; ---------------------------------------------------------------------------
+
+MissileSpec     struc ; (sizeof=0x4, mappedto_18)
+                                        ; XREF: dseg:missleSpec/r
+field_0         dw ?
+field_2         dw ?
+MissileSpec     ends
+
+; ---------------------------------------------------------------------------
+
+struc_9         struc ; (sizeof=0x8, mappedto_19)
+                                        ; XREF: dseg:stru_33402/r
+field_0         dw ?
+field_2         dw ?
+field_4         dw ?
+field_6         dw ?
+struc_9         ends
 
 ; ---------------------------------------------------------------------------
 
 ; enum enum_1, mappedto_2
-DOS_SET_IRQH	 = 25h
-PORT_PIT_TIME0	 = 40h
-PORT_PIT_CNTRL	 = 43h
+DOS_SET_IRQH     = 25h
+PORT_PIT_TIME0   = 40h
+PORT_PIT_CNTRL   = 43h
 
 ; ---------------------------------------------------------------------------
 
 ; enum Pointers, mappedto_3
-COMM_GFXOVL_SEG	 = 1Ah
-COMM_SNDOVL_SEG	 = 1Ch
+COMM_GFXOVL_SEG  = 1Ah
+COMM_SNDOVL_SEG  = 1Ch
 COMM_MISCOVL_SEG  = 1Eh
-COMM_GFXBUF_PTR	 = 20h
-COMM_HERC_FLAG	 = 24h
-COMM_SETUP_DONE_OFFSET	= 26h
+COMM_GFXBUF_PTR  = 20h
+COMM_HERC_FLAG   = 24h
+COMM_SETUP_DONE_OFFSET  = 26h
 COMM_SETUP_GFXMODE_OFFSET  = 30h
-COMM_UNK7	 = 38h
+COMM_UNK7        = 38h
 COMM_JOYDATA_OFF  = 48h
-COMM_USEJOY_OFF	 = 72h
+COMM_USEJOY_OFF  = 72h
 COMM_GFXMODE_OFFSET  = 78h
-COMM_WORLDBUF	 = 7Ah
-OFF_IACA_START	 = 4F0h
-COMM_GAMEDATA_OFFSET  =	120Eh
+COMM_WORLDBUF    = 7Ah
+OFF_IACA_START   = 4F0h
+COMM_GAMEDATA_OFFSET  = 120Eh
 
 ; ---------------------------------------------------------------------------
 
 ; enum Interrupt, mappedto_4
-IRQ_CBREAK	 = 1Bh
+IRQ_CBREAK       = 1Bh                  ; XREF: installCBreakHandler+4/t
 
 ; ---------------------------------------------------------------------------
 
 ; enum Game, mappedto_5
 GAMEDATA_THEATER  = 38h
 GAMEDATA_DIFFICULTY  = 3Eh
-GAMEDATA_UNK4	 = 40h
+GAMEDATA_UNK4    = 40h
 
 ; ---------------------------------------------------------------------------
 
 ; enum Misc, mappedto_6
-WAYPT_PRIMARY	 = 1
-WAYPT_SECONDARY	 = 2
-WAYPT_BASE	 = 3
-IRQ_VIDEO	 = 10h
-OVL_HDR_CODESEG	 = 18h
+WAYPT_PRIMARY    = 1
+WAYPT_SECONDARY  = 2
+WAYPT_BASE       = 3
+IRQ_VIDEO        = 10h
+OVL_HDR_CODESEG  = 18h
 OVL_HDR_FIRSTIDX  = 1Ch
 OVL_HDR_SLOTCOUNT  = 22h
 OVL_HDR_FIRSTPTR  = 24h
 
 ; ==============================================================================
 .CODE ;seg000 segment byte public 'CODE' use16
+; ------------------------------seg000:0x211------------------------------
+MainGameLoop proc near
+    retn
+MainGameLoop endp
+; ------------------------------seg000:0x293------------------------------
 ; ------------------------------seg000:0x294------------------------------
 sub_10294 proc near
     retn
@@ -410,103 +448,15 @@ sub_10297 proc near
     retn
 sub_10297 endp
 ; ------------------------------seg000:0x299------------------------------
-; ------------------------------seg000:0x2e2------------------------------
-_loadF15DgtlBin proc near
-    call far ptr gfx_jump_32
-    mov bx, ax
-    sub bx, 2
-    cmp bx, 0FFFh
-    jbe short loc_102F5
-    mov bx, 0FFFh
-loc_102F5:
-    mov allocSize, bx
-    mov ah, 48h
-    int 21h ;DOS - 2+ - ALLOCATE MEMORY
-    mov f15dgtlAddr, ax
-    sub cx, cx
-    mov es, cx
-    mov es:4FEh, ax
-    mov ah, 3Dh
-    mov al, 0
-    mov dx, offset aF15dgtl_bin ;"F15DGTL.BIN"
-    int 21h ;DOS - 2+ - OPEN DISK FILE WITH HANDLE
-    mov bx, ax
-    mov cx, allocSize
-    shl cx, 1
-    shl cx, 1
-    shl cx, 1
-    shl cx, 1
-    push ds
-    mov ax, f15dgtlAddr
-    mov ds, ax
-    mov dx, 0
-    mov ah, 3Fh
-    int 21h ;DOS - 2+ - READ FROM FILE WITH HANDLE
-    pop ds
-    push ax
-    mov ah, 3Eh
-    int 21h ;DOS - 2+ - CLOSE A FILE WITH HANDLE
-    pop ax
-    retn
-_loadF15DgtlBin endp
-; ------------------------------seg000:0x333------------------------------
 ; ------------------------------seg000:0x334------------------------------
 sub_10334 proc near
     retn ;sp-analysis failed
 sub_10334 endp
 ; ------------------------------seg000:0x66e------------------------------
-; ------------------------------seg000:0x688------------------------------
-_setupOverlaySlots proc near
-    arg_0 = word ptr 4
-    push bp
-    mov bp, sp
-    push di
-    push si
-    push es
-    push ds
-    push bp
-    mov dx, [bp+arg_0]
-    mov ovlInsaneFlag, 0
-    jmp short loc_106A0
-    nop
-    mov ovlInsaneFlag, 1
-loc_106A0:
-    mov es, dx
-    mov bx, offset _gfx_jump_0_alloc
-    mov di, OVL_HDR_FIRSTIDX
-    mov ax, es:[di]
-    mov dl, 5
-    mul dl
-    add bx, ax
-    mov di, OVL_HDR_SLOTCOUNT
-    mov cx, es:[di]
-    mov si, OVL_HDR_FIRSTPTR
-    mov di, OVL_HDR_CODESEG
-    mov di, es:[di]
-writeSlots:
-    mov ax, es:[si]
-    mov [bx+1], ax
-    mov [bx+3], di
-    add si, 2
-    add bx, 5
-    loop writeSlots
-    cmp ovlInsaneFlag, 0
-    jnz short locret_106E0
-    pop bp
-    pop ds
-    pop es
-    pop si
-    pop di
-    mov sp, bp
-    pop bp
-locret_106E0:
-    retn
-_setupOverlaySlots endp ;sp-analysis failed
-; ------------------------------seg000:0x6e0------------------------------
 ; ------------------------------seg000:0x720------------------------------
-sub_10720 proc near
+UpdatePlayerAndWorldState proc near
     retn
-sub_10720 endp
+UpdatePlayerAndWorldState endp
 ; ------------------------------seg000:0x14e7------------------------------
 ; ------------------------------seg000:0x14e8------------------------------
 sub_114E8 proc near
@@ -724,38 +674,6 @@ sub_13A90 proc near
     retn
 sub_13A90 endp
 ; ------------------------------seg000:0x3aa6------------------------------
-; ------------------------------seg000:0x3aee------------------------------
-_setupDac proc near
-    mov ax, ds
-    mov es, ax
-    mov bx, 10h
-    mov cx, 50h
-    mov dx, offset dacValues1
-    mov ax, 1012h
-    int 10h ;- VIDEO - SET BLOCK OF DAC REGISTERS (EGA, VGA/MCGA)
-    cmp _byte_34197, 2
-    jz short loc_13B16
-    mov cx, 30h
-    push si
-    push di
-    mov si, offset byte_37116
-    mov di, offset byte_36D86
-    rep movsb
-    pop di
-    pop si
-loc_13B16:
-    mov dx, offset dacValues
-    cmp _word_330BC, 0
-    jz short loc_13B23
-    mov dx, offset otherDacValues
-loc_13B23:
-    mov bx, 60h
-    mov cx, 0A0h
-    mov ax, 1012h
-    int 10h ;- VIDEO - SET BLOCK OF DAC REGISTERS (EGA, VGA/MCGA)
-    retn
-_setupDac endp
-; ------------------------------seg000:0x3b2e------------------------------
 ; ------------------------------seg000:0x3b2f------------------------------
 sub_13B2F proc near
     retn
@@ -796,28 +714,6 @@ sub_13BCD proc near
     retn
 sub_13BCD endp
 ; ------------------------------seg000:0x3beb------------------------------
-; ------------------------------seg000:0x3bec------------------------------
-_installCBreakHandler proc near
-    push si
-    push di
-    push dx
-    push ds
-    mov si, IRQ_CBREAK*4
-    call getInterruptHandler
-    mov origCBreakOfs, bx
-    mov origCBreakSeg, ax
-    mov ax, seg @code ;mov ax, seg seg000
-    mov dx, offset cbreakHandler
-    mov ds, ax
-    mov ax, 251Bh
-    int 21h ;DOS - SET INTERRUPT VECTOR
-    pop ds
-    pop dx
-    pop di
-    pop si
-    retn
-_installCBreakHandler endp
-; ------------------------------seg000:0x3c0e------------------------------
 ; ------------------------------seg000:0x3c0f------------------------------
 _restoreCBreakHandler proc near
     push ds
@@ -862,8 +758,8 @@ _sub_13C3B endp
 ; ------------------------------seg000:0x3c46------------------------------
 ; ------------------------------seg000:0x3c47------------------------------
 sub_13C47 proc near
-    call _sub_155AB
-    call _sub_18E50
+    call ProcessPlayerInputAndAI
+    call UpdateFlightModelAndHUD
     cmp _keyValue, 0
     jnz short loc_13C59
     call far ptr _sub_21A7A ;call sub_21A7A
@@ -873,7 +769,7 @@ loc_13C59:
     call far ptr gfx_jump_2c
     mov byte_378EE, 1
     call _otherKeyDispatch
-    call sub_10720
+    call UpdatePlayerAndWorldState
     cmp byte_3C8B0, 0
     jz short sub_13C47
     retn
@@ -883,12 +779,14 @@ sub_13C47 endp
 _setTimerIrqHandler proc near
     mov word_378FA, 1
     mov word_37904, 1
+InstallKeyboardIrqHandler:
     mov word_378F0, 0
     mov word_378F2, 0
     call sub_13DF2
     mov ah, 35h
     mov al, 8
-    int 21h ;DOS - 2+ - GET INTERRUPT VECTOR
+RestoreKeyboardIrqHandler: ;DOS - 2+ - GET INTERRUPT VECTOR
+    int 21h ;AL = interrupt number
     mov word ptr cs:timerIsrPtr, bx
     mov word ptr cs:timerIsrPtr+2, es
     push ds
@@ -1100,6 +998,11 @@ sub_15557 proc near
     retn
 sub_15557 endp
 ; ------------------------------seg000:0x55aa------------------------------
+; ------------------------------seg000:0x55ab------------------------------
+ProcessPlayerInputAndAI proc near
+    retn
+ProcessPlayerInputAndAI endp
+; ------------------------------seg000:0x5fda------------------------------
 ; ------------------------------seg000:0x5fdb------------------------------
 _sub_15FDB proc near
     retn
@@ -1126,9 +1029,9 @@ sub_16172 proc near
 sub_16172 endp
 ; ------------------------------seg000:0x6345------------------------------
 ; ------------------------------seg000:0x6346------------------------------
-sub_16346 proc near
+DisplayMessageAndWaitKey proc near
     retn
-sub_16346 endp
+DisplayMessageAndWaitKey endp
 ; ------------------------------seg000:0x660c------------------------------
 ; ------------------------------seg000:0x660e------------------------------
 sub_1660E proc near
@@ -1205,6 +1108,11 @@ sub_18E38 proc near
     retn
 sub_18E38 endp
 ; ------------------------------seg000:0x8e4f------------------------------
+; ------------------------------seg000:0x8e50------------------------------
+UpdateFlightModelAndHUD proc near
+    retn
+UpdateFlightModelAndHUD endp
+; ------------------------------seg000:0x9484------------------------------
 ; ------------------------------seg000:0x94d0------------------------------
 sub_194D0 proc near
     retn
@@ -1351,9 +1259,9 @@ sub_1A224 proc near
 sub_1A224 endp
 ; ------------------------------seg000:0xa25a------------------------------
 ; ------------------------------seg000:0xa25c------------------------------
-_sub_1A25C proc near
+_MakeRotationMatrix proc near
     retn
-_sub_1A25C endp
+_MakeRotationMatrix endp
 ; ------------------------------seg000:0xa73e------------------------------
 ; ------------------------------seg000:0xa740------------------------------
 sub_1A740 proc near
@@ -1371,9 +1279,9 @@ sub_1A872 proc near
 sub_1A872 endp
 ; ------------------------------seg000:0xa8c7------------------------------
 ; ------------------------------seg000:0xa8c8------------------------------
-_sub_1A8C8 proc near
+_TransformAndProjectObject proc near
     retn
-_sub_1A8C8 endp
+_TransformAndProjectObject endp
 ; ------------------------------seg000:0xa933------------------------------
 ; ------------------------------seg000:0xa934------------------------------
 sub_1A934 proc near
@@ -1386,9 +1294,9 @@ sub_1A962 proc near
 sub_1A962 endp
 ; ------------------------------seg000:0xa9bb------------------------------
 ; ------------------------------seg000:0xa9bc------------------------------
-sub_1A9BC proc near
+CheckCollisionsAndDamage proc near
     retn
-sub_1A9BC endp
+CheckCollisionsAndDamage endp
 ; ------------------------------seg000:0xa9f7------------------------------
 ; ------------------------------seg000:0xa9f8------------------------------
 sub_1A9F8 proc near
@@ -1431,9 +1339,9 @@ sub_1C661 proc near
 sub_1C661 endp
 ; ------------------------------seg000:0xc6bd------------------------------
 ; ------------------------------seg000:0xc6be------------------------------
-sub_1C6BE proc near
+MatMul proc near
     retn
-sub_1C6BE endp
+MatMul endp
 ; ------------------------------seg000:0xc7a1------------------------------
 ; ------------------------------seg000:0xc7a2------------------------------
 sub_1C7A2 proc near
@@ -1451,9 +1359,9 @@ sub_1C7EA proc near
 sub_1C7EA endp
 ; ------------------------------seg000:0xc82c------------------------------
 ; ------------------------------seg000:0xc82d------------------------------
-sub_1C82D proc near
+LoadDigitalSoundBin proc near
     retn
-sub_1C82D endp
+LoadDigitalSoundBin endp
 ; ------------------------------seg000:0xc863------------------------------
 ; ------------------------------seg000:0xc864------------------------------
 sub_1C864 proc near
@@ -1461,14 +1369,14 @@ sub_1C864 proc near
 sub_1C864 endp
 ; ------------------------------seg000:0xc8a3------------------------------
 ; ------------------------------seg000:0xc8a4------------------------------
-sub_1C8A4 proc near
+DrawCockpitInstruments proc near
     retn
-sub_1C8A4 endp
+DrawCockpitInstruments endp
 ; ------------------------------seg000:0xc8dd------------------------------
 ; ------------------------------seg000:0xc9d2------------------------------
-sub_1C9D2 proc near
+Load3DT_TerrainData proc near
     retn
-sub_1C9D2 endp
+Load3DT_TerrainData endp
 ; ------------------------------seg000:0xcb41------------------------------
 ; ------------------------------seg000:0xcb42------------------------------
 sub_1CB42 proc near
@@ -1476,9 +1384,9 @@ sub_1CB42 proc near
 sub_1CB42 endp
 ; ------------------------------seg000:0xcf30------------------------------
 ; ------------------------------seg000:0xcf32------------------------------
-sub_1CF32 proc near
+TrgMul proc near
     retn
-sub_1CF32 endp
+TrgMul endp
 ; ------------------------------seg000:0xcf63------------------------------
 ; ------------------------------seg000:0xcf64------------------------------
 _sub_1CF64 proc near
@@ -1486,19 +1394,19 @@ _sub_1CF64 proc near
 _sub_1CF64 endp
 ; ------------------------------seg000:0xcf8d------------------------------
 ; ------------------------------seg000:0xcf8e------------------------------
-sub_1CF8E proc near
+forceRange proc near
     retn
-sub_1CF8E endp
+forceRange endp
 ; ------------------------------seg000:0xcfa5------------------------------
 ; ------------------------------seg000:0xcfa6------------------------------
-_sub_1CFA6 proc near
+_xydist proc near
     retn
-_sub_1CFA6 endp
+_xydist endp
 ; ------------------------------seg000:0xd007------------------------------
 ; ------------------------------seg000:0xd008------------------------------
-_sub_1D008 proc near
+_ARCTAN proc near
     retn
-_sub_1D008 endp
+_ARCTAN endp
 ; ------------------------------seg000:0xd177------------------------------
 ; ------------------------------seg000:0xd178------------------------------
 _sub_1D178 proc near
@@ -1511,9 +1419,9 @@ _sub_1D190 proc near
 _sub_1D190 endp
 ; ------------------------------seg000:0xd1a4------------------------------
 ; ------------------------------seg000:0xd1c8------------------------------
-sub_1D1C8 proc near
+abs_word proc near
     retn
-sub_1D1C8 endp
+abs_word endp
 ; ------------------------------seg000:0xd1e6------------------------------
 ; ------------------------------seg000:0xd1e8------------------------------
 sub_1D1E8 proc near
@@ -1521,9 +1429,9 @@ sub_1D1E8 proc near
 sub_1D1E8 endp
 ; ------------------------------seg000:0xd1ff------------------------------
 ; ------------------------------seg000:0xd200------------------------------
-sub_1D200 proc near
+randlmul proc near
     retn
-sub_1D200 endp
+randlmul endp
 ; ------------------------------seg000:0xd21d------------------------------
 ; ------------------------------seg000:0xd21e------------------------------
 sub_1D21E proc near
@@ -1541,9 +1449,9 @@ selectMissile proc near
 selectMissile endp
 ; ------------------------------seg000:0xda34------------------------------
 ; ------------------------------seg000:0xda35------------------------------
-sub_1DA35 proc near
+makeSound proc near
     retn
-sub_1DA35 endp
+makeSound endp
 ; ------------------------------seg000:0xda5e------------------------------
 ; ------------------------------seg000:0xda5f------------------------------
 sub_1DA5F proc near
@@ -1561,9 +1469,9 @@ sub_1DAAE proc near
 sub_1DAAE endp
 ; ------------------------------seg000:0xdb2a------------------------------
 ; ------------------------------seg000:0xdb2b------------------------------
-sub_1DB2B proc near
+SetDifficultyParameters proc near
     retn
-sub_1DB2B endp
+SetDifficultyParameters endp
 ; ------------------------------seg000:0xdb9b------------------------------
 ; ------------------------------seg000:0xdb9c------------------------------
 sub_1DB9C proc near
@@ -1849,7 +1757,7 @@ loc_1E0E0:
     mov di, word_389E0
     call far ptr gfx_jump_3a_getRowOffset
     mov rowOffset, ax
-    call sub_1E262
+    call DecompressAndBlitRow
     mov di, rowOffset
     mov bp, offset picDecodedRowBuf
     mov bx, word_389E0
@@ -1884,7 +1792,7 @@ nullsub_1 proc near
 nullsub_1 endp
 ; ------------------------------seg000:0xe260------------------------------
 ; ------------------------------seg000:0xe262------------------------------
-sub_1E262 proc near
+DecompressAndBlitRow proc near
     push es
     push ds
     pop es
@@ -1893,22 +1801,22 @@ sub_1E262 proc near
     add si, 5D7Ch
     shr di, 1
     jnz short loc_1E275
-    call sub_1E28C
+    call RLE_DecompressHelper
 loc_1E275:
     mov cx, 140h
     mov word_38D5E, cx
     mov di, 5FE8h
-    call sub_1E309
+    call RLE_DecompressLoop
     sub si, 5D7Ch
     mov fileReadPos, si
     pop es
     retn
-sub_1E262 endp
+DecompressAndBlitRow endp
 ; ------------------------------seg000:0xe28b------------------------------
 ; ------------------------------seg000:0xe28c------------------------------
-sub_1E28C proc near
+RLE_DecompressHelper proc near
     retn ;sp-analysis failed
-sub_1E28C endp
+RLE_DecompressHelper endp
 ; ------------------------------seg000:0xe2d0------------------------------
 ; ------------------------------seg000:0xe2d3------------------------------
 sub_1E2D3 proc near
@@ -1916,14 +1824,14 @@ sub_1E2D3 proc near
 sub_1E2D3 endp
 ; ------------------------------seg000:0xe308------------------------------
 ; ------------------------------seg000:0xe309------------------------------
-sub_1E309 proc near
+RLE_DecompressLoop proc near
     retn
-sub_1E309 endp
+RLE_DecompressLoop endp
 ; ------------------------------seg000:0xe381------------------------------
 ; ------------------------------seg000:0xe382------------------------------
-sub_1E382 proc near
+LZW_Decompress proc near
     retn ;sp-analysis failed
-sub_1E382 endp
+LZW_Decompress endp
 ; ------------------------------seg000:0xe42e------------------------------
 ; ------------------------------seg000:0xe432------------------------------
 start proc near
@@ -1962,7 +1870,7 @@ sub_1E640 endp
 ; ------------------------------seg000:0xe652------------------------------
 ; ------------------------------seg000:0xe654------------------------------
 __chkstk proc near
-    retn
+    retn ;sp-analysis failed
 __chkstk endp
 ; ------------------------------seg000:0xe667------------------------------
 ; ------------------------------seg000:0xe66a------------------------------
@@ -2724,8 +2632,11 @@ loc_22599:
     mov word_37C18, ax
     mov ax, 9Fh
     mov word_37C1A, ax
+loc_225BF:
     call far ptr gfx_jump_1d
+loc_225C4:
     mov word_37C1C, ax
+loc_225C7:
     mov ax, 0A0h
     mov word_37C1E, ax
     mov ax, 4Ch
@@ -4292,67 +4203,7 @@ word_333DA dw 0
     db 0
     db 0
     db 0
-word_33402 dw 0
-word_33404 dw 0
-word_33406 dw 0
-unk_33408 db 0
-byte_33409 db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
-    db 0
+    stru_33402 struc_9 8 dup(<0>)
 word_33442 dw 0
     db 3
     db 0
@@ -5063,10 +4914,10 @@ gfx_jump_2e endp
     db 0
     db 0
 ; ------------------------------dseg:0xfb8------------------------------
-gfx_jump_32 proc near
+_gfx_jump_32 proc near
     db 0EAh ;jmp far ptr 0:0
     dd 0
-gfx_jump_32 endp
+_gfx_jump_32 endp
 ; ------------------------------dseg:0xfb8------------------------------
 ; ------------------------------dseg:0xfbd------------------------------
 gfx_jump_33_fillRow proc near
@@ -13236,7 +13087,7 @@ word_36C33 dw 0
     db 3Fh
     db 3Fh
     db 3Fh
-dacValues1 db 3 dup(0), 3 dup(4), 3 dup(8), 3 dup(0Ch), 3 dup(10h)
+_dacValues1 db 3 dup(0), 3 dup(4), 3 dup(8), 3 dup(0Ch), 3 dup(10h)
     db 3 dup(14h), 3 dup(18h), 3 dup(1Ch), 3 dup(20h), 3 dup(24h) ;f0/240 bytes of 80 rgb triplets
     db 3 dup(28h), 3 dup(2Ch), 3 dup(30h), 3 dup(34h), 3 dup(38h)
     db 3 dup(3Ch), 0, 3Fh, 2 dup(0), 38h, 2 dup(0), 31h, 2 dup(0)
@@ -13256,7 +13107,7 @@ dacValues1 db 3 dup(0), 3 dup(4), 3 dup(8), 3 dup(0Ch), 3 dup(10h)
     db 0Fh, 14h, 18h, 3Fh, 2Ch, 24h, 3Ah, 28h, 21h, 35h, 25h
     db 1Eh, 31h, 21h, 1Ch, 2Ch, 1Fh, 19h, 28h, 1Bh, 16h, 23h
     db 18h, 14h, 1Eh, 15h, 11h
-dacValues db 34h
+_dacValues db 34h
     db 34h
     db 34h
     db 31h
@@ -13304,7 +13155,7 @@ dacValues db 34h
     db 0
     db 27h
     db 3Fh
-byte_36D86 db 3 dup(34h), 2Fh, 33h, 2Fh, 2Ch, 32h, 2Bh, 27h, 31h
+_byte_36D86 db 3 dup(34h), 2Fh, 33h, 2Fh, 2Ch, 32h, 2Bh, 27h, 31h
     db 27h, 24h, 30h, 23h, 20h, 2Fh, 20h, 1Dh, 2Fh, 1Ch, 19h
     db 2Eh, 18h, 16h, 2Dh, 15h, 12h, 2Ch, 11h, 0Fh, 2Bh, 0Eh
     db 0Ch, 2Ah, 0Bh, 9, 29h, 8, 6, 28h, 5, 4, 28h, 3, 1, 27h
@@ -13693,7 +13544,7 @@ byte_36D86 db 3 dup(34h), 2Fh, 33h, 2Fh, 2Ch, 32h, 2Bh, 27h, 31h
     db 22h
     db 22h
     db 22h
-otherDacValues db 1Fh, 10h, 1Eh, 1Dh, 0Fh, 1Eh, 1Bh, 0Fh, 1Dh, 19h, 0Eh
+_otherDacValues db 1Fh, 10h, 1Eh, 1Dh, 0Fh, 1Eh, 1Bh, 0Fh, 1Dh, 19h, 0Eh
     db 1Ch, 17h, 0Dh, 1Bh, 15h, 0Dh, 1Ah, 13h, 0Ch, 19h, 11h ;1e0/480 bytes of 160 rgb triplets
     db 0Ch, 18h, 0Fh, 0Bh, 17h, 0Dh, 0Bh, 16h, 0Ch, 0Ah, 15h
     db 2 dup(0Ah), 14h, 9, 0Ah, 13h, 9, 0Ah, 12h, 8, 0Ah, 12h
@@ -13735,7 +13586,7 @@ otherDacValues db 1Fh, 10h, 1Eh, 1Dh, 0Fh, 1Eh, 1Bh, 0Fh, 1Dh, 19h, 0Eh
     db 3 dup(16h), 0Bh, 0Fh, 12h, 1Fh, 20h, 26h, 19h, 1Eh
     db 19h, 20h, 2 dup(26h), 20h, 2 dup(1Ah), 2Ah, 2 dup(0)
     db 2 dup(26h), 1Fh, 3 dup(1Eh)
-byte_37116 db 3 dup(34h), 33h, 31h, 2Fh, 32h, 2Fh, 2Ch, 32h, 2Dh
+_byte_37116 db 3 dup(34h), 33h, 31h, 2Fh, 32h, 2Fh, 2Ch, 32h, 2Dh
     db 28h, 31h, 2Ah, 24h, 30h, 28h, 20h, 30h, 26h, 1Dh, 2Fh
     db 24h, 19h, 2Eh, 22h, 16h, 2Eh, 20h, 12h, 2Dh, 1Eh, 0Fh
     db 2Ch, 1Ch, 0Ch, 2Ch, 1Ah, 9, 2Bh, 18h, 6, 2Ah, 16h, 3
@@ -17320,7 +17171,7 @@ aLandingGearRaised db 'Landing gear raised',0
 aBrakesOn db 'Brakes on',0
 a_ db '.',0
 aG db 'G',0
-    db 10h
+byte_37FEC db 10h
     db 10h
     db 10h
     db 10h
@@ -17476,7 +17327,7 @@ word_3808C dw 0
     db 0 ;align 4
     db 0
 word_38090 dw 0
-    db 0FFh
+unk_38092 db 0FFh
     db 7Fh
     db 0
     db 0
@@ -17504,7 +17355,7 @@ word_380AC dw 0
     db 0
     db 0FFh
     db 7Fh
-    db 0
+unk_380B6 db 0
     db 0
     db 0
     db 0
@@ -19320,7 +19171,7 @@ word_38FC8 dw ?
     db ?
 word_38FCC dw ?
 word_38FCE dw ?
-    db ?
+unk_38FD0 db ?
     db ?
     db ?
     db ?
@@ -24036,10 +23887,8 @@ _buf3d3_3 db 96h dup(?)
 _dword_3B1FE dd ?
 _unk_3B202 db ?
     db ?
-    db ?
-    db ?
-    db ?
-    db ?
+word_3B204 dw ?
+word_3B206 dw ?
     _stru_3B208 struc_3 <?>
 word_3B22C dw ?
 word_3B22E dw ?
@@ -25582,7 +25431,7 @@ word_3C00A dw ?
 _word_3C00C dw ?
 word_3C00E dw ?
 _flagFarToNear dw ?
-word_3C012 dw ?
+keyScancode dw ?
 word_3C014 dw ?
 word_3C016 dw ?
 word_3C018 dw ?

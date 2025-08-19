@@ -517,10 +517,10 @@ int sub_155AB() {
         var_A = (dword_3C01C >> 5) - word_3BEC0;
         // 5981
         var_C = (dword_3C024 >> 5) - word_3BED0;
-        var_6 = sub_1CFA6(var_A, var_C);
-        word_3C5AA = sub_1D008(var_A, -var_C);
+        var_6 = xydist(var_A, var_C);
+        word_3C5AA = ARCTAN(var_A, -var_C);
         // 59ba
-        word_3BE94 = -sub_1D008((word_3C02C - word_380CE) >> 5, var_6);
+        word_3BE94 = -ARCTAN((word_3C02C - word_380CE) >> 5, var_6);
         word_3B4E4 = 0;
         // 59d6
         var_8 = sub_1D190(word_3BE94, 0x18 << var_2);
@@ -657,8 +657,8 @@ int sub_155AB() {
         var_E = byte_3C5A0;
         byte_3C5A0 = gfx_jump_2d();
         // 5f84
-        sub_1A8C8(0x6b, 0x30, 0xd1, 0, 0x6f, 0x2f, 0);
-        sub_1A8C8(0x41, 0x5f, 0x7d, 0x36, 0xc3, 2, 0);
+        TransformAndProjectObject(0x6b, 0x30, 0xd1, 0, 0x6f, 0x2f, 0);
+        TransformAndProjectObject(0x41, 0x5f, 0x7d, 0x36, 0xc3, 2, 0);
         byte_3C5A0 = var_E;
     } // 5fb1
     gfx_jump_46_retrace2();
@@ -676,7 +676,7 @@ int sub_18E50(int arg_0) {
     var_16 = waypoints[waypointIndex].field_0 - word_3BEC0;
     var_1A = waypoints[waypointIndex].field_2 - word_3BED0;
     // 8e83
-    word_3BE92 = sub_1D008(var_16, -var_1A);
+    word_3BE92 = ARCTAN(var_16, -var_1A);
     if (word_330C2 != 0) { // 8e96
         if (word_38FEA != 0) { // 8e9d
             word_38FEA = 0;
@@ -732,7 +732,7 @@ int sub_18E50(int arg_0) {
                 sub_19E44(7);
                 word_3C008 = (word_38FC4 >> 6) + 0x38;
                 if (word_3C008 > 0xa && word_3C008 < 0x6f) { // 9173
-                    sub_1A8C8(0x9a, word_3C008 - 4, 0x94, 0x15, 0x0b, 7, 0xf);
+                    TransformAndProjectObject(0x9a, word_3C008 - 4, 0x94, 0x15, 0x0b, 7, 0xf);
                 }
             } // 9198
             if (word_3C45C == 1) { // 91a2
@@ -741,7 +741,7 @@ int sub_18E50(int arg_0) {
                 var_18 = (word_3C6AC >> var_1C) + 0x38;
                 // 91c3
                 if (var_14 > 0xa && var_14 < 0x135 && var_18 > 8 && var_18 < 0x5b) { // 91da
-                    sub_1A8C8(var_14 - 6, var_18 - 5, 0x91, 0x4, 0xd, 0xb, 0xe);
+                    TransformAndProjectObject(var_14 - 6, var_18 - 5, 0x91, 0x4, 0xd, 0xb, 0xe);
                 } // 9202
                 // 7 = air to air? Only Sidewinder and Amraam have it
                 if (sams[missiles[missleSpec[missileSpecIndex].field_0].field_16].field_C == 7) { // 9223
@@ -781,7 +781,7 @@ int sub_18E50(int arg_0) {
             goto somewhere;
         } // 93c4
 somewhere:        
-        sub_1A25C(byte_3C5A0);
+        MakeRotationMatrix(byte_3C5A0);
     } // 93cf
     if (word_383F2 != 0 && ((keyValue == 0 && byte_37C24 == 0) || (word_3370E != 0))) { // 93eb
         draw2Strings(tempString, -(((int16)strlen(tempString) >> 1) - 0x28) * 4, 0x18, 0xf);

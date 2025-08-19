@@ -49,7 +49,7 @@ extern unsigned char far byte_2D6A4[];
 // ==== seg000:0x147 ====
 void __cdecl drawCockpit();
 // ==== seg000:0x211 ====
-int sub_10211();
+int MainGameLoop();
 // ==== seg000:0x294 ====
 int sub_10294();
 // ==== seg000:0x297 ====
@@ -64,7 +64,7 @@ int sub_10334();
 // ==== seg000:0x688 ====
 int setupOverlaySlots();
 // ==== seg000:0x720 ====
-int sub_10720();
+int UpdatePlayerAndWorldState();
 // ==== seg000:0x14e8 ====
 int sub_114E8();
 // ==== seg000:0x14fc ====
@@ -234,7 +234,7 @@ int sub_15540();
 // ==== seg000:0x5557 ====
 int sub_15557();
 // ==== seg000:0x55ab ====
-int sub_155AB();
+int ProcessPlayerInputAndAI();
 // ==== seg000:0x5fdb ====
 int sub_15FDB();
 // ==== seg000:0x606c ====
@@ -246,7 +246,7 @@ int sub_1613B();
 // ==== seg000:0x6172 ====
 int sub_16172();
 // ==== seg000:0x6346 ====
-int sub_16346();
+int DisplayMessageAndWaitKey();
 // ==== seg000:0x660e ====
 int sub_1660E();
 // ==== seg000:0x66be ====
@@ -278,7 +278,7 @@ int sub_18DF4();
 // ==== seg000:0x8e38 ====
 int sub_18E38();
 // ==== seg000:0x8e50 ====
-int sub_18E50();
+int UpdateFlightModelAndHUD();
 // ==== seg000:0x94d0 ====
 int sub_194D0();
 // ==== seg000:0x957a ====
@@ -346,7 +346,7 @@ int sub_1A204();
 // ==== seg000:0xa224 ====
 int sub_1A224();
 // ==== seg000:0xa25c ====
-int sub_1A25C();
+int MakeRotationMatrix();
 // ==== seg000:0xa740 ====
 int sub_1A740();
 // ==== seg000:0xa7c4 ====
@@ -354,13 +354,13 @@ int sub_1A7C4();
 // ==== seg000:0xa872 ====
 int sub_1A872();
 // ==== seg000:0xa8c8 ====
-int sub_1A8C8();
+int TransformAndProjectObject();
 // ==== seg000:0xa934 ====
 int sub_1A934();
 // ==== seg000:0xa962 ====
 int sub_1A962();
 // ==== seg000:0xa9bc ====
-int sub_1A9BC();
+int CheckCollisionsAndDamage();
 // ==== seg000:0xa9f8 ====
 int sub_1A9F8();
 // ==== seg000:0xb147 ====
@@ -378,7 +378,7 @@ int sub_1C488();
 // ==== seg000:0xc661 ====
 int sub_1C661();
 // ==== seg000:0xc6be ====
-int sub_1C6BE();
+int MatMul();
 // ==== seg000:0xc7a2 ====
 int sub_1C7A2();
 // ==== seg000:0xc7c6 ====
@@ -386,37 +386,37 @@ int sub_1C7C6();
 // ==== seg000:0xc7ea ====
 int sub_1C7EA();
 // ==== seg000:0xc82d ====
-int sub_1C82D();
+int LoadDigitalSoundBin();
 // ==== seg000:0xc864 ====
 int sub_1C864();
 // ==== seg000:0xc8a4 ====
-int sub_1C8A4();
+int DrawCockpitInstruments();
 // ==== seg000:0xc8de ====
 int load15Flt3d3();
 // ==== seg000:0xc9d2 ====
-int sub_1C9D2();
+int Load3DT_TerrainData();
 // ==== seg000:0xcb42 ====
 int sub_1CB42();
 // ==== seg000:0xcf32 ====
-int sub_1CF32();
+int TrgMul();
 // ==== seg000:0xcf64 ====
 int sub_1CF64();
 // ==== seg000:0xcf8e ====
-int sub_1CF8E();
+int forceRange();
 // ==== seg000:0xcfa6 ====
-int sub_1CFA6();
+int xydist();
 // ==== seg000:0xd008 ====
-int sub_1D008();
+int ARCTAN();
 // ==== seg000:0xd178 ====
 int sub_1D178();
 // ==== seg000:0xd190 ====
 int sub_1D190();
 // ==== seg000:0xd1c8 ====
-int sub_1D1C8();
+int abs_word();
 // ==== seg000:0xd1e8 ====
 int sub_1D1E8();
 // ==== seg000:0xd200 ====
-int sub_1D200();
+int randlmul();
 // ==== seg000:0xd21e ====
 int sub_1D21E();
 // ==== seg000:0xd260 ====
@@ -424,7 +424,7 @@ int keyDispatch();
 // ==== seg000:0xd9db ====
 int selectMissile();
 // ==== seg000:0xda35 ====
-int sub_1DA35();
+int makeSound();
 // ==== seg000:0xda5f ====
 int sub_1DA5F();
 // ==== seg000:0xda8d ====
@@ -432,7 +432,7 @@ int sub_1DA8D();
 // ==== seg000:0xdaae ====
 int sub_1DAAE();
 // ==== seg000:0xdb2b ====
-int sub_1DB2B();
+int SetDifficultyParameters();
 // ==== seg000:0xdb9c ====
 int sub_1DB9C();
 // ==== seg000:0xdbe0 ====
@@ -474,15 +474,15 @@ int sub_1E1F8();
 // ==== seg000:0xe260 ====
 int nullsub_1();
 // ==== seg000:0xe262 ====
-int sub_1E262();
+int DecompressAndBlitRow();
 // ==== seg000:0xe28c ====
-int sub_1E28C();
+int RLE_DecompressHelper();
 // ==== seg000:0xe2d3 ====
 int sub_1E2D3();
 // ==== seg000:0xe309 ====
-int sub_1E309();
+int RLE_DecompressLoop();
 // ==== seg000:0xe382 ====
-int sub_1E382();
+int LZW_Decompress();
 // ==== seg000:0xe631 ====
 int sub_1E631();
 // ==== seg000:0xe640 ====
@@ -746,11 +746,7 @@ extern int16 word_333D2;
 extern int16 word_333D4;
 extern int16 word_333D8;
 extern int16 word_333DA;
-extern int16 word_33402;
-extern int16 word_33404;
-extern int16 word_33406;
-extern uint8 unk_33408;
-extern uint8 byte_33409[];
+extern struct struc_9 stru_33402[];
 extern int16 word_33442;
 extern struct struc_2 stru_335C4[];
 extern int16 word_336E4;
@@ -1212,6 +1208,7 @@ extern uint8 aLandingGearRaised[];
 extern uint8 aBrakesOn[];
 extern uint8 a_[];
 extern uint8 aG[];
+extern uint8 byte_37FEC[];
 extern uint8 unk_3806E[];
 extern int16 word_38070;
 extern int word_38072;
@@ -1223,6 +1220,7 @@ extern int16 word_38080;
 extern int16 word_38084;
 extern int16 word_3808C;
 extern int16 word_38090;
+extern uint8 unk_38092[];
 extern int16 word_3809A;
 extern int16 word_3809C;
 extern int16 word_380A0;
@@ -1231,6 +1229,7 @@ extern int16 word_380A4;
 extern int16 word_380A6;
 extern int16 word_380AA;
 extern int16 word_380AC;
+extern uint8 unk_380B6[];
 extern int word_380C8;
 extern int word_380CA;
 extern int word_380CC;
@@ -1478,6 +1477,7 @@ extern int16 word_38FC6;
 extern int16 word_38FC8;
 extern int16 word_38FCC;
 extern int16 word_38FCE;
+extern uint8 unk_38FD0[];
 extern int word_38FDA;
 extern int word_38FDC;
 extern int16 word_38FDE;
@@ -1539,6 +1539,8 @@ extern int16 word_3B15E;
 extern uint8 buf3d3_3[];
 extern int32 dword_3B1FE;
 extern uint8 unk_3B202[];
+extern int16 word_3B204;
+extern int16 word_3B206;
 extern struct struc_3 stru_3B208[];
 extern int16 word_3B22C;
 extern int16 word_3B22E;
@@ -1620,7 +1622,7 @@ extern int16 word_3C00A;
 extern int16 word_3C00C;
 extern int word_3C00E;
 extern int16 flagFarToNear;
-extern int16 word_3C012;
+extern int16 keyScancode;
 extern int16 word_3C014;
 extern int16 word_3C016;
 extern int16 word_3C018;
