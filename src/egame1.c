@@ -1352,7 +1352,7 @@ int UpdateFlightModelAndHUD(int arg_0) {
                 sub_19C0C(0x11d, 0x59, 0x11d, 0x59);
                 // 8f74
                 sub_19E44(0xf);
-                var_14 = ((int16)(noJoy80[0] - 0x78) >> 4) + 0x11d;
+                var_14 = ((int16)(noJoy80 - 0x78) >> 4) + 0x11d;
                 // 8fa1
                 var_18 = ((int16)((noJoy80_2 * 3) - 0x168) >> 6) + 0x59;
                 sub_19C0C(var_14 - 1, var_18, var_14 + 1, var_18);
@@ -1365,78 +1365,67 @@ int UpdateFlightModelAndHUD(int arg_0) {
                 sub_19C0C(0xa0, 0x56, 0xa0, 0x5c);
             } // 900c
             sub_19E44(word_330BC != 0 ? 4 : 0);
-
-            // 9041: Draw airspeed indicator tape.
+            // 9041
             var_10 = sub_1CF64((((word_3C5A6 - word_3AA5A) * 2) / 5) + 0x1d, 0, 0x3d);
-            if (var_10) {
-                sub_19C0C(0x48, 0x55 - var_10, 0x48, 0x55);
-            }
-
-            // 9089: Draw vertical velocity indicator (VVI).
-            sub_19C0C(0xf7, 0x38, 0xf7, sub_1CF64(-((word_3C8B6 >> 4) - 0x38), 0x14, 0x55));
-
-            // 908f: Draw landing bracket if conditions are met.
-            if ((!(word_391FE & 1)) && (word_336E8 & 1) && (gameData->unk4 != 0) && (word_3C8B6 < 0)) {
-                temp_ax = (stru_3AA5E[word_3C16A << 4].field_6 & 0x200) ? 0x100 : 0x80;
-                var_2 = ((temp_ax / gameData->unk4) >> 4) + 0x38;
+            if (var_10) sub_19C0C(0x48, 0x55 - var_10, 0x48, 0x55);
+            // 9089
+            sub_19C0C(0xf7,  0x38, 0xf7, sub_1CF64(-((word_3C8B6 >> 4) - 0x38), 0x14, 0x55));
+            // 908f
+            if ((word_391FE & 1) == 0 && (word_336E8 & 1) != 0 && gameData->unk4 != 0 && word_3C8B6 < 0) { // 90af
+                var_2 = (((stru_3AA5E[word_3C16A].field_6 & 0x200 ? 0x100 : 0x80) / gameData->unk4) >> 4) + 0x38;
                 sub_19E44(0xf);
+                // 90f7
                 sub_19C0C(0xf2, var_2 - 2, 0xf4, var_2);
                 sub_19C0C(0xf2, var_2 + 2, 0xf4, var_2);
-            }
-
-            // 9115: Display "STALL WARNING" text if needed.
-            if (word_3AA5A < word_3C5A6 && word_3BEBE != word_380CE && (word_336E8 & 1)) {
+            } // 9115
+            // stall warning display
+            if (word_3AA5A < word_3C5A6 && word_3BEBE != word_380CE && word_336E8 & 1) { // 912e
                 draw2Strings(aStallWarning, 0x84, 0x1e, 0xf);
-            }
-
-            // 9144: Draw Attitude Direction Indicator (ADI) / Artificial Horizon.
-            if (word_3C45C == 0 || word_3C45C == 2) {
+            } // 9144
+            if (word_3C45C == 0 || word_3C45C == 2) { // 9152
                 sub_19E44(7);
                 word_3C008 = (word_38FC4 >> 6) + 0x38;
-                if (word_3C008 > 0xa && word_3C008 < 0x6f) {
+                if (word_3C008 > 0xa && word_3C008 < 0x6f) { // 9173
                     TransformAndProjectObject(0x9a, word_3C008 - 4, 0x94, 0x15, 0x0b, 7, 0xf);
                 }
-            }
-            
-            // 9198: Draw target designator box if in the right mode.
-            if (word_3C45C == 1) {
+            } // 9198
+            if (word_3C45C == 1) { // 91a2
                 var_1C = byte_37C24 + 4;
                 var_14 = (word_3C6A4 >> var_1C) + 0x9f;
                 var_18 = (word_3C6AC >> var_1C) + 0x38;
-                if (var_14 > 0xa && var_14 < 0x135 && var_18 > 8 && var_18 < 0x5b) {
+                // 91c3
+                if (var_14 > 0xa && var_14 < 0x135 && var_18 > 8 && var_18 < 0x5b) { // 91da
                     TransformAndProjectObject(var_14 - 6, var_18 - 5, 0x91, 0x4, 0xd, 0xb, 0xe);
-                }
-
-                // 9202: Draw missile seeker circle for A/A missiles.
-                if (sams[missiles[missleSpec[missileSpecIndex].field_0].field_16].field_C == 7) {
-                    sub_19E44(gfxModeUnset != 0 ? 0xf : 7);
-                    // Draw a 16-sided circle (polygon).
-                    for (var_A = 0; var_A <= 0x100; var_A += 0x10) {
+                } // 9202
+                // 7 = air to air? Only Sidewinder and Amraam have it
+                if (sams[missiles[missleSpec[missileSpecIndex].field_0].field_16].field_C == 7) { // 9223
+                    sub_19E44((uint8)gfxModeUnset != 0 ? 0xf : 7);
+                    // 9239
+                    for (var_A = 0; var_A <= 0x100; var_A += 0x10) { // 924b
                         var_4 = var_A << 8;
                         var_8 = sub_1D178(var_4, 0x28) + 0x9f;
+                        // 9278
                         var_C = -(sub_1D190(var_4, 0x23) - 0x38);
-                        if (var_A != 0) {
-                            sub_19C0C(var_8, var_C, var_E, var_12);
-                        }
+                        if (var_A != 0) sub_19C0C(var_8, var_C, var_E, var_12);
+                        // 9294
                         var_E = var_8;
                         var_12 = var_C;
                     }
                 }
-            }
-
-            // 929f: Draw numerical readouts for airspeed and altitude.
+            } // 929f
             sub_1A183(word_3AA5A, 0x50, 0x36, 0xf);
-            if (word_380D0 <= 0x4e20) {
-                temp_ax = (word_380D0 < 0x64) ? word_380D0 : (word_380D0 / 5) * 5;
-                sub_1A183(temp_ax, 0xe4, 0x36, 0xf);
-            }
-
-            // 92ee: Draw various text indicators.
-            if (word_3370A > 1) drawSomeStrings(aAccel, 0x96, 0x4, 0xf);
-            if (word_391FE & 0x1000) drawSomeStrings(aTraining, 0xea, 0x10, 0xf);
-            if (word_330B6 != 0) drawSomeStrings(aAutopilot, 0xec, 0x5a, 0xf);
-            
-            // 9346: Draw heading indicator caret.
+            if (word_380D0 <= 0x4e20) { // 92bd
+                sub_1A183(word_380D0 < 0x64 ? word_380D0 : (word_380D0 / 5) * 5, 0xe4, 0x36, 0xf);
+            } // 92ee
+            if (word_3370A > 1) { // 92f5
+                drawSomeStrings(aAccel, 0x96, 0x4, 0xf);
+            } // 930b
+            if (word_391FE & 0x1000) { // 9313
+                drawSomeStrings(aTraining, 0xea, 0x10, 0xf);
+            } // 9329
+            if (word_330B6 != 0) { // 9330
+                drawSomeStrings(aAutopilot, 0xec, 0x5a, 0xf);
+            } // 9346
             var_6 = sub_1CF64((((word_3BE92 - word_380C8) >> 6) / 3) + 0x9f, 0x59, 0xe5);
             sub_19E44(0x0b);
             sub_19C0C(var_6 - 2, 0xf, var_6, 0x11);

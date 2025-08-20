@@ -31,7 +31,7 @@ int main(void) {
         copyJoystickData(commData->joyData);
     }
     else { // 0x9d
-        noJoy80[0] = noJoy80[1] = 0x80;
+        noJoy80 = noJoy80_2 = 0x80;
     }
     // 0xa5
     gfxInit();
