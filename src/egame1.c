@@ -381,8 +381,662 @@ int strcpyFromDot(char *arg_0, char *arg_2) {
 }
 
 // ==== seg000:0x3f72 ====
-int otherKeyDispatch() {
+int otherKeyDispatch(void) {
+    // Local variables corresponding to the stack frame (sub sp, 3Eh)
+    int16 var_3E, var_3C, var_38, var_34, var_32, var_2C, var_2A, var_28;
+    int16 var_24, var_22, var_20, var_1A, var_18, var_16, var_14, var_10;
+    int16 var_E, var_C;
 
+    // Helper variables for complex calculations
+    int16 temp_ax, temp_bx, temp_cx, temp_si, temp_di;
+    int32 temp_long_dx_ax;
+
+    if (word_3BECC == 0) {
+        word_3AFA6 = 0;
+        word_380E0 = 0;
+        word_3A944 = 0;
+        word_380D0 = 0;
+        word_380CE = 0;
+        word_380CC = 0;
+        word_380CA = 0;
+
+        if (gameData->difficulty == 0) {
+            temp_ax = word_3BED0 - (waypoints[0].field_2 + 4);
+            word_380C8 = (temp_ax < 0) ? 0x8000 : 0;
+        } else {
+            if (gameData->theater == 6 || (gameData->theater & 1)) {
+                 word_380C8 = 0;
+            } else {
+                 word_380C8 = 0x8000;
+            }
+        }
+
+        temp_bx = word_3B148 << 4;
+        if (stru_3AA5E[temp_bx].field_6 & 0x200) {
+            *((unsigned char*)&word_380C8 + 1) += 4;
+        }
+
+        sub_15411();
+        sub_15FDB();
+        word_3BECC = 1;
+    }
+
+    keyScancode = 0;
+    if (_kbhit()) {
+        keyScancode = __bios_keybrd(0);
+        if (word_336EA == 1) {
+            word_3370E = 0;
+            word_336EA = 0;
+            keyValue = 0;
+        }
+    }
+
+    while (_kbhit()) {
+        __bios_keybrd(0); // Flush keyboard buffer
+    }
+
+    // Main key dispatch logic
+    switch (keyScancode) {
+        case 0x1000: // Alt-Q
+            sub_11B37(1);
+            exitCode = 0;
+            goto switch_break;
+        case 0x0C2D: // Minus
+            word_380E0 = sub_1CF64(word_380E0 - 10, 0, 100);
+            sub_15FDB();
+            goto switch_break;
+        case 0x0C5F: // Shift-Minus
+            word_380E0 = 0;
+            makeSound(0x10, 0);
+            sub_15FDB();
+            goto switch_break;
+        case 0x0D2B: // Shift-Equal
+            word_380E0 = 100;
+            sub_15FDB();
+            *((unsigned char*)&word_391FE) &= 0xF7; // ~8
+            goto post_key_B_check;
+        case 0x0D3D: // Equal
+            temp_ax = (word_380E0 < 10) ? 5 : 10;
+            word_380E0 = sub_1CF64(word_380E0 + temp_ax, 0, 100);
+            sub_15FDB();
+            *((unsigned char*)&word_391FE) &= 0xF7; // ~8
+            goto switch_break;
+        case 0x1900: // Alt-P
+            sub_1613B();
+            goto switch_break;
+        case 0x1E61: // A
+            word_380E0 = 0x90;
+            sub_15FDB();
+            *((unsigned char*)&word_391FE) &= 0xF7; // ~8
+            goto switch_break;
+        case 0x2400: // Alt-J
+            if (word_380E2 == 0) {
+                sub_2265B();
+                word_380E2 = 40;
+            }
+            goto switch_break;
+        case 0x3000: // Alt-B
+            if (word_330C2 != 0) {
+                gfx_jump_2a(off_38364[0], 0, 0x61, off_38334[0], 0, 0x61, 0x140, 0x67);
+            }
+            sub_19E44(0);
+            sub_19E5D(0, 0, 0x13F, 0xC7);
+            TransformAndProjectObject(0, 0, 0x71, 0x37, 0x0C, 7, 0);
+            sub_1613B();
+            if (word_330C2 != 0) {
+                gfx_jump_2a(off_38364[0], 0, 0x61, off_38334[0], 0, 0x61, 0x140, 0x67);
+                gfx_jump_2a(off_38364[0], 0, 0x61, off_3834C[0], 0, 0x61, 0x140, 0x67);
+                sub_15FDB();
+            }
+            goto switch_break;
+        case 0x3062: // B
+            *((unsigned char*)&word_391FE) ^= 8;
+        post_key_B_check:
+            if (!(*((unsigned char*)&word_391FE) & 8) && word_3BEBE != 0 && word_380E0 == 100) {
+                word_3A944 = 0x546;
+                makeSound(0x1C, 2);
+            }
+            goto switch_break;
+    }
+
+switch_break:
+    if (word_380E2 > 0) {
+        word_380E2--;
+    }
+
+    if (word_380E0 != 0 && word_3AFA6 == 0) {
+        makeSound(0x0E, 2);
+    }
+
+    if (word_330BE != 0) {
+        noJoy80 = 0;
+        noJoy80_2 = 0;
+    } else {
+        if (commData->setupUseJoy != 0) {
+            sub_2267E();
+        } else {
+            temp_ax = (unsigned char)byte_37F98 - 0x80;
+            temp_ax *= (word_38602 + 1);
+            noJoy80 = (temp_ax / 3) - 0x80;
+
+            temp_ax = (unsigned char)byte_37F99 - 0x80;
+            temp_ax *= (word_38602 + 1);
+            noJoy80_2 = (temp_ax / 3) - 0x80;
+        }
+    }
+
+    word_3C00E = ((int16)(unsigned char)noJoy80 >> 4) - 8;
+    if (word_3C00E < 0) word_3C00E++;
+
+    word_3C5A4 = ((int16)(unsigned char)noJoy80_2 >> 4) - 8;
+    if (word_3C5A4 < 0) word_3C5A4++;
+    
+    word_3C00E = -((abs(word_3C00E) + 2) * word_3C00E) * 2;
+    word_3C5A4 *= 6;
+    if (word_3C5A4 < 0) {
+        word_3C5A4 /= 2;
+    }
+    
+    if (word_3BEBE == word_380CE && word_3C5A4 < 0 && word_380CA > 0) {
+        word_3C5A4 = 0;
+    }
+
+    if (word_3AA5A > 0x15E && !(*((unsigned char*)&word_391FE) & 1) && word_336EC != 0) {
+        word_336EC = 0;
+        *((unsigned char*)&word_391FE) |= 1;
+        tempStrcpy("Landing gear raised");
+        makeSound(0x20, 2);
+    }
+    
+    if (word_3BEBE == word_380CE && word_380E0 == 0 && !(*((unsigned char*)&word_391FE) & 8)) {
+        *((unsigned char*)&word_391FE) |= 8;
+        tempStrcpy("Brakes on");
+    }
+
+    if (word_3C00E != 0 || word_3C5A4 != 0) {
+        word_330B6 = 0;
+    }
+    
+    if (word_330B6 != 0) {
+        if (word_336EA != 0) {
+            var_2C = (int16)((word_38FE0 & 0xF) << 8) - 0x800;
+        } else {
+            var_2C = 0;
+        }
+        
+        temp_ax = var_2C - word_380C8 + word_3BE92;
+        var_2C = forceRange(temp_ax, 0xEC00, 0x1400) * 2;
+        
+        temp_ax = (var_2C - word_380CC) >> 6;
+        word_3C00E = -sub_1CF64(temp_ax, -24, 24);
+        
+        temp_ax = ((word_330B6 - word_380CE) << 4) - word_38FC4;
+        var_14 = forceRange(temp_ax, 0xEC00, 0xC00);
+        
+        temp_ax = (var_14 - word_380CA) >> 7;
+        word_3C5A4 = sub_1CF64(temp_ax, -8, 8);
+    }
+    
+    if (waypointIndex == 3) {
+        var_3E = word_3AFA8;
+        var_10 = word_3B15A;
+        temp_si = var_10 << 4;
+        
+        var_2A = stru_3AA5E[temp_si].field_0 - word_3BEC0;
+        var_34 = stru_3AA5E[temp_si].field_2 - word_3BED0;
+
+        if (stru_3AA5E[temp_si].field_6 & 0x200) {
+            // is hostile
+        } else {
+            var_3E = -abs_word(var_3E);
+        }
+
+        temp_ax = (stru_3AA5E[temp_si].field_6 & 0x200) ? 0x1E : 0x40;
+        var_34 += temp_ax * var_3E;
+        
+        var_2C = abs(word_380C8);
+        if (var_3E == -1) {
+            var_2A = -var_2A;
+            var_34 = -var_34;
+            var_2C = abs(word_380C8 - 0x8000);
+        }
+        
+        temp_ax = (abs(var_2A) + abs(var_34)) * 2;
+        temp_bx = temp_ax + (temp_ax >> 5);
+        var_14 = sub_1CF64(temp_bx, 50, 0x1000);
+        
+        if (var_14 < 0x1000) {
+            sub_1DB9C();
+        }
+
+        if (stru_3AA5E[temp_si].field_6 & 0x200) {
+            var_14 += 100;
+        }
+
+        if (word_33702 != 0 && abs(var_2C) < 0x200) {
+            var_14 = -20;
+        }
+
+        temp_ax = (stru_3AA5E[temp_si].field_6 & 0x200) ? 0x1C : 0x38;
+        var_34 = stru_3AA5E[temp_si].field_2 + (temp_ax * var_3E);
+
+        temp_ax = (abs(var_2A) * 4) + (var_2C >> 4);
+        temp_ax = sub_1CF64(temp_ax, 0, 0xC00);
+        temp_ax *= var_3E;
+        var_34 += temp_ax;
+        
+        *((unsigned char*)&word_391FE) &= 0xF7;
+        
+        if (var_2C > 0x4000) {
+            var_2A = stru_3AA5E[temp_si].field_0;
+            var_14 = 0x1000;
+        } else {
+            var_2A = stru_3AA5E[temp_si].field_0 + (var_2A * var_3E * 2);
+            if (word_380E0 * 80 < word_3AA5A) {
+                 *((unsigned char*)&word_391FE) |= 8;
+            }
+        }
+        
+        var_E = ARCTAN(var_2A - word_3BEC0, word_3BED0 - var_34);
+        var_3C = (int16)word_3AA5A >> 4;
+
+        temp_ax = forceRange(var_E - word_380C8, -var_3C, var_3C);
+        var_2C = temp_ax * 2;
+
+        if (word_33702 != 0) {
+            var_2C = 0;
+        }
+        
+        temp_ax = (var_2C - word_380CC) >> 6;
+        word_3C00E = -sub_1CF64(temp_ax, -32, 32);
+
+        temp_ax = abs(var_2C) >> 8;
+        temp_bx = (var_14 >> 6) + temp_ax;
+        word_380E0 = sub_1CF64(temp_bx, 35, 80);
+        sub_15FDB();
+        
+        temp_ax = (var_14 - word_380CE) / 8 + (word_38FC4 / 128);
+        var_14 = forceRange(temp_ax, -24, 24);
+        
+        temp_ax = var_14 - (word_380CA / 128);
+        word_3C5A4 = sub_1CF64(temp_ax, -16, 16);
+        
+        if (word_3AA5A < 0x15E) {
+            *((unsigned char*)&word_391FE) &= 0xFE;
+        }
+
+        if (word_3BEBE == word_380CE) {
+            word_380E0 = 0;
+            word_3C00E = 0;
+            *((unsigned char*)&word_391FE) |= 8;
+            word_3C5A4 = 0;
+        }
+    }
+    
+    if (gameData->unk4 != 0) {
+        temp_long_dx_ax = (int32)word_3AA5A * (1000 - word_380CE);
+        var_24 = temp_long_dx_ax >> 15;
+    } else {
+        var_24 = 0;
+    }
+    
+    if (!(*((unsigned char*)&word_391FE) & 1)) {
+        temp_ax = (word_3AA5A - 200) >> 5;
+        var_24 += sub_1CF64(temp_ax, 0, 32);
+    }
+    
+    if (var_24 > 0 && word_3BEBE < word_380CE) {
+        word_3C00E += randlmul(var_24) - (var_24 >> 1);
+        word_3C5A4 += (randlmul(var_24) - (var_24 >> 1)) >> 1;
+    }
+    
+    if ((*((unsigned char*)&word_391FE) & 1) && word_3C5A4 > 0 && word_3A944 < word_3A8FE && gameData->unk4 < 2 && abs(word_380CC) < 0x3000 && word_38FE8 == 0) {
+        var_14 = (((word_38FC4 - word_380CA) / 4) - word_380CE + 300) / 4;
+        if (var_14 > 0) {
+            word_3C5A4 = sub_1CF64(var_14, 0, 32);
+        }
+    }
+    
+    if (word_3BE3C != 0) {
+        int16 pitch_input_modifier;
+        int16 stall_decay_effect;
+        int16 bailout_index;
+
+        word_3C00E = 0x40;
+
+        if (abs(word_380CC) > 0x4000) {
+            pitch_input_modifier = 0x10;
+        } else {
+            pitch_input_modifier = -8;
+        }
+        word_3C5A4 = pitch_input_modifier;
+
+        word_3BE3C++;
+        stall_decay_effect = sub_1CF64(
+            - (word_3BE3C - 0x20),
+            (int16)0xFF00 / word_330C4,
+            (int16)0x80 / word_330C4
+        );
+        word_3C040 += stall_decay_effect;
+
+        if (word_3C040 < 0) {
+            word_3C040 = 0;
+            if ((word_38FE0 & 7) == 0) {
+                sub_11B37(0);
+            }
+        }
+
+        if (word_380CE == 0 && word_336F6 == -1) {
+            word_336F6 = 0;
+            stru_3AA5E[0].field_0 = word_3BEC0;
+            stru_3AA5E[0].field_2 = word_3BED0;
+            word_3BEBC = word_3BEC0;
+            word_3BEC8 = word_3BED0;
+            word_3BECE = 0;
+            word_39606 = -8;
+            makeSound(2, 2);
+            word_380E0 = 0;
+            word_3A944 = 0;
+        }
+
+        if ((word_3BE3C & 0xFFFC) == 0x10 && (word_336E8 & 3) == 1) {
+            word_336F6 = -1;
+
+            bailout_index = (word_336E8 >> 1) & 7;
+
+            stru_33402[bailout_index].field_0 = word_3BEC0;
+            stru_33402[bailout_index].field_2 = word_3BED0;
+            stru_33402[bailout_index].field_4 = word_380CE;
+
+            temp_ax = randlmul(0x20);
+            stru_33402[bailout_index].field_6 = temp_ax << 11;
+
+            word_33442 = bailout_index;
+            word_3BEBC = word_3BEC0;
+            word_3BEC8 = word_3BED0;
+            word_3BECE = word_380CE;
+            word_39606 = -8;
+            makeSound(0, 2);
+
+            word_380CA = -0x4000;
+            byte_380DD = 1;
+        }
+    }
+    
+    if (word_3BF90 > 0) {
+        temp_si = -((word_3BF90 * 4) - 0x90);
+        if (word_380E0 > temp_si) {
+            word_380E0 = (temp_si < 0) ? 0 : temp_si;
+            sub_15FDB();
+        }
+    }
+    
+    temp_ax = (word_380E0 - word_3AFA6);
+    temp_ax = (int16)temp_ax >> 2;
+    word_3AFA6 += (int16)temp_ax / (int16)word_330C4;
+    if (word_3AFA6 < word_380E0) word_3AFA6++;
+    if (word_3AFA6 > word_380E0) word_3AFA6 = word_380E0;
+
+    if ((word_336E8 % (word_330C4 * 2)) == 0 && word_380E0 > 0 && word_336EA == 0) {
+        word_33098 -= ((word_380E0 * word_380E0) / 750) + 2;
+        sub_1606C();
+    }
+    
+    if (word_33098 < 0) {
+        word_3AFA6 = 0;
+        word_33098 = 0;
+    }
+
+    word_38FDA = byte_37FEC[((unsigned int)abs(word_380CC)) >> 8];
+    if (word_3BEBE < word_380CE) {
+        word_38FDA += (int16)word_3C5A4 >> 1;
+    }
+    
+    if (word_38FDA > 0x80) {
+        word_38FDA = 0x80;
+        temp_ax = -sub_1CF64(80 - byte_37FEC[((unsigned int)abs(word_380CC)) >> 8], 0, word_3C5A4);
+        word_3C5A4 = temp_ax;
+    }
+    
+    _itoa(word_38FDA >> 4, strBuf, 10);
+    _strcpy(unk_38FD0, strBuf);
+    _strcat(unk_38FD0, ".");
+    _itoa((abs(word_38FDA) & 0xF) >> 1, strBuf, 10);
+    _strcat(unk_38FD0, strBuf);
+    _strcat(unk_38FD0, "G");
+    
+    temp_cx = sub_1D178(word_380CA, 800, 100);
+    temp_long_dx_ax = (int32)(word_3AFA6 - temp_cx);
+    temp_long_dx_ax = __aNlmul(temp_long_dx_ax, (int32)word_3AA5A);
+    var_32 = __aNldiv(temp_long_dx_ax, (int32)word_3C5A6);
+    
+    word_3C5A6 = 100;
+    temp_ax = (word_380CE >> 7) + 0x0400;
+    temp_long_dx_ax = __aNlmul((int32)var_32, (int32)temp_ax);
+    var_32 = (int16)(temp_long_dx_ax >> 10);
+    
+    temp_ax = (word_380D0 >> 6) + 0x0400;
+    temp_long_dx_ax = __aNlmul((int32)100, (int32)temp_ax);
+    word_3C5A6 = (int16)(temp_long_dx_ax >> 10);
+    
+    temp_ax = -((word_33098 >> 9) - 100);
+    temp_long_dx_ax = __aNlmul((int32)var_32, (int32)temp_ax);
+    temp_long_dx_ax = __aNldiv(temp_long_dx_ax, (int32)90);
+    var_32 = (int16)temp_long_dx_ax;
+    
+    temp_long_dx_ax = __aNlmul((int32)var_32, (int32)(128 - word_38FDA));
+    var_32 = (int16)(temp_long_dx_ax >> 7);
+    
+    temp_long_dx_ax = __aNlmul((int32)sub_15557(word_38FDA * 4), (int32)word_3C5A6);
+    word_3C5A6 = (int16)(temp_long_dx_ax >> 8);
+    word_3C5A6 = abs(word_3C5A6);
+
+    if (!(*((unsigned char*)&word_391FE) & 1)) {
+        var_32 -= var_32 >> 3;
+    }
+    
+    word_3A8FE = word_3C5A6 * 27;
+    var_1A = sub_1CF64(var_32, 0, 900) * 27;
+    
+    temp_long_dx_ax = (int32)word_3A944 - var_1A;
+    temp_long_dx_ax = __aNldiv(__aNldiv(temp_long_dx_ax, 16), (int32)word_330C4);
+    word_3A944 += (int16)temp_long_dx_ax;
+    
+    word_3B4DA = ((int32)word_3A8FE * 3072) / (abs(word_3A944) + 1);
+    if (word_3B4DA > 0x2000) word_3B4DA = 0x2000;
+    
+    word_38FC4 = sub_1D190(word_380CC, word_3B4DA - 0x300);
+    
+    if (*((unsigned char*)&word_391FE) & 8) {
+        if (word_3BEBE == word_380CE) {
+            temp_ax = ((gameData->unk4 * 8) - 32) * -27;
+            word_3A944 -= temp_ax / word_330C4;
+            if (word_3BEBE != 0 && word_3A944 < 0x1B0) {
+                 word_3A944 = 0;
+            }
+        } else {
+             word_3A944 -= (word_3A944 >> 4) / word_330C4;
+        }
+    }
+    
+    if (word_3A944 < -1000) word_3A944 = 0;
+    
+    var_22 = sub_1D190(word_380CA, word_3A944);
+    word_3AA5A = word_3A944 / 27;
+    
+    audio_jump_6a(word_3AA5A, word_3AFA6);
+    
+    temp_long_dx_ax = (int32)sub_1D178(word_380CC, word_38FDA << 4) << 7;
+    var_18 = __aNldiv(temp_long_dx_ax, (int32)(word_3AA5A * word_3AA5A / 250 + 2));
+
+    var_18 = sub_1D190(var_18, word_380CA);
+    
+    if (word_3BEBE == word_380CE) {
+        var_18 = (word_3C00E * -1) << 6;
+        word_3C00E = 0;
+        if (word_3AA5A < word_3C5A6) {
+            word_3C5A4 = 0;
+        }
+    }
+    
+    if (word_38FDE != 0) {
+        word_3C5A4 = -2000 - word_380CA;
+        word_3A944 = 0;
+        word_380E0 = 0;
+    }
+    
+    var_28 = (int16)((int32)word_3C00E << 7) / word_330C4;
+    if (var_28 != 0) {
+        word_380AC = word_380A4 = sub_13B86(var_28);
+        word_380A6 = sub_13B96(var_28);
+        word_380AA = -word_380A6;
+        sub_151F9(unk_3806E, word_380A4);
+    }
+    
+    var_20 = (int16)((int32)word_3C5A4 << 7) / word_330C4;
+    if (var_20 != 0) {
+        word_380A2 = word_3809A = sub_13B86(var_20);
+        word_380A0 = sub_13B96(var_20);
+        word_3809C = -word_380A0;
+        sub_151F9(unk_3806E, unk_38092);
+    }
+    
+    var_16 = (int16)var_18 / word_330C4;
+    if (var_16 != 0) {
+        word_38090 = word_38080 = sub_13B86(var_16);
+        word_38084 = sub_13B96(var_16);
+        word_3808C = -word_38084;
+        sub_151F9(word_38080, unk_3806E);
+    }
+    
+    sub_15237();
+
+    if (word_3A944 > word_3A8FE && word_3BEBE < word_380CE) {
+        temp_cx = (gameData->unk4 == 2 || word_3BF90 > 8) ? 1 : 2;
+        word_380CA -= (word_3A8FE - word_3A944) >> temp_cx;
+        byte_380DD = 1;
+        if (word_380CA < 0 && word_380CE < 200) {
+            makeSound(0x14, 1);
+        }
+    }
+
+    if (word_3BEBE == word_380CE) {
+        if (word_380CC != 0) {
+            word_380CC = 0;
+            byte_380DD = 1;
+        }
+        if (word_380CA > 0 && word_3AA5A < word_3C5A6) {
+            if (word_38FDE == 0) {
+                word_380CA = 0;
+            }
+            byte_380DD = 1;
+        }
+    }
+    
+    word_38FDE = 0;
+
+    temp_ax = abs(word_380CC) >> 1;
+    temp_si = abs(word_380CA);
+    byte_3C6A0 = (temp_si - temp_ax > 0x1000) ? 1 : 0;
+    
+    if (byte_380DD) {
+        sub_15411();
+    }
+    
+    var_C = word_380D0;
+    temp_ax = sub_13B96(word_380CA - word_38FC4);
+    word_3C8B6 = sub_13B2F((word_3A944 / 10), temp_ax);
+
+    if (word_33712 == 0) {
+        word_380D0 += (word_3C8B6 / word_330C4);
+        
+        temp_ax = sub_13B96(word_380C8);
+        temp_ax = sub_13B2F(var_22, temp_ax);
+        temp_long_dx_ax = (int32)(temp_ax / 10) / word_330C4;
+        dword_3B7DA += temp_long_dx_ax;
+
+        temp_ax = sub_13B86(word_380C8);
+        temp_ax = sub_13B2F(var_22, temp_ax);
+        temp_long_dx_ax = (int32)(temp_ax / 10) / word_330C4;
+        dword_3B7F8 += temp_long_dx_ax;
+    }
+    
+    if (word_380D0 > word_3BEBE || word_380D0 < -4000) {
+        word_380D0 = word_3BEBE;
+    }
+    if (word_380D0 > 0xEA60) word_380D0 = 0xEA60;
+    
+    if (word_380D0 < 0x2000) {
+        word_380CE = word_380D0;
+    } else if (word_380D0 < 0x4000) {
+        word_380CE = ((word_380D0 - 0x2000) >> 1) + 0x2000;
+    } else {
+        word_380CE = ((word_380D0 - 0x4000) >> 2) + 0x3000;
+    }
+
+    if (word_3BEBE == word_380CE) {
+        if (var_C > word_3BEBE && word_33702 != 0) {
+            makeSound(0xC, 2);
+            temp_bx = word_3C16A << 4;
+            temp_cx = (stru_3AA5E[temp_bx].field_6 & 0x200) ? 0x100 : 0x80;
+
+            temp_ax = -word_3C8B6 * word_330B8;
+            temp_ax = (int16)temp_ax >> 1;
+
+            if (temp_cx < temp_ax) {
+                if (gameData->unk4 != 0 && !(*((unsigned char*)&word_391FE) & 1)) {
+                    temp_ax = abs(word_380CC);
+                    temp_cx = (int16)((30 * word_330B8) + 1);
+                    if ((int16)temp_ax > (int16)(30 / temp_cx)) {
+                        makeSound(0, 2);
+                        sub_12278(0x3C);
+                        sub_11B37(5);
+                    }
+                }
+            }
+        }
+        word_3C8B6 = 0;
+    }
+    
+    temp_ax = word_336E8 & 0xF;
+    var_38 = temp_ax;
+    temp_si = temp_ax << 4;
+    stru_3A95A[temp_si].field_A = word_380C8;
+    stru_3A95A[temp_si].field_C = word_380CA;
+    stru_3A95A[temp_si].field_E = word_380CC;
+    *(int32*)&stru_3A95A[temp_si].field_0 = dword_3B7DA;
+    *(int32*)&stru_3A95A[temp_si].field_4 = dword_3B7F8;
+    stru_3A95A[temp_si].field_8 = word_380CE;
+
+    if (word_3C45C == 1) {
+        if (word_336F2 >= 0) {
+            temp_si = word_336F2 * 0x24;
+            
+            temp_ax = xydist(word_3BEC0 - word_3B204[temp_si], word_3BED0 - word_3B206[temp_si]);
+            temp_ax = (temp_ax * word_330C4) >> 8;
+            var_38 = sub_1CF64(temp_ax, 0, 12);
+
+        } else {
+            var_38 = word_330C4 - 1;
+        }
+
+        var_38 = (word_336E8 - var_38) & 0xF;
+        
+        temp_si = var_38 << 4;
+
+        var_2C = word_380C8 - stru_3A95A[temp_si].field_A;
+        var_14 = word_380CA - stru_3A95A[temp_si].field_C;
+
+        temp_di = sub_1D178(word_380CC, (var_14 >> 2));
+        temp_ax = sub_1D190(word_380CC, -(var_2C >> 2));
+        word_3C6A4 = temp_di + temp_ax;
+
+        temp_di = sub_1D190(word_380CC, (var_14 >> 1));
+        temp_ax = sub_1D178(word_380CC, (var_2C >> 2));
+        word_3C6AC = temp_di + temp_ax;
+    }
+
+    return 0; 
 } // 51f9
 
 // ==== seg000:0x55ab ====
@@ -700,7 +1354,7 @@ int UpdateFlightModelAndHUD(int arg_0) {
                 sub_19E44(0xf);
                 var_14 = ((int16)(noJoy80[0] - 0x78) >> 4) + 0x11d;
                 // 8fa1
-                var_18 = ((int16)((noJoy80[1] * 3) - 0x168) >> 6) + 0x59;
+                var_18 = ((int16)((noJoy80_2 * 3) - 0x168) >> 6) + 0x59;
                 sub_19C0C(var_14 - 1, var_18, var_14 + 1, var_18);
                 // 8fc8
                 sub_19C0C(var_14, var_18 + 1, var_14, var_18 - 1);
@@ -711,67 +1365,78 @@ int UpdateFlightModelAndHUD(int arg_0) {
                 sub_19C0C(0xa0, 0x56, 0xa0, 0x5c);
             } // 900c
             sub_19E44(word_330BC != 0 ? 4 : 0);
-            // 9041
+
+            // 9041: Draw airspeed indicator tape.
             var_10 = sub_1CF64((((word_3C5A6 - word_3AA5A) * 2) / 5) + 0x1d, 0, 0x3d);
-            if (var_10) sub_19C0C(0x48, 0x55 - var_10, 0x48, 0x55);
-            // 9089
-            sub_19C0C(0xf7,  0x38, 0xf7, sub_1CF64(-((word_3C8B6 >> 4) - 0x38), 0x14, 0x55));
-            // 908f
-            if ((word_391FE & 1) == 0 && (word_336E8 & 1) != 0 && gameData->unk4 != 0 && word_3C8B6 < 0) { // 90af
-                var_2 = (((stru_3AA5E[word_3C16A].field_6 & 0x200 ? 0x100 : 0x80) / gameData->unk4) >> 4) + 0x38;
+            if (var_10) {
+                sub_19C0C(0x48, 0x55 - var_10, 0x48, 0x55);
+            }
+
+            // 9089: Draw vertical velocity indicator (VVI).
+            sub_19C0C(0xf7, 0x38, 0xf7, sub_1CF64(-((word_3C8B6 >> 4) - 0x38), 0x14, 0x55));
+
+            // 908f: Draw landing bracket if conditions are met.
+            if ((!(word_391FE & 1)) && (word_336E8 & 1) && (gameData->unk4 != 0) && (word_3C8B6 < 0)) {
+                temp_ax = (stru_3AA5E[word_3C16A << 4].field_6 & 0x200) ? 0x100 : 0x80;
+                var_2 = ((temp_ax / gameData->unk4) >> 4) + 0x38;
                 sub_19E44(0xf);
-                // 90f7
                 sub_19C0C(0xf2, var_2 - 2, 0xf4, var_2);
                 sub_19C0C(0xf2, var_2 + 2, 0xf4, var_2);
-            } // 9115
-            // stall warning display
-            if (word_3AA5A < word_3C5A6 && word_3BEBE != word_380CE && word_336E8 & 1) { // 912e
+            }
+
+            // 9115: Display "STALL WARNING" text if needed.
+            if (word_3AA5A < word_3C5A6 && word_3BEBE != word_380CE && (word_336E8 & 1)) {
                 draw2Strings(aStallWarning, 0x84, 0x1e, 0xf);
-            } // 9144
-            if (word_3C45C == 0 || word_3C45C == 2) { // 9152
+            }
+
+            // 9144: Draw Attitude Direction Indicator (ADI) / Artificial Horizon.
+            if (word_3C45C == 0 || word_3C45C == 2) {
                 sub_19E44(7);
                 word_3C008 = (word_38FC4 >> 6) + 0x38;
-                if (word_3C008 > 0xa && word_3C008 < 0x6f) { // 9173
+                if (word_3C008 > 0xa && word_3C008 < 0x6f) {
                     TransformAndProjectObject(0x9a, word_3C008 - 4, 0x94, 0x15, 0x0b, 7, 0xf);
                 }
-            } // 9198
-            if (word_3C45C == 1) { // 91a2
+            }
+            
+            // 9198: Draw target designator box if in the right mode.
+            if (word_3C45C == 1) {
                 var_1C = byte_37C24 + 4;
                 var_14 = (word_3C6A4 >> var_1C) + 0x9f;
                 var_18 = (word_3C6AC >> var_1C) + 0x38;
-                // 91c3
-                if (var_14 > 0xa && var_14 < 0x135 && var_18 > 8 && var_18 < 0x5b) { // 91da
+                if (var_14 > 0xa && var_14 < 0x135 && var_18 > 8 && var_18 < 0x5b) {
                     TransformAndProjectObject(var_14 - 6, var_18 - 5, 0x91, 0x4, 0xd, 0xb, 0xe);
-                } // 9202
-                // 7 = air to air? Only Sidewinder and Amraam have it
-                if (sams[missiles[missleSpec[missileSpecIndex].field_0].field_16].field_C == 7) { // 9223
-                    sub_19E44((uint8)gfxModeUnset != 0 ? 0xf : 7);
-                    // 9239
-                    for (var_A = 0; var_A <= 0x100; var_A += 0x10) { // 924b
+                }
+
+                // 9202: Draw missile seeker circle for A/A missiles.
+                if (sams[missiles[missleSpec[missileSpecIndex].field_0].field_16].field_C == 7) {
+                    sub_19E44(gfxModeUnset != 0 ? 0xf : 7);
+                    // Draw a 16-sided circle (polygon).
+                    for (var_A = 0; var_A <= 0x100; var_A += 0x10) {
                         var_4 = var_A << 8;
                         var_8 = sub_1D178(var_4, 0x28) + 0x9f;
-                        // 9278
                         var_C = -(sub_1D190(var_4, 0x23) - 0x38);
-                        if (var_A != 0) sub_19C0C(var_8, var_C, var_E, var_12);
-                        // 9294
+                        if (var_A != 0) {
+                            sub_19C0C(var_8, var_C, var_E, var_12);
+                        }
                         var_E = var_8;
                         var_12 = var_C;
                     }
                 }
-            } // 929f
+            }
+
+            // 929f: Draw numerical readouts for airspeed and altitude.
             sub_1A183(word_3AA5A, 0x50, 0x36, 0xf);
-            if (word_380D0 <= 0x4e20) { // 92bd
-                sub_1A183(word_380D0 < 0x64 ? word_380D0 : (word_380D0 / 5) * 5, 0xe4, 0x36, 0xf);
-            } // 92ee
-            if (word_3370A > 1) { // 92f5
-                drawSomeStrings(aAccel, 0x96, 0x4, 0xf);
-            } // 930b
-            if (word_391FE & 0x1000) { // 9313
-                drawSomeStrings(aTraining, 0xea, 0x10, 0xf);
-            } // 9329
-            if (word_330B6 != 0) { // 9330
-                drawSomeStrings(aAutopilot, 0xec, 0x5a, 0xf);
-            } // 9346
+            if (word_380D0 <= 0x4e20) {
+                temp_ax = (word_380D0 < 0x64) ? word_380D0 : (word_380D0 / 5) * 5;
+                sub_1A183(temp_ax, 0xe4, 0x36, 0xf);
+            }
+
+            // 92ee: Draw various text indicators.
+            if (word_3370A > 1) drawSomeStrings(aAccel, 0x96, 0x4, 0xf);
+            if (word_391FE & 0x1000) drawSomeStrings(aTraining, 0xea, 0x10, 0xf);
+            if (word_330B6 != 0) drawSomeStrings(aAutopilot, 0xec, 0x5a, 0xf);
+            
+            // 9346: Draw heading indicator caret.
             var_6 = sub_1CF64((((word_3BE92 - word_380C8) >> 6) / 3) + 0x9f, 0x59, 0xe5);
             sub_19E44(0x0b);
             sub_19C0C(var_6 - 2, 0xf, var_6, 0x11);
