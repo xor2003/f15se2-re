@@ -387,7 +387,7 @@ int otherKeyDispatch() {
 
 // ==== seg000:0x55ab ====
 // something to do with view switching?
-int sub_155AB() {
+int ProcessPlayerInputAndAI() {
     int var_2, var_4, var_6, var_8, var_A, var_C, var_E;
     dword_3B1FE = dword_3C01C = dword_3B7DA;
     dword_3B4D4 = dword_3B7F8;
@@ -668,7 +668,7 @@ int sub_155AB() {
 } // 5fda
 
 // ==== seg000:0x8e50 ====
-int sub_18E50(int arg_0) {
+int UpdateFlightModelAndHUD(int arg_0) {
     int var_2, var_4, var_6, var_8, var_A, var_C, var_E, var_10, var_12, var_14, var_16, var_18, var_1A;
     char var_1C;
     byte_3C5A0 = gfx_jump_2d();

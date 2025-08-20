@@ -1,20 +1,20 @@
 .8086
 DOSSEG
 .MODEL SMALL
-EXTRN _sub_155AB:PROC
-EXTRN _sub_18E50:PROC
+EXTRN _ProcessPlayerInputAndAI:PROC
+EXTRN _UpdateFlightModelAndHUD:PROC
 EXTRN _sub_21A7A:PROC
 EXTRN _otherKeyDispatch:PROC
-EXTRN _setupOverlaySlots:PROC
-EXTRN _installCBreakHandler:PROC
-EXTRN _setupDac:PROC
-EXTRN _loadF15DgtlBin:PROC
 PUBLIC _commData
 PUBLIC _gameData
 PUBLIC _hercFlag
 PUBLIC _gfxModeUnset
 PUBLIC _noJoy80
 PUBLIC _copyJoystickData
+PUBLIC _setupOverlaySlots
+PUBLIC _installCBreakHandler
+PUBLIC _loadF15DgtlBin
+PUBLIC _setupDac
 PUBLIC _gfxBufPtr
 PUBLIC _restoreJoystickData
 PUBLIC _regs
@@ -448,11 +448,99 @@ sub_10297 proc near
     retn
 sub_10297 endp
 ; ------------------------------seg000:0x299------------------------------
+; ------------------------------seg000:0x2e2------------------------------
+_loadF15DgtlBin proc near
+    call far ptr _gfx_jump_32
+    mov bx, ax
+    sub bx, 2
+    cmp bx, 0FFFh
+    jbe short loc_102F5
+    mov bx, 0FFFh
+loc_102F5:
+    mov allocSize, bx
+    mov ah, 48h
+    int 21h ;DOS - 2+ - ALLOCATE MEMORY
+    mov f15dgtlAddr, ax
+    sub cx, cx
+    mov es, cx
+    mov es:4FEh, ax
+    mov ah, 3Dh
+    mov al, 0
+    mov dx, offset aF15dgtl_bin ;"F15DGTL.BIN"
+    int 21h ;DOS - 2+ - OPEN DISK FILE WITH HANDLE
+    mov bx, ax
+    mov cx, allocSize
+    shl cx, 1
+    shl cx, 1
+    shl cx, 1
+    shl cx, 1
+    push ds
+    mov ax, f15dgtlAddr
+    mov ds, ax
+    mov dx, 0
+    mov ah, 3Fh
+    int 21h ;DOS - 2+ - READ FROM FILE WITH HANDLE
+    pop ds
+    push ax
+    mov ah, 3Eh
+    int 21h ;DOS - 2+ - CLOSE A FILE WITH HANDLE
+    pop ax
+    retn
+_loadF15DgtlBin endp
+; ------------------------------seg000:0x333------------------------------
 ; ------------------------------seg000:0x334------------------------------
 sub_10334 proc near
     retn ;sp-analysis failed
 sub_10334 endp
 ; ------------------------------seg000:0x66e------------------------------
+; ------------------------------seg000:0x688------------------------------
+_setupOverlaySlots proc near
+    arg_0 = word ptr 4
+    push bp
+    mov bp, sp
+    push di
+    push si
+    push es
+    push ds
+    push bp
+    mov dx, [bp+arg_0]
+    mov ovlInsaneFlag, 0
+    jmp short loc_106A0
+    nop
+    mov ovlInsaneFlag, 1
+loc_106A0:
+    mov es, dx
+    mov bx, offset _gfx_jump_0_alloc
+    mov di, OVL_HDR_FIRSTIDX
+    mov ax, es:[di]
+    mov dl, 5
+    mul dl
+    add bx, ax
+    mov di, OVL_HDR_SLOTCOUNT
+    mov cx, es:[di]
+    mov si, OVL_HDR_FIRSTPTR
+    mov di, OVL_HDR_CODESEG
+    mov di, es:[di]
+writeSlots:
+    mov ax, es:[si]
+    mov [bx+1], ax
+    mov [bx+3], di
+    add si, 2
+    add bx, 5
+    loop writeSlots
+    cmp ovlInsaneFlag, 0
+    jnz short locret_106E0
+    pop bp
+    pop ds
+    pop es
+    pop si
+    pop di
+    mov sp, bp
+    pop bp
+locret_106E0:
+    retn
+_setupOverlaySlots endp ;sp-analysis failed
+; ------------------------------seg000:0x6e0------------------------------
 ; ------------------------------seg000:0x720------------------------------
 UpdatePlayerAndWorldState proc near
     retn
@@ -674,6 +762,38 @@ sub_13A90 proc near
     retn
 sub_13A90 endp
 ; ------------------------------seg000:0x3aa6------------------------------
+; ------------------------------seg000:0x3aee------------------------------
+_setupDac proc near
+    mov ax, ds
+    mov es, ax
+    mov bx, 10h
+    mov cx, 50h
+    mov dx, offset _dacValues1
+    mov ax, 1012h
+    int 10h ;- VIDEO - SET BLOCK OF DAC REGISTERS (EGA, VGA/MCGA)
+    cmp _byte_34197, 2
+    jz short loc_13B16
+    mov cx, 30h
+    push si
+    push di
+    mov si, offset _byte_37116
+    mov di, offset _byte_36D86
+    rep movsb
+    pop di
+    pop si
+loc_13B16:
+    mov dx, offset _dacValues
+    cmp _word_330BC, 0
+    jz short loc_13B23
+    mov dx, offset _otherDacValues
+loc_13B23:
+    mov bx, 60h
+    mov cx, 0A0h
+    mov ax, 1012h
+    int 10h ;- VIDEO - SET BLOCK OF DAC REGISTERS (EGA, VGA/MCGA)
+    retn
+_setupDac endp
+; ------------------------------seg000:0x3b2e------------------------------
 ; ------------------------------seg000:0x3b2f------------------------------
 sub_13B2F proc near
     retn
@@ -714,6 +834,28 @@ sub_13BCD proc near
     retn
 sub_13BCD endp
 ; ------------------------------seg000:0x3beb------------------------------
+; ------------------------------seg000:0x3bec------------------------------
+_installCBreakHandler proc near
+    push si
+    push di
+    push dx
+    push ds
+    mov si, IRQ_CBREAK*4
+    call getInterruptHandler
+    mov origCBreakOfs, bx
+    mov origCBreakSeg, ax
+    mov ax, seg @code ;mov ax, seg seg000
+    mov dx, offset cbreakHandler
+    mov ds, ax
+    mov ax, 251Bh
+    int 21h ;DOS - SET INTERRUPT VECTOR
+    pop ds
+    pop dx
+    pop di
+    pop si
+    retn
+_installCBreakHandler endp
+; ------------------------------seg000:0x3c0e------------------------------
 ; ------------------------------seg000:0x3c0f------------------------------
 _restoreCBreakHandler proc near
     push ds
@@ -758,8 +900,8 @@ _sub_13C3B endp
 ; ------------------------------seg000:0x3c46------------------------------
 ; ------------------------------seg000:0x3c47------------------------------
 sub_13C47 proc near
-    call ProcessPlayerInputAndAI
-    call UpdateFlightModelAndHUD
+    call _ProcessPlayerInputAndAI
+    call _UpdateFlightModelAndHUD
     cmp _keyValue, 0
     jnz short loc_13C59
     call far ptr _sub_21A7A ;call sub_21A7A
@@ -998,11 +1140,6 @@ sub_15557 proc near
     retn
 sub_15557 endp
 ; ------------------------------seg000:0x55aa------------------------------
-; ------------------------------seg000:0x55ab------------------------------
-ProcessPlayerInputAndAI proc near
-    retn
-ProcessPlayerInputAndAI endp
-; ------------------------------seg000:0x5fda------------------------------
 ; ------------------------------seg000:0x5fdb------------------------------
 _sub_15FDB proc near
     retn
@@ -1108,11 +1245,6 @@ sub_18E38 proc near
     retn
 sub_18E38 endp
 ; ------------------------------seg000:0x8e4f------------------------------
-; ------------------------------seg000:0x8e50------------------------------
-UpdateFlightModelAndHUD proc near
-    retn
-UpdateFlightModelAndHUD endp
-; ------------------------------seg000:0x9484------------------------------
 ; ------------------------------seg000:0x94d0------------------------------
 sub_194D0 proc near
     retn

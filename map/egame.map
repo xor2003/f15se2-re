@@ -411,7 +411,6 @@ audio_jump_6d: Data1 FAR 10df-10e3 R10df-10e3 ignore
 #
 # Discovered variables, one per line, syntax is "VariableName: Segment VAR OffsetWithinSegment"
 #
-var_1: seg000 VAR 002c
 var_4: seg000 VAR 3d01
 var_5: seg000 VAR 3d67
 var_6: seg000 VAR 3d69
