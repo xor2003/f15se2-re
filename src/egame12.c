@@ -34,7 +34,7 @@ int otherKeyDispatch(void) {
 
         if (gameData->difficulty == 0) {
             
-            word_380C8 = ((word_3BED0 - (waypoints[1].y)) <= 0x8000) ? 0 : 0x8000;
+            word_380C8 = ((word_3BED0 - (waypoints[1].y)) < 0x8000) ? 0 : 0x8000;
         } else {
             if (gameData->theater == 6 || (gameData->theater & 1)) {
                  word_380C8 = 0;
