@@ -299,8 +299,8 @@ int UpdateFlightModelAndHUD(int arg_0) {
     char var_1C;
     byte_3C5A0 = gfx_jump_2d();
     // probably x,y
-    var_16 = waypoints[waypointIndex].field_0 - word_3BEC0;
-    var_1A = waypoints[waypointIndex].field_2 - word_3BED0;
+    var_16 = waypoints[waypointIndex].x - word_3BEC0;
+    var_1A = waypoints[waypointIndex].y - word_3BED0;
     // 8e83
     word_3BE92 = ARCTAN(var_16, -var_1A);
     if (word_330C2 != 0) { // 8e96

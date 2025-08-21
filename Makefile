@@ -139,7 +139,7 @@ EGAME_INC := $(LSTDIR)/egame.inc
 EGAME_CONF := $(CONFDIR)/egame_rc.json
 EGAME_BASE := egame_rc.asm
 EGAME_ASM := $(EGAME_BASE)
-EGAME_SRC := egame0.c egame1.c egame2.c egame3.c
+EGAME_SRC := egame0.c egame11.c egame12.c egame13.c egame2.c egame3.c
 EGAME_BASEHDR = $(SRCDIR)/egame.h
 EGAME_COBJ := $(call cobj,$(BUILDDIR),$(EGAME_SRC))
 EGAME_OBJ := $(EGAME_COBJ) $(call asmobj,$(BUILDDIR),$(EGAME_ASM))
@@ -157,6 +157,7 @@ $(SRCDIR)/$(EGAME_BASE): $(EGAME_LST) $(EGAME_INC) $(EGAME_CONF) $(LST2ASM)
 	$(LST2ASM) $< $@ $(EGAME_CONF) --stub
 
 $(EGAME_COBJ): $(EGAME_BASEHDR)
+$(BUILDDIR)/egame12.obj: MSC_CFLAGS := /Gs /Ot /Id:\f15-se2
 $(BUILDDIR)/egame2.obj: MSC_CFLAGS := /Gs /Id:\f15-se2
 $(BUILDDIR)/egame3.obj: MSC_CFLAGS := /Od /Id:\f15-se2
 

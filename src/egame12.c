@@ -24,17 +24,17 @@ int otherKeyDispatch(void) {
     int16 temp_1,temp_2,temp_3;
 
     if (word_3BECC == 0) {
-        word_3AFA6 = 0;
-        word_380E0 = 0;
-        word_3A944 = 0;
-        word_380D0 = 0;
-        word_380CE = 0;
-        word_380CC = 0;
+        word_3AFA6 = 
+        word_380E0 = 
+        word_3A944 = 
+        word_380D0 = 
+        word_380CE = 
+        word_380CC = 
         word_380CA = 0;
 
         if (gameData->difficulty == 0) {
-            temp_ax = word_3BED0 - (waypoints[0].field_2 + 4);
-            word_380C8 = (temp_ax < 0) ? 0x8000 : 0;
+            
+            word_380C8 = ((word_3BED0 - (waypoints[1].y)) <= 0x8000) ? 0 : 0x8000;
         } else {
             if (gameData->theater == 6 || (gameData->theater & 1)) {
                  word_380C8 = 0;

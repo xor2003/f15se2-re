@@ -420,8 +420,10 @@ struc_4         ends
 
 Waypoint        struc ; (sizeof=0x4, mappedto_15)
                                         ; XREF: dseg:waypoints/r
-field_0         dw ?
-field_2         dw ?
+x               dw ?                    ; XREF: UpdatePlayerAndWorldState+5B2/w
+                                        ; sub_11E0E:else_11EBA/r ...
+y               dw ?                    ; XREF: UpdatePlayerAndWorldState+1FB/r
+                                        ; UpdatePlayerAndWorldState+5B9/w ...
 Waypoint        ends
 
 ; ---------------------------------------------------------------------------

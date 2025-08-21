@@ -145,8 +145,8 @@ struct struc_4 {
 
 // used in egame.exe, 4 bytes
 struct Waypoint {
-    uint16 field_0;
-    uint16 field_2;
+  uint16 x;
+  uint16 y;
 };
 
 // 0x1a bytes

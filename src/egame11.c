@@ -106,9 +106,9 @@ int sub_11E0E() {
     }
     else { // 1eba
         // 1ed1
-        dword_3B7DA = ((int32)waypoints[0].field_0 << 5) + 2;
+        dword_3B7DA = ((int32)waypoints[0].x << 5) + 2;
         // 1ef5
-        dword_3B7F8 = (0x8000 - (int32)waypoints[0].field_2) << 5;
+        dword_3B7F8 = (0x8000 - (int32)waypoints[0].y) << 5;
     } // 1efc
     // 1f15
     word_3BEC0 = (dword_3B7DA + 0x10) >> 5;
