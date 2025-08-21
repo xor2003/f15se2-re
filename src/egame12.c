@@ -36,11 +36,9 @@ int otherKeyDispatch(void) {
             
             word_380C8 = ((word_3BED0 - (waypoints[1].y)) < 0x8000) ? 0 : 0x8000;
         } else {
-            if (gameData->theater == 6 || (gameData->theater & 1)) {
-                 word_380C8 = 0;
-            } else {
-                 word_380C8 = 0x8000;
-            }
+            word_380C8 = (gameData->theater == 6)
+               ? 0  // If true, the result is 0
+               : ((gameData->theater & 1) ? 0 : 0x8000); // Else, evaluate the second condition
         }
 
         temp_bx = word_3B148 << 4;
