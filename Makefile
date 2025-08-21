@@ -29,7 +29,7 @@ LINK_TOOLCHAIN ?= msc510
 LINKFLAGS := /M /INFORMATION
 DOSDIR := dos
 TOOLCHAIN_DIR := $(DOSDIR)/$(C_TOOLCHAIN)
-VERIFY_FLAGS := --verbose --loose --ctx 20 --asm
+VERIFY_FLAGS := --verbose --loose --ctx 50 --asm
 
 SRCTOP := src
 SRCDIR := $(SRCTOP)
@@ -157,7 +157,7 @@ $(SRCDIR)/$(EGAME_BASE): $(EGAME_LST) $(EGAME_INC) $(EGAME_CONF) $(LST2ASM)
 	$(LST2ASM) $< $@ $(EGAME_CONF) --stub
 
 $(EGAME_COBJ): $(EGAME_BASEHDR)
-$(BUILDDIR)/egame12.obj: MSC_CFLAGS := /Gs /Os /Id:\f15-se2
+#$(BUILDDIR)/egame12.obj: MSC_CFLAGS := /Gs /Ot /Id:\f15-se2
 $(BUILDDIR)/egame2.obj: MSC_CFLAGS := /Gs /Id:\f15-se2
 $(BUILDDIR)/egame3.obj: MSC_CFLAGS := /Od /Id:\f15-se2
 

@@ -41,8 +41,7 @@ int otherKeyDispatch(void) {
                : ((gameData->theater & 1) ? 0 : 0x8000); // Else, evaluate the second condition
         }
 
-        temp_bx = word_3B148 << 4;
-        if (stru_3AA5E[temp_bx].field_6 & 0x200) {
+        if (stru_3AA5E[word_3B148].field_6 & 0x200) {
             *((unsigned char*)&word_380C8 + 1) += 4;
         }
 
@@ -55,8 +54,8 @@ int otherKeyDispatch(void) {
     if (_kbhit()) {
         keyScancode = __bios_keybrd(0);
         if (word_336EA == 1) {
-            word_3370E = 0;
-            word_336EA = 0;
+            word_3370E = 
+            word_336EA = 
             keyValue = 0;
         }
     }
@@ -67,43 +66,47 @@ int otherKeyDispatch(void) {
 
     // Main key dispatch logic
     switch (keyScancode) {
-        case 0x1000: // Alt-Q
-            sub_11B37(1);
-            exitCode = 0;
-            goto switch_break;
         case 0x0C2D: // Minus
             word_380E0 = sub_1CF64(word_380E0 - 10, 0, 100);
             sub_15FDB();
             goto switch_break;
-        case 0x0C5F: // Shift-Minus
-            word_380E0 = 0;
-            makeSound(0x10, 0);
-            sub_15FDB();
-            goto switch_break;
-        case 0x0D2B: // Shift-Equal
-            word_380E0 = 100;
-            sub_15FDB();
-            *((unsigned char*)&word_391FE) &= 0xF7; // ~8
-            goto post_key_B_check;
         case 0x0D3D: // Equal
-            temp_ax = (word_380E0 < 10) ? 5 : 10;
-            word_380E0 = sub_1CF64(word_380E0 + temp_ax, 0, 100);
+            word_380E0 = sub_1CF64(word_380E0 + ((word_380E0 < 10) ? 5 : 10), 0, 100);
             sub_15FDB();
             *((unsigned char*)&word_391FE) &= 0xF7; // ~8
-            goto switch_break;
-        case 0x1900: // Alt-P
-            sub_1613B();
             goto switch_break;
         case 0x1E61: // A
             word_380E0 = 0x90;
             sub_15FDB();
             *((unsigned char*)&word_391FE) &= 0xF7; // ~8
             goto switch_break;
+        case 0x0D2B: // Shift-Equal
+            word_380E0 = 100;
+            sub_15FDB();
+            *((unsigned char*)&word_391FE) &= 0xF7; // ~8
+            goto post_key_B_check;
+        case 0x0C5F: // Shift-Minus
+            word_380E0 = 0;
+            makeSound(0x10, 0);
+            sub_15FDB();
+            goto switch_break;
+        case 0x3062: // B
+            *((unsigned char*)&word_391FE) ^= 8;
+        post_key_B_check:
+            if (!(*((unsigned char*)&word_391FE) & 8) && word_3BEBE != 0 && word_380E0 == 100) {
+                word_3A944 = 0x546;
+                makeSound(0x1C, 2);
+            }
+            goto switch_break;
         case 0x2400: // Alt-J
             if (word_380E2 == 0) {
                 sub_2265B();
                 word_380E2 = 40;
             }
+            goto switch_break;
+        case 0x1000: // Alt-Q
+            sub_11B37(1);
+            exitCode = 0;
             goto switch_break;
         case 0x3000: // Alt-B
             if (word_330C2 != 0) {
@@ -119,13 +122,8 @@ int otherKeyDispatch(void) {
                 sub_15FDB();
             }
             goto switch_break;
-        case 0x3062: // B
-            *((unsigned char*)&word_391FE) ^= 8;
-        post_key_B_check:
-            if (!(*((unsigned char*)&word_391FE) & 8) && word_3BEBE != 0 && word_380E0 == 100) {
-                word_3A944 = 0x546;
-                makeSound(0x1C, 2);
-            }
+        case 0x1900: // Alt-P
+            sub_1613B();
             goto switch_break;
     }
 
@@ -296,7 +294,7 @@ switch_break:
         }
 
         if (word_3BEBE == word_380CE) {
-            word_380E0 = 0;
+            word_380E0 = 
             word_3C00E = 0;
             *((unsigned char*)&word_391FE) |= 8;
             word_3C5A4 = 0;
@@ -365,7 +363,7 @@ switch_break:
             word_3BECE = 0;
             word_39606 = -8;
             makeSound(2, 2);
-            word_380E0 = 0;
+            word_380E0 = 
             word_3A944 = 0;
         }
 
@@ -413,7 +411,7 @@ switch_break:
     }
     
     if (word_33098 < 0) {
-        word_3AFA6 = 0;
+        word_3AFA6 = 
         word_33098 = 0;
     }
 
@@ -511,7 +509,7 @@ switch_break:
     
     if (word_38FDE != 0) {
         word_3C5A4 = -2000 - word_380CA;
-        word_3A944 = 0;
+        word_3A944 = 
         word_380E0 = 0;
     }
     
