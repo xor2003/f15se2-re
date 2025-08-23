@@ -14,13 +14,16 @@
 // ==== seg000:0x3f72 ====
 int otherKeyDispatch(void) {
     // Local variables corresponding to the stack frame (sub sp, 3Eh)
-    int16 var_3E, var_3C, var_38, var_34, var_32, var_2C, var_2A, var_28;
-    int16 var_24, var_22, var_20, var_1A, var_18, var_16, var_14, var_10;
-    int16 var_E, var_C;
+    int16 var_3E, var_3C, var_38, var_34, var_32, var_2C, var_2A, var_28,
+     var_24, var_22, var_20, var_1A, var_18, var_16, var_14, var_10,
+     var_E, var_C;
 
     // Helper variables for complex calculations
-    register int16 temp_ax, temp_bx, temp_cx, temp_si, temp_di;
-    register int32 temp_long_dx_ax;
+    //register 
+    register int16 temp_si;
+    register int16 temp_di;
+    int16 temp_ax, temp_bx, temp_cx;
+    int32 temp_long_dx_ax;
     int16 temp_1, temp_2;
 
     if (word_3BECC == 0) {
@@ -144,10 +147,10 @@ switch_break:
             sub_2267E();
         } else {
            
-            temp_ax = word_38602 + 1;
-            noJoy80 = (unsigned char)(((int)((unsigned char)byte_37F98 - 0x80) * temp_ax) / 3) - 0x80;
+            temp_si = word_38602 + 1;
+            noJoy80 = (unsigned char)(((int)((unsigned char)byte_37F98 - 0x80) * temp_si) / 3) - 0x80;
            
-            noJoy80_2 = (unsigned char)(((int)((unsigned char)byte_37F99 - 0x80) * temp_ax) / 3) - 0x80;
+            noJoy80_2 = (unsigned char)(((int)((unsigned char)byte_37F99 - 0x80) * temp_si) / 3) - 0x80;
         }
     }
 
@@ -200,12 +203,12 @@ switch_break:
     if (waypointIndex == 3) {
         var_3E = word_3AFA8;
         var_10 = word_3B15A;
-        temp_si = var_10 << 4;
         
-        var_2A = stru_3AA5E[temp_si].field_0 - word_3BEC0;
-        var_34 = stru_3AA5E[temp_si].field_2 - word_3BED0;
 
-        if (stru_3AA5E[temp_si].field_6 & 0x200) {
+        var_2A = stru_3AA5E[temp_si = var_10].field_0 - word_3BEC0;
+        var_34 = stru_3AA5E[temp_si = var_10].field_2 - word_3BED0;
+
+        if (stru_3AA5E[temp_si = var_10].field_6 & 0x200) {
             // is hostile
         } else {
             var_3E = -abs_word(var_3E);
