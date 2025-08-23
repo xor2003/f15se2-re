@@ -19,9 +19,9 @@ int otherKeyDispatch(void) {
     int16 var_E, var_C;
 
     // Helper variables for complex calculations
-    int16 temp_ax, temp_bx, temp_cx, temp_si, temp_di;
-    int32 temp_long_dx_ax;
-    int16 temp_1,temp_2,temp_3;
+    register int16 temp_ax, temp_bx, temp_cx, temp_si, temp_di;
+    register int32 temp_long_dx_ax;
+    int16 temp_1, temp_2;
 
     if (word_3BECC == 0) {
         word_3AFA6 = 
@@ -143,20 +143,18 @@ switch_break:
         if (commData->setupUseJoy != 0) {
             sub_2267E();
         } else {
-            temp_ax = (unsigned char)byte_37F98 - 0x80;
-            temp_ax *= (word_38602 + 1);
-            noJoy80 = (temp_ax / 3) - 0x80;
-
-            temp_ax = (unsigned char)byte_37F99 - 0x80;
-            temp_ax *= (word_38602 + 1);
-            noJoy80_2 = (temp_ax / 3) - 0x80;
+           
+            temp_ax = word_38602 + 1;
+            noJoy80 = (unsigned char)(((int)((unsigned char)byte_37F98 - 0x80) * temp_ax) / 3) - 0x80;
+           
+            noJoy80_2 = (unsigned char)(((int)((unsigned char)byte_37F99 - 0x80) * temp_ax) / 3) - 0x80;
         }
     }
 
-    word_3C00E = ((int16)(unsigned char)noJoy80 >> 4) - 8;
+    word_3C00E = ((uint16)noJoy80 >> 4) - 8;
     if (word_3C00E < 0) word_3C00E++;
 
-    word_3C5A4 = ((int16)(unsigned char)noJoy80_2 >> 4) - 8;
+    word_3C5A4 = ((uint16)noJoy80_2 >> 4) - 8;
     if (word_3C5A4 < 0) word_3C5A4++;
     
     word_3C00E = -((abs(word_3C00E) + 2) * word_3C00E) * 2;
@@ -165,7 +163,7 @@ switch_break:
         word_3C5A4 /= 2;
     }
     
-    if (word_3BEBE == word_380CE && word_3C5A4 < 0 && word_380CA > 0) {
+    if (word_3BEBE == word_380CE && word_3C5A4 < 0 && word_380CA <= 0) {
         word_3C5A4 = 0;
     }
 

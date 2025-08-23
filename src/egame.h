@@ -1345,7 +1345,7 @@ extern uint8 aWaypointFriend[];
 extern uint8 aAutopilotOff[];
 extern uint8 aAutopilotOn[];
 extern int16 word_38600;
-extern int16 word_38602;
+extern int word_38602;
 extern int16 word_38604;
 extern int16 word_38606;
 extern int16 word_38608;
