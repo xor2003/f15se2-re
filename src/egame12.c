@@ -184,23 +184,17 @@ switch_break:
     }
     
     if (word_330B6 != 0) {
-        if (word_336EA != 0) {
-            var_2C = (int16)((word_38FE0 & 0xF) << 8) - 0x800;
-        } else {
-            var_2C = 0;
-        }
+        var_2C = (word_336EA != 0) ? 
+                 (int16)((word_38FE0 & 0xF) << 8) - 0x800
+                 : 0;
         
-        temp_ax = var_2C - word_380C8 + word_3BE92;
-        var_2C = forceRange(temp_ax, 0xEC00, 0x1400) * 2;
+        var_2C = forceRange(var_2C - word_380C8 + word_3BE92, 0xEC00, 0x1400) * 2;
         
-        temp_ax = (var_2C - word_380CC) >> 6;
-        word_3C00E = -sub_1CF64(temp_ax, -24, 24);
+        word_3C00E = -sub_1CF64((var_2C - word_380CC) >> 6, -24, 24);
         
-        temp_ax = ((word_330B6 - word_380CE) << 4) - word_38FC4;
-        var_14 = forceRange(temp_ax, 0xEC00, 0xC00);
+        var_14 = forceRange(((word_330B6 - word_380CE) << 4) - word_38FC4, 0xEC00, 0xC00);
         
-        temp_ax = (var_14 - word_380CA) >> 7;
-        word_3C5A4 = sub_1CF64(temp_ax, -8, 8);
+        word_3C5A4 = sub_1CF64((var_14 - word_380CA) >> 7, -8, 8);
     }
     
     if (waypointIndex == 3) {
