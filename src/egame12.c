@@ -261,23 +261,19 @@ switch_break:
         
         word_3C00E = -sub_1CF64((var_2C - word_380CC) >> 6, -32, 32);
 
-        temp_ax = abs(var_2C) >> 8;
-        temp_bx = (var_14 >> 6) + temp_ax;
-        word_380E0 = sub_1CF64(temp_bx, 35, 80);
+        word_380E0 = sub_1CF64((var_14 / 64) + (abs(var_2C) / 128), 35, 80);
         sub_15FDB();
         
-        temp_ax = (var_14 - word_380CE) / 8 + (word_38FC4 / 128);
-        var_14 = forceRange(temp_ax, -24, 24);
+        var_14 = forceRange(((var_14 - word_380CE) >> 3) + (word_38FC4 >> 7), -24, 24);
         
-        temp_ax = var_14 - (word_380CA / 128);
-        word_3C5A4 = sub_1CF64(temp_ax, -16, 16);
+        word_3C5A4 = sub_1CF64(var_14 - (word_380CA >> 7), -16, 16);
         
         if (word_3AA5A < 0x15E) {
             *((unsigned char*)&word_391FE) &= 0xFE;
         }
 
         if (word_3BEBE == word_380CE) {
-            word_380E0 = 
+            word_380E0 = 0;
             word_3C00E = 0;
             *((unsigned char*)&word_391FE) |= 8;
             word_3C5A4 = 0;
