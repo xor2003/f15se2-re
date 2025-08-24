@@ -20,11 +20,11 @@ int otherKeyDispatch(void) {
 
     // Helper variables for complex calculations
     //register 
-    register int16 temp_si;
-    register int16 temp_di;
+    int16 temp_si;
+    int16 temp_di;
     int16 temp_ax, temp_bx, temp_cx;
     int32 temp_long_dx_ax;
-    int16 temp_1, temp_2;
+    int16 temp_1, temp_2, temp_3;
 
     if (word_3BECC == 0) {
         word_3AFA6 = 
@@ -147,10 +147,10 @@ switch_break:
             sub_2267E();
         } else {
            
-            temp_si = word_38602 + 1;
-            noJoy80 = (unsigned char)(((int)((unsigned char)byte_37F98 - 0x80) * temp_si) / 3) - 0x80;
+            //temp_si = word_38602 + 1;
+            noJoy80 = (unsigned char)(((int)((unsigned char)byte_37F98 - 0x80) * (word_38602 + 1)) / 3) - 0x80;
            
-            noJoy80_2 = (unsigned char)(((int)((unsigned char)byte_37F99 - 0x80) * temp_si) / 3) - 0x80;
+            noJoy80_2 = (unsigned char)(((int)((unsigned char)byte_37F99 - 0x80) * (word_38602 + 1)) / 3) - 0x80;
         }
     }
 
@@ -205,10 +205,10 @@ switch_break:
         var_10 = word_3B15A;
         
 
-        var_2A = stru_3AA5E[temp_si = var_10].field_0 - word_3BEC0;
-        var_34 = stru_3AA5E[temp_si = var_10].field_2 - word_3BED0;
+        var_2A = stru_3AA5E[var_10].field_0 - word_3BEC0;
+        var_34 = stru_3AA5E[var_10].field_2 - word_3BED0;
 
-        if (stru_3AA5E[temp_si = var_10].field_6 & 0x200) {
+        if (stru_3AA5E[var_10].field_6 & 0x200) {
             // is hostile
         } else {
             var_3E = -abs_word(var_3E);
