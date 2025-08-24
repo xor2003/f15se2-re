@@ -208,14 +208,11 @@ switch_break:
         var_2A = stru_3AA5E[var_10].field_0 - word_3BEC0;
         var_34 = stru_3AA5E[var_10].field_2 - word_3BED0;
 
-        if (stru_3AA5E[var_10].field_6 & 0x200) {
-            // is hostile
-        } else {
-            var_3E = -abs_word(var_3E);
+        if (!(stru_3AA5E[var_10].field_6 & 0x200)) {
+            var_3E = -abs_word(var_34);
         }
 
-        temp_ax = (stru_3AA5E[temp_si].field_6 & 0x200) ? 0x1E : 0x40;
-        var_34 += temp_ax * var_3E;
+        var_34 += ((stru_3AA5E[var_10].field_6 & 0x200) ? 0x1E : 0x40) * var_3E;
         
         var_2C = abs(word_380C8);
         if (var_3E == -1) {
@@ -223,16 +220,13 @@ switch_break:
             var_34 = -var_34;
             var_2C = abs(word_380C8 - 0x8000);
         }
-        
-        temp_ax = (abs(var_2A) + abs(var_34)) * 2;
-        temp_bx = temp_ax + (temp_ax >> 5);
-        var_14 = sub_1CF64(temp_bx, 50, 0x1000);
-        
+
+        var_14 = sub_1CF64((abs(var_2A) + abs(var_34)) * 2 + var_2C / 32, 50, 0x1000);
         if (var_14 < 0x1000) {
             sub_1DB9C();
         }
 
-        if (stru_3AA5E[temp_si].field_6 & 0x200) {
+        if (stru_3AA5E[var_10].field_6 & 0x200) {
             var_14 += 100;
         }
 
@@ -240,38 +234,32 @@ switch_break:
             var_14 = -20;
         }
 
-        temp_ax = (stru_3AA5E[temp_si].field_6 & 0x200) ? 0x1C : 0x38;
-        var_34 = stru_3AA5E[temp_si].field_2 + (temp_ax * var_3E);
+        var_34 = stru_3AA5E[var_10].field_2 + (((stru_3AA5E[var_10].field_6 & 0x200) ? 0x1C : 0x38) * var_3E);
 
-        temp_ax = (abs(var_2A) * 4) + (var_2C >> 4);
-        temp_ax = sub_1CF64(temp_ax, 0, 0xC00);
-        temp_ax *= var_3E;
-        var_34 += temp_ax;
+        var_34 += sub_1CF64((abs(var_2A) * 4) + (var_2C / 16), 0, 0xC00) * var_3E;
         
         *((unsigned char*)&word_391FE) &= 0xF7;
         
         if (var_2C > 0x4000) {
-            var_2A = stru_3AA5E[temp_si].field_0;
+            var_2A = stru_3AA5E[var_10].field_0;
             var_14 = 0x1000;
         } else {
-            var_2A = stru_3AA5E[temp_si].field_0 + (var_2A * var_3E * 2);
+            var_2A = stru_3AA5E[var_10].field_0 + (var_2A * var_3E * 2);
             if (word_380E0 * 80 < word_3AA5A) {
                  *((unsigned char*)&word_391FE) |= 8;
             }
         }
         
         var_E = ARCTAN(var_2A - word_3BEC0, word_3BED0 - var_34);
-        var_3C = (int16)word_3AA5A >> 4;
+        var_3C = (int16)word_3AA5A / 16;
 
-        temp_ax = forceRange(var_E - word_380C8, -var_3C, var_3C);
-        var_2C = temp_ax * 2;
+        var_2C = forceRange(var_E - word_380C8, (-var_3C) << 8, var_3C << 8) * 2;
 
         if (word_33702 != 0) {
             var_2C = 0;
         }
         
-        temp_ax = (var_2C - word_380CC) >> 6;
-        word_3C00E = -sub_1CF64(temp_ax, -32, 32);
+        word_3C00E = -sub_1CF64((var_2C - word_380CC) >> 6, -32, 32);
 
         temp_ax = abs(var_2C) >> 8;
         temp_bx = (var_14 >> 6) + temp_ax;
