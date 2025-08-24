@@ -275,29 +275,27 @@ switch_break:
         if (word_3BEBE == word_380CE) {
             word_380E0 = 0;
             word_3C00E = 0;
-            *((unsigned char*)&word_391FE) |= 8;
+            word_391FE |= 8;
             word_3C5A4 = 0;
         }
     }
     
     if (gameData->unk4 != 0) {
-        temp_long_dx_ax = (int32)word_3AA5A * (1000 - word_380CE);
-        var_24 = temp_long_dx_ax >> 15;
+        var_24 = ((int32)word_3AA5A * (1000 - word_380CE)) >> 15;
     } else {
         var_24 = 0;
     }
     
-    if (!(*((unsigned char*)&word_391FE) & 1)) {
-        temp_ax = (word_3AA5A - 200) >> 5;
-        var_24 += sub_1CF64(temp_ax, 0, 32);
+    if (!((word_391FE) & 1)) {
+        var_24 += sub_1CF64((word_3AA5A - 200) >> 5, 0, 32);
     }
     
-    if (var_24 > 0 && word_3BEBE < word_380CE) {
+    if (var_24 > 0 && ((int16)word_3BEBE) > ((int16)word_380CE)) {
         word_3C00E += randlmul(var_24) - (var_24 >> 1);
         word_3C5A4 += (randlmul(var_24) - (var_24 >> 1)) >> 1;
     }
     
-    if ((*((unsigned char*)&word_391FE) & 1) && word_3C5A4 > 0 && word_3A944 < word_3A8FE && gameData->unk4 < 2 && abs(word_380CC) < 0x3000 && word_38FE8 == 0) {
+    if ((word_391FE & 1) && word_3C5A4 > 0 && ((int16)word_3A944) <= ((int16)word_3A8FE) && gameData->unk4 < 2 && abs(word_380CC) < 0x3000 && word_38FE8 == 0) {
         var_14 = (((word_38FC4 - word_380CA) / 4) - word_380CE + 300) / 4;
         if (var_14 > 0) {
             word_3C5A4 = sub_1CF64(var_14, 0, 32);
