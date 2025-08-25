@@ -296,33 +296,28 @@ switch_break:
     }
     
     if ((word_391FE & 1) && word_3C5A4 <= 0 && ((uint16)word_3A944) < ((uint16)word_3A8FE) && gameData->unk4 < 2 && abs(word_380CC) < 0x3000 && word_38FE8 == 0) {
-        var_14 = (((((uint16)word_38FC4) - ((uint16)word_380CA)) / 4) - word_380CE + 300) / 4;
+        var_14 = ((((word_38FC4) - (word_380CA)) >> 2) - word_380CE + 300) >> 2;
         if (var_14 > 0) {
             word_3C5A4 = sub_1CF64(var_14, 0, 32);
         }
     }
     
     if (word_3BE3C != 0) {
-        int16 pitch_input_modifier;
-        int16 stall_decay_effect;
+        //int16 pitch_input_modifier;
+        //int16 stall_decay_effect;
         int16 bailout_index;
 
         word_3C00E = 0x40;
 
-        if (abs(word_380CC) > 0x4000) {
-            pitch_input_modifier = 0x10;
-        } else {
-            pitch_input_modifier = -8;
-        }
-        word_3C5A4 = pitch_input_modifier;
-
-        word_3BE3C++;
-        stall_decay_effect = sub_1CF64(
-            - (word_3BE3C - 0x20),
+        word_3C5A4 = (abs(word_380CC) > 0x4000) ? 0x10 : -8; // pitch_input_modifier
+        
+        //word_3BE3C++;
+        word_3C040 += sub_1CF64(
+            - (++word_3BE3C - 0x20),
             (int16)0xFF00 / word_330C4,
             (int16)0x80 / word_330C4
         );
-        word_3C040 += stall_decay_effect;
+        //word_3C040 += stall_decay_effect;
 
         if (word_3C040 < 0) {
             word_3C040 = 0;
@@ -347,7 +342,7 @@ switch_break:
         if ((word_3BE3C & 0xFFFC) == 0x10 && (word_336E8 & 3) == 1) {
             word_336F6 = -1;
 
-            bailout_index = (word_336E8 >> 1) & 7;
+            bailout_index = ((uint16)word_336E8 / 2) & 7;
 
             stru_33402[bailout_index].field_0 = word_3BEC0;
             stru_33402[bailout_index].field_2 = word_3BED0;
