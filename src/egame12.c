@@ -290,13 +290,13 @@ switch_break:
         var_24 += sub_1CF64((word_3AA5A - 200) >> 5, 0, 32);
     }
     
-    if (var_24 > 0 && ((int16)word_3BEBE) > ((int16)word_380CE)) {
+    if (var_24 > 0 && ((uint16)word_3BEBE) < ((uint16)word_380CE)) {
         word_3C00E += randlmul(var_24) - (var_24 >> 1);
         word_3C5A4 += (randlmul(var_24) - (var_24 >> 1)) >> 1;
     }
     
-    if ((word_391FE & 1) && word_3C5A4 > 0 && ((int16)word_3A944) <= ((int16)word_3A8FE) && gameData->unk4 < 2 && abs(word_380CC) < 0x3000 && word_38FE8 == 0) {
-        var_14 = (((word_38FC4 - word_380CA) / 4) - word_380CE + 300) / 4;
+    if ((word_391FE & 1) && word_3C5A4 <= 0 && ((uint16)word_3A944) < ((uint16)word_3A8FE) && gameData->unk4 < 2 && abs(word_380CC) < 0x3000 && word_38FE8 == 0) {
+        var_14 = (((((uint16)word_38FC4) - ((uint16)word_380CA)) / 4) - word_380CE + 300) / 4;
         if (var_14 > 0) {
             word_3C5A4 = sub_1CF64(var_14, 0, 32);
         }
