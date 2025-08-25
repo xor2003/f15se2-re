@@ -34,7 +34,7 @@ VERIFY_FLAGS := --verbose --loose --ctx 50 --asm
 SRCTOP := src
 SRCDIR := $(SRCTOP)
 BUILDDIR := build
-DEBUGDIR := debug_build
+DEBUGDIR := dbuild
 HDRFILES := dosfunc.h output.h pointers.h offsets.h biosfunc.h comm.h overlay.h util.h start.h slot.h const.h struct.h debug.h
 HDRS := $(addprefix $(SRCDIR)/,$(HDRFILES))
 
@@ -52,7 +52,7 @@ MAIN_SRCS := f15.c dosfunc.c biosfunc.c output.c overlay.c util.c
 MAIN_OBJS := $(call cobj,$(BUILDDIR),$(MAIN_SRCS))
 
 $(MAIN_EXE): $(BUILDDIR) $(MAIN_OBJS)
-	$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(MAIN_OBJS) -o $@ -f "$(LINKFLAGS)"
+	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(MAIN_OBJS) -o $@ -f "$(LINKFLAGS)"
 
 #
 # start.exe reconstruction (rc)
@@ -93,7 +93,7 @@ $(BUILDDIR)/start4.obj: MSC_CFLAGS := /Gs /Zi /Id:\f15-se2
 
 $(START_EXE): | $(BUILDDIR)
 $(START_EXE): $(START_OBJ)
-	$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(START_OBJ) -o $@ -f "$(LINKFLAGS)"
+	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(START_OBJ) -o $@ -f "$(LINKFLAGS)"
 
 # start.exe debug build
 START_DEBUG := $(DEBUGDIR)/start.exe
@@ -146,7 +146,7 @@ EGAME_OBJ := $(EGAME_COBJ) $(call asmobj,$(BUILDDIR),$(EGAME_ASM))
 $(EGAME_COBJ): $(EGAME_BASEHDR)
 $(EGAME_EXE): | $(BUILDDIR)
 $(EGAME_EXE): $(EGAME_OBJ)
-	$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(EGAME_OBJ) -o $@ -f "$(LINKFLAGS)"
+	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(EGAME_OBJ) -o $@ -f "$(LINKFLAGS)"
 
 # generate C header file from ida listing
 $(EGAME_BASEHDR): $(EGAME_LST) $(EGAME_INC) $(EGAME_CONF) $(LST2CH)
@@ -167,7 +167,7 @@ EGAME_VRF_REFEP := 0x10
 EGAME_VRF_TGTEP := [558bec83ec??c746]
 
 #
-# unit test executable
+# unit test executables
 #
 TEST_EXE := $(DEBUGDIR)/test.exe
 TEST_SRCS := test.c start1.c start2.c start3.c
@@ -178,6 +178,47 @@ TEST_LIBS := slibce.lib
 $(TEST_EXE): MSC_CFLAGS := /Gs /w /Id:\f15-se2 /DDEBUG
 $(TEST_EXE): $(DEBUGDIR) $(TEST_OBJS) $(HDRS)
 	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(TEST_OBJS) -o $@ -f "$(LINKFLAGS)" -l "$(TEST_LIBS)"
+
+# New test targets for egame files
+TEST_E0_EXE := $(DEBUGDIR)/TEST_E0.exe
+TEST_E0_SRCS := tests/TEST_E0.c
+TEST_E0_OBJS := $(call cobj,$(DEBUGDIR),$(TEST_E0_SRCS))
+
+$(TEST_E0_EXE): MSC_CFLAGS := /Gs /w /Id:\f15-se2 /DDEBUG
+$(TEST_E0_EXE): $(DEBUGDIR) $(TEST_E0_OBJS)
+	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(TEST_E0_OBJS) -o $@ -f "$(LINKFLAGS)" -l "$(TEST_LIBS)"
+
+TEST_E11_EXE := $(DEBUGDIR)/TEST_E11.exe
+TEST_E11_SRCS := tests/TEST_E11.c
+TEST_E11_OBJS := $(call cobj,$(DEBUGDIR),$(TEST_E11_SRCS))
+
+$(TEST_E11_EXE): MSC_CFLAGS := /Gs /w /Id:\f15-se2 /DDEBUG
+$(TEST_E11_EXE): $(DEBUGDIR) $(TEST_E11_OBJS)
+	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(TEST_E11_OBJS) -o $@ -f "$(LINKFLAGS)" -l "$(TEST_LIBS)"
+
+TEST_E13_EXE := $(DEBUGDIR)/TEST_E13.exe
+TEST_E13_SRCS := tests/TEST_E13.c
+TEST_E13_OBJS := $(call cobj,$(DEBUGDIR),$(TEST_E13_SRCS))
+
+$(TEST_E13_EXE): MSC_CFLAGS := /Gs /w /Id:\f15-se2 /DDEBUG
+$(TEST_E13_EXE): $(DEBUGDIR) $(TEST_E13_OBJS)
+	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(TEST_E13_OBJS) -o $@ -f "$(LINKFLAGS)" -l "$(TEST_LIBS)"
+
+TEST_E2_EXE := $(DEBUGDIR)/TEST_E2.exe
+TEST_E2_SRCS := tests/TEST_E2.c
+TEST_E2_OBJS := $(call cobj,$(DEBUGDIR),$(TEST_E2_SRCS))
+
+$(TEST_E2_EXE): MSC_CFLAGS := /Gs /w /Id:\f15-se2 /DDEBUG
+$(TEST_E2_EXE): $(DEBUGDIR) $(TEST_E2_OBJS)
+	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(TEST_E2_OBJS) -o $@ -f "$(LINKFLAGS)" -l "$(TEST_LIBS)"
+
+TEST_E3_EXE := $(DEBUGDIR)/TEST_E3.exe
+TEST_E3_SRCS := tests/TEST_E3.c
+TEST_E3_OBJS := $(call cobj,$(DEBUGDIR),$(TEST_E3_SRCS))
+
+$(TEST_E3_EXE): MSC_CFLAGS := /Gs /w /Id:\f15-se2 /DDEBUG
+$(TEST_E3_EXE): $(DEBUGDIR) $(TEST_E3_OBJS)
+	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(TEST_E3_OBJS) -o $@ -f "$(LINKFLAGS)" -l "$(TEST_LIBS)"
 
 #
 # example for various temporary experiments
@@ -202,8 +243,13 @@ clean:
 	-rm -rf $(BUILDDIR)
 	-rm -rf $(DEBUGDIR)
 
-test: $(TEST_EXE)
-	@$(DOSBUILD) test -i $<
+test: $(TEST_EXE) $(TEST_E0_EXE) $(TEST_E11_EXE) $(TEST_E13_EXE) $(TEST_E2_EXE) $(TEST_E3_EXE)
+	@$(DOSBUILD) test -i $(TEST_EXE)
+	@$(DOSBUILD) test -i $(TEST_E0_EXE)
+	@$(DOSBUILD) test -i $(TEST_E11_EXE)
+	@$(DOSBUILD) test -i $(TEST_E13_EXE)
+	@$(DOSBUILD) test -i $(TEST_E2_EXE)
+	@$(DOSBUILD) test -i $(TEST_E3_EXE)
 
 hello: $(HELLO_EXE)
 	ls -l $^
@@ -231,10 +277,10 @@ $(MZDIFF):
 	cd $(MZRE) && ./build.sh
 
 $(DEBUGDIR)/%.obj $(BUILDDIR)/%.obj: $(SRCDIR)/%.c $(HDRS)
-	$(DOSBUILD) cc $(C_TOOLCHAIN) -i $< -o $@ -f "$(MSC_CFLAGS)"
+	@$(DOSBUILD) cc $(C_TOOLCHAIN) -i $< -o $@ -f "$(MSC_CFLAGS)"
 
 $(DEBUGDIR)/%.obj $(BUILDDIR)/%.obj: $(SRCDIR)/%.asm
-	$(UASM) $(UASMFLAGS) -Fo$@ $<
+	@$(UASM) $(UASMFLAGS) -Fo$@ $<
 #	@$(DOSBUILD) as $(ASM_TOOLCHAIN) -i $< -o $@ -f "$(ASFLAGS)"
 
 reasm: $(STARTRE_EXE)

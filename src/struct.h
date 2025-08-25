@@ -61,8 +61,6 @@ struct struc_9 {
     int16 field_2;
     int16 field_4;
     int16 field_6;
-    int16 field_8;
-    int16 field_A;
 };
 
 #define STRUC9SIZE 0xc

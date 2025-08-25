@@ -348,8 +348,7 @@ switch_break:
             stru_33402[bailout_index].field_2 = word_3BED0;
             stru_33402[bailout_index].field_4 = word_380CE;
 
-            temp_ax = randlmul(0x20);
-            stru_33402[bailout_index].field_6 = temp_ax << 11;
+            stru_33402[bailout_index].field_6 = randlmul(0x20) << 11;
 
             word_33442 = bailout_index;
             word_3BEBC = word_3BEC0;
@@ -363,39 +362,37 @@ switch_break:
         }
     }
     
-    if (word_3BF90 > 0) {
-        temp_si = -((word_3BF90 * 4) - 0x90);
-        if (word_380E0 > temp_si) {
-            word_380E0 = (temp_si < 0) ? 0 : temp_si;
+    if (word_3BF90 != 0) {
+        if (word_380E0 > -((word_3BF90 * 4) - 0x90)) {
+            word_380E0 = -((word_3BF90 * 4) - 0x90);
+            if (word_380E0 < 0)
+                word_380E0 = 0;
             sub_15FDB();
         }
     }
     
-    temp_ax = (word_380E0 - word_3AFA6);
-    temp_ax = (int16)temp_ax >> 2;
-    word_3AFA6 += (int16)temp_ax / (int16)word_330C4;
-    if (word_3AFA6 < word_380E0) word_3AFA6++;
-    if (word_3AFA6 > word_380E0) word_3AFA6 = word_380E0;
+    word_3AFA6 += ((word_380E0 - word_3AFA6) / 4) / word_330C4;
+    if (word_380E0 > word_3AFA6) word_3AFA6++;
+    if (word_380E0 < word_3AFA6) word_3AFA6 = word_380E0;
 
-    if ((word_336E8 % (word_330C4 * 2)) == 0 && word_380E0 > 0 && word_336EA == 0) {
+    if ((((uint16)word_336E8) % (word_330C4 * 2)) == 0 && word_380E0 != 0 && word_336EA == 0) {
         word_33098 -= ((word_380E0 * word_380E0) / 750) + 2;
         sub_1606C();
     }
     
-    if (word_33098 < 0) {
-        word_3AFA6 = 
+    if (word_33098 <= 0) {
+        word_3AFA6 = 0;
         word_33098 = 0;
     }
 
-    word_38FDA = byte_37FEC[((unsigned int)abs(word_380CC)) >> 8];
-    if (word_3BEBE < word_380CE) {
-        word_38FDA += (int16)word_3C5A4 >> 1;
+    word_38FDA = byte_37FEC[(abs(word_380CC) >> 8) & 0x7f];
+    if (((uint16)word_3BEBE) < ((uint16)word_380CE)) {
+        word_38FDA += word_3C5A4 / 2;
     }
     
     if (word_38FDA > 0x80) {
         word_38FDA = 0x80;
-        temp_ax = -sub_1CF64(80 - byte_37FEC[((unsigned int)abs(word_380CC)) >> 8], 0, word_3C5A4);
-        word_3C5A4 = temp_ax;
+        word_3C5A4 = sub_1CF64(0x80 - byte_37FEC[(abs(word_380CC) >> 8) & 0x7f], 0, word_3C5A4);
     }
     
     _itoa(word_38FDA >> 4, strBuf, 10);
