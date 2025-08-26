@@ -11,6 +11,7 @@
 #endif
 
 #define __int32 long
+#define __int16 int
 #define __int8 char
 #define __cdecl
 #define __far far
@@ -740,7 +741,7 @@ extern int16 word_330BA;
 extern int16 word_330BC;
 extern int16 word_330BE;
 extern int16 word_330C2;
-extern __int32 word_330C4;
+extern __int16 word_330C4;
 extern struct Missile missiles[20];
 extern int16 word_333D2;
 extern int16 word_333D4;
@@ -962,7 +963,7 @@ extern int16 word_34268;
 extern int16 word_3426A;
 extern int16 word_3426C;
 extern int16 word_3426E;
-extern __int32 word_34270;
+extern __int16 word_34270;
 extern int16 word_34272;
 extern int16 word_34274;
 extern int16 word_34276;
@@ -1392,7 +1393,7 @@ extern uint8 byte_38A87;
 extern int32 dword_38A88;
 extern int16 word_38A8C;
 extern int16 word_38A92;
-extern __int32 word_38A94;
+extern __int16 word_38A94;
 extern int word_38A96;
 extern int16 word_38A98;
 extern int16 word_38BC6;
@@ -1449,7 +1450,7 @@ extern size_t flt15_size;
 extern int16 word_38D4C;
 extern int16 word_38D4E;
 extern int16 word_38D50;
-extern __int32 word_38D52;
+extern __int16 word_38D52;
 extern int16 word_38D54;
 extern int16 word_38D56;
 extern unsigned int word_38D58;
@@ -1509,14 +1510,14 @@ extern uint8 buf1_3dt[];
 extern uint8 buf2_3dt[];
 extern uint8 buf3_3dt[];
 extern uint8 val_3dt[];
-extern __int32 word_3A8FE;
+extern __int16 word_3A8FE;
 extern uint8 byte_3A900[];
 extern int16 word_3A940;
 extern int word_3A944;
 extern int16 word_3A946;
 extern uint8 unk_3A948[];
 extern struct struc_1 stru_3A95A[];
-extern __int32 word_3AA5A;
+extern __int16 word_3AA5A;
 extern int16 word_3AA5C;
 extern struct struc_4 stru_3AA5E[];
 extern int16 word_3AF0C;
@@ -1583,7 +1584,7 @@ extern int32 dword_3B7F8;
 extern uint8 byte_3B7FC[];
 extern int16 word_3BE3C;
 extern uint8 byte_3BE3E[];
-extern __int32 word_3BE7E;
+extern __int16 word_3BE7E;
 extern uint8 byte_3BE80[];
 extern int16 keyValue;
 extern int16 word_3BE92;
@@ -1657,7 +1658,7 @@ extern int matrix3dt_2[5][32];
 extern char byte_3C5A0;
 extern int16 word_3C5A2;
 extern int16 word_3C5A4;
-extern __int32 word_3C5A6;
+extern __int16 word_3C5A6;
 extern int16 word_3C5A8;
 extern int word_3C5AA;
 extern int16 word_3C5AC;

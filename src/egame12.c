@@ -24,7 +24,7 @@ int otherKeyDispatch(void) {
     int16 temp_di;
     int16 temp_ax, temp_bx, temp_cx;
     int32 temp_long_dx_ax;
-    int16 temp_1, temp_2, temp_3;
+    int16 temp_1, temp_2, temp_3, temp_4, temp_5;
 
     if (word_3BECC == 0) {
         word_3AFA6 = 
@@ -401,12 +401,12 @@ switch_break:
     
     _strcat(unk_38FD0, _itoa((abs(word_38FDA) & 0xF) >> 1, strBuf, 10));
     _strcat(unk_38FD0, "G");
-    //word_3AA5A, (int32)word_3C5A6
-    var_32 = __aNldiv((int32)__aNlmul((int32)(word_3AFA6 - sub_1D178(word_380CA, 80)), (int32)800), (int32)100);
+
+    var_32 = (((int32)(word_3AFA6 - sub_1D178(word_380CA, 80))) * ((int32)800)) / ((int32)100);
     
     word_3C5A6 = 100;
-    var_32 = (int16)(__aNlmul((int32)var_32, (int32)((word_380CE /128) + 0x0400)) >> 10);
-    
+    var_32 = (int16)(( ((int32)var_32) * ((uint32)(((uint16)word_380CE >> 7) + 0x0400)) ) >> 10);
+     
     word_3C5A6 = (int16)(__aNlmul((int32)100, (int32)((word_380D0 >> 6) + 0x0400)) >> 10);
     
     temp_ax = -((word_33098 >> 9) - 100);

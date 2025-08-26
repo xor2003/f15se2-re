@@ -131,6 +131,7 @@
         "#endif",
         "",
         "#define __int32 long",
+        "#define __int16 int",
         "#define __int8 char",
         "#define __cdecl",
         "#define __far far",
