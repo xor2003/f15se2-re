@@ -395,7 +395,7 @@ switch_break:
         word_3C5A4 = sub_1CF64(0x80 - byte_37FEC[(abs(word_380CC) >> 8) & 0x7f], 0, word_3C5A4);
     }
     
-    _itoa(word_38FDA >> 4, strBuf, 10);
+    _itoa(word_38FDA / 16, strBuf, 10);
     _strcpy(unk_38FD0, strBuf);
     _strcat(unk_38FD0, ".");
     _itoa((abs(word_38FDA) & 0xF) >> 1, strBuf, 10);
