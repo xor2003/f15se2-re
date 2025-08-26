@@ -371,11 +371,11 @@ switch_break:
         }
     }
     
-    word_3AFA6 += ((word_380E0 - word_3AFA6) / 4) / word_330C4;
+    word_3AFA6 += ((word_380E0 - word_3AFA6) / 4) / ((int16)word_330C4);
     if (word_380E0 > word_3AFA6) word_3AFA6++;
     if (word_380E0 < word_3AFA6) word_3AFA6 = word_380E0;
 
-    if ((((uint16)word_336E8) % (word_330C4 * 2)) == 0 && word_380E0 != 0 && word_336EA == 0) {
+    if ((((uint16)word_336E8) % ((uint16)(word_330C4 << 1))) == 0 && word_380E0 != 0 && word_336EA == 0) {
         word_33098 -= ((word_380E0 * word_380E0) / 750) + 2;
         sub_1606C();
     }
