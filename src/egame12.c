@@ -18,8 +18,7 @@ int otherKeyDispatch(void) {
      var_24, var_22, var_20, var_1A, var_18, var_16, var_14, var_10,
      var_E, var_C;
 
-    // Helper variables for complex calculations
-    //register 
+    // Allocate stack, unused
     int16 temp_si;
     int16 temp_di;
     int16 temp_ax, temp_bx, temp_cx;
@@ -574,9 +573,8 @@ switch_break:
 
     if (word_3C45C == 1) {
         if (word_336F2 >= 0) {
-            temp_si = word_336F2 * 0x24;
-            
-            var_38 = sub_1CF64((xydist(word_3BEC0 - word_3B204[temp_si], word_3BED0 - word_3B206[temp_si]) * word_330C4) >> 8, 0, 12);
+            // TODO struct
+            var_38 = sub_1CF64((xydist(word_3BEC0 - word_3B204[word_336F2 * 0x12], word_3BED0 - word_3B206[word_336F2 * 0x12]) * word_330C4) >> 8, 0, 12);
 
         } else {
             var_38 = word_330C4 - 1;
@@ -584,20 +582,14 @@ switch_break:
 
         var_38 = (word_336E8 - var_38) & 0xF;
         
-        temp_si = var_38 << 4;
+        var_2C = word_380C8 - stru_3A95A[var_38].field_A;
+        var_14 = word_380CA - stru_3A95A[var_38].field_C;
+ 
+        word_3C6A4 = sub_1D190(word_380CC, ((-var_2C) >> 2)) + sub_1D178(word_380CC, (var_14 >> 2));
 
-        var_2C = word_380C8 - stru_3A95A[temp_si].field_A;
-        var_14 = word_380CA - stru_3A95A[temp_si].field_C;
-
-        temp_di = sub_1D178(word_380CC, (var_14 >> 2));
-        temp_ax = sub_1D190(word_380CC, -(var_2C >> 2));
-        word_3C6A4 = temp_di + temp_ax;
-
-        temp_di = sub_1D190(word_380CC, (var_14 >> 1));
-        temp_ax = sub_1D178(word_380CC, (var_2C >> 2));
-        word_3C6AC = temp_di + temp_ax;
+        word_3C6AC = sub_1D178(word_380CC, (var_2C >> 2)) + sub_1D190(word_380CC, (var_14 >> 1));
     }
 
-    return 0; 
+    return; 
 } // 51f9
 
