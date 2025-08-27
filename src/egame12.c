@@ -405,20 +405,15 @@ switch_break:
     var_32 = (((int32)(word_3AFA6 - sub_1D178(word_380CA, 80))) * ((int32)800)) / ((int32)100);
     
     word_3C5A6 = 100;
-    var_32 = (int16)(( ((int32)var_32) * ((uint32)(((uint16)word_380CE >> 7) + 0x0400)) ) >> 10);
+    var_32 = (( ((uint32)(((uint16)word_380CE >> 7) + 0x0400)) * ((int32)(var_32)) ) >> 10);
      
-    word_3C5A6 = (int16)(__aNlmul((int32)100, (int32)((word_380D0 >> 6) + 0x0400)) >> 10);
+    word_3C5A6 = (uint32)((int32)100 * (int32)((word_380D0 >> 6) + 0x0400)) >> 10;
     
-    temp_ax = -((word_33098 >> 9) - 100);
-    temp_long_dx_ax = __aNlmul((int32)var_32, (int32)temp_ax);
-    temp_long_dx_ax = __aNldiv(temp_long_dx_ax, (int32)90);
-    var_32 = (int16)temp_long_dx_ax;
+    var_32 = ((int32)var_32) * ((int32)(-((word_33098 >> 9) - 100))) / (int32)90;
     
-    temp_long_dx_ax = __aNlmul((int32)var_32, (int32)(128 - word_38FDA));
-    var_32 = (int16)(temp_long_dx_ax >> 7);
+    var_32 = (((int32)var_32) * ((int32)(128 - word_38FDA))) >> 7;
     
-    temp_long_dx_ax = __aNlmul((int32)sub_15557(word_38FDA * 4), (int32)word_3C5A6);
-    word_3C5A6 = (int16)(temp_long_dx_ax >> 8);
+    word_3C5A6 = ((int32)sub_15557(word_38FDA * 4) * (int32)word_3C5A6) >> 8;
     word_3C5A6 = abs(word_3C5A6);
 
     if (!(*((unsigned char*)&word_391FE) & 1)) {
@@ -428,9 +423,7 @@ switch_break:
     word_3A8FE = word_3C5A6 * 27;
     var_1A = sub_1CF64(var_32, 0, 900) * 27;
     
-    temp_long_dx_ax = (int32)word_3A944 - var_1A;
-    temp_long_dx_ax = __aNldiv(__aNldiv(temp_long_dx_ax, 16), (int32)word_330C4);
-    word_3A944 += (int16)temp_long_dx_ax;
+    word_3A944 += ((((int32)word_3A944 - var_1A) / 16) / (int32)word_330C4);
     
     word_3B4DA = ((int32)word_3A8FE * 3072) / (abs(word_3A944) + 1);
     if (word_3B4DA > 0x2000) word_3B4DA = 0x2000;
