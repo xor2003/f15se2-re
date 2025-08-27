@@ -522,17 +522,17 @@ switch_break:
     }
     
     var_C = word_380D0;
-    word_3C8B6 = sub_13B2F((word_3A944 / 10), sub_13B96(word_380CA - word_38FC4));
+    word_3C8B6 = sub_13B2F((((uint16)word_3A944) / 10), sub_13B96(word_380CA - word_38FC4));
 
     if (word_33712 == 0) {
         word_380D0 += (word_3C8B6 / word_330C4);
         
-        dword_3B7DA += (int32)(sub_13B2F(var_22, sub_13B96(word_380C8)) / 11) / word_330C4;
+        dword_3B7DA += sub_13B2F(var_22, sub_13B96(word_380C8)) / 10 / word_330C4;
 
-        dword_3B7F8 += (int32)(sub_13B2F(var_22, sub_13B86(word_380C8)) / 12) / word_330C4;
+        dword_3B7F8 += sub_13B2F(var_22, sub_13B86(word_380C8)) / 10 / word_330C4;
     }
     
-    if (word_380D0 > word_3BEBE || word_380D0 < -4000) {
+    if ((uint16)word_380D0 > 0xf230 || (uint16)word_380D0 < (uint16)word_3BEBE) {
         word_380D0 = word_3BEBE;
     }
     if (word_380D0 > 0xEA60) word_380D0 = 0xEA60;
@@ -548,17 +548,12 @@ switch_break:
     if (word_3BEBE == word_380CE) {
         if (var_C > word_3BEBE && word_33702 != 0) {
             makeSound(0xC, 2);
-            temp_bx = word_3C16A << 4;
-            temp_cx = (stru_3AA5E[temp_bx].field_6 & 0x200) ? 0x100 : 0x80;
+            //temp_bx = word_3C16A << 4;
 
-            temp_ax = -word_3C8B6 * word_330B8;
-            temp_ax = (int16)temp_ax >> 1;
-
-            if (temp_cx < temp_ax) {
-                if (gameData->unk4 != 0 && !(*((unsigned char*)&word_391FE) & 1)) {
-                    temp_ax = abs(word_380CC);
-                    temp_cx = (int16)((30 * word_330B8) + 1);
-                    if ((int16)temp_ax > (int16)(30 / temp_cx)) {
+            if (((stru_3AA5E[word_3C16A].field_6 & 0x200) ? 0x100 : 0x80) 
+                >= ((int16)(-word_3C8B6 * word_330B8) / 2)) {
+                if (gameData->unk4 != 0 && !(word_391FE & 1)) {
+                    if (((int16)abs(word_380CC)) > (int16)((0x30 / (word_330B8 + 1)) << 8)) {
                         makeSound(0, 2);
                         sub_12278(0x3C);
                         sub_11B37(5);
@@ -569,23 +564,19 @@ switch_break:
         word_3C8B6 = 0;
     }
     
-    temp_ax = word_336E8 & 0xF;
-    var_38 = temp_ax;
-    temp_si = temp_ax << 4;
-    stru_3A95A[temp_si].field_A = word_380C8;
-    stru_3A95A[temp_si].field_C = word_380CA;
-    stru_3A95A[temp_si].field_E = word_380CC;
-    *(int32*)&stru_3A95A[temp_si].field_0 = dword_3B7DA;
-    *(int32*)&stru_3A95A[temp_si].field_4 = dword_3B7F8;
-    stru_3A95A[temp_si].field_8 = word_380CE;
+    var_38 = word_336E8 & 0xF;
+    stru_3A95A[var_38].field_A = word_380C8;
+    stru_3A95A[var_38].field_C = word_380CA;
+    stru_3A95A[var_38].field_E = word_380CC;
+    *(int32*)&stru_3A95A[var_38].field_0 = dword_3B7DA;
+    *(int32*)&stru_3A95A[var_38].field_4 = dword_3B7F8;
+    stru_3A95A[var_38].field_8 = word_380CE;
 
     if (word_3C45C == 1) {
         if (word_336F2 >= 0) {
             temp_si = word_336F2 * 0x24;
             
-            temp_ax = xydist(word_3BEC0 - word_3B204[temp_si], word_3BED0 - word_3B206[temp_si]);
-            temp_ax = (temp_ax * word_330C4) >> 8;
-            var_38 = sub_1CF64(temp_ax, 0, 12);
+            var_38 = sub_1CF64((xydist(word_3BEC0 - word_3B204[temp_si], word_3BED0 - word_3B206[temp_si]) * word_330C4) >> 8, 0, 12);
 
         } else {
             var_38 = word_330C4 - 1;
