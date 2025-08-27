@@ -448,10 +448,9 @@ switch_break:
     
     audio_jump_6a(word_3AA5A, word_3AFA6);
     
-    temp_long_dx_ax = (int32)sub_1D178(word_380CC, (uint16)word_38FDA << 4) << 7;
-    var_18 = (temp_long_dx_ax / (int32)(word_3AA5A * word_3AA5A / 250 + 2));
+    var_18 = (((int32)sub_1D178(word_380CC, word_38FDA << 4)) << 7) / ((int32)((int16)((uint16)word_3A944 >> 9) + 0x20));
 
-    var_18 = sub_1D190(var_18, word_380CA);
+    var_18 = sub_1D190(word_380CA, var_18);
     
     if (word_3BEBE == word_380CE) {
         var_18 = (word_3C00E * -1) << 6;
