@@ -466,7 +466,7 @@ switch_break:
         word_380E0 = 0;
     }
     
-    var_28 = (int16)((int32)word_3C00E << 7) / word_330C4;
+    var_28 = (((int32)word_3C00E) << 7) / ((int32)word_330C4);
     if (var_28 != 0) {
         word_380AC = word_380A4 = sub_13B86(var_28);
         word_380A6 = sub_13B96(var_28);
