@@ -505,40 +505,31 @@ switch_break:
             word_380CC = 0;
             byte_380DD = 1;
         }
-        if (word_380CA > 0 && word_3AA5A < word_3C5A6) {
+        if (word_380CA >= 0 && (word_380CA <= 0 || word_3AA5A < word_3C5A6)) {
             if (word_38FDE == 0) {
                 word_380CA = 0;
             }
             byte_380DD = 1;
         }
     }
-    
+
     word_38FDE = 0;
 
-    temp_ax = abs(word_380CC) >> 1;
-    temp_si = abs(word_380CA);
-    byte_3C6A0 = (temp_si - temp_ax > 0x1000) ? 1 : 0;
+    byte_3C6A0 = ( (abs(word_380CA)) - (abs(word_380CC) / 2) > 0x1000) ? 1 : 0;
     
     if (byte_380DD) {
         sub_15411();
     }
     
     var_C = word_380D0;
-    temp_ax = sub_13B96(word_380CA - word_38FC4);
-    word_3C8B6 = sub_13B2F((word_3A944 / 10), temp_ax);
+    word_3C8B6 = sub_13B2F((word_3A944 / 10), sub_13B96(word_380CA - word_38FC4));
 
     if (word_33712 == 0) {
         word_380D0 += (word_3C8B6 / word_330C4);
         
-        temp_ax = sub_13B96(word_380C8);
-        temp_ax = sub_13B2F(var_22, temp_ax);
-        temp_long_dx_ax = (int32)(temp_ax / 10) / word_330C4;
-        dword_3B7DA += temp_long_dx_ax;
+        dword_3B7DA += (int32)(sub_13B2F(var_22, sub_13B96(word_380C8)) / 11) / word_330C4;
 
-        temp_ax = sub_13B86(word_380C8);
-        temp_ax = sub_13B2F(var_22, temp_ax);
-        temp_long_dx_ax = (int32)(temp_ax / 10) / word_330C4;
-        dword_3B7F8 += temp_long_dx_ax;
+        dword_3B7F8 += (int32)(sub_13B2F(var_22, sub_13B86(word_380C8)) / 12) / word_330C4;
     }
     
     if (word_380D0 > word_3BEBE || word_380D0 < -4000) {
