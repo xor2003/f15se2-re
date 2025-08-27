@@ -471,7 +471,7 @@ switch_break:
         word_380AC = word_380A4 = sub_13B86(var_28);
         word_380A6 = sub_13B96(var_28);
         word_380AA = -word_380A6;
-        sub_151F9(unk_3806E, word_380A4);
+        sub_151F9(unk_3806E, &word_380A4);
     }
     
     var_20 = (int16)((int32)word_3C5A4 << 7) / word_330C4;
@@ -487,7 +487,7 @@ switch_break:
         word_38090 = word_38080 = sub_13B86(var_16);
         word_38084 = sub_13B96(var_16);
         word_3808C = -word_38084;
-        sub_151F9(word_38080, unk_3806E);
+        sub_151F9(&word_38080, unk_3806E);
     }
     
     sub_15237();
