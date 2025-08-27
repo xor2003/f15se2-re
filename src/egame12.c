@@ -492,11 +492,10 @@ switch_break:
     
     sub_15237();
 
-    if (word_3A944 > word_3A8FE && word_3BEBE < word_380CE) {
-        temp_cx = (gameData->unk4 == 2 || word_3BF90 > 8) ? 1 : 2;
-        word_380CA -= (word_3A8FE - word_3A944) >> temp_cx;
+    if ((uint16)word_3A944 > (uint16)word_3A8FE && (uint16)word_3BEBE < (uint16)word_380CE) {
+        word_380CA -= ((uint16)word_3A8FE - (uint16)word_3A944) >> ((gameData->unk4 == 2 || word_3BF90 > 8) ? 1 : 2);
         byte_380DD = 1;
-        if (word_380CA < 0 && word_380CE < 200) {
+        if (word_380CA >= 0 && (uint16)word_380CE < 200) {
             makeSound(0x14, 1);
         }
     }
