@@ -423,10 +423,10 @@ switch_break:
     word_3A8FE = word_3C5A6 * 27;
     var_1A = sub_1CF64(var_32, 0, 900) * 27;
     
-    word_3A944 += ((((int32)word_3A944 - var_1A) / 16) / (int32)word_330C4);
+    word_3A944 += ((((int32)var_1A - word_3A944) / 16) / (int32)word_330C4);
     
     word_3B4DA = ((int32)word_3A8FE * 3072) / (abs(word_3A944) + 1);
-    if (word_3B4DA > 0x2000) word_3B4DA = 0x2000;
+    if ((uint16)word_3B4DA > 0x2000) word_3B4DA = 0x2000;
     
     word_38FC4 = sub_1D190(word_380CC, word_3B4DA - 0x300);
     
