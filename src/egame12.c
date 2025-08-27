@@ -432,25 +432,24 @@ switch_break:
     
     if (*((unsigned char*)&word_391FE) & 8) {
         if (word_3BEBE == word_380CE) {
-            temp_ax = ((gameData->unk4 * 8) - 32) * -27;
-            word_3A944 -= temp_ax / word_330C4;
-            if (word_3BEBE != 0 && word_3A944 < 0x1B0) {
+            word_3A944 -= (-((gameData->unk4 * 8) - 32) * 27) / word_330C4;
+            if (word_3BEBE != 0 && (uint16)word_3A944 < 0x1B0) {
                  word_3A944 = 0;
             }
         } else {
-             word_3A944 -= (word_3A944 >> 4) / word_330C4;
+             word_3A944 -= ((uint16)word_3A944 >> 4) / word_330C4;
         }
     }
     
-    if (word_3A944 < -1000) word_3A944 = 0;
+    if ((uint16)word_3A944 > 0xfc18) word_3A944 = 0;
     
     var_22 = sub_1D190(word_380CA, word_3A944);
-    word_3AA5A = word_3A944 / 27;
+    word_3AA5A = (uint16)word_3A944 / 27;
     
     audio_jump_6a(word_3AA5A, word_3AFA6);
     
-    temp_long_dx_ax = (int32)sub_1D178(word_380CC, word_38FDA << 4) << 7;
-    var_18 = __aNldiv(temp_long_dx_ax, (int32)(word_3AA5A * word_3AA5A / 250 + 2));
+    temp_long_dx_ax = (int32)sub_1D178(word_380CC, (uint16)word_38FDA << 4) << 7;
+    var_18 = (temp_long_dx_ax / (int32)(word_3AA5A * word_3AA5A / 250 + 2));
 
     var_18 = sub_1D190(var_18, word_380CA);
     
