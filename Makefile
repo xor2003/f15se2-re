@@ -157,7 +157,6 @@ $(SRCDIR)/$(EGAME_BASE): $(EGAME_LST) $(EGAME_INC) $(EGAME_CONF) $(LST2ASM)
 	$(LST2ASM) $< $@ $(EGAME_CONF) --stub
 
 $(EGAME_COBJ): $(EGAME_BASEHDR)
-#$(BUILDDIR)/egame12.obj: MSC_CFLAGS := /Gs /Ot /Id:\f15-se2
 $(BUILDDIR)/egame2.obj: MSC_CFLAGS := /Gs /Id:\f15-se2
 $(BUILDDIR)/egame3.obj: MSC_CFLAGS := /Od /Id:\f15-se2
 
