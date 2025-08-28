@@ -21,7 +21,7 @@ PUBLIC _restoreJoystickData
 PUBLIC _regs
 PUBLIC _exitCode
 PUBLIC _restoreCBreakHandler
-PUBLIC _sub_22411
+PUBLIC _InitializeGameSettings
 PUBLIC _scenarioPlh
 PUBLIC _regnStr
 PUBLIC _f15DgtlResult
@@ -42,9 +42,9 @@ PUBLIC _flagFarToNear
 PUBLIC _byte_3C16E
 PUBLIC _word_3BEC0
 PUBLIC _word_3BED0
-PUBLIC _dword_3B7F8
-PUBLIC _word_3B148
-PUBLIC _dword_3B7DA
+PUBLIC _g_ViewY
+PUBLIC _g_playerTargetIndex
+PUBLIC _g_ViewX
 PUBLIC _flt15_buf1
 PUBLIC _flt15_word1
 PUBLIC _flt15_buf2
@@ -134,7 +134,7 @@ PUBLIC _dword_3C01C
 PUBLIC _dword_3B4D4
 PUBLIC _sub_1CF64
 PUBLIC _keyValue
-PUBLIC _word_380CE
+PUBLIC _g_ViewZ
 PUBLIC _dword_3B1FE
 PUBLIC _word_336FE
 PUBLIC _dword_3C024
@@ -148,19 +148,19 @@ PUBLIC _word_3C5AA
 PUBLIC _word_3BE94
 PUBLIC _stru_3A95A
 PUBLIC _word_336E8
-PUBLIC _sub_1D190
-PUBLIC _sub_1D178
+PUBLIC _cosX
+PUBLIC _sinX
 PUBLIC _word_3C028
 PUBLIC _word_3C03A
-PUBLIC _word_330C4
+PUBLIC _g_frameRateScaling
 PUBLIC _word_336F4
 PUBLIC _stru_335C4
 PUBLIC _ARCTAN
 PUBLIC _word_3A940
 PUBLIC _word_3370E
-PUBLIC _xydist
+PUBLIC _Dist2D
 PUBLIC _word_3C02E
-PUBLIC _word_3C45C
+PUBLIC _g_currentWeaponType
 PUBLIC _word_336F2
 PUBLIC _word_336EA
 PUBLIC _stru_3AA5E
@@ -168,18 +168,18 @@ PUBLIC _word_3370C
 PUBLIC _stru_3B208
 PUBLIC _unk_3A948
 PUBLIC _sub_160D3
-PUBLIC _sub_19FCC
+PUBLIC _ClearMessageArea
 PUBLIC _word_38152
-PUBLIC _word_37561
+PUBLIC _g_LineY1
 PUBLIC _word_39604
-PUBLIC _word_37563
+PUBLIC _g_LineY2
 PUBLIC _word_38126
-PUBLIC _sub_195C9
+PUBLIC _RenderScene
 PUBLIC _sub_2152A
 PUBLIC _off_38364
 PUBLIC _word_330BC
 PUBLIC _unk_3806E
-PUBLIC _TransformAndProjectObject
+PUBLIC _TransformAndProjectObject_2
 PUBLIC _a256left_pic
 PUBLIC _a256right_pic
 PUBLIC _a256rear_pic
@@ -192,12 +192,12 @@ PUBLIC _aLeft_pic
 PUBLIC _word_36B86
 PUBLIC _byte_3850E
 PUBLIC _unk_38128
-PUBLIC _word_3755D
+PUBLIC _g_LineX1
 PUBLIC _sub_11A18
-PUBLIC _word_3755F
+PUBLIC _g_LineX2
 PUBLIC _aRear_pic
-PUBLIC _word_38FDC
-PUBLIC _sub_11A88
+PUBLIC _g_difficultyLevel
+PUBLIC _SetupWeaponDisplay
 PUBLIC _word_3C09A
 PUBLIC _word_330C2
 PUBLIC _sub_20BAE
@@ -223,8 +223,8 @@ PUBLIC _copySomeMem
 PUBLIC _word_38FC4
 PUBLIC _waypoints
 PUBLIC _word_3C008
-PUBLIC _word_391FE
-PUBLIC _byte_37C24
+PUBLIC _g_playerPlaneFlags
+PUBLIC _g_halfSpeedUpdateFlag
 PUBLIC _string_3C04A
 PUBLIC _draw2Strings
 PUBLIC _word_3370A
@@ -238,13 +238,13 @@ PUBLIC _aAutopilot
 PUBLIC _word_38FEA
 PUBLIC _word_3BE92
 PUBLIC _MakeRotationMatrix
-PUBLIC _word_3C16A
+PUBLIC _g_closestThreatIndex
 PUBLIC _word_380D0
 PUBLIC _tempString
 PUBLIC _word_383F2
-PUBLIC _word_330B6
+PUBLIC _g_autopilotAltitude
 PUBLIC _missileSpecIndex
-PUBLIC _sub_21A86
+PUBLIC _GameLoopUpdate
 PUBLIC _gfx_jump_0_alloc
 PUBLIC _gfx_jump_05_drawString
 PUBLIC _gfx_jump_0c
@@ -265,7 +265,7 @@ PUBLIC _dacValues1
 PUBLIC _gfx_jump_32
 PUBLIC _byte_36D86
 PUBLIC _dacValues
-PUBLIC _word_330B8
+PUBLIC _g_missionStatus
 PUBLIC _word_3BECE
 PUBLIC ___bios_keybrd
 PUBLIC _word_336F6
@@ -309,7 +309,7 @@ PUBLIC _tempStrcpy
 PUBLIC _word_38FE8
 PUBLIC _word_3AFA6
 PUBLIC _word_3B4DA
-PUBLIC _sub_13B2F
+PUBLIC _FixedPointMul
 PUBLIC _abs_word
 PUBLIC _word_3AFA8
 PUBLIC ___aNlmul
@@ -321,13 +321,13 @@ PUBLIC _word_3809A
 PUBLIC _word_3808C
 PUBLIC _sub_15237
 PUBLIC _word_3A8FE
-PUBLIC _word_3BF90
+PUBLIC _g_gunHits
 PUBLIC _word_3809C
 PUBLIC _sub_15557
 PUBLIC _word_380A0
 PUBLIC _word_38FDA
 PUBLIC _word_3B15A
-PUBLIC _sub_11B37
+PUBLIC _PrepareToExit
 PUBLIC __kbhit
 PUBLIC _byte_37F98
 PUBLIC _word_3C00E
@@ -421,7 +421,7 @@ struc_4         ends
 Waypoint        struc ; (sizeof=0x4, mappedto_15)
                                         ; XREF: dseg:waypoints/r
 x               dw ?                    ; XREF: UpdatePlayerAndWorldState+5B2/w
-                                        ; sub_11E0E:else_11EBA/r ...
+                                        ; InitializeCockpitData:else_11EBA/r ...
 y               dw ?                    ; XREF: UpdatePlayerAndWorldState+1FB/r
                                         ; UpdatePlayerAndWorldState+5B9/w ...
 Waypoint        ends
@@ -542,7 +542,7 @@ _loadF15DgtlBin proc near
 loc_102F5:
     mov allocSize, bx
     mov ah, 48h
-    int 21h ;DOS - 2+ - ALLOCATE MEMORY
+    int 21h ;DOS - Allocate Memory
     mov f15dgtlAddr, ax
     sub cx, cx
     mov es, cx
@@ -550,7 +550,7 @@ loc_102F5:
     mov ah, 3Dh
     mov al, 0
     mov dx, offset aF15dgtl_bin ;"F15DGTL.BIN"
-    int 21h ;DOS - 2+ - OPEN DISK FILE WITH HANDLE
+    int 21h ;DOS - Open File with Handle
     mov bx, ax
     mov cx, allocSize
     shl cx, 1
@@ -562,11 +562,11 @@ loc_102F5:
     mov ds, ax
     mov dx, 0
     mov ah, 3Fh
-    int 21h ;DOS - 2+ - READ FROM FILE WITH HANDLE
+    int 21h ;DOS - Read from File with Handle
     pop ds
     push ax
     mov ah, 3Eh
-    int 21h ;DOS - 2+ - CLOSE A FILE WITH HANDLE
+    int 21h ;DOS - Close File with Handle
     pop ax
     retn
 _loadF15DgtlBin endp
@@ -660,9 +660,9 @@ sub_118D5 proc near
 sub_118D5 endp
 ; ------------------------------seg000:0x18f5------------------------------
 ; ------------------------------seg000:0x18f6------------------------------
-sub_118F6 proc near
+InitMission proc near
     retn
-sub_118F6 endp
+InitMission endp
 ; ------------------------------seg000:0x1970------------------------------
 ; ------------------------------seg000:0x1971------------------------------
 sub_11971 proc near
@@ -670,9 +670,9 @@ sub_11971 proc near
 sub_11971 endp
 ; ------------------------------seg000:0x19a2------------------------------
 ; ------------------------------seg000:0x19a3------------------------------
-sub_119A3 proc near
+InitializeWeapons proc near
     retn
-sub_119A3 endp
+InitializeWeapons endp
 ; ------------------------------seg000:0x1a17------------------------------
 ; ------------------------------seg000:0x1a18------------------------------
 _sub_11A18 proc near
@@ -680,14 +680,14 @@ _sub_11A18 proc near
 _sub_11A18 endp
 ; ------------------------------seg000:0x1a87------------------------------
 ; ------------------------------seg000:0x1a88------------------------------
-_sub_11A88 proc near
+_SetupWeaponDisplay proc near
     retn
-_sub_11A88 endp
+_SetupWeaponDisplay endp
 ; ------------------------------seg000:0x1b36------------------------------
 ; ------------------------------seg000:0x1b37------------------------------
-_sub_11B37 proc near
+_PrepareToExit proc near
     retn
-_sub_11B37 endp
+_PrepareToExit endp
 ; ------------------------------seg000:0x1bc2------------------------------
 ; ------------------------------seg000:0x1bc3------------------------------
 sub_11BC3 proc near
@@ -878,9 +878,9 @@ loc_13B23:
 _setupDac endp
 ; ------------------------------seg000:0x3b2e------------------------------
 ; ------------------------------seg000:0x3b2f------------------------------
-_sub_13B2F proc near
+_FixedPointMul proc near
     retn
-_sub_13B2F endp
+_FixedPointMul endp
 ; ------------------------------seg000:0x3b44------------------------------
 ; ------------------------------seg000:0x3b86------------------------------
 _sub_13B86 proc near
@@ -1049,9 +1049,9 @@ timerIrqAddr dd byte_13D05
 byte_13D05 db 0FBh, 50h, 53h, 51h, 52h, 56h, 57h, 55h, 1Eh, 6, 0B8h
 timerIsrPtr dd 0
 ; ------------------------------seg000:0x3d6b------------------------------
-sub_13D6B proc near
+timerInterruptLogic proc near
     retn
-sub_13D6B endp
+timerInterruptLogic endp
 ; ------------------------------seg000:0x3df1------------------------------
 ; ------------------------------seg000:0x3df2------------------------------
 sub_13DF2 proc near
@@ -1329,9 +1329,9 @@ sub_18E38 proc near
 sub_18E38 endp
 ; ------------------------------seg000:0x8e4f------------------------------
 ; ------------------------------seg000:0x94d0------------------------------
-sub_194D0 proc near
+SetHUDMessage proc near
     retn
-sub_194D0 endp
+SetHUDMessage endp
 ; ------------------------------seg000:0x9579------------------------------
 ; ------------------------------seg000:0x957a------------------------------
 sub_1957A proc near
@@ -1339,14 +1339,14 @@ sub_1957A proc near
 sub_1957A endp
 ; ------------------------------seg000:0x9594------------------------------
 ; ------------------------------seg000:0x9595------------------------------
-sub_19595 proc near
+InitHUD proc near
     retn
-sub_19595 endp
+InitHUD endp
 ; ------------------------------seg000:0x95c8------------------------------
 ; ------------------------------seg000:0x95c9------------------------------
-_sub_195C9 proc near
+_RenderScene proc near
     retn
-_sub_195C9 endp
+_RenderScene endp
 ; ------------------------------seg000:0x9874------------------------------
 ; ------------------------------seg000:0x9875------------------------------
 zoomIn proc near
@@ -1359,14 +1359,14 @@ zoomOut proc near
 zoomOut endp
 ; ------------------------------seg000:0x98f9------------------------------
 ; ------------------------------seg000:0x98fa------------------------------
-sub_198FA proc near
+TransformXCoordinate proc near
     retn
-sub_198FA endp
+TransformXCoordinate endp
 ; ------------------------------seg000:0x9914------------------------------
 ; ------------------------------seg000:0x9915------------------------------
-sub_19915 proc near
+TransformYCoordinate proc near
     retn
-sub_19915 endp
+TransformYCoordinate endp
 ; ------------------------------seg000:0x9939------------------------------
 ; ------------------------------seg000:0x993a------------------------------
 sub_1993A proc near
@@ -1374,19 +1374,19 @@ sub_1993A proc near
 sub_1993A endp
 ; ------------------------------seg000:0x99eb------------------------------
 ; ------------------------------seg000:0x99ec------------------------------
-sub_199EC proc near
+TransformAndProjectObject proc near
     retn
-sub_199EC endp
+TransformAndProjectObject endp
 ; ------------------------------seg000:0x9a4c------------------------------
 ; ------------------------------seg000:0x9a4d------------------------------
-sub_19A4D proc near
+GetObjectScreenPosition proc near
     retn
-sub_19A4D endp
+GetObjectScreenPosition endp
 ; ------------------------------seg000:0x9ada------------------------------
 ; ------------------------------seg000:0x9adb------------------------------
-sub_19ADB proc near
+UpdateObjectAI proc near
     retn
-sub_19ADB endp
+UpdateObjectAI endp
 ; ------------------------------seg000:0x9b97------------------------------
 ; ------------------------------seg000:0x9b98------------------------------
 sub_19B98 proc near
@@ -1429,19 +1429,19 @@ sub_19EB6 proc near
 sub_19EB6 endp
 ; ------------------------------seg000:0x9f46------------------------------
 ; ------------------------------seg000:0x9fad------------------------------
-sub_19FAD proc near
+DisplayMessageTop proc near
     retn
-sub_19FAD endp
+DisplayMessageTop endp
 ; ------------------------------seg000:0x9fcb------------------------------
 ; ------------------------------seg000:0x9fcc------------------------------
-_sub_19FCC proc near
+_ClearMessageArea proc near
     retn
-_sub_19FCC endp
+_ClearMessageArea endp
 ; ------------------------------seg000:0xa02f------------------------------
 ; ------------------------------seg000:0xa030------------------------------
-sub_1A030 proc near
+DisplayMessageBottom proc near
     retn
-sub_1A030 endp
+DisplayMessageBottom endp
 ; ------------------------------seg000:0xa0ca------------------------------
 ; ------------------------------seg000:0xa0fe------------------------------
 _draw2Strings proc near
@@ -1494,9 +1494,9 @@ sub_1A872 proc near
 sub_1A872 endp
 ; ------------------------------seg000:0xa8c7------------------------------
 ; ------------------------------seg000:0xa8c8------------------------------
-_TransformAndProjectObject proc near
+_TransformAndProjectObject_2 proc near
     retn
-_TransformAndProjectObject endp
+_TransformAndProjectObject_2 endp
 ; ------------------------------seg000:0xa933------------------------------
 ; ------------------------------seg000:0xa934------------------------------
 sub_1A934 proc near
@@ -1614,9 +1614,9 @@ _forceRange proc near
 _forceRange endp
 ; ------------------------------seg000:0xcfa5------------------------------
 ; ------------------------------seg000:0xcfa6------------------------------
-_xydist proc near
+_Dist2D proc near
     retn
-_xydist endp
+_Dist2D endp
 ; ------------------------------seg000:0xd007------------------------------
 ; ------------------------------seg000:0xd008------------------------------
 _ARCTAN proc near
@@ -1624,14 +1624,14 @@ _ARCTAN proc near
 _ARCTAN endp
 ; ------------------------------seg000:0xd177------------------------------
 ; ------------------------------seg000:0xd178------------------------------
-_sub_1D178 proc near
+_sinX proc near
     retn
-_sub_1D178 endp
+_sinX endp
 ; ------------------------------seg000:0xd18f------------------------------
 ; ------------------------------seg000:0xd190------------------------------
-_sub_1D190 proc near
+_cosX proc near
     retn
-_sub_1D190 endp
+_cosX endp
 ; ------------------------------seg000:0xd1a4------------------------------
 ; ------------------------------seg000:0xd1c8------------------------------
 _abs_word proc near
@@ -2384,24 +2384,24 @@ sub_1F882 proc far
 sub_1F882 endp
 ; ------------------------------seg001:0x64------------------------------
 ; ------------------------------seg001:0x78------------------------------
-sub_1F8F8 proc near
+ProjectAndCalculateScreenCoords proc near
     retn
-sub_1F8F8 endp
+ProjectAndCalculateScreenCoords endp
 ; ------------------------------seg001:0xfa------------------------------
 ; ------------------------------seg001:0x113------------------------------
-sub_1F993 proc near
+SetCustomInterruptVector proc near
     retn
-sub_1F993 endp
+SetCustomInterruptVector endp
 ; ------------------------------seg001:0x136------------------------------
 ; ------------------------------seg001:0x137------------------------------
-sub_1F9B7 proc near
+RestoreOriginalInterruptVector proc near
     retn
-sub_1F9B7 endp
+RestoreOriginalInterruptVector endp
 ; ------------------------------seg001:0x14b------------------------------
 ; ------------------------------seg001:0x15d------------------------------
-sub_1F9DD proc near
+ClipAndDrawLineManager proc near
     retn
-sub_1F9DD endp
+ClipAndDrawLineManager endp
 ; ------------------------------seg001:0x23e------------------------------
 ; ------------------------------seg001:0x23f------------------------------
 sub_1FABF proc near
@@ -2429,9 +2429,9 @@ sub_1FBB4 proc near
 sub_1FBB4 endp
 ; ------------------------------seg001:0x382------------------------------
 ; ------------------------------seg001:0x383------------------------------
-sub_1FC03 proc near
+CalculateOutcode proc near
     retn
-sub_1FC03 endp
+CalculateOutcode endp
 ; ------------------------------seg001:0x3b9------------------------------
 ; ------------------------------seg001:0x3ba------------------------------
 sub_1FC3A proc near
@@ -2439,14 +2439,14 @@ sub_1FC3A proc near
 sub_1FC3A endp
 ; ------------------------------seg001:0x40d------------------------------
 ; ------------------------------seg001:0x40e------------------------------
-sub_1FC8E proc near
+ClipLineSegment_Bisection proc near
     retn
-sub_1FC8E endp
+ClipLineSegment_Bisection endp
 ; ------------------------------seg001:0x483------------------------------
 ; ------------------------------seg001:0x484------------------------------
-sub_1FD04 proc near
+ClipLineSegment_Bisection_Int proc near
     retn
-sub_1FD04 endp
+ClipLineSegment_Bisection_Int endp
 ; ------------------------------seg001:0x4f1------------------------------
 ; ------------------------------seg001:0x4f2------------------------------
 sub_1FD72 proc near
@@ -2474,14 +2474,14 @@ sub_1FEFE proc near
 sub_1FEFE endp
 ; ------------------------------seg001:0x883------------------------------
 ; ------------------------------seg001:0x884------------------------------
-sub_20104 proc far
+Process3DObjectData proc far
     retn
-sub_20104 endp
+Process3DObjectData endp
 ; ------------------------------seg001:0x907------------------------------
 ; ------------------------------seg001:0x908------------------------------
-sub_20188 proc near
+TransformAndProjectPoint proc near
     retn
-sub_20188 endp
+TransformAndProjectPoint endp
 ; ------------------------------seg001:0xa08------------------------------
 ; ------------------------------seg001:0xa09------------------------------
 sub_20289 proc near
@@ -2509,14 +2509,14 @@ sub_202F6 proc far
 sub_202F6 endp
 ; ------------------------------seg001:0xa7f------------------------------
 ; ------------------------------seg001:0xa80------------------------------
-sub_20300 proc near
+SortObjectForDrawing proc near
     retn
-sub_20300 endp
+SortObjectForDrawing endp
 ; ------------------------------seg001:0xb5f------------------------------
 ; ------------------------------seg001:0xb60------------------------------
-sub_203E0 proc near
+DrawSortedObjects proc near
     retn
-sub_203E0 endp
+DrawSortedObjects endp
 ; ------------------------------seg001:0xbbb------------------------------
 ; ------------------------------seg001:0xbca------------------------------
 sub_2044A proc far
@@ -2524,14 +2524,14 @@ sub_2044A proc far
 sub_2044A endp
 ; ------------------------------seg001:0xbe6------------------------------
 ; ------------------------------seg001:0xbe7------------------------------
-sub_20467 proc near
+Draw3DObjectDispatcher proc near
     retn ;sp-analysis failed
-sub_20467 endp
+Draw3DObjectDispatcher endp
 ; ------------------------------seg001:0xcb3------------------------------
 ; ------------------------------seg001:0xcb4------------------------------
-sub_20534 proc near
+SetupObjectTransformation proc near
     retn
-sub_20534 endp
+SetupObjectTransformation endp
 ; ------------------------------seg001:0xdd6------------------------------
 ; ------------------------------seg001:0xdd8------------------------------
 sub_20658 proc far
@@ -2544,9 +2544,9 @@ sub_20674 proc near
 sub_20674 endp
 ; ------------------------------seg001:0xf77------------------------------
 ; ------------------------------seg001:0x10f0------------------------------
-sub_20970 proc near
+DrawObjectPolygons proc near
     retn
-sub_20970 endp
+DrawObjectPolygons endp
 ; ------------------------------seg001:0x11c2------------------------------
 ; ------------------------------seg001:0x11c6------------------------------
 sub_20A46 proc far
@@ -2554,9 +2554,9 @@ sub_20A46 proc far
 sub_20A46 endp
 ; ------------------------------seg001:0x11d7------------------------------
 ; ------------------------------seg001:0x11d8------------------------------
-sub_20A58 proc near
+ProcessAndClipPolygons proc near
     retn
-sub_20A58 endp
+ProcessAndClipPolygons endp
 ; ------------------------------seg001:0x1281------------------------------
 ; ------------------------------seg001:0x1282------------------------------
 sub_20B02 proc near
@@ -2569,9 +2569,9 @@ _sub_20BAE proc far
 _sub_20BAE endp
 ; ------------------------------seg001:0x1345------------------------------
 ; ------------------------------seg001:0x135f------------------------------
-sub_20BDF proc near
+SetupObjectMatrix proc near
     retn
-sub_20BDF endp
+SetupObjectMatrix endp
 ; ------------------------------seg001:0x147a------------------------------
 ; ------------------------------seg001:0x147b------------------------------
 sub_20CFB proc near
@@ -2589,9 +2589,9 @@ sub_20E38 proc far
 sub_20E38 endp
 ; ------------------------------seg001:0x15cc------------------------------
 ; ------------------------------seg001:0x15cd------------------------------
-sub_20E4D proc near
+MatrixMultiply_3x3 proc near
     retn
-sub_20E4D endp
+MatrixMultiply_3x3 endp
 ; ------------------------------seg001:0x175b------------------------------
 ; ------------------------------seg001:0x175c------------------------------
 sub_20FDC proc far
@@ -2639,9 +2639,9 @@ _sub_2152A proc far
 _sub_2152A endp
 ; ------------------------------seg001:0x1cb5------------------------------
 ; ------------------------------seg001:0x1cb6------------------------------
-sub_21536 proc near
+DrawLine3D_Clipped proc near
     retn
-sub_21536 endp
+DrawLine3D_Clipped endp
 ; ------------------------------seg001:0x1e3f------------------------------
 ; ------------------------------seg001:0x1e42------------------------------
 sub_216C2 proc near
@@ -2659,19 +2659,19 @@ sub_2171A proc far
 sub_2171A endp
 ; ------------------------------seg001:0x1e9f------------------------------
 ; ------------------------------seg001:0x1ea0------------------------------
-sub_21720 proc near
+ClearDirtyRectangle proc near
     retn
-sub_21720 endp
+ClearDirtyRectangle endp
 ; ------------------------------seg001:0x1ed5------------------------------
 ; ------------------------------seg001:0x1ed6------------------------------
-sub_21756 proc near
+UpdateDirtyRectangle proc near
     retn
-sub_21756 endp
+UpdateDirtyRectangle endp
 ; ------------------------------seg001:0x1f24------------------------------
 ; ------------------------------seg001:0x1f34------------------------------
-sub_217B4 proc near
+DrawLineSegment_Bresenham proc near
     retn
-sub_217B4 endp
+DrawLineSegment_Bresenham endp
 ; ------------------------------seg001:0x201a------------------------------
 ; ------------------------------seg001:0x201c------------------------------
 sub_2189C proc far
@@ -2679,9 +2679,9 @@ sub_2189C proc far
 sub_2189C endp
 ; ------------------------------seg001:0x2027------------------------------
 ; ------------------------------seg001:0x2028------------------------------
-sub_218A8 proc near
+DrawLine_Handler proc near
     retn
-sub_218A8 endp
+DrawLine_Handler endp
 ; ------------------------------seg001:0x21d5------------------------------
 ; ------------------------------seg002:0x12------------------------------
 sub_21A82 proc far
@@ -2689,20 +2689,20 @@ sub_21A82 proc far
 sub_21A82 endp
 ; ------------------------------seg002:0x15------------------------------
 ; ------------------------------seg002:0x16------------------------------
-_sub_21A86 proc near
+_GameLoopUpdate proc near
     retn
-_sub_21A86 endp
+_GameLoopUpdate endp
 ; ------------------------------seg002:0x9a0------------------------------
 ; ------------------------------seg002:0x9a1------------------------------
-_sub_22411 proc near
-    mov ax, _gfxBufPtr
+_InitializeGameSettings proc near
+    mov ax, _gfxBufPtr ;Initializes game settings based on detected hardware (VGA vs EGA). Corresponds to F-14's NJOYCAL.C.
     mov word_37B7E, ax
     mov word_37B9C, ax
     mov word_37BBA, ax
     mov word_37BD8, ax
-    mov _byte_37C24, 0
+    mov _g_halfSpeedUpdateFlag, 0
 loc_22425:
-    cmp _byte_37C24, 1
+    cmp _g_halfSpeedUpdateFlag, 1
     jz short loc_2242F
     jmp loc_22545
 loc_2242F:
@@ -2902,7 +2902,7 @@ loc_225C7:
     mov ax, 10h
     mov word_37B72, ax
     retn
-_sub_22411 endp
+_InitializeGameSettings endp
 ; ------------------------------seg002:0xbea------------------------------
 ; ------------------------------seg002:0xbeb------------------------------
 _sub_2265B proc far
@@ -2920,9 +2920,9 @@ _sub_2267E proc far
 _sub_2267E endp
 ; ------------------------------seg002:0xc20------------------------------
 ; ------------------------------seg002:0xc21------------------------------
-sub_22691 proc near
+ReadJoystick proc near
     retn
-sub_22691 endp
+ReadJoystick endp
 ; ------------------------------seg002:0xc4d------------------------------
 ; ------------------------------seg002:0xc4e------------------------------
 sub_226BE proc near
@@ -2994,7 +2994,7 @@ loc_2277C:
 loc_2277F: ;store original int9 handler address
     mov word ptr cs:loc_228C4+1, ax
     mov word ptr cs:loc_228C4+3, dx
-    mov ax, offset int9Handler
+    mov ax, offset CustomInt9Handler
 loc_2278B:
     mov dx, cs
     cli
@@ -3002,6 +3002,8 @@ loc_2278B:
 loc_22790:
     mov [bx+2], dx
     sti
+    public RestoreInt9Handler
+RestoreInt9Handler: ;Restores the original keyboard interrupt (INT 9) handler.
     pop ds
     retf
 _setInt9Handler endp
@@ -3027,8 +3029,8 @@ loc_227AE:
 _restoreInt9Handler endp
 ; ------------------------------seg003:0x6f------------------------------
 ; ------------------------------seg003:0x70------------------------------
-int9Handler proc near
-    sti
+CustomInt9Handler proc near
+    sti ;Custom keyboard interrupt handler to process key presses.
     pushf
 loc_227B2:
     push ds
@@ -3156,7 +3158,7 @@ loc_228BE:
 loc_228C4:
     db 0EAh ;far jump to original handlerjmp far ptr 0:0
     dd 0
-int9Handler endp
+CustomInt9Handler endp
 ; ------------------------------seg003:0x184------------------------------
 ; ==============================================================================
 .DATA ;dseg segment para public 'DATA' use16
@@ -3222,8 +3224,10 @@ unk_32977 db 0
     db 0
     db 0
 word_3298A dw 0C4h
-word_3298C dw 0A0h
-word_3298E dw 64h
+    public g_ViewPositionX
+g_ViewPositionX dw 0A0h
+    public g_ViewPositionY
+g_ViewPositionY dw 64h
     db 0
     db 0
     db 2
@@ -4072,7 +4076,7 @@ aAn72 db 'An-72',0
     Sam <'AA-9', 52h, 7D0h, 0FFFFh, 3, 13h>
     Sam <'AA-10', 40h, 7D0h, 0, 4, 13h>
     Sam <'Equip.', 0, 0, 1Dh, 0, 0Eh>
-word_33096 dw 4
+g_missileHits dw 4
 _word_33098 dw 1388h
 word_3309A dw 0
 word_3309C dw 0Ch
@@ -4085,15 +4089,15 @@ word_3309E dw 12h
     MissileSpec <0>
 _missileSpecIndex dw 0
 word_330B4 dw 28Ah
-_word_330B6 dw 0
-_word_330B8 dw 1
+_g_autopilotAltitude dw 0
+_g_missionStatus dw 1
 word_330BA dw 1
 _word_330BC dw 0
 _word_330BE dw 0
     db 1
     db 0
 _word_330C2 dw 1
-_word_330C4 dw 4
+_g_frameRateScaling dw 4
     _missiles Missile <'AIM-9M', 'Sidewinder', 17h, 4>
     Missile <'AIM-120', 'AMRAAM ', 16h, 4>
     Missile <'AGM-88A', 'HARM', 18h, 4>
@@ -6769,9 +6773,12 @@ word_341BC dw 2710h
     db 0ECh
     db 0Eh
 dword_3423C dd 0
-word_34240 dw 0
-word_34242 dw 0
-word_34244 dw 0
+    public g_ObjectPositionX
+g_ObjectPositionX dw 0
+    public g_ObjectPositionY
+g_ObjectPositionY dw 0
+    public g_ObjectPositionZ
+g_ObjectPositionZ dw 0
 word_34246 dw 0
 word_34248 dw 0
 word_3424A dw 0
@@ -6794,21 +6801,36 @@ word_34262 dw 0
 word_34264 dw 0
 word_34266 dw 0
 word_34268 dw 0
-word_3426A dw 0
-word_3426C dw 0
-word_3426E dw 0
-word_34270 dw 0
-word_34272 dw 0
-word_34274 dw 0
-word_34276 dw 0
-word_34278 dw 0
-word_3427A dw 0
-word_3427C dw 0
-word_3427E dw 0
-word_34280 dw 0
-word_34282 dw 0
-word_34284 dw 0
-word_34286 dw 0
+    public g_SinRoll
+g_SinRoll dw 0
+    public g_CosRoll
+g_CosRoll dw 0
+    public g_SinHead
+g_SinHead dw 0
+    public g_CosHead
+g_CosHead dw 0
+    public g_SinPitch
+g_SinPitch dw 0
+    public g_CosPitch
+g_CosPitch dw 0
+    public g_TransformMatrix_00
+g_TransformMatrix_00 dw 0
+    public g_TransformMatrix_01
+g_TransformMatrix_01 dw 0
+    public g_TransformMatrix_02
+g_TransformMatrix_02 dw 0
+    public g_TransformMatrix_10
+g_TransformMatrix_10 dw 0
+    public g_TransformMatrix_11
+g_TransformMatrix_11 dw 0
+    public g_TransformMatrix_12
+g_TransformMatrix_12 dw 0
+    public g_TransformMatrix_20
+g_TransformMatrix_20 dw 0
+    public g_TransformMatrix_21
+g_TransformMatrix_21 dw 0
+    public g_TransformMatrix_22
+g_TransformMatrix_22 dw 0
 word_34288 dw 0
 word_3428A dw 0
 word_3428C dw 0
@@ -14839,14 +14861,20 @@ word_3754F dw 0
 word_37551 dw 0
 word_37553 dw 0
 word_37555 dw 0
-word_37557 dw 13Fh
-word_37559 dw 6Fh
+    public g_ViewportWidth
+g_ViewportWidth dw 13Fh
+    public g_ViewportHeight
+g_ViewportHeight dw 6Fh
     db 0
     db 0
-_word_3755D dw 0
-_word_3755F dw 0
-_word_37561 dw 0
-_word_37563 dw 0
+    public _g_LineX1
+_g_LineX1 dw 0
+    public _g_LineX2
+_g_LineX2 dw 0
+    public _g_LineY1
+_g_LineY1 dw 0
+    public _g_LineY2
+_g_LineY2 dw 0
 unk_37565 db 0FFh
     db 0FFh
     db 0FFh
@@ -15729,8 +15757,10 @@ unk_3771D db 0
     db 0
 word_378D5 dw 0
 word_378D7 dw 0
-word_378D9 dw 0FFFFh
-word_378DB dw 0
+    public g_DirtyRectX1
+g_DirtyRectX1 dw 0FFFFh
+    public g_DirtyRectX2
+g_DirtyRectX2 dw 0
     db 0 ;align 2
 byte_378DE db 0
 word_378DF dw 0
@@ -16489,7 +16519,7 @@ word_37C1C dw 0
 word_37C1E dw 0
 word_37C20 dw 0
 word_37C22 dw 0
-_byte_37C24 db 0
+_g_halfSpeedUpdateFlag db 0
 word_37C25 dw 0
 word_37C27 dw 0
 word_37C29 dw 0
@@ -17591,7 +17621,7 @@ unk_380B6 db 0
 _word_380C8 dw 0
 _word_380CA dw 0
 _word_380CC dw 0
-_word_380CE dw 0
+_g_ViewZ dw 0
 _word_380D0 dw 0
     db 0Ch
     db 0
@@ -18141,7 +18171,7 @@ byte_383E5 db 1
     db 0
     db 1
     db 0
-word_383EA dw 8
+g_zoomLevel dw 8
 radarRange dw 1
 word_383EE dw 0
 word_383F0 dw 0
@@ -19323,9 +19353,11 @@ byte_38D6E db 0
 word_38F70 dw ?
 word_38F72 dw ?
 _strBuf db 18h dup(?)
-byte_38F8C db ?
+    public g_RawJoyX1
+g_RawJoyX1 db ?
 byte_38F8D db ?
-    db ?
+    public g_RawJoyY1
+g_RawJoyY1 db ?
     db ?
     db ?
     db ?
@@ -19397,7 +19429,7 @@ _unk_38FD0 db ?
     db ?
     db ?
 _word_38FDA dw ?
-_word_38FDC dw ?
+_g_difficultyLevel dw ?
 _word_38FDE dw ?
 _word_38FE0 dw ?
 _dword_38FE2 dd ?
@@ -19405,7 +19437,7 @@ _fileHandle dw ?
 _word_38FE8 dw ?
 _word_38FEA dw ?
 word_38FEC dw ?
-word_38FEE dw ?
+g_closestThreatDistance dw ?
 _gameData dd ?
     db ?
     db ?
@@ -19414,7 +19446,7 @@ word_38FF8 dw ?
 _word_38FFA dw ?
 word_38FFC dw ?
 _buf4_3dg db 200h dup(?)
-_word_391FE dw ?
+_g_playerPlaneFlags dw ?
 word_39200 dw ?
 _buf3_3dg db 200h dup(?)
 word_39402 dw ?
@@ -24072,7 +24104,7 @@ word_3B0AC dw ?
 _buf3d3_2 db 96h dup(?)
 _word_3B144 dw ?
 word_3B146 dw ?
-_word_3B148 dw ?
+_g_playerTargetIndex dw ?
 _word_3B14A dw ?
 word_3B14C dw ?
     db ?
@@ -25540,7 +25572,7 @@ word_3B5D6 dw ?
     db ?
     db ?
     db ?
-_dword_3B7DA dd ?
+_g_ViewX dd ?
 word_3B7DE dw ?
 word_3B7E0 dw ?
 word_3B7E2 dw ?
@@ -25559,7 +25591,7 @@ byte_3B7F1 db ?
     db ?
     db ?
     db ?
-_dword_3B7F8 dd ?
+_g_ViewY dd ?
 _byte_3B7FC db 640h dup(?)
 _word_3BE3C dw ?
 _byte_3BE3E db 40h dup(?)
@@ -25623,7 +25655,7 @@ _byte_3BED8 db 64h dup(?)
 word_3BF3C dw ?
 word_3BF3E dw ?
 _tempString db 50h dup(?)
-_word_3BF90 dw ?
+_g_gunHits dw ?
 _regs db ?
 byte_3BF93 db ?
     db ?
@@ -25686,10 +25718,10 @@ word_3C09C dw ?
 _word_3C09E dw ?
 word_3C0A0 dw ?
 _word_3C0A2 dw 64h dup(?)
-_word_3C16A dw ?
+_g_closestThreatIndex dw ?
 word_3C16C dw ?
 _byte_3C16E db 2EEh dup(?)
-_word_3C45C dw ?
+_g_currentWeaponType dw ?
 word_3C45E dw ?
 _matrix3dt_2 dw 0A0h dup(?)
 _byte_3C5A0 db ?

@@ -15,12 +15,12 @@
 // something to do with view switching?
 int ProcessPlayerInputAndAI() {
     int var_2, var_4, var_6, var_8, var_A, var_C, var_E;
-    dword_3B1FE = dword_3C01C = dword_3B7DA;
-    dword_3B4D4 = dword_3B7F8;
-    dword_3C024 = 0x100000 - dword_3B7F8;
+    dword_3B1FE = dword_3C01C = g_ViewX;
+    dword_3B4D4 = g_ViewY;
+    dword_3C024 = 0x100000 - g_ViewY;
     // 55ef
-    word_3B4DE = word_380CE + 0x18;
-    word_3C02C = word_380CE;
+    word_3B4DE = g_ViewZ + 0x18;
+    word_3C02C = g_ViewZ;
     var_2 = word_336FE = sub_1CF64(word_336FE, 2, 8);
     // 5613
     switch(keyValue) {
@@ -50,7 +50,7 @@ int ProcessPlayerInputAndAI() {
         // 5678
         break;
     case 0x84: // 567b
-        var_E = (word_336E8 - ((word_330C4  + 1) / 2) - 1) & 0xf;
+        var_E = (word_336E8 - ((g_frameRateScaling  + 1) / 2) - 1) & 0xf;
         word_3C5AA = stru_3A95A[var_E].field_A;
         word_3BE94 = stru_3A95A[var_E].field_C;
         // 56a9
@@ -65,16 +65,16 @@ int ProcessPlayerInputAndAI() {
         word_3BE94 = 0;
         word_3B4E4 = 0;
         // 5708
-        dword_3B1FE = sub_1D178(word_380C8 + 0x4000, 0x18 << var_2) + dword_3B7DA;
+        dword_3B1FE = sinX(word_380C8 + 0x4000, 0x18 << var_2) + g_ViewX;
         // 572e
-        dword_3B4D4 = sub_1D190(word_380C8 + 0x4000, 0x18 << var_2) + dword_3B7F8;
+        dword_3B4D4 = cosX(word_380C8 + 0x4000, 0x18 << var_2) + g_ViewY;
         // 5735
         break;
     case 0x86: // 5738
         word_3C5AA = 0x8000;
         word_3BE94 = 0;
         word_3B4E4 = 0;
-        dword_3B4D4 = (0x18 << var_2) + dword_3B7F8;
+        dword_3B4D4 = (0x18 << var_2) + g_ViewY;
         // 5762
         break;
     case 0x87:
@@ -82,17 +82,17 @@ int ProcessPlayerInputAndAI() {
         word_3BE94 = 0;
         word_3B4E4 = 0;
         // 5796
-        dword_3B1FE = sub_1D178(word_380C8 + 0x8000, 0x18 << var_2) + dword_3B7DA;
+        dword_3B1FE = sinX(word_380C8 + 0x8000, 0x18 << var_2) + g_ViewX;
         // 57ad
-        dword_3B4D4 = sub_1D190(word_380C8 + 0x8000, 0x18 << var_2) + dword_3B7F8;
-        word_3B4DE = (4 << var_2) + word_380CE;
+        dword_3B4D4 = cosX(word_380C8 + 0x8000, 0x18 << var_2) + g_ViewY;
+        word_3B4DE = (4 << var_2) + g_ViewZ;
         // 57d2
         break;
     case 0x88:
     case 0x89:
     case 0x8b: // 57d5
         if (keyValue != 0x89) { // 57dd
-            if (word_3C45C == 1) { // 57e4
+            if (g_currentWeaponType == 1) { // 57e4
                 // XXX: test byte ptr word_336F2, 80h -> check which byte is tested, other byte ptr instructions in this routine
                 if (!(word_336F2 & 0x80)) word_3C02E = word_336F2 + 0x20;
             } 
@@ -143,27 +143,27 @@ int ProcessPlayerInputAndAI() {
         var_A = (dword_3C01C >> 5) - word_3BEC0;
         // 5981
         var_C = (dword_3C024 >> 5) - word_3BED0;
-        var_6 = xydist(var_A, var_C);
+        var_6 = Dist2D(var_A, var_C);
         word_3C5AA = ARCTAN(var_A, -var_C);
         // 59ba
-        word_3BE94 = -ARCTAN((word_3C02C - word_380CE) >> 5, var_6);
+        word_3BE94 = -ARCTAN((word_3C02C - g_ViewZ) >> 5, var_6);
         word_3B4E4 = 0;
         // 59d6
-        var_8 = sub_1D190(word_3BE94, 0x18 << var_2);
+        var_8 = cosX(word_3BE94, 0x18 << var_2);
         if (word_3C02E & 0x60 || word_3370E != 0) { // 59ea
             if (keyValue == 0x88) { // 59f2
                 // 5a0b
-                dword_3B1FE = sub_1D178(word_3C5AA + 0x8000, var_8) + dword_3B7DA;
-                dword_3B4D4 = sub_1D190(word_3C5AA + 0x8000, var_8) + dword_3B7F8;
+                dword_3B1FE = sinX(word_3C5AA + 0x8000, var_8) + g_ViewX;
+                dword_3B4D4 = cosX(word_3C5AA + 0x8000, var_8) + g_ViewY;
                 // 5a53
-                word_3B4DE = sub_1D178(word_3BE94, 0x18 << var_2) + (4 << var_2) + word_380CE; 
+                word_3B4DE = sinX(word_3BE94, 0x18 << var_2) + (4 << var_2) + g_ViewZ; 
                 word_3BE94 = -word_3BE94;
             }
             else { // 5a62
-                dword_3B1FE = sub_1D178(word_3C5AA, var_8) + dword_3C01C;
-                dword_3B4D4 = sub_1D190(word_3C5AA, var_8) - dword_3C024 + 0x100000;
+                dword_3B1FE = sinX(word_3C5AA, var_8) + dword_3C01C;
+                dword_3B4D4 = cosX(word_3C5AA, var_8) - dword_3C024 + 0x100000;
                 // 5ac3
-                word_3B4DE = (4 << var_2) - sub_1D178(word_3BE94, 0x18 << var_2) + word_3C02C;
+                word_3B4DE = (4 << var_2) - sinX(word_3BE94, 0x18 << var_2) + word_3C02C;
                 if (word_3C02E & 0x40 && stru_3AA5E[word_3C02E & 0x3f].field_6 & 0x200 && word_3B4DE < 0x84) { 
                     word_3B4DE = 0x84;
                 } // 5aed
@@ -174,12 +174,12 @@ int ProcessPlayerInputAndAI() {
             word_3C5AA = stru_335C4[word_3C02E].field_8;
             word_3BE94 = stru_335C4[word_3C02E].field_A - 0x400;
             // 5b22
-            var_8 = sub_1D190(word_3BE94, 0x10 << var_2);
-            dword_3B1FE = dword_3C01C - sub_1D178(word_3C5AA, var_8);
+            var_8 = cosX(word_3BE94, 0x10 << var_2);
+            dword_3B1FE = dword_3C01C - sinX(word_3C5AA, var_8);
             // 5b68
-            dword_3B4D4 = 0x100000 - (sub_1D190(word_3C5AA, var_8) + dword_3C024);
+            dword_3B4D4 = 0x100000 - (cosX(word_3C5AA, var_8) + dword_3C024);
             // 5b88
-            word_3B4DE = word_3C02C - sub_1D178(word_3BE94, 0x10 << var_2);
+            word_3B4DE = word_3C02C - sinX(word_3BE94, 0x10 << var_2);
         }
         // 5b8c
         break;
@@ -221,12 +221,12 @@ int ProcessPlayerInputAndAI() {
             gfx_jump_2a(*off_38364, 0, 0x61, *off_3834C, 0, 0x61, 0x140, 0x67);
             sub_15FDB();
             sub_11A18();
-            sub_11A88(missileSpecIndex);
+            SetupWeaponDisplay(missileSpecIndex);
             if (word_3C09A == 0) { // 5d42
-                sub_195C9(word_3BEC0, word_3BED0);
+                RenderScene(word_3BEC0, word_3BED0);
             } // 5d50
             word_336F4 = word_336F2 = 0xffff;
-            sub_19FCC(3, 3);
+            ClearMessageArea(3, 3);
             word_39604 = 0;
         } 
         else { // 5d6c
@@ -253,7 +253,7 @@ int ProcessPlayerInputAndAI() {
     } // 5e7b
     byte_34197 = byte_228D0[0x2f];
     *(uint8*)(&word_3BE98) = 3;
-    if (word_38FDC == 0 && commData->gfxModeNum != 0) { // 5e9d
+    if (g_difficultyLevel == 0 && commData->gfxModeNum != 0) { // 5e9d
         byte_34197 = 3;
         *(uint8*)(&word_3BE98) = 0x0b;
     } // 5ea7
@@ -267,24 +267,24 @@ int ProcessPlayerInputAndAI() {
     if (keyValue == 0x41) { // 5f06
         sub_160D3(unk_38128);
         gfx_jump_21(0xf);
-        word_3755D = 0xf1;
-        word_37561 = 0x15;
-        word_3755F = 0xfb;
-        word_37563 = 0x5e;
+        g_LineX1 = 0xf1;
+        g_LineY1 = 0x15;
+        g_LineX2 = 0xfb;
+        g_LineY2 = 0x5e;
         // 5f34
         sub_2152A();
-        word_3755D = 0x53;
-        word_37561 = 0x15;
-        word_3755F = 0x49;
-        word_37563 = 0x5e;
+        g_LineX1 = 0x53;
+        g_LineY1 = 0x15;
+        g_LineX2 = 0x49;
+        g_LineY2 = 0x5e;
         // 5f51
         sub_2152A();
         gfx_jump_23();
         var_E = byte_3C5A0;
         byte_3C5A0 = gfx_jump_2d();
         // 5f84
-        TransformAndProjectObject(0x6b, 0x30, 0xd1, 0, 0x6f, 0x2f, 0);
-        TransformAndProjectObject(0x41, 0x5f, 0x7d, 0x36, 0xc3, 2, 0);
+        TransformAndProjectObject_2(0x6b, 0x30, 0xd1, 0, 0x6f, 0x2f, 0);
+        TransformAndProjectObject_2(0x41, 0x5f, 0x7d, 0x36, 0xc3, 2, 0);
         byte_3C5A0 = var_E;
     } // 5fb1
     gfx_jump_46_retrace2();
@@ -308,12 +308,12 @@ int UpdateFlightModelAndHUD(int arg_0) {
             word_38FEA = 0;
             if (!(keyValue & 0x80)) { // 8eaa
                 sub_19E44(0xd);
-                sub_19E5D(0, 0, 0x13f, 0x60);
+                DrawHUDElement(0, 0, 0x13f, 0x60);
                 gfx_jump_4f(0x3c);
             }
         } // 8ed2
         byte_37C2F = 1;
-        if (keyValue == 0 && byte_37C24 == 0) { // 8eeb
+        if (keyValue == 0 && g_halfSpeedUpdateFlag == 0) { // 8eeb
             if (!commData->setupUseJoy) { // 8ef9
                 sub_19E44(0);
                 sub_19C0C(0x115, 0x53, 0x125, 0x53);
@@ -331,7 +331,7 @@ int UpdateFlightModelAndHUD(int arg_0) {
                 // 8fc8
                 sub_19C0C(var_14, var_18 + 1, var_14, var_18 - 1);
             } // 8fce
-            if (word_391FE & 0x200) { // 8fd6
+            if (g_playerPlaneFlags & 0x200) { // 8fd6
                 sub_19E44(0xf);
                 sub_19C0C(0x9c, 0x59, 0xa4, 0x59);
                 sub_19C0C(0xa0, 0x56, 0xa0, 0x5c);
@@ -343,31 +343,31 @@ int UpdateFlightModelAndHUD(int arg_0) {
             // 9089
             sub_19C0C(0xf7,  0x38, 0xf7, sub_1CF64(-((word_3C8B6 >> 4) - 0x38), 0x14, 0x55));
             // 908f
-            if ((word_391FE & 1) == 0 && (word_336E8 & 1) != 0 && gameData->unk4 != 0 && word_3C8B6 < 0) { // 90af
-                var_2 = (((stru_3AA5E[word_3C16A].field_6 & 0x200 ? 0x100 : 0x80) / gameData->unk4) >> 4) + 0x38;
+            if ((g_playerPlaneFlags & 1) == 0 && (word_336E8 & 1) != 0 && gameData->unk4 != 0 && word_3C8B6 < 0) { // 90af
+                var_2 = (((stru_3AA5E[g_closestThreatIndex].field_6 & 0x200 ? 0x100 : 0x80) / gameData->unk4) >> 4) + 0x38;
                 sub_19E44(0xf);
                 // 90f7
                 sub_19C0C(0xf2, var_2 - 2, 0xf4, var_2);
                 sub_19C0C(0xf2, var_2 + 2, 0xf4, var_2);
             } // 9115
             // stall warning display
-            if (word_3AA5A < word_3C5A6 && word_3BEBE != word_380CE && word_336E8 & 1) { // 912e
+            if (word_3AA5A < word_3C5A6 && word_3BEBE != g_ViewZ && word_336E8 & 1) { // 912e
                 draw2Strings(aStallWarning, 0x84, 0x1e, 0xf);
             } // 9144
-            if (word_3C45C == 0 || word_3C45C == 2) { // 9152
+            if (g_currentWeaponType == 0 || g_currentWeaponType == 2) { // 9152
                 sub_19E44(7);
                 word_3C008 = (word_38FC4 >> 6) + 0x38;
                 if (word_3C008 > 0xa && word_3C008 < 0x6f) { // 9173
-                    TransformAndProjectObject(0x9a, word_3C008 - 4, 0x94, 0x15, 0x0b, 7, 0xf);
+                    TransformAndProjectObject_2(0x9a, word_3C008 - 4, 0x94, 0x15, 0x0b, 7, 0xf);
                 }
             } // 9198
-            if (word_3C45C == 1) { // 91a2
-                var_1C = byte_37C24 + 4;
+            if (g_currentWeaponType == 1) { // 91a2
+                var_1C = g_halfSpeedUpdateFlag + 4;
                 var_14 = (word_3C6A4 >> var_1C) + 0x9f;
                 var_18 = (word_3C6AC >> var_1C) + 0x38;
                 // 91c3
                 if (var_14 > 0xa && var_14 < 0x135 && var_18 > 8 && var_18 < 0x5b) { // 91da
-                    TransformAndProjectObject(var_14 - 6, var_18 - 5, 0x91, 0x4, 0xd, 0xb, 0xe);
+                    TransformAndProjectObject_2(var_14 - 6, var_18 - 5, 0x91, 0x4, 0xd, 0xb, 0xe);
                 } // 9202
                 // 7 = air to air? Only Sidewinder and Amraam have it
                 if (sams[missiles[missleSpec[missileSpecIndex].field_0].field_16].field_C == 7) { // 9223
@@ -375,9 +375,9 @@ int UpdateFlightModelAndHUD(int arg_0) {
                     // 9239
                     for (var_A = 0; var_A <= 0x100; var_A += 0x10) { // 924b
                         var_4 = var_A << 8;
-                        var_8 = sub_1D178(var_4, 0x28) + 0x9f;
+                        var_8 = sinX(var_4, 0x28) + 0x9f;
                         // 9278
-                        var_C = -(sub_1D190(var_4, 0x23) - 0x38);
+                        var_C = -(cosX(var_4, 0x23) - 0x38);
                         if (var_A != 0) sub_19C0C(var_8, var_C, var_E, var_12);
                         // 9294
                         var_E = var_8;
@@ -392,10 +392,10 @@ int UpdateFlightModelAndHUD(int arg_0) {
             if (word_3370A > 1) { // 92f5
                 drawSomeStrings(aAccel, 0x96, 0x4, 0xf);
             } // 930b
-            if (word_391FE & 0x1000) { // 9313
+            if (g_playerPlaneFlags & 0x1000) { // 9313
                 drawSomeStrings(aTraining, 0xea, 0x10, 0xf);
             } // 9329
-            if (word_330B6 != 0) { // 9330
+            if (g_autopilotAltitude != 0) { // 9330
                 drawSomeStrings(aAutopilot, 0xec, 0x5a, 0xf);
             } // 9346
             var_6 = sub_1CF64((((word_3BE92 - word_380C8) >> 6) / 3) + 0x9f, 0x59, 0xe5);
@@ -409,7 +409,7 @@ int UpdateFlightModelAndHUD(int arg_0) {
 somewhere:        
         MakeRotationMatrix(byte_3C5A0);
     } // 93cf
-    if (word_383F2 != 0 && ((keyValue == 0 && byte_37C24 == 0) || (word_3370E != 0))) { // 93eb
+    if (word_383F2 != 0 && ((keyValue == 0 && g_halfSpeedUpdateFlag == 0) || (word_3370E != 0))) { // 93eb
         draw2Strings(tempString, -(((int16)strlen(tempString) >> 1) - 0x28) * 4, 0x18, 0xf);
         word_383F2--;
         // 9417
@@ -417,7 +417,7 @@ somewhere:
             draw2Strings(aPressAnyKeyToP, 0x78, 1, word_330BC != 0 ? 0xe : 0);
         }
     } // 943f
-    if (word_383F4 != 0 && keyValue == 0 && byte_37C24 == 0) { // 9454
+    if (word_383F4 != 0 && keyValue == 0 && g_halfSpeedUpdateFlag == 0) { // 9454
         draw2Strings(string_3C04A, -(((int16)strlen(string_3C04A) >> 1) - 0x28) * 4, 0x5a, 0xf);
         word_383F4--;
     } // 9480
@@ -430,7 +430,7 @@ void sub_19E44(int arg_0) {
 }
 
 // ==== seg000:0x9e5d ====
-void sub_19E5D(int arg_0, int arg_2, int arg_4, int arg_6) {
+void DrawHUDElement(int arg_0, int arg_2, int arg_4, int arg_6) {
     sub_21444(off_38334, arg_0, arg_2, arg_4, arg_6);
     sub_21444(off_3834C, arg_0, arg_2, arg_4, arg_6);
 }

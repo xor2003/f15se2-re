@@ -79,17 +79,17 @@ int sub_11841();
 // ==== seg000:0x18d5 ====
 int sub_118D5();
 // ==== seg000:0x18f6 ====
-int sub_118F6();
+int InitMission();
 // ==== seg000:0x1971 ====
 int sub_11971();
 // ==== seg000:0x19a3 ====
-int sub_119A3();
+int InitializeWeapons();
 // ==== seg000:0x1a18 ====
 int sub_11A18();
 // ==== seg000:0x1a88 ====
-int sub_11A88();
+int SetupWeaponDisplay();
 // ==== seg000:0x1b37 ====
-int sub_11B37();
+int PrepareToExit();
 // ==== seg000:0x1bc3 ====
 int sub_11BC3();
 // ==== seg000:0x1bfd ====
@@ -101,7 +101,7 @@ int sub_11D10();
 // ==== seg000:0x1d6e ====
 int placeString();
 // ==== seg000:0x1e0e ====
-int sub_11E0E();
+int InitializeCockpitData();
 // ==== seg000:0x1f3e ====
 int sub_11F3E();
 // ==== seg000:0x2049 ====
@@ -177,7 +177,7 @@ int sub_13A90();
 // ==== seg000:0x3aee ====
 int setupDac();
 // ==== seg000:0x3b2f ====
-int sub_13B2F();
+int FixedPointMul();
 // ==== seg000:0x3b86 ====
 int sub_13B86();
 // ==== seg000:0x3b96 ====
@@ -209,7 +209,7 @@ int setTimerIrqHandler();
 // ==== seg000:0x3cb6 ====
 int restoreTimerIrqHandler();
 // ==== seg000:0x3d6b ====
-int sub_13D6B();
+int timerInterruptLogic();
 // ==== seg000:0x3df2 ====
 int sub_13DF2();
 // ==== seg000:0x3e87 ====
@@ -281,29 +281,29 @@ int sub_18E38();
 // ==== seg000:0x8e50 ====
 int UpdateFlightModelAndHUD();
 // ==== seg000:0x94d0 ====
-int sub_194D0();
+int SetHUDMessage();
 // ==== seg000:0x957a ====
 int sub_1957A();
 // ==== seg000:0x9595 ====
-int sub_19595();
+int InitHUD();
 // ==== seg000:0x95c9 ====
-int sub_195C9();
+int RenderScene();
 // ==== seg000:0x9875 ====
 int zoomIn();
 // ==== seg000:0x98b4 ====
 int zoomOut();
 // ==== seg000:0x98fa ====
-int sub_198FA();
+int TransformXCoordinate();
 // ==== seg000:0x9915 ====
-int sub_19915();
+int TransformYCoordinate();
 // ==== seg000:0x993a ====
 int sub_1993A();
 // ==== seg000:0x99ec ====
-int sub_199EC();
+int TransformAndProjectObject();
 // ==== seg000:0x9a4d ====
-int sub_19A4D();
+int GetObjectScreenPosition();
 // ==== seg000:0x9adb ====
-int sub_19ADB();
+int UpdateObjectAI();
 // ==== seg000:0x9b98 ====
 int sub_19B98();
 // ==== seg000:0x9be1 ====
@@ -319,17 +319,17 @@ int sub_19DB0();
 // ==== seg000:0x9e44 ====
 void __cdecl sub_19E44(int);
 // ==== seg000:0x9e5d ====
-void __cdecl sub_19E5D(int, int, int, int);
+void __cdecl DrawHUDElement(int, int, int, int);
 // ==== seg000:0x9e94 ====
 int sub_19E94();
 // ==== seg000:0x9eb6 ====
 int sub_19EB6();
 // ==== seg000:0x9fad ====
-int __cdecl sub_19FAD(int, char *);
+int __cdecl DisplayMessageTop(int, char *);
 // ==== seg000:0x9fcc ====
-int sub_19FCC();
+int ClearMessageArea();
 // ==== seg000:0xa030 ====
-int __cdecl sub_1A030(int, char *);
+int __cdecl DisplayMessageBottom(int, char *);
 // ==== seg000:0xa0cb ====
 int __cdecl drawSomeStrings(char *, int, int, int);
 // ==== seg000:0xa0fe ====
@@ -355,7 +355,7 @@ int sub_1A7C4();
 // ==== seg000:0xa872 ====
 int sub_1A872();
 // ==== seg000:0xa8c8 ====
-int TransformAndProjectObject();
+int TransformAndProjectObject_2();
 // ==== seg000:0xa934 ====
 int sub_1A934();
 // ==== seg000:0xa962 ====
@@ -405,13 +405,13 @@ int sub_1CF64();
 // ==== seg000:0xcf8e ====
 int forceRange();
 // ==== seg000:0xcfa6 ====
-int xydist();
+int Dist2D();
 // ==== seg000:0xd008 ====
 int ARCTAN();
 // ==== seg000:0xd178 ====
-int __cdecl sub_1D178(int, int);
+int __cdecl sinX(int, int);
 // ==== seg000:0xd190 ====
-int sub_1D190();
+int cosX();
 // ==== seg000:0xd1c8 ====
 int abs_word();
 // ==== seg000:0xd1e8 ====
@@ -505,13 +505,13 @@ int sub_1F82C();
 // ==== seg001:0x2 ====
 int far sub_1F882();
 // ==== seg001:0x78 ====
-int sub_1F8F8();
+int ProjectAndCalculateScreenCoords();
 // ==== seg001:0x113 ====
-int sub_1F993();
+int SetCustomInterruptVector();
 // ==== seg001:0x137 ====
-int sub_1F9B7();
+int RestoreOriginalInterruptVector();
 // ==== seg001:0x15d ====
-int sub_1F9DD();
+int ClipAndDrawLineManager();
 // ==== seg001:0x23f ====
 int sub_1FABF();
 // ==== seg001:0x29d ====
@@ -523,13 +523,13 @@ int sub_1FB88();
 // ==== seg001:0x334 ====
 int sub_1FBB4();
 // ==== seg001:0x383 ====
-int sub_1FC03();
+int CalculateOutcode();
 // ==== seg001:0x3ba ====
 int sub_1FC3A();
 // ==== seg001:0x40e ====
-int sub_1FC8E();
+int ClipLineSegment_Bisection();
 // ==== seg001:0x484 ====
-int sub_1FD04();
+int ClipLineSegment_Bisection_Int();
 // ==== seg001:0x4f2 ====
 int sub_1FD72();
 // ==== seg001:0x52d ====
@@ -541,9 +541,9 @@ int far sub_1FEEC();
 // ==== seg001:0x67e ====
 int sub_1FEFE();
 // ==== seg001:0x884 ====
-int far sub_20104();
+int far Process3DObjectData();
 // ==== seg001:0x908 ====
-int sub_20188();
+int TransformAndProjectPoint();
 // ==== seg001:0xa09 ====
 int sub_20289();
 // ==== seg001:0xa36 ====
@@ -555,31 +555,31 @@ int far sub_202DA();
 // ==== seg001:0xa76 ====
 int far sub_202F6();
 // ==== seg001:0xa80 ====
-int sub_20300();
+int SortObjectForDrawing();
 // ==== seg001:0xb60 ====
-int sub_203E0();
+int DrawSortedObjects();
 // ==== seg001:0xbca ====
 int far sub_2044A();
 // ==== seg001:0xbe7 ====
-int sub_20467();
+int Draw3DObjectDispatcher();
 // ==== seg001:0xcb4 ====
-int sub_20534();
+int SetupObjectTransformation();
 // ==== seg001:0xdd8 ====
 int far sub_20658();
 // ==== seg001:0xdf4 ====
 int sub_20674();
 // ==== seg001:0x10f0 ====
-int sub_20970();
+int DrawObjectPolygons();
 // ==== seg001:0x11c6 ====
 int far sub_20A46();
 // ==== seg001:0x11d8 ====
-int sub_20A58();
+int ProcessAndClipPolygons();
 // ==== seg001:0x1282 ====
 int sub_20B02();
 // ==== seg001:0x132e ====
 int far sub_20BAE();
 // ==== seg001:0x135f ====
-int sub_20BDF();
+int SetupObjectMatrix();
 // ==== seg001:0x147b ====
 int sub_20CFB();
 // ==== seg001:0x1599 ====
@@ -587,7 +587,7 @@ int sub_20E19();
 // ==== seg001:0x15b8 ====
 int far sub_20E38();
 // ==== seg001:0x15cd ====
-int sub_20E4D();
+int MatrixMultiply_3x3();
 // ==== seg001:0x175c ====
 int far sub_20FDC();
 // ==== seg001:0x176a ====
@@ -607,7 +607,7 @@ int far sub_21526();
 // ==== seg001:0x1caa ====
 int far sub_2152A();
 // ==== seg001:0x1cb6 ====
-int sub_21536();
+int DrawLine3D_Clipped();
 // ==== seg001:0x1e42 ====
 int sub_216C2();
 // ==== seg001:0x1e84 ====
@@ -615,15 +615,15 @@ int far sub_21704();
 // ==== seg001:0x1e9a ====
 int far sub_2171A();
 // ==== seg001:0x1ea0 ====
-int sub_21720();
+int ClearDirtyRectangle();
 // ==== seg001:0x1ed6 ====
-int sub_21756();
+int UpdateDirtyRectangle();
 // ==== seg001:0x1f34 ====
-int sub_217B4();
+int DrawLineSegment_Bresenham();
 // ==== seg001:0x201c ====
 int far sub_2189C();
 // ==== seg001:0x2028 ====
-int sub_218A8();
+int DrawLine_Handler();
 // bytes outside routine, potential module boundary at 0x9
 // ==== seg002:0xa ====
 int far sub_21A7A();
@@ -632,9 +632,9 @@ void __cdecl __far sub_21A7E();
 // ==== seg002:0x12 ====
 int far sub_21A82();
 // ==== seg002:0x16 ====
-int sub_21A86();
+int GameLoopUpdate();
 // ==== seg002:0x9a1 ====
-void __cdecl sub_22411();
+void __cdecl InitializeGameSettings();
 // ==== seg002:0xbeb ====
 int far sub_2265B();
 // ==== seg002:0xbfb ====
@@ -642,7 +642,7 @@ int sub_2266B();
 // ==== seg002:0xc0e ====
 int far sub_2267E();
 // ==== seg002:0xc21 ====
-int sub_22691();
+int ReadJoystick();
 // ==== seg002:0xc4e ====
 int sub_226BE();
 // ==== seg002:0xcaa ====
@@ -654,7 +654,7 @@ int far setInt9Handler();
 // ==== seg003:0x56 ====
 int far restoreInt9Handler();
 // ==== seg003:0x70 ====
-int int9Handler();
+int CustomInt9Handler();
 // bytes outside routine, potential module boundary at 0x189
 extern uint8 unk_328B0[];
 extern int16 word_328B2;
@@ -683,8 +683,8 @@ extern int16 f15dgtlAddr;
 extern int allocSize;
 extern uint8 unk_32977[];
 extern int16 word_3298A;
-extern int16 word_3298C;
-extern int16 word_3298E;
+extern int16 g_ViewPositionX;
+extern int16 g_ViewPositionY;
 extern uint8 unk_329AB[];
 extern uint8 ovlInsaneFlag;
 extern uint8 aErrorReleasingOverlay[];
@@ -727,7 +727,7 @@ extern uint8 aMainstay[];
 extern uint8 aF4e[];
 extern uint8 aAn72[];
 extern struct Sam sams[39];
-extern int16 word_33096;
+extern int16 g_missileHits;
 extern int16 word_33098;
 extern int16 word_3309A;
 extern int16 word_3309C;
@@ -735,13 +735,13 @@ extern int16 word_3309E;
 extern struct MissileSpec missleSpec[];
 extern int16 missileSpecIndex;
 extern int16 word_330B4;
-extern int16 word_330B6;
-extern int16 word_330B8;
+extern int16 g_autopilotAltitude;
+extern int16 g_missionStatus;
 extern int16 word_330BA;
 extern int16 word_330BC;
 extern int16 word_330BE;
 extern int16 word_330C2;
-extern __int16 word_330C4;
+extern __int16 g_frameRateScaling;
 extern struct Missile missiles[20];
 extern int16 word_333D2;
 extern int16 word_333D4;
@@ -942,9 +942,9 @@ extern int16 word_341B8;
 extern int16 word_341BA;
 extern int16 word_341BC;
 extern int32 dword_3423C;
-extern int16 word_34240;
-extern int16 word_34242;
-extern int16 word_34244;
+extern int16 g_ObjectPositionX;
+extern int16 g_ObjectPositionY;
+extern int16 g_ObjectPositionZ;
 extern int16 word_34246;
 extern int16 word_34248;
 extern int16 word_3424A;
@@ -960,21 +960,21 @@ extern int16 word_34262;
 extern int16 word_34264;
 extern int16 word_34266;
 extern int16 word_34268;
-extern int16 word_3426A;
-extern int16 word_3426C;
-extern int16 word_3426E;
-extern __int16 word_34270;
-extern int16 word_34272;
-extern int16 word_34274;
-extern int16 word_34276;
-extern int16 word_34278;
-extern int16 word_3427A;
-extern int16 word_3427C;
-extern int16 word_3427E;
-extern int16 word_34280;
-extern int16 word_34282;
-extern int16 word_34284;
-extern int16 word_34286;
+extern int16 g_SinRoll;
+extern int16 g_CosRoll;
+extern int16 g_SinHead;
+extern __int16 g_CosHead;
+extern int16 g_SinPitch;
+extern int16 g_CosPitch;
+extern int16 g_TransformMatrix_00;
+extern int16 g_TransformMatrix_01;
+extern int16 g_TransformMatrix_02;
+extern int16 g_TransformMatrix_10;
+extern int16 g_TransformMatrix_11;
+extern int16 g_TransformMatrix_12;
+extern int16 g_TransformMatrix_20;
+extern int16 g_TransformMatrix_21;
+extern int16 g_TransformMatrix_22;
 extern int16 word_34288;
 extern int16 word_3428A;
 extern int16 word_3428C;
@@ -1062,18 +1062,18 @@ extern int16 word_3754F;
 extern int16 word_37551;
 extern int16 word_37553;
 extern int16 word_37555;
-extern int16 word_37557;
-extern int16 word_37559;
-extern int16 word_3755D;
-extern int16 word_3755F;
-extern int16 word_37561;
-extern int16 word_37563;
+extern int16 g_ViewportWidth;
+extern int16 g_ViewportHeight;
+extern int16 g_LineX1;
+extern int16 g_LineX2;
+extern int16 g_LineY1;
+extern int16 g_LineY2;
 extern uint8 unk_37565[];
 extern uint8 unk_3771D[];
 extern int16 word_378D5;
 extern int16 word_378D7;
-extern int16 word_378D9;
-extern int16 word_378DB;
+extern int16 g_DirtyRectX1;
+extern int16 g_DirtyRectX2;
 extern uint8 byte_378DE;
 extern int16 word_378DF;
 extern int16 word_378E1;
@@ -1166,7 +1166,7 @@ extern int16 word_37C1C;
 extern int16 word_37C1E;
 extern int16 word_37C20;
 extern int16 word_37C22;
-extern uint8 byte_37C24;
+extern uint8 g_halfSpeedUpdateFlag;
 extern int16 word_37C25;
 extern int16 word_37C27;
 extern int16 word_37C29;
@@ -1234,7 +1234,7 @@ extern uint8 unk_380B6[];
 extern int word_380C8;
 extern int word_380CA;
 extern int word_380CC;
-extern int16 word_380CE;
+extern int16 g_ViewZ;
 extern unsigned int word_380D0;
 extern int16 word_380D8;
 extern uint8 byte_380DA[];
@@ -1293,7 +1293,7 @@ extern int16 word_383D8;
 extern int16 word_383DA;
 extern uint8 byte_383E4;
 extern uint8 byte_383E5[];
-extern int16 word_383EA;
+extern int16 g_zoomLevel;
 extern int16 radarRange;
 extern int16 word_383EE;
 extern int16 word_383F0;
@@ -1471,8 +1471,9 @@ extern uint8 byte_38D6E[];
 extern int16 word_38F70;
 extern int word_38F72;
 extern uint8 strBuf[];
-extern uint8 byte_38F8C;
-extern uint8 byte_38F8D[];
+extern uint8 g_RawJoyX1;
+extern uint8 byte_38F8D;
+extern uint8 g_RawJoyY1[];
 extern int16 word_38FC4;
 extern int16 word_38FC6;
 extern int16 word_38FC8;
@@ -1480,7 +1481,7 @@ extern int16 word_38FCC;
 extern int16 word_38FCE;
 extern uint8 unk_38FD0[];
 extern int word_38FDA;
-extern int word_38FDC;
+extern int g_difficultyLevel;
 extern int16 word_38FDE;
 extern int16 word_38FE0;
 extern unsigned __int8 far *dword_38FE2;
@@ -1488,14 +1489,14 @@ extern FILE *fileHandle;
 extern int16 word_38FE8;
 extern int16 word_38FEA;
 extern int16 word_38FEC;
-extern int16 word_38FEE;
+extern int16 g_closestThreatDistance;
 extern struct Game far *gameData;
 extern int16 word_38FF6;
 extern int16 word_38FF8;
 extern int16 word_38FFA;
 extern int16 word_38FFC;
 extern uint8 buf4_3dg[];
-extern int16 word_391FE;
+extern int16 g_playerPlaneFlags;
 extern int16 word_39200;
 extern uint8 buf3_3dg[];
 extern int16 word_39402;
@@ -1531,7 +1532,7 @@ extern int16 word_3B0AC;
 extern uint8 buf3d3_2[];
 extern int16 word_3B144;
 extern int16 word_3B146;
-extern int16 word_3B148;
+extern int16 g_playerTargetIndex;
 extern int word_3B14A[];
 extern int16 word_3B14C;
 extern int16 word_3B158;
@@ -1567,7 +1568,7 @@ extern uint8 byte_3B4E9;
 extern int16 word_3B4EA;
 extern uint8 byte_3B4EC[];
 extern int16 word_3B5D6;
-extern int32 dword_3B7DA;
+extern int32 g_ViewX;
 extern int16 word_3B7DE;
 extern int16 word_3B7E0;
 extern int16 word_3B7E2;
@@ -1580,7 +1581,7 @@ extern uint8 byte_3B7EE;
 extern uint8 byte_3B7EF;
 extern uint8 byte_3B7F0;
 extern uint8 byte_3B7F1[];
-extern int32 dword_3B7F8;
+extern int32 g_ViewY;
 extern uint8 byte_3B7FC[];
 extern int16 word_3BE3C;
 extern uint8 byte_3BE3E[];
@@ -1609,7 +1610,7 @@ extern uint8 byte_3BED8[];
 extern int16 word_3BF3C;
 extern int16 word_3BF3E;
 extern char tempString[80];
-extern int16 word_3BF90;
+extern int16 g_gunHits;
 extern union REGS regs;
 extern uint8 byte_3BF93[];
 extern uint8 unk_3BF95;
@@ -1649,10 +1650,10 @@ extern int16 word_3C09C;
 extern int16 word_3C09E;
 extern int16 word_3C0A0;
 extern int16 word_3C0A2[];
-extern int16 word_3C16A;
+extern int16 g_closestThreatIndex;
 extern int16 word_3C16C;
 extern uint8 byte_3C16E[];
-extern int16 word_3C45C;
+extern int16 g_currentWeaponType;
 extern int16 word_3C45E;
 extern int matrix3dt_2[5][32];
 extern char byte_3C5A0;

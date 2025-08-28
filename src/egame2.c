@@ -11,12 +11,12 @@
 
 // ==== seg002:0xa ====
 int far sub_21A7A() {
-    sub_21A86();
+    GameLoopUpdate();
 }
 
 // ==== seg002:0xe ====
 void far sub_21A7E() {
-    sub_22411();
+    InitializeGameSettings();
 }
 
 // ==== seg000:0x21c6 ====

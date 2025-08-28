@@ -32,7 +32,7 @@ int otherKeyDispatch(void) {
         word_380E0 = 
         word_3A944 = 
         word_380D0 = 
-        word_380CE = 
+        g_ViewZ = 
         word_380CC = 
         word_380CA = 0;
 
@@ -49,7 +49,7 @@ int otherKeyDispatch(void) {
         }
 
         // seg000:3FDE
-        if (stru_3AA5E[word_3B148].field_6 & 0x200) {
+        if (stru_3AA5E[g_playerTargetIndex].field_6 & 0x200) {
             // seg000:3FE6
             *((unsigned char*)&word_380C8 + 1) += 4;
         }
@@ -101,7 +101,7 @@ int otherKeyDispatch(void) {
             // seg000:407B
             sub_15FDB();
             // seg000:407E
-            *((unsigned char*)&word_391FE) &= 0xF7; // ~8
+            *((unsigned char*)&g_playerPlaneFlags) &= 0xF7; // ~8
             // seg000:4083
             goto switch_break;
         // seg000:421C
@@ -111,7 +111,7 @@ int otherKeyDispatch(void) {
             // seg000:408C
             sub_15FDB();
             // seg000:408F
-            *((unsigned char*)&word_391FE) &= 0xF7; // ~8
+            *((unsigned char*)&g_playerPlaneFlags) &= 0xF7; // ~8
             // seg000:4094
             goto switch_break;
         // seg000:4205
@@ -121,7 +121,7 @@ int otherKeyDispatch(void) {
             // seg000:409D
             sub_15FDB();
             // seg000:40A0
-            *((unsigned char*)&word_391FE) &= 0xF7; // ~8
+            *((unsigned char*)&g_playerPlaneFlags) &= 0xF7; // ~8
             // seg000:40A5
             goto post_key_B_check;
         // seg000:41FD
@@ -137,11 +137,11 @@ int otherKeyDispatch(void) {
         // seg000:4234
         case 0x3062: // B
             // seg000:40C0
-            *((unsigned char*)&word_391FE) ^= 8;
+            *((unsigned char*)&g_playerPlaneFlags) ^= 8;
         // seg000:40C5
         post_key_B_check:
             // seg000:40C5
-            if (!(*((unsigned char*)&word_391FE) & 8) && word_3BEBE != 0 && word_380E0 == 100) {
+            if (!(*((unsigned char*)&g_playerPlaneFlags) & 8) && word_3BEBE != 0 && word_380E0 == 100) {
                 // seg000:40DA
                 word_3A944 = 0x546;
                 // seg000:40E8
@@ -163,7 +163,7 @@ int otherKeyDispatch(void) {
         // seg000:41EB
         case 0x1000: // Alt-Q
             // seg000:410A
-            sub_11B37(1);
+            PrepareToExit(1);
             // seg000:4110
             exitCode = 0;
             // seg000:4115
@@ -178,9 +178,9 @@ int otherKeyDispatch(void) {
             // seg000:414C
             sub_19E44(0);
             // seg000:415E
-            sub_19E5D(0, 0, 0x13F, 0xC7);
+            DrawHUDElement(0, 0, 0x13F, 0xC7);
             // seg000:417B
-            TransformAndProjectObject(0, 0, 0x71, 0x37, 0x0C, 7, 0);
+            TransformAndProjectObject_2(0, 0, 0x71, 0x37, 0x0C, 7, 0);
             // seg000:4181
             sub_1613B();
             // seg000:4184
@@ -259,17 +259,17 @@ switch_break:
     }
     
     // seg000:4316
-    if (word_3BEBE == word_380CE && word_3C5A4 < 0 && word_380CA <= 0) {
+    if (word_3BEBE == g_ViewZ && word_3C5A4 < 0 && word_380CA <= 0) {
         // seg000:432A
         word_3C5A4 = 0;
     }
 
     // seg000:4330
-    if (word_3AA5A > 0x15E && !(*((unsigned char*)&word_391FE) & 1) && word_336EC != 0) {
+    if (word_3AA5A > 0x15E && !(*((unsigned char*)&g_playerPlaneFlags) & 1) && word_336EC != 0) {
         // seg000:4346
         word_336EC = 0;
         // seg000:434C
-        *((unsigned char*)&word_391FE) |= 1;
+        *((unsigned char*)&g_playerPlaneFlags) |= 1;
         // seg000:4355
         tempStrcpy("Landing gear raised");
         // seg000:4363
@@ -277,9 +277,9 @@ switch_break:
     }
     
     // seg000:4369
-    if (word_3BEBE == word_380CE && word_380E0 == 0 && !(*((unsigned char*)&word_391FE) & 8)) {
+    if (word_3BEBE == g_ViewZ && word_380E0 == 0 && !(*((unsigned char*)&g_playerPlaneFlags) & 8)) {
         // seg000:4380
-        *((unsigned char*)&word_391FE) |= 8;
+        *((unsigned char*)&g_playerPlaneFlags) |= 8;
         // seg000:4389
         tempStrcpy("Brakes on");
     }
@@ -287,11 +287,11 @@ switch_break:
     // seg000:438F
     if (word_3C00E != 0 || word_3C5A4 != 0) {
         // seg000:439D
-        word_330B6 = 0;
+        g_autopilotAltitude = 0;
     }
     
     // seg000:43A3
-    if (word_330B6 != 0) {
+    if (g_autopilotAltitude != 0) {
         // seg000:43AD
         var_2C = (word_336EA != 0) ? 
                  (int16)((word_38FE0 & 0xF) << 8) - 0x800
@@ -304,7 +304,7 @@ switch_break:
         word_3C00E = -sub_1CF64((var_2C - word_380CC) >> 6, -24, 24);
         
         // seg000:4420
-        var_14 = forceRange(((word_330B6 - word_380CE) << 4) - word_38FC4, 0xEC00, 0xC00);
+        var_14 = forceRange(((g_autopilotAltitude - g_ViewZ) << 4) - word_38FC4, 0xEC00, 0xC00);
         
         // seg000:443D
         word_3C5A4 = sub_1CF64((var_14 - word_380CA) >> 7, -8, 8);
@@ -371,7 +371,7 @@ switch_break:
         var_34 += sub_1CF64((abs(var_2A) * 4) + (var_2C / 16), 0, 0xC00) * var_3E;
         
         // seg000:45AB
-        *((unsigned char*)&word_391FE) &= 0xF7;
+        *((unsigned char*)&g_playerPlaneFlags) &= 0xF7;
         
         // seg000:45B0
         if (var_2C > 0x4000) {
@@ -385,7 +385,7 @@ switch_break:
             // seg000:45E5
             if (word_380E0 * 80 < word_3AA5A) {
                  // seg000:45EF
-                 *((unsigned char*)&word_391FE) |= 8;
+                 *((unsigned char*)&g_playerPlaneFlags) |= 8;
             }
         }
         
@@ -412,7 +412,7 @@ switch_break:
         sub_15FDB();
         
         // seg000:46CF
-        var_14 = forceRange(((var_14 - word_380CE) >> 3) + (word_38FC4 >> 7), -24, 24);
+        var_14 = forceRange(((var_14 - g_ViewZ) >> 3) + (word_38FC4 >> 7), -24, 24);
         
         // seg000:46EE
         word_3C5A4 = sub_1CF64(var_14 - (word_380CA >> 7), -16, 16);
@@ -420,17 +420,17 @@ switch_break:
         // seg000:46F7
         if (word_3AA5A < 0x15E) {
             // seg000:46FF
-            *((unsigned char*)&word_391FE) &= 0xFE;
+            *((unsigned char*)&g_playerPlaneFlags) &= 0xFE;
         }
 
         // seg000:4704
-        if (word_3BEBE == word_380CE) {
+        if (word_3BEBE == g_ViewZ) {
             // seg000:470D
             word_380E0 = 0;
             // seg000:4713
             word_3C00E = 0;
             // seg000:4719
-            word_391FE |= 8;
+            g_playerPlaneFlags |= 8;
             // seg000:471E
             word_3C5A4 = 0;
         }
@@ -439,20 +439,20 @@ switch_break:
     // seg000:4728
     if (gameData->unk4 != 0) {
         // seg000:473F
-        var_24 = ((int32)word_3AA5A * (1000 - word_380CE)) >> 15;
+        var_24 = ((int32)word_3AA5A * (1000 - g_ViewZ)) >> 15;
     } else {
         // seg000:4753
         var_24 = 0;
     }
     
     // seg000:4758
-    if (!((word_391FE) & 1)) {
+    if (!((g_playerPlaneFlags) & 1)) {
         // seg000:4771
         var_24 += sub_1CF64((word_3AA5A - 200) >> 5, 0, 32);
     }
     
     // seg000:477A
-    if (var_24 > 0 && ((uint16)word_3BEBE) < ((uint16)word_380CE)) {
+    if (var_24 > 0 && ((uint16)word_3BEBE) < ((uint16)g_ViewZ)) {
         // seg000:478C
         word_3C00E += randlmul(var_24) - (var_24 >> 1);
         // seg000:47A0
@@ -460,9 +460,9 @@ switch_break:
     }
     
     // seg000:47B3
-    if ((word_391FE & 1) && word_3C5A4 <= 0 && ((uint16)word_3A944) < ((uint16)word_3A8FE) && gameData->unk4 < 2 && abs(word_380CC) < 0x3000 && word_38FE8 == 0) {
+    if ((g_playerPlaneFlags & 1) && word_3C5A4 <= 0 && ((uint16)word_3A944) < ((uint16)word_3A8FE) && gameData->unk4 < 2 && abs(word_380CC) < 0x3000 && word_38FE8 == 0) {
         // seg000:47EB
-        var_14 = ((((word_38FC4) - (word_380CA)) >> 2) - word_380CE + 300) >> 2;
+        var_14 = ((((word_38FC4) - (word_380CA)) >> 2) - g_ViewZ + 300) >> 2;
         // seg000:4804
         if (var_14 > 0) {
             // seg000:4812
@@ -486,8 +486,8 @@ switch_break:
         //word_3BE3C++;
         word_3C040 += sub_1CF64(
             - (++word_3BE3C - 0x20),
-            (int16)0xFF00 / word_330C4,
-            (int16)0x80 / word_330C4
+            (int16)0xFF00 / g_frameRateScaling,
+            (int16)0x80 / g_frameRateScaling
         );
         //word_3C040 += stall_decay_effect;
 
@@ -498,12 +498,12 @@ switch_break:
             // seg000:4876
             if ((word_38FE0 & 7) == 0) {
                 // seg000:4880
-                sub_11B37(0);
+                PrepareToExit(0);
             }
         }
 
         // seg000:4886
-        if (word_380CE == 0 && word_336F6 == -1) {
+        if (g_ViewZ == 0 && word_336F6 == -1) {
             // seg000:4894
             word_336F6 = 0;
             // seg000:489A
@@ -538,7 +538,7 @@ switch_break:
             // seg000:4902
             stru_33402[bailout_index].field_2 = word_3BED0;
             // seg000:4909
-            stru_33402[bailout_index].field_4 = word_380CE;
+            stru_33402[bailout_index].field_4 = g_ViewZ;
 
             // seg000:4914
             stru_33402[bailout_index].field_6 = randlmul(0x20) << 11;
@@ -550,7 +550,7 @@ switch_break:
             // seg000:492E
             word_3BEC8 = word_3BED0;
             // seg000:4934
-            word_3BECE = word_380CE;
+            word_3BECE = g_ViewZ;
             // seg000:493A
             word_39606 = -8;
             // seg000:4947
@@ -564,11 +564,11 @@ switch_break:
     }
     
     // seg000:4958
-    if (word_3BF90 != 0) {
+    if (g_gunHits != 0) {
         // seg000:496D
-        if (word_380E0 > -((word_3BF90 * 4) - 0x90)) {
+        if (word_380E0 > -((g_gunHits * 4) - 0x90)) {
             // seg000:4973
-            word_380E0 = -((word_3BF90 * 4) - 0x90);
+            word_380E0 = -((g_gunHits * 4) - 0x90);
             // seg000:4977
             if (word_380E0 < 0)
                 // seg000:497B
@@ -579,14 +579,14 @@ switch_break:
     }
     
     // seg000:4984
-    word_3AFA6 += ((word_380E0 - word_3AFA6) / 4) / ((int16)word_330C4);
+    word_3AFA6 += ((word_380E0 - word_3AFA6) / 4) / ((int16)g_frameRateScaling);
     // seg000:49A7
     if (word_380E0 > word_3AFA6) word_3AFA6++;
     // seg000:49B4
     if (word_380E0 < word_3AFA6) word_3AFA6 = word_380E0;
 
     // seg000:49C0
-    if ((((uint16)word_336E8) % ((uint16)(word_330C4 << 1))) == 0 && word_380E0 != 0 && word_336EA == 0) {
+    if ((((uint16)word_336E8) % ((uint16)(g_frameRateScaling << 1))) == 0 && word_380E0 != 0 && word_336EA == 0) {
         // seg000:49ED
         word_33098 -= ((word_380E0 * word_380E0) / 750) + 2;
         // seg000:49F1
@@ -604,7 +604,7 @@ switch_break:
     // seg000:4A07
     word_38FDA = byte_37FEC[(abs(word_380CC) >> 8) & 0x7f];
     // seg000:4A23
-    if (((uint16)word_3BEBE) < ((uint16)word_380CE)) {
+    if (((uint16)word_3BEBE) < ((uint16)g_ViewZ)) {
         // seg000:4A34
         word_38FDA += word_3C5A4 / 2;
     }
@@ -629,12 +629,12 @@ switch_break:
     _strcat(unk_38FD0, "G");
 
     // seg000:4AFB
-    var_32 = (((int32)(word_3AFA6 - sub_1D178(word_380CA, 80))) * ((int32)800)) / ((int32)100);
+    var_32 = (((int32)(word_3AFA6 - sinX(word_380CA, 80))) * ((int32)800)) / ((int32)100);
     
     // seg000:4B16
     word_3C5A6 = 100;
     // seg000:4B30
-    var_32 = (( ((uint32)(((uint16)word_380CE >> 7) + 0x0400)) * ((int32)(var_32)) ) >> 10);
+    var_32 = (( ((uint32)(((uint16)g_ViewZ >> 7) + 0x0400)) * ((int32)(var_32)) ) >> 10);
      
     // seg000:4B56
     word_3C5A6 = (uint32)((int32)100 * (int32)((word_380D0 >> 6) + 0x0400)) >> 10;
@@ -651,7 +651,7 @@ switch_break:
     word_3C5A6 = abs(word_3C5A6);
 
     // seg000:4BE3
-    if (!(*((unsigned char*)&word_391FE) & 1)) {
+    if (!(*((unsigned char*)&g_playerPlaneFlags) & 1)) {
         // seg000:4BEA
         var_32 -= var_32 >> 3;
     }
@@ -662,7 +662,7 @@ switch_break:
     var_1A = sub_1CF64(var_32, 0, 900) * 27;
     
     // seg000:4C39
-    word_3A944 += ((((int32)var_1A - word_3A944) / 16) / (int32)word_330C4);
+    word_3A944 += ((((int32)var_1A - word_3A944) / 16) / (int32)g_frameRateScaling);
     
     // seg000:4C5F
     word_3B4DA = ((int32)word_3A8FE * 3072) / (abs(word_3A944) + 1);
@@ -670,14 +670,14 @@ switch_break:
     if ((uint16)word_3B4DA > 0x2000) word_3B4DA = 0x2000;
     
     // seg000:4C7B
-    word_38FC4 = sub_1D190(word_380CC, word_3B4DA - 0x300);
+    word_38FC4 = cosX(word_380CC, word_3B4DA - 0x300);
     
     // seg000:4C84
-    if (*((unsigned char*)&word_391FE) & 8) {
+    if (*((unsigned char*)&g_playerPlaneFlags) & 8) {
         // seg000:4C8B
-        if (word_3BEBE == word_380CE) {
+        if (word_3BEBE == g_ViewZ) {
             // seg000:4CB0
-            word_3A944 -= (-((gameData->unk4 * 8) - 32) * 27) / word_330C4;
+            word_3A944 -= (-((gameData->unk4 * 8) - 32) * 27) / g_frameRateScaling;
             // seg000:4CB8
             if (word_3BEBE != 0 && (uint16)word_3A944 < 0x1B0) {
                  // seg000:4CC7
@@ -685,7 +685,7 @@ switch_break:
             }
         } else {
              // seg000:4CD8
-             word_3A944 -= ((uint16)word_3A944 >> 4) / word_330C4;
+             word_3A944 -= ((uint16)word_3A944 >> 4) / g_frameRateScaling;
         }
     }
     
@@ -693,7 +693,7 @@ switch_break:
     if ((uint16)word_3A944 > 0xAFC8) word_3A944 = 0;
     
     // seg000:4CF6
-    var_22 = sub_1D190(word_380CA, word_3A944);
+    var_22 = cosX(word_380CA, word_3A944);
     // seg000:4D07
     word_3AA5A = (uint16)word_3A944 / 27;
     
@@ -701,13 +701,13 @@ switch_break:
     audio_jump_6a(word_3AA5A, word_3AFA6);
     
     // seg000:4D47
-    var_18 = (((int32)sub_1D178(word_380CC, word_38FDA << 4)) << 7) / ((int32)((int16)((uint16)word_3A944 >> 9) + 0x20));
+    var_18 = (((int32)sinX(word_380CC, word_38FDA << 4)) << 7) / ((int32)((int16)((uint16)word_3A944 >> 9) + 0x20));
 
     // seg000:4D52
-    var_18 = sub_1D190(word_380CA, var_18);
+    var_18 = cosX(word_380CA, var_18);
     
     // seg000:4D5B
-    if (word_3BEBE == word_380CE) {
+    if (word_3BEBE == g_ViewZ) {
         // seg000:4D64
         var_18 = (word_3C00E * -1) << 6;
         // seg000:4D70
@@ -729,7 +729,7 @@ switch_break:
     }
     
     // seg000:4DB6
-    var_28 = (((int32)word_3C00E) << 7) / ((int32)word_330C4);
+    var_28 = (((int32)word_3C00E) << 7) / ((int32)g_frameRateScaling);
     // seg000:4DBC
     if (var_28 != 0) {
         // seg000:4DC1
@@ -743,7 +743,7 @@ switch_break:
     }
     
     // seg000:4DF8
-    var_20 = (int16)((int32)word_3C5A4 << 7) / word_330C4;
+    var_20 = (int16)((int32)word_3C5A4 << 7) / g_frameRateScaling;
     // seg000:4DFD
     if (var_20 != 0) {
         // seg000:4E02
@@ -757,7 +757,7 @@ switch_break:
     }
     
     // seg000:4E35
-    var_16 = (int16)var_18 / word_330C4;
+    var_16 = (int16)var_18 / g_frameRateScaling;
     // seg000:4E3A
     if (var_16 != 0) {
         // seg000:4E3F
@@ -774,20 +774,20 @@ switch_break:
     sub_15237();
 
     // seg000:4E6D
-    if ((uint16)word_3A944 > (uint16)word_3A8FE && (uint16)word_3BEBE < (uint16)word_380CE) {
+    if ((uint16)word_3A944 > (uint16)word_3A8FE && (uint16)word_3BEBE < (uint16)g_ViewZ) {
         // seg000:4E9A
-        word_380CA -= ((uint16)word_3A8FE - (uint16)word_3A944) >> ((gameData->unk4 == 2 || word_3BF90 > 8) ? 1 : 2);
+        word_380CA -= ((uint16)word_3A8FE - (uint16)word_3A944) >> ((gameData->unk4 == 2 || g_gunHits > 8) ? 1 : 2);
         // seg000:4EA4
         byte_380DD = 1;
         // seg000:4EA9
-        if (word_380CA >= 0 && (uint16)word_380CE < 200) {
+        if (word_380CA >= 0 && (uint16)g_ViewZ < 200) {
             // seg000:4EC0
             makeSound(0x14, 1);
         }
     }
 
     // seg000:4EC6
-    if (word_3BEBE == word_380CE) {
+    if (word_3BEBE == g_ViewZ) {
         // seg000:4ECF
         if (word_380CC != 0) {
             // seg000:4ED6
@@ -822,18 +822,18 @@ switch_break:
     // seg000:4F40
     var_C = word_380D0;
     // seg000:4F60
-    word_3C8B6 = sub_13B2F((((uint16)word_3A944) / 10), sub_13B96(word_380CA - word_38FC4));
+    word_3C8B6 = FixedPointMul((((uint16)word_3A944) / 10), sub_13B96(word_380CA - word_38FC4));
 
     // seg000:4F69
     if (word_33712 == 0) {
         // seg000:4F75
-        word_380D0 += (word_3C8B6 / word_330C4);
+        word_380D0 += (word_3C8B6 / g_frameRateScaling);
         
         // seg000:4F9A
-        dword_3B7DA += sub_13B2F(var_22, sub_13B96(word_380C8)) / 10 / word_330C4;
+        g_ViewX += FixedPointMul(var_22, sub_13B96(word_380C8)) / 10 / g_frameRateScaling;
 
         // seg000:4FC4
-        dword_3B7F8 += sub_13B2F(var_22, sub_13B86(word_380C8)) / 10 / word_330C4;
+        g_ViewY += FixedPointMul(var_22, sub_13B86(word_380C8)) / 10 / g_frameRateScaling;
     }
     
     // seg000:4FCF
@@ -847,36 +847,36 @@ switch_break:
     // seg000:4FF4
     if (word_380D0 < 0x2000) {
         // seg000:4FFC
-        word_380CE = word_380D0;
+        g_ViewZ = word_380D0;
     } else if (word_380D0 < 0x4000) {
         // seg000:500C
-        word_380CE = ((word_380D0 - 0x2000) >> 1) + 0x2000;
+        g_ViewZ = ((word_380D0 - 0x2000) >> 1) + 0x2000;
     } else {
         // seg000:501C
-        word_380CE = ((word_380D0 - 0x4000) >> 2) + 0x3000;
+        g_ViewZ = ((word_380D0 - 0x4000) >> 2) + 0x3000;
     }
 
     // seg000:502C
-    if (word_3BEBE == word_380CE) {
+    if (word_3BEBE == g_ViewZ) {
         // seg000:5038
         if (var_C > word_3BEBE && word_33702 != 0) {
             // seg000:5055
             makeSound(0xC, 2);
-            //temp_bx = word_3C16A << 4;
+            //temp_bx = g_closestThreatIndex << 4;
 
             // seg000:5063
-            if (((stru_3AA5E[word_3C16A].field_6 & 0x200) ? 0x100 : 0x80) 
-                >= ((int16)(-word_3C8B6 * word_330B8) / 2)) {
+            if (((stru_3AA5E[g_closestThreatIndex].field_6 & 0x200) ? 0x100 : 0x80) 
+                >= ((int16)(-word_3C8B6 * g_missionStatus) / 2)) {
                 // seg000:508B
-                if (gameData->unk4 != 0 && !(word_391FE & 1)) {
+                if (gameData->unk4 != 0 && !(g_playerPlaneFlags & 1)) {
                     // seg000:50B4
-                    if (((int16)abs(word_380CC)) > (int16)((0x30 / (word_330B8 + 1)) << 8)) {
+                    if (((int16)abs(word_380CC)) > (int16)((0x30 / (g_missionStatus + 1)) << 8)) {
                         // seg000:50BF
                         makeSound(0, 2);
                         // seg000:50C9
                         sub_12278(0x3C);
                         // seg000:50D3
-                        sub_11B37(5);
+                        PrepareToExit(5);
                     }
                 }
             }
@@ -894,23 +894,23 @@ switch_break:
     // seg000:50FC
     stru_3A95A[var_38].field_E = word_380CC;
     // seg000:510A
-    *(int32*)&stru_3A95A[var_38].field_0 = dword_3B7DA;
+    *(int32*)&stru_3A95A[var_38].field_0 = g_ViewX;
     // seg000:5119
-    *(int32*)&stru_3A95A[var_38].field_4 = dword_3B7F8;
+    *(int32*)&stru_3A95A[var_38].field_4 = g_ViewY;
     // seg000:5121
-    stru_3A95A[var_38].field_8 = word_380CE;
+    stru_3A95A[var_38].field_8 = g_ViewZ;
 
     // seg000:5128
-    if (word_3C45C == 1) {
+    if (g_currentWeaponType == 1) {
         // seg000:5132
         if (word_336F2 >= 0) {
             // TODO struct
             // seg000:5168
-            var_38 = sub_1CF64((xydist(word_3BEC0 - word_3B204[word_336F2 * 0x12], word_3BED0 - word_3B206[word_336F2 * 0x12]) * word_330C4) >> 8, 0, 12);
+            var_38 = sub_1CF64((Dist2D(word_3BEC0 - word_3B204[word_336F2 * 0x12], word_3BED0 - word_3B206[word_336F2 * 0x12]) * g_frameRateScaling) >> 8, 0, 12);
 
         } else {
             // seg000:5173
-            var_38 = word_330C4 - 1;
+            var_38 = g_frameRateScaling - 1;
         }
 
         // seg000:517A
@@ -922,10 +922,10 @@ switch_break:
         var_14 = word_380CA - stru_3A95A[var_38].field_C;
  
         // seg000:51BF
-        word_3C6A4 = sub_1D190(word_380CC, ((-var_2C) >> 2)) + sub_1D178(word_380CC, (var_14 >> 2));
+        word_3C6A4 = cosX(word_380CC, ((-var_2C) >> 2)) + sinX(word_380CC, (var_14 >> 2));
 
         // seg000:51E8
-        word_3C6AC = sub_1D178(word_380CC, (var_2C >> 2)) + sub_1D190(word_380CC, (var_14 >> 1));
+        word_3C6AC = sinX(word_380CC, (var_2C >> 2)) + cosX(word_380CC, (var_14 >> 1));
     }
 
     // seg000:51F8

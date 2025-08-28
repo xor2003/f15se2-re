@@ -17,7 +17,7 @@ unsigned char far byte_2D6A4[0x4844+0x9c8];
 
 // ==== seg000:0x147 ====
 void drawCockpit() {
-    sub_11E0E();
+    InitializeCockpitData();
     load15Flt3d3();
     // 0x162
     strcpy(regnStr, scenarioPlh[gameData->theater]);
@@ -83,7 +83,7 @@ void gfxInit() {
 }
 
 // ==== seg000:0x1e0e ====
-int sub_11E0E() {
+int InitializeCockpitData() {
     int var_2, var_4;
     setCommWorldbufPtr();
     flagFarToNear = 1;
@@ -100,20 +100,20 @@ int sub_11E0E() {
     } // 1e61
     if (gameData->difficulty != 0) { //1e6c
         // 1e8c
-        dword_3B7DA = ((int32)(stru_3AA5E[word_3B148].field_0) << 5) + 2;
+        g_ViewX = ((int32)(stru_3AA5E[g_playerTargetIndex].field_0) << 5) + 2;
         // 1eb1
-        dword_3B7F8 = (0x8000 - (int32)(stru_3AA5E[word_3B148].field_2)) << 5;
+        g_ViewY = (0x8000 - (int32)(stru_3AA5E[g_playerTargetIndex].field_2)) << 5;
     }
     else { // 1eba
         // 1ed1
-        dword_3B7DA = ((int32)waypoints[0].x << 5) + 2;
+        g_ViewX = ((int32)waypoints[0].x << 5) + 2;
         // 1ef5
-        dword_3B7F8 = (0x8000 - (int32)waypoints[0].y) << 5;
+        g_ViewY = (0x8000 - (int32)waypoints[0].y) << 5;
     } // 1efc
     // 1f15
-    word_3BEC0 = (dword_3B7DA + 0x10) >> 5;
+    word_3BEC0 = (g_ViewX + 0x10) >> 5;
     // 1f36
-    word_3BED0 = 0x8000 - ((dword_3B7F8 + 0x10) >> 5);
+    word_3BED0 = 0x8000 - ((g_ViewY + 0x10) >> 5);
 }
 
 // ==== seg000:0x2049 ====
@@ -236,7 +236,7 @@ void load3D3(char *arg_0) {
     while ((fileHandle = fopen(aPhoto_3d3, aRb_0)) == NULL) {
         // 2add
         sub_19E44(0);
-        sub_19E5D(0, 0x28, 0x13f, 0x2d);
+        DrawHUDElement(0, 0x28, 0x13f, 0x2d);
         drawSomeStrings(aPleaseInsertF15DiskB, 0x6c, 0x28, 0x0f);
         gfx_jump_46_retrace2();
         misc_jump_5b_getkey();
