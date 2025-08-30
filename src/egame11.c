@@ -100,9 +100,9 @@ int InitializeCockpitData() {
     } // 1e61
     if (gameData->difficulty != 0) { //1e6c
         // 1e8c
-        g_ViewX = ((int32)(stru_3AA5E[g_playerTargetIndex].field_0) << 5) + 2;
+        g_ViewX = ((int32)(g_planes[g_playerTargetIndex].field_0) << 5) + 2;
         // 1eb1
-        g_ViewY = (0x8000 - (int32)(stru_3AA5E[g_playerTargetIndex].field_2)) << 5;
+        g_ViewY = (0x8000 - (int32)(g_planes[g_playerTargetIndex].field_2)) << 5;
     }
     else { // 1eba
         // 1ed1
@@ -111,9 +111,9 @@ int InitializeCockpitData() {
         g_ViewY = (0x8000 - (int32)waypoints[0].y) << 5;
     } // 1efc
     // 1f15
-    word_3BEC0 = (g_ViewX + 0x10) >> 5;
+    g_viewX_ = (g_ViewX + 0x10) >> 5;
     // 1f36
-    word_3BED0 = 0x8000 - ((g_ViewY + 0x10) >> 5);
+    g_viewY_ = 0x8000 - ((g_ViewY + 0x10) >> 5);
 }
 
 // ==== seg000:0x2049 ====

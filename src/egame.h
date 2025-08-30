@@ -225,7 +225,7 @@ int sub_151F9();
 // ==== seg000:0x5237 ====
 int sub_15237();
 // ==== seg000:0x5411 ====
-int sub_15411();
+int UpdateRotationMatrix();
 // ==== seg000:0x543b ====
 int sub_1543B();
 // ==== seg000:0x54b7 ====
@@ -237,7 +237,7 @@ int sub_15557();
 // ==== seg000:0x55ab ====
 int ProcessPlayerInputAndAI();
 // ==== seg000:0x5fdb ====
-int sub_15FDB();
+int UpdateThrottleState();
 // ==== seg000:0x606c ====
 int sub_1606C();
 // ==== seg000:0x60d3 ====
@@ -1231,15 +1231,15 @@ extern int16 word_380A6;
 extern int16 word_380AA;
 extern int16 word_380AC;
 extern uint8 unk_380B6[];
-extern int word_380C8;
-extern int word_380CA;
-extern int word_380CC;
-extern int16 g_ViewZ;
+extern int g_ourHead;
+extern int g_ourPitch;
+extern int g_ourRoll;
+extern int16 g_viewZ;
 extern unsigned int word_380D0;
 extern int16 word_380D8;
 extern uint8 byte_380DA[];
 extern unsigned __int8 byte_380DD;
-extern int16 word_380E0;
+extern int16 g_setThrust;
 extern unsigned int word_380E2;
 extern uint8 a256left_pic[];
 extern uint8 a256right_pic[];
@@ -1480,7 +1480,7 @@ extern int16 word_38FC8;
 extern int16 word_38FCC;
 extern int16 word_38FCE;
 extern uint8 unk_38FD0[];
-extern int word_38FDA;
+extern int g_gees;
 extern int g_difficultyLevel;
 extern int16 word_38FDE;
 extern int16 word_38FE0;
@@ -1514,17 +1514,17 @@ extern uint8 val_3dt[];
 extern __int16 word_3A8FE;
 extern uint8 byte_3A900[];
 extern int16 word_3A940;
-extern int word_3A944;
+extern int g_velocity;
 extern int16 word_3A946;
 extern uint8 unk_3A948[];
 extern struct struc_1 stru_3A95A[];
-extern __int16 word_3AA5A;
+extern __int16 g_knots;
 extern int16 word_3AA5C;
-extern struct struc_4 stru_3AA5E[];
+extern struct struc_4 g_planes[];
 extern int16 word_3AF0C;
 extern uint8 buf3d3_1[];
 extern int16 word_3AFA4;
-extern int16 word_3AFA6;
+extern int16 g_thrust;
 extern int16 word_3AFA8;
 extern int16 word_3AFAA;
 extern uint8 byte_3AFAC[];
@@ -1595,14 +1595,14 @@ extern int16 word_3BE98;
 extern int16 word_3BE9C;
 extern int16 word_3BEBC;
 extern int16 word_3BEBE;
-extern int16 word_3BEC0;
+extern int16 g_viewX_;
 extern int16 word_3BEC2;
 extern uint8 byte_3BEC4[];
 extern int16 word_3BEC8;
 extern int16 sign3d3;
 extern int16 word_3BECC;
 extern int16 word_3BECE;
-extern int16 word_3BED0;
+extern int16 g_viewY_;
 extern int16 word_3BED2;
 extern int16 word_3BED4;
 extern int16 word_3BED6;

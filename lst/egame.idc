@@ -5444,6 +5444,7 @@ static Bytes_0(void) {
 	create_insn	(x=0X15389);
 	op_hex		(x,	1);
 	create_insn	(0X15411);
+	set_name	(0X15411,	"UpdateRotationMatrix");
 	create_insn	(x=0X15429);
 	op_hex		(x,	1);
 	create_insn	(0X1543B);
@@ -6020,6 +6021,7 @@ static Bytes_0(void) {
 	op_stkvar	(x,	1);
 	create_insn	(0X15FD0);
 	create_insn	(0X15FDB);
+	set_name	(0X15FDB,	"UpdateThrottleState");
 	create_insn	(0X15FE8);
 	set_cmt	(0X15FEA,	"int",	0);
 	create_insn	(x=0X15FEE);
@@ -6086,13 +6088,6 @@ static Bytes_0(void) {
 	op_stkvar	(x,	1);
 	create_insn	(x=0X1611C);
 	op_stkvar	(x,	0);
-	create_insn	(0X1612C);
-	create_insn	(x=0X16131);
-	op_stkvar	(x,	0);
-	create_insn	(0X16137);
-	create_insn	(0X1613B);
-	create_insn	(x=0X1613E);
-	op_hex		(x,	1);
 }
 
 //------------------------------------------------------------------------
@@ -6102,6 +6097,13 @@ static Bytes_1(void) {
         auto x;
 #define id x
 
+	create_insn	(0X1612C);
+	create_insn	(x=0X16131);
+	op_stkvar	(x,	0);
+	create_insn	(0X16137);
+	create_insn	(0X1613B);
+	create_insn	(x=0X1613E);
+	op_hex		(x,	1);
 	create_insn	(x=0X16149);
 	op_stkvar	(x,	0);
 	create_insn	(0X16155);
@@ -12402,14 +12404,6 @@ static Bytes_1(void) {
 	set_cmt	(0X1CD0A,	"int",	0);
 	create_insn	(x=0X1CD0A);
 	op_stkvar	(x,	0);
-	create_insn	(x=0X1CD10);
-	op_hex		(x,	1);
-	create_insn	(x=0X1CD13);
-	op_stkvar	(x,	1);
-	create_insn	(x=0X1CD18);
-	op_stkvar	(x,	0);
-	create_insn	(x=0X1CD1B);
-	op_stkvar	(x,	0);
 }
 
 //------------------------------------------------------------------------
@@ -12419,6 +12413,14 @@ static Bytes_2(void) {
         auto x;
 #define id x
 
+	create_insn	(x=0X1CD10);
+	op_hex		(x,	1);
+	create_insn	(x=0X1CD13);
+	op_stkvar	(x,	1);
+	create_insn	(x=0X1CD18);
+	op_stkvar	(x,	0);
+	create_insn	(x=0X1CD1B);
+	op_stkvar	(x,	0);
 	create_insn	(x=0X1CD1E);
 	op_stkvar	(x,	0);
 	create_insn	(x=0X1CD24);
@@ -17184,16 +17186,20 @@ static Bytes_2(void) {
 	create_word	(0X380AA);
 	create_word	(0X380AC);
 	create_word	(0X380C8);
+	set_name	(0X380C8,	"g_ourHead");
 	create_word	(0X380CA);
+	set_name	(0X380CA,	"g_ourPitch");
 	create_word	(0X380CC);
+	set_name	(0X380CC,	"g_ourRoll");
 	create_word	(0X380CE);
-	set_name	(0X380CE,	"g_ViewZ");
+	set_name	(0X380CE,	"g_viewZ");
 	create_word	(0X380D0);
 	create_word	(0X380D8);
 	create_byte	(0X380DA);
 	create_byte	(0X380DD);
 	make_array	(0X380DE,	0X2);
 	create_word	(0X380E0);
+	set_name	(0X380E0,	"g_setThrust");
 	create_word	(0X380E2);
 	create_strlit	(0X380E4,	0XC);
 	set_name	(0X380E4,	"a256left_pic");
@@ -17356,14 +17362,6 @@ static Bytes_2(void) {
 	set_name	(0X38520,	"aLong");
 	create_strlit	(0X38525,	0X7);
 	set_name	(0X38525,	"aMedium");
-	create_strlit	(0X3852C,	0X6);
-	set_name	(0X3852C,	"aShort");
-	create_strlit	(0X38532,	0XD);
-	set_name	(0X38532,	"aRangeRadar");
-	create_strlit	(0X3853F,	0XE);
-	set_name	(0X3853F,	"aDetailLevel");
-	create_strlit	(0X3854D,	0X11);
-	set_name	(0X3854D,	"aKybdSensitivit");
 }
 
 //------------------------------------------------------------------------
@@ -17373,6 +17371,14 @@ static Bytes_3(void) {
         auto x;
 #define id x
 
+	create_strlit	(0X3852C,	0X6);
+	set_name	(0X3852C,	"aShort");
+	create_strlit	(0X38532,	0XD);
+	set_name	(0X38532,	"aRangeRadar");
+	create_strlit	(0X3853F,	0XE);
+	set_name	(0X3853F,	"aDetailLevel");
+	create_strlit	(0X3854D,	0X11);
+	set_name	(0X3854D,	"aKybdSensitivit");
 	create_strlit	(0X3855E,	0X12);
 	set_name	(0X3855E,	"aMemoryAvailabl");
 	create_strlit	(0X38570,	0XF);
@@ -17578,6 +17584,7 @@ static Bytes_3(void) {
 	create_word	(0X38FCC);
 	create_word	(0X38FCE);
 	create_word	(0X38FDA);
+	set_name	(0X38FDA,	"g_gees");
 	create_word	(0X38FDC);
 	set_name	(0X38FDC,	"g_difficultyLevel");
 	create_word	(0X38FDE);
@@ -17630,20 +17637,24 @@ static Bytes_3(void) {
 	create_word	(0X3A940);
 	make_array	(0X3A942,	0X2);
 	create_word	(0X3A944);
+	set_name	(0X3A944,	"g_velocity");
 	create_word	(0X3A946);
 	MakeStruct	(0X3A95A,	"struc_1");
 	make_array	(0X3A95A,	0X10);
 	create_word	(0X3AA5A);
+	set_name	(0X3AA5A,	"g_knots");
 	create_word	(0X3AA5C);
 	set_cmt	(0X3AA5E,	"Array of object properties/structures",	0);
 	MakeStruct	(0X3AA5E,	"struc_4");
 	make_array	(0X3AA5E,	0X4A);
+	set_name	(0X3AA5E,	"g_planes");
 	create_word	(0X3AF0C);
 	create_byte	(0X3AF0E);
 	make_array	(0X3AF0E,	0X96);
 	set_name	(0X3AF0E,	"buf3d3_1");
 	create_word	(0X3AFA4);
 	create_word	(0X3AFA6);
+	set_name	(0X3AFA6,	"g_thrust");
 	create_word	(0X3AFA8);
 	create_word	(0X3AFAA);
 	create_byte	(0X3AFAC);
@@ -17730,6 +17741,7 @@ static Bytes_3(void) {
 	create_word	(0X3BEBC);
 	create_word	(0X3BEBE);
 	create_word	(0X3BEC0);
+	set_name	(0X3BEC0,	"g_viewX_");
 	create_word	(0X3BEC2);
 	create_byte	(0X3BEC4);
 	make_array	(0X3BEC5,	0X3);
@@ -17739,6 +17751,7 @@ static Bytes_3(void) {
 	create_word	(0X3BECC);
 	create_word	(0X3BECE);
 	create_word	(0X3BED0);
+	set_name	(0X3BED0,	"g_viewY_");
 	create_word	(0X3BED2);
 	create_word	(0X3BED4);
 	create_word	(0X3BED6);

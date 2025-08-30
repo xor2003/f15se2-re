@@ -40,8 +40,8 @@ PUBLIC _dword_38FE2
 PUBLIC _word_3C0A2
 PUBLIC _flagFarToNear
 PUBLIC _byte_3C16E
-PUBLIC _word_3BEC0
-PUBLIC _word_3BED0
+PUBLIC _g_viewX_
+PUBLIC _g_viewY_
 PUBLIC _g_ViewY
 PUBLIC _g_playerTargetIndex
 PUBLIC _g_ViewX
@@ -134,16 +134,16 @@ PUBLIC _dword_3C01C
 PUBLIC _dword_3B4D4
 PUBLIC _sub_1CF64
 PUBLIC _keyValue
-PUBLIC _g_ViewZ
+PUBLIC _g_viewZ
 PUBLIC _dword_3B1FE
 PUBLIC _word_336FE
 PUBLIC _dword_3C024
 PUBLIC _word_3B4DE
 PUBLIC _word_3C02C
-PUBLIC _word_380C8
+PUBLIC _g_ourHead
 PUBLIC _word_3B4E4
-PUBLIC _word_380CA
-PUBLIC _word_380CC
+PUBLIC _g_ourPitch
+PUBLIC _g_ourRoll
 PUBLIC _word_3C5AA
 PUBLIC _word_3BE94
 PUBLIC _stru_3A95A
@@ -163,7 +163,7 @@ PUBLIC _word_3C02E
 PUBLIC _g_currentWeaponType
 PUBLIC _word_336F2
 PUBLIC _word_336EA
-PUBLIC _stru_3AA5E
+PUBLIC _g_planes
 PUBLIC _word_3370C
 PUBLIC _stru_3B208
 PUBLIC _unk_3A948
@@ -204,7 +204,7 @@ PUBLIC _sub_20BAE
 PUBLIC _word_3C09E
 PUBLIC _word_3BE98
 PUBLIC _byte_3C5A0
-PUBLIC _sub_15FDB
+PUBLIC _UpdateThrottleState
 PUBLIC _word_3C040
 PUBLIC _word_383F4
 PUBLIC _word_3BEBE
@@ -212,7 +212,7 @@ PUBLIC _sub_1A183
 PUBLIC _word_3C6A4
 PUBLIC _byte_37C2F
 PUBLIC _sams
-PUBLIC _word_3AA5A
+PUBLIC _g_knots
 PUBLIC _word_3C5A6
 PUBLIC _missleSpec
 PUBLIC _word_3C8B6
@@ -296,7 +296,7 @@ PUBLIC _word_380AC
 PUBLIC _word_3B206
 PUBLIC _word_33098
 PUBLIC _sub_2267E
-PUBLIC _word_3A944
+PUBLIC _g_velocity
 PUBLIC _word_330BE
 PUBLIC _sub_1613B
 PUBLIC _randlmul
@@ -307,13 +307,13 @@ PUBLIC __strcpy
 PUBLIC _sub_1606C
 PUBLIC _tempStrcpy
 PUBLIC _word_38FE8
-PUBLIC _word_3AFA6
+PUBLIC _g_thrust
 PUBLIC _word_3B4DA
 PUBLIC _FixedPointMul
 PUBLIC _abs_word
 PUBLIC _word_3AFA8
 PUBLIC ___aNlmul
-PUBLIC _sub_15411
+PUBLIC _UpdateRotationMatrix
 PUBLIC _word_3BEC8
 PUBLIC _unk_38092
 PUBLIC _strBuf
@@ -325,13 +325,13 @@ PUBLIC _g_gunHits
 PUBLIC _word_3809C
 PUBLIC _sub_15557
 PUBLIC _word_380A0
-PUBLIC _word_38FDA
+PUBLIC _g_gees
 PUBLIC _word_3B15A
 PUBLIC _PrepareToExit
 PUBLIC __kbhit
 PUBLIC _byte_37F98
 PUBLIC _word_3C00E
-PUBLIC _word_380E0
+PUBLIC _g_setThrust
 PUBLIC _word_380A2
 PUBLIC _byte_37FEC
 PUBLIC _byte_37F99
@@ -402,7 +402,7 @@ struc_3         ends
 ; ---------------------------------------------------------------------------
 
 struc_4         struc ; (sizeof=0x10, mappedto_14)
-                                        ; XREF: dseg:stru_3AA5E/r
+                                        ; XREF: dseg:g_planes/r
 field_0         dw ?                    ; XREF: sub_11841+60/r
                                         ; sub_11F3E+60/r ...
 field_2         dw ?                    ; XREF: sub_11841+68/r
@@ -1199,9 +1199,9 @@ _sub_15237 proc near
 _sub_15237 endp
 ; ------------------------------seg000:0x5410------------------------------
 ; ------------------------------seg000:0x5411------------------------------
-_sub_15411 proc near
+_UpdateRotationMatrix proc near
     retn
-_sub_15411 endp
+_UpdateRotationMatrix endp
 ; ------------------------------seg000:0x543a------------------------------
 ; ------------------------------seg000:0x543b------------------------------
 sub_1543B proc near
@@ -1224,9 +1224,9 @@ _sub_15557 proc near
 _sub_15557 endp
 ; ------------------------------seg000:0x55aa------------------------------
 ; ------------------------------seg000:0x5fdb------------------------------
-_sub_15FDB proc near
+_UpdateThrottleState proc near
     retn
-_sub_15FDB endp
+_UpdateThrottleState endp
 ; ------------------------------seg000:0x606b------------------------------
 ; ------------------------------seg000:0x606c------------------------------
 _sub_1606C proc near
@@ -17618,10 +17618,10 @@ unk_380B6 db 0
     db 0
     db 0
     db 0
-_word_380C8 dw 0
-_word_380CA dw 0
-_word_380CC dw 0
-_g_ViewZ dw 0
+_g_ourHead dw 0
+_g_ourPitch dw 0
+_g_ourRoll dw 0
+_g_viewZ dw 0
 _word_380D0 dw 0
     db 0Ch
     db 0
@@ -17636,7 +17636,7 @@ byte_380DA db 0
 _byte_380DD db 0
     db 0 ;align 4
     db 0
-_word_380E0 dw 0
+_g_setThrust dw 0
 _word_380E2 dw 0
 _a256left_pic db '256Left.Pic',0
 _a256right_pic db '256Right.Pic',0
@@ -19428,7 +19428,7 @@ _unk_38FD0 db ?
     db ?
     db ?
     db ?
-_word_38FDA dw ?
+_g_gees dw ?
 _g_difficultyLevel dw ?
 _word_38FDE dw ?
 _word_38FE0 dw ?
@@ -24055,7 +24055,7 @@ _byte_3A900 db 40h dup(?)
 _word_3A940 dw ?
     db ? ;align 4
     db ?
-_word_3A944 dw ?
+_g_velocity dw ?
 word_3A946 dw ?
 _unk_3A948 db ?
     db ?
@@ -24076,9 +24076,9 @@ _unk_3A948 db ?
     db ?
     db ?
     _stru_3A95A struc_1 10h dup(<?>)
-_word_3AA5A dw ?
+_g_knots dw ?
 _word_3AA5C dw ?
-    _stru_3AA5E struc_4 4Ah dup(<?>)
+    _g_planes struc_4 4Ah dup(<?>)
     db ?
     db ?
     db ?
@@ -24096,7 +24096,7 @@ _word_3AA5C dw ?
 word_3AF0C dw ?
 _buf3d3_1 db 96h dup(?)
 word_3AFA4 dw ?
-_word_3AFA6 dw ?
+_g_thrust dw ?
 _word_3AFA8 dw ?
 word_3AFAA dw ?
 _byte_3AFAC db 100h dup(?)
@@ -25637,7 +25637,7 @@ word_3BE9C dw ?
     db ?
 _word_3BEBC dw ?
 _word_3BEBE dw ?
-_word_3BEC0 dw ?
+_g_viewX_ dw ?
 word_3BEC2 dw ?
 _byte_3BEC4 db ?
     db ? ;align 4
@@ -25647,7 +25647,7 @@ _word_3BEC8 dw ?
 _sign3d3 dw ?
 _word_3BECC dw ?
 _word_3BECE dw ?
-_word_3BED0 dw ?
+_g_viewY_ dw ?
 _word_3BED2 dw ?
 word_3BED4 dw ?
 word_3BED6 dw ?
