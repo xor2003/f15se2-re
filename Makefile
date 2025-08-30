@@ -15,7 +15,7 @@ CONFDIR := conf
 TOOLDIR := tools
 CXXFLAGS := -Wfatal-errors
 # UASM: no copyright into, 8086 instuctions, MASM compatibility
-UASMFLAGS := -q -0 -Zm
+UASMFLAGS := -q -0 -Zm -Fl
 # DOS C compiler: no stack probes, debug mode
 C_TOOLCHAIN ?= msc510
 MSC_CFLAGS ?= /Fc /Gs /Zi /Id:\f15-se2 /Id:\f15-se2\src /Zp1
