@@ -291,151 +291,162 @@ switch_break:
     }
     
     // seg000:43A3
-    if (g_autopilotAltitude != 0) {
+    if (g_autopilotAltitude != 0)
+    {
         // seg000:43AD
-        var_2C = (word_336EA != 0) ? 
-                 (int16)((word_38FE0 & 0xF) << 8) - 0x800
-                 : 0;
-        
+        var_2C = (word_336EA != 0) ? (int16)((word_38FE0 & 0xF) << 8) - 0x800
+                                   : 0;
+
         // seg000:43DE
         var_2C = forceRange(var_2C - g_ourHead + word_3BE92, 0xEC00, 0x1400) * 2;
-        
+
         // seg000:43FD
         word_3C00E = -sub_1CF64((var_2C - g_ourRoll) >> 6, -24, 24);
-        
+
         // seg000:4420
         var_14 = forceRange(((g_autopilotAltitude - g_viewZ) << 4) - word_38FC4, 0xEC00, 0xC00);
-        
+
         // seg000:443D
         word_3C5A4 = sub_1CF64((var_14 - g_ourPitch) >> 7, -8, 8);
-    }
-    
-    // seg000:4446
-    if (waypointIndex == 3) {
-        // seg000:4450
-        var_3E = word_3AFA8;
-        // seg000:4456
-        var_10 = word_3B15A;
-        
 
-        // seg000:4462
-        var_2A = g_planes[var_10].field_0 - g_viewX_;
-        // seg000:446D
-        var_34 = g_planes[var_10].field_2 - g_viewY_;
+        // seg000:4446
+        if (waypointIndex == 3)
+        {
+            // seg000:4450
+            var_3E = word_3AFA8;
+            // seg000:4456
+            var_10 = word_3B15A;
 
-        // seg000:4478
-        if (!(g_planes[var_10].field_6 & 0x200)) {
-            // seg000:4481
-            var_3E = -abs_word(var_34);
-        }
+            // seg000:4462
+            var_2A = g_planes[var_10].field_0 - g_viewX_;
+            // seg000:446D
+            var_34 = g_planes[var_10].field_2 - g_viewY_;
 
-        // seg000:4493
-        var_34 += ((g_planes[var_10].field_6 & 0x200) ? 0x1E : 0x40) * var_3E;
-        
-        // seg000:44A9
-        var_2C = abs(g_ourHead);
-        // seg000:44B6
-        if (var_3E == -1) {
-            // seg000:44BC
-            var_2A = -var_2A;
-            // seg000:44C4
-            var_34 = -var_34;
-            // seg000:44D3
-            var_2C = abs(g_ourHead - 0x8000);
-        }
+            // seg000:4478
+            if (!(g_planes[var_10].field_6 & 0x200))
+            {
+                // seg000:4481
+                var_3E = -abs_word(var_34);
+            }
 
-        // seg000:4514
-        var_14 = sub_1CF64((abs(var_2A) + abs(var_34)) * 2 + var_2C / 32, 50, 0x1000);
-        // seg000:451D
-        if (var_14 < 0x1000) {
-            // seg000:4522
-            sub_1DB9C();
-        }
+            // seg000:4493
+            var_34 += ((g_planes[var_10].field_6 & 0x200) ? 0x1E : 0x40) * var_3E;
 
-        // seg000:452C
-        if (g_planes[var_10].field_6 & 0x200) {
-            // seg000:4534
-            var_14 += 100;
-        }
+            // seg000:44A9
+            var_2C = abs(g_ourHead);
+            // seg000:44B6
+            if (var_3E == -1)
+            {
+                // seg000:44BC
+                var_2A = -var_2A;
+                // seg000:44C4
+                var_34 = -var_34;
+                // seg000:44D3
+                var_2C = abs(g_ourHead - 0x8000);
+            }
 
-        // seg000:4538
-        if (word_33702 != 0 && abs(var_2C) < 0x200) {
-            // seg000:454D
-            var_14 = -20;
-        }
+            // seg000:4514
+            var_14 = sub_1CF64((abs(var_2A) + abs(var_34)) * 2 + var_2C / 32, 50, 0x1000);
+            // seg000:451D
+            if (var_14 < 0x1000)
+            {
+                // seg000:4522
+                sub_1DB9C();
+            }
 
-        // seg000:4552
-        var_34 = g_planes[var_10].field_2 + (((g_planes[var_10].field_6 & 0x200) ? 0x1C : 0x38) * var_3E);
+            // seg000:452C
+            if (g_planes[var_10].field_6 & 0x200)
+            {
+                // seg000:4534
+                var_14 += 100;
+            }
 
-        // seg000:459F
-        var_34 += sub_1CF64((abs(var_2A) * 4) + (var_2C / 16), 0, 0xC00) * var_3E;
-        
-        // seg000:45AB
-        *((unsigned char*)&g_playerPlaneFlags) &= 0xF7;
-        
-        // seg000:45B0
-        if (var_2C > 0x4000) {
-            // seg000:45BE
-            var_2A = g_planes[var_10].field_0;
-            // seg000:45C5
-            var_14 = 0x1000;
-        } else {
-            // seg000:45CC
-            var_2A = g_planes[var_10].field_0 + (var_2A * var_3E * 2);
-            // seg000:45E5
-            if (g_setThrust * 80 < g_knots) {
-                 // seg000:45EF
-                 *((unsigned char*)&g_playerPlaneFlags) |= 8;
+            // seg000:4538
+            if (word_33702 != 0 && abs(var_2C) < 0x200)
+            {
+                // seg000:454D
+                var_14 = -20;
+            }
+
+            // seg000:4552
+            var_34 = g_planes[var_10].field_2 + (((g_planes[var_10].field_6 & 0x200) ? 0x1C : 0x38) * var_3E);
+
+            // seg000:459F
+            var_34 += sub_1CF64((abs(var_2A) * 4) + (var_2C / 16), 0, 0xC00) * var_3E;
+
+            // seg000:45AB
+            *((unsigned char *)&g_playerPlaneFlags) &= 0xF7;
+
+            // seg000:45B0
+            if (var_2C > 0x4000)
+            {
+                // seg000:45BE
+                var_2A = g_planes[var_10].field_0;
+                // seg000:45C5
+                var_14 = 0x1000;
+            }
+            else
+            {
+                // seg000:45CC
+                var_2A = g_planes[var_10].field_0 + (var_2A * var_3E * 2);
+                // seg000:45E5
+                if (g_setThrust * 80 < g_knots)
+                {
+                    // seg000:45EF
+                    *((unsigned char *)&g_playerPlaneFlags) |= 8;
+                }
+            }
+
+            // seg000:4603
+            var_E = ARCTAN(var_2A - g_viewX_, g_viewY_ - var_34);
+            // seg000:460C
+            var_3C = (int16)g_knots / 16;
+
+            // seg000:4638
+            var_2C = forceRange(var_E - g_ourHead, (-var_3C) << 8, var_3C << 8) * 2;
+
+            // seg000:4643
+            if (word_33702 != 0)
+            {
+                // seg000:464A
+                var_2C = 0;
+            }
+
+            // seg000:4663
+            word_3C00E = -sub_1CF64((var_2C - g_ourRoll) >> 6, -32, 32);
+
+            // seg000:46A5
+            g_setThrust = sub_1CF64((var_14 / 64) + (abs(var_2C) / 128), 35, 80);
+            // seg000:46AE
+            UpdateThrottleState();
+
+            // seg000:46CF
+            var_14 = forceRange(((var_14 - g_viewZ) >> 3) + (word_38FC4 >> 7), -24, 24);
+
+            // seg000:46EE
+            word_3C5A4 = sub_1CF64(var_14 - (g_ourPitch >> 7), -16, 16);
+
+            // seg000:46F7
+            if (g_knots < 0x15E)
+            {
+                // seg000:46FF
+                *((unsigned char *)&g_playerPlaneFlags) &= 0xFE;
+            }
+
+            // seg000:4704
+            if (word_3BEBE == g_viewZ)
+            {
+                // seg000:470D
+                g_setThrust = 0;
+                // seg000:4713
+                word_3C00E = 0;
+                // seg000:4719
+                g_playerPlaneFlags |= 8;
+                // seg000:471E
+                word_3C5A4 = 0;
             }
         }
-        
-        // seg000:4603
-        var_E = ARCTAN(var_2A - g_viewX_, g_viewY_ - var_34);
-        // seg000:460C
-        var_3C = (int16)g_knots / 16;
-
-        // seg000:4638
-        var_2C = forceRange(var_E - g_ourHead, (-var_3C) << 8, var_3C << 8) * 2;
-
-        // seg000:4643
-        if (word_33702 != 0) {
-            // seg000:464A
-            var_2C = 0;
-        }
-        
-        // seg000:4663
-        word_3C00E = -sub_1CF64((var_2C - g_ourRoll) >> 6, -32, 32);
-
-        // seg000:46A5
-        g_setThrust = sub_1CF64((var_14 / 64) + (abs(var_2C) / 128), 35, 80);
-        // seg000:46AE
-        UpdateThrottleState();
-        
-        // seg000:46CF
-        var_14 = forceRange(((var_14 - g_viewZ) >> 3) + (word_38FC4 >> 7), -24, 24);
-        
-        // seg000:46EE
-        word_3C5A4 = sub_1CF64(var_14 - (g_ourPitch >> 7), -16, 16);
-        
-        // seg000:46F7
-        if (g_knots < 0x15E) {
-            // seg000:46FF
-            *((unsigned char*)&g_playerPlaneFlags) &= 0xFE;
-        }
-
-        // seg000:4704
-        if (word_3BEBE == g_viewZ) {
-            // seg000:470D
-            g_setThrust = 0;
-            // seg000:4713
-            word_3C00E = 0;
-            // seg000:4719
-            g_playerPlaneFlags |= 8;
-            // seg000:471E
-            word_3C5A4 = 0;
-        }
     }
-    
     // seg000:4724
     if (gameData->unk4 != 0) {
         // seg000:473F
