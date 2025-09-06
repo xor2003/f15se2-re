@@ -791,7 +791,7 @@ switch_break:
         // seg000:4EA4
         byte_380DD = 1;
         // seg000:4EA9
-        if (g_ourPitch >= 0 && (uint16)g_viewZ < 200) {
+        if (g_ourPitch < 0 || (uint16)g_viewZ < 200) {
             // seg000:4EC0
             makeSound(0x14, 1);
         }
@@ -807,7 +807,7 @@ switch_break:
             byte_380DD = 1;
         }
         // seg000:4EE1
-        if (g_ourPitch >= 0 && (g_ourPitch <= 0 || g_knots < word_3C5A6)) {
+        if (g_ourPitch < 0 || (g_ourPitch > 0 && g_knots < word_3C5A6)) {
             // seg000:4EF3
             if (word_38FDE == 0) {
                 // seg000:4EFA
