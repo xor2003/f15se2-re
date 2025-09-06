@@ -5,6 +5,7 @@ EXTRN _ProcessPlayerInputAndAI:PROC
 EXTRN _UpdateFlightModelAndHUD:PROC
 EXTRN _sub_21A7A:PROC
 EXTRN _otherKeyDispatch:PROC
+EXTRN _sub_15557:PROC
 PUBLIC _commData
 PUBLIC _gameData
 PUBLIC _hercFlag
@@ -323,7 +324,6 @@ PUBLIC _sub_15237
 PUBLIC _word_3A8FE
 PUBLIC _g_gunHits
 PUBLIC _word_3809C
-PUBLIC _sub_15557
 PUBLIC _word_380A0
 PUBLIC _g_gees
 PUBLIC _word_3B15A
@@ -1218,11 +1218,6 @@ sub_15540 proc near
     retn
 sub_15540 endp
 ; ------------------------------seg000:0x5556------------------------------
-; ------------------------------seg000:0x5557------------------------------
-_sub_15557 proc near
-    retn
-_sub_15557 endp
-; ------------------------------seg000:0x55aa------------------------------
 ; ------------------------------seg000:0x5fdb------------------------------
 _UpdateThrottleState proc near
     retn

@@ -27,6 +27,7 @@
         { "seg": "seg000", "begin": "0x2f8c", "end": "0x2fae", "from": "printError",       "to": "endp" },
         { "seg": "seg000", "begin": "0x2faf", "end": "0x2fd9", "from": "strcpyFromDot",    "to": "endp" },
         { "seg": "seg000", "begin": "0x3f72", "end": "0x51f8", "from": "otherKeyDispatch", "to": "endp" },
+        { "seg": "seg000", "begin": "0x5557", "end": "0x55aa", "from": "sub_15557",        "to": "endp" },
         { "seg": "seg000", "begin": "0x55ab", "end": "0x5fda", "from": "ProcessPlayerInputAndAI","to": "endp" },
         { "seg": "seg000", "begin": "0x8e50", "end": "0x9484", "from": "UpdateFlightModelAndHUD","to": "endp" },
         { "seg": "seg000", "begin": "0x9e44", "end": "0x9e5c", "from": "sub_19E44",        "to": "endp" },
@@ -83,7 +84,7 @@
         "openFile", "createFile", "sub_1DF4F", "DecompressAndBlitRow", "closeFile", "read512FromFileIntoBuf", "manipulateTimer"
     ],
     "externs": [
-        "ProcessPlayerInputAndAI", "UpdateFlightModelAndHUD", "sub_21A7A", "otherKeyDispatch"
+        "ProcessPlayerInputAndAI", "UpdateFlightModelAndHUD", "sub_21A7A", "otherKeyDispatch", "sub_15557"
     ],
     "publics": [ 
         "commData", "gameData", "hercFlag", "gfxModeUnset", "noJoy80", "noJoy80_2", "copyJoystickData", "setupOverlaySlots", "installCBreakHandler", "loadF15DgtlBin", "setupDac",
@@ -109,7 +110,7 @@
         "gfx_jump_4f",
         "gfx_jump_52",
 "otherDacValues", "byte_37116", "dacValues1", "gfx_jump_32", "byte_36D86", "dacValues",
-"g_missionStatus", "word_3BECE", "__bios_keybrd", "word_336F6", "audio_jump_6a", "word_33702", "word_3C5A4", "makeSound", "_itoa", "word_38602", "word_33712", "sub_1DB9C", "word_38080", "word_33442", "word_38090", "sub_151F9", "unk_38FD0", "word_3BE3C", "word_39606", "word_38FE0", "word_38084", "keyScancode", "word_380AA", "stru_33402", "word_3B204", "sub_2265B", "__aNldiv", "word_380AC", "word_3B206", "word_33098", "sub_2267E", "g_velocity", "word_330BE", "sub_1613B", "randlmul", "byte_380DD", "forceRange", "word_336EC", "_strcpy", "sub_1606C", "tempStrcpy", "word_38FE8", "g_thrust", "word_3B4DA", "FixedPointMul", "abs_word", "word_3AFA8", "__aNlmul", "UpdateRotationMatrix", "word_3BEC8", "unk_38092", "strBuf", "word_3809A", "word_3808C", "sub_15237", "word_3A8FE", "g_gunHits", "word_3809C", "sub_15557", "word_380A0", "g_gees", "word_3B15A", "PrepareToExit", "_kbhit", "byte_37F98", "word_3C00E", "g_setThrust", "word_380A2", "byte_37FEC", "byte_37F99", "sub_13B86", "sub_13B96", "word_380E2", "word_380A4", "word_38FDE", "word_380A6", "word_3BEBC", "_strcat", "word_3BECC", "byte_3C6A0"
+"g_missionStatus", "word_3BECE", "__bios_keybrd", "word_336F6", "audio_jump_6a", "word_33702", "word_3C5A4", "makeSound", "_itoa", "word_38602", "word_33712", "sub_1DB9C", "word_38080", "word_33442", "word_38090", "sub_151F9", "unk_38FD0", "word_3BE3C", "word_39606", "word_38FE0", "word_38084", "keyScancode", "word_380AA", "stru_33402", "word_3B204", "sub_2265B", "__aNldiv", "word_380AC", "word_3B206", "word_33098", "sub_2267E", "g_velocity", "word_330BE", "sub_1613B", "randlmul", "byte_380DD", "forceRange", "word_336EC", "_strcpy", "sub_1606C", "tempStrcpy", "word_38FE8", "g_thrust", "word_3B4DA", "FixedPointMul", "abs_word", "word_3AFA8", "__aNlmul", "UpdateRotationMatrix", "word_3BEC8", "unk_38092", "strBuf", "word_3809A", "word_3808C", "sub_15237", "word_3A8FE", "g_gunHits", "word_3809C", "word_380A0", "g_gees", "word_3B15A", "PrepareToExit", "_kbhit", "byte_37F98", "word_3C00E", "g_setThrust", "word_380A2", "byte_37FEC", "byte_37F99", "sub_13B86", "sub_13B96", "word_380E2", "word_380A4", "word_38FDE", "word_380A6", "word_3BEBC", "_strcat", "word_3BECC", "byte_3C6A0"
     ],
     "preamble": [
         ".8086",
