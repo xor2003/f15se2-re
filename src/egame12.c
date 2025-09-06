@@ -876,20 +876,17 @@ switch_break:
             //temp_bx = g_closestThreatIndex << 4;
 
             // seg000:5063
-            if (((g_planes[g_closestThreatIndex].field_6 & 0x200) ? 0x100 : 0x80) 
-                >= ((int16)(-word_3C8B6 * g_missionStatus) / 2)) {
-                // seg000:508B
-                if (gameData->unk4 != 0 && !(g_playerPlaneFlags & 1)) {
-                    // seg000:50B4
-                    if (((int16)abs(g_ourRoll)) > (int16)((0x30 / (g_missionStatus + 1)) << 8)) {
-                        // seg000:50BF
-                        makeSound(0, 2);
-                        // seg000:50C9
-                        sub_12278(0x3C);
-                        // seg000:50D3
-                        PrepareToExit(5);
-                    }
-                }
+            if ((( ((g_planes[g_closestThreatIndex].field_6 & 0x200) ? 0x100 : 0x80) 
+                < ((int16)(-word_3C8B6 * g_missionStatus) / 2))) || 
+                ((gameData->unk4 != 0 && 
+                    (((g_playerPlaneFlags & 1)!=0) || 
+                        (((int16)abs(g_ourRoll)) > (int16)((0x30 / (g_missionStatus + 1)) << 8))) ))) {
+                            // seg000:50B8
+                            makeSound(0, 2);
+                            // seg000:50C9
+                            sub_12278(0x3C);
+                            // seg000:50D3
+                            PrepareToExit(5);
             }
         }
         // seg000:50D9
@@ -940,5 +937,4 @@ switch_break:
     }
 
     // seg000:51F8
-    return; 
 } // 51f9
