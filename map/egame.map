@@ -182,8 +182,8 @@ routine_309: seg000 NEAR cb42-cf31 Rcb42-cf31
 routine_274: seg000 NEAR cf32-cf63 Rcf32-cf63
 routine_120: seg000 NEAR cf64-cf8d Rcf64-cf8d
 routine_163: seg000 NEAR cf8e-cfa5 Rcf8e-cfa5
-routine_162: seg000 NEAR cfa6-d007 Rcfa6-d007
-routine_136: seg000 NEAR d008-d177 Rd008-d177
+Dist2D: seg000 NEAR cfa6-d007 Rcfa6-d007
+ARCTAN: seg000 NEAR d008-d177 Rd008-d177
 routine_142: seg000 NEAR d178-d18f Rd178-d18f
 routine_143: seg000 NEAR d190-d1a5 Rd190-d1a5
 routine_164: seg000 NEAR d1c8-d1e7 Rd1c8-d1e7

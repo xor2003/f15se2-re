@@ -6,6 +6,7 @@ EXTRN _UpdateFlightModelAndHUD:PROC
 EXTRN _sub_21A7A:PROC
 EXTRN _otherKeyDispatch:PROC
 EXTRN _sub_15557:PROC
+EXTRN _Dist2D:PROC
 PUBLIC _commData
 PUBLIC _gameData
 PUBLIC _hercFlag
@@ -156,10 +157,8 @@ PUBLIC _word_3C03A
 PUBLIC _g_frameRateScaling
 PUBLIC _word_336F4
 PUBLIC _stru_335C4
-PUBLIC _ARCTAN
 PUBLIC _word_3A940
 PUBLIC _word_3370E
-PUBLIC _Dist2D
 PUBLIC _word_3C02E
 PUBLIC _g_currentWeaponType
 PUBLIC _word_336F2
@@ -1608,16 +1607,6 @@ _forceRange proc near
     retn
 _forceRange endp
 ; ------------------------------seg000:0xcfa5------------------------------
-; ------------------------------seg000:0xcfa6------------------------------
-_Dist2D proc near
-    retn
-_Dist2D endp
-; ------------------------------seg000:0xd007------------------------------
-; ------------------------------seg000:0xd008------------------------------
-_ARCTAN proc near
-    retn
-_ARCTAN endp
-; ------------------------------seg000:0xd177------------------------------
 ; ------------------------------seg000:0xd178------------------------------
 _sinX proc near
     retn

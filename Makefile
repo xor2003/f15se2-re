@@ -296,6 +296,9 @@ $(EGAME_VRF_REF):
 	@echo "---> Place egame.exe with md5sum ffc191b1caeafc3b6f435795f8ea868e into bin/"
 	@exit 1
 
+$(BUILDDIR)/egame_rebuilt.map: $(EGAME_EXE)
+	$(MZRE)/debug/mzsig --load-segment 0x1000 --output $@ $<
+
 verify-start: $(MZDIFF) $(START_EXE) $(START_VRF_REF)
 	$(MZDIFF) $(START_VRF_REF):$(START_VRF_REFEP) $(START_EXE):$(START_VRF_TGTEP) $(VERIFY_FLAGS) --map map/start.map --asm
 
