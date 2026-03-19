@@ -190,6 +190,23 @@ class HeuristicNotesTest(unittest.TestCase):
             notes,
         )
 
+    def test_recognizes_constant_table_register_setup_drift(self):
+        notes = heuristic_notes(
+            "soft",
+            None,
+            [
+                diff("DIFF_OP2", "mov dx, 0x43b6", "mov dx, 0x441a"),
+                diff("DIFF_OP1", "cmp byte [0x18e7], 0x2", "cmp byte [0x194b], 0x2"),
+                diff("DIFF_OP2", "mov si, 0x4866", "mov si, 0x48ca"),
+                diff("DIFF_OP2", "mov di, 0x44d6", "mov di, 0x453a"),
+                diff("DIFF_OP2", "mov dx, 0x44a6", "mov dx, 0x450a"),
+            ],
+        )
+        self.assertTrue(
+            any("constant table/register setup" in note for note in notes),
+            notes,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

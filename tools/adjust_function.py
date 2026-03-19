@@ -374,6 +374,24 @@ def heuristic_notes(focus_kind, record_or_error, soft_diffs):
             notes.append(
                 "The early soft diffs look like repeated literal-load and jump-to-shared-tail blocks, which usually means the case structure still matches and only literal addresses or shared-tail placement differ."
             )
+        table_setup_like = [
+            item
+            for item in soft_diffs[:8]
+            if (
+                item["ref_instr"].startswith("mov dx, 0x")
+                or item["ref_instr"].startswith("mov si, 0x")
+                or item["ref_instr"].startswith("mov di, 0x")
+            )
+            and (
+                item["tgt_instr"].startswith("mov dx, 0x")
+                or item["tgt_instr"].startswith("mov si, 0x")
+                or item["tgt_instr"].startswith("mov di, 0x")
+            )
+        ]
+        if focus_kind == "soft" and len(table_setup_like) >= 3:
+            notes.append(
+                "The early soft diffs look like repeated constant table/register setup, which usually means the same palette/table pointers are being staged and only the table addresses differ."
+            )
         stack_slot_like = [
             item
             for item in early

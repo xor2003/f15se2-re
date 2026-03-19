@@ -17,6 +17,7 @@
   - treat repeated far-pointer reloads separately from generic call drift, because `les bx, [...]` sequences often mean the same far data walk with shifted storage
   - treat repeated helper-call setup blocks separately from generic push drift, because stable `push/push/call` rhythm often means the call shape still matches even when symbols move
   - treat repeated literal-load/jump-tail blocks separately from generic branch drift, because case/error dispatch code often keeps the same shared tail while labels and literals slide
+  - treat repeated constant table/register setup separately from generic immediate drift, because palette/table-heavy code often stages the same pointer roles with different base addresses
   - use `UpdateFlightModelAndHUD` as a near-case and find or create a cleaner routine that exercises the push/immediate-drift heuristic directly
   - use `UpdateFlightModelAndHUD` as the current near-case for stack-slot drift too, unless a cleaner early-window trigger appears
 - Keep toolkit tests in lockstep with behavior:
