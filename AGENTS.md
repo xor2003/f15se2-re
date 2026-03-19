@@ -1,8 +1,38 @@
 # AGENTS.md
 
+## TL;DR
+
+If you only need the short version, use this:
+
+1. Success means `mzdiff` matches, not just “working C”.
+2. Use the original DOS toolchain flow. Do not swap in a modern compiler workflow.
+3. Change one routine at a time, then rebuild and verify immediately.
+4. Prefer the one-button loop first:
+   - `make one-egame`
+   - `python3 tools/decomp_workflow.py adjust --target egame --function <routine>`
+5. Treat `.COD`, `src/egame_rc.asm`, and `src/start_rc.asm` as generated feedback, not hand-maintained source.
+6. Use donor code and toolkit hints as clues only. Recompile and let `mzdiff` decide.
+7. Keep commits small and regular.
+
 ## Project Focus
 
 This repository reconstructs the MS-DOS version of F-15 Strike Eagle II with instruction-level fidelity. The only success metric that matters is whether the rebuilt binaries still match the originals under `mzdiff`.
+
+## Quick Start
+
+For the usual `egame` loop:
+
+1. Run `make one-egame`.
+2. If it stops on a routine, inspect it with:
+   `python3 tools/decomp_workflow.py adjust --target egame --function <routine>`
+3. Make the smallest possible C or `conf/` change.
+4. Re-run `make one-egame`.
+
+For toolkit changes:
+
+1. Run `python3 -m unittest tests/test_toolkit_heuristics.py`
+2. Run `python3 -m py_compile tools/adjust_function.py tools/decomp_workflow.py tools/correlation_analyzer.py tools/ptr_hints.py tools/donor_search.py tools/hint_pressure.py`
+3. Then re-run `make one-egame`
 
 ## Read This First
 
@@ -85,6 +115,8 @@ Practical findings from local testing:
 
 - `make egame`: build `EGAME.EXE`
 - `make start`: build `start.exe`
+- `make one-egame`: one-button fresh `egame` iterate loop under the DOSBox workflow
+- `make one-start`: one-button fresh `start` iterate loop
 - `make verify-egame`: compare rebuilt `EGAME.EXE` against `bin/egame.exe`
 - `make verify-start`: compare rebuilt `start.exe` against `bin/start.exe`
 - `make analyze`: run `mzdiff` and feed the output into `tools/correlation_analyzer.py`
@@ -109,6 +141,7 @@ Do not manually maintain `.COD` content.
 
 Use these helpers before touching `conf/` by hand:
 
+- `make one-egame`
 - `python3 tools/decomp_workflow.py catalog --target egame`
 - `python3 tools/decomp_workflow.py verify --target egame`
 - `python3 tools/decomp_workflow.py analyze --target egame --fresh`
@@ -138,7 +171,7 @@ There are two common modes:
 
 The preferred sequence is:
 
-1. `python3 tools/decomp_workflow.py iterate --target egame --fresh`
+1. `make one-egame` or `python3 tools/decomp_workflow.py iterate --target egame --fresh`
 2. `python3 tools/decomp_workflow.py refresh --target egame --function <routine> --snapshot-dir /tmp/f15-adjust` to rerun the loop and regenerate the current adjustment bundle
 3. `python3 tools/decomp_workflow.py adjust --target egame --function <routine>` to inspect the exact C, `.COD`, and original asm window interactively
 4. make the smallest possible C adjustment or start a draft for the missing routine
