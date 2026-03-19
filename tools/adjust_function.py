@@ -291,6 +291,17 @@ def heuristic_notes(focus_kind, record_or_error, soft_diffs):
             notes.append(
                 "The first soft diffs include same-shaped push setup drift, which often means argument ordering/immediate layout noise around a helper call rather than a control-flow problem."
             )
+        stack_slot_like = [
+            item
+            for item in early
+            if "[bp-" in item["ref_instr"]
+            and "[bp-" in item["tgt_instr"]
+            and item["ref_instr"].split()[0] == item["tgt_instr"].split()[0]
+        ]
+        if len(stack_slot_like) >= 2:
+            notes.append(
+                "The first soft diffs include same-shaped stack-slot drift, which usually means local-variable layout or temporary-slot differences rather than changed control flow."
+            )
     if not notes:
         notes.append("Start from the first reported C line and inspect the preceding block for control-flow or temporary-shape differences.")
     return notes
