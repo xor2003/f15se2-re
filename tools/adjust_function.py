@@ -286,6 +286,19 @@ def heuristic_notes(focus_kind, record_or_error, soft_diffs):
             notes.append(
                 "The first soft diffs are all mov-shaped address/operand drifts, which usually means global/layout differences in an otherwise matching block rather than a real control-flow mismatch."
             )
+        pair_window = soft_diffs[:6]
+        pair_like = [
+            item
+            for item in pair_window
+            if item["ref_instr"].startswith("mov ")
+            and item["tgt_instr"].startswith("mov ")
+            and any(reg in item["ref_instr"] for reg in (" ax", " dx", ",ax", ",dx"))
+            and any(reg in item["tgt_instr"] for reg in (" ax", " dx", ",ax", ",dx"))
+        ]
+        if focus_kind == "soft" and len(pair_like) >= 4:
+            notes.append(
+                "The early soft diffs look like a repeated AX/DX copy block, which usually means a 32-bit global copy or split store is still shape-matching and only the referenced symbols/layout differ."
+            )
         push_like = [item for item in early if item["ref_instr"].startswith("push") and item["tgt_instr"].startswith("push")]
         if len(push_like) >= 2:
             notes.append(

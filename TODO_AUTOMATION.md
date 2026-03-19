@@ -9,6 +9,7 @@
   - recognize more low-risk soft-diff patterns beyond mov/global-address drift
   - recognize low-risk same-shaped push/immediate drift around helper calls
   - recognize low-risk same-shaped stack-slot drift around helper setup and temporary reuse
+  - keep widening the soft-only pattern library from real cases like paired AX/DX split-copy drift
   - use `UpdateFlightModelAndHUD` as a near-case and find or create a cleaner routine that exercises the push/immediate-drift heuristic directly
   - use `UpdateFlightModelAndHUD` as the current near-case for stack-slot drift too, unless a cleaner early-window trigger appears
 - Review more repo tools and capture the useful ones in workflow docs:
