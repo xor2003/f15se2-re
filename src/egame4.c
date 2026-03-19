@@ -1,6 +1,11 @@
 #include "egame.h"
 #include <stdlib.h> /* For abs() */
 
+int sub_15540(int angle)
+{
+    return 0x4000 - sub_154B7(angle);
+}
+
 /*
 Replicates the integer square root function at seg000:5557.
 It uses an iterative method to find the root.
