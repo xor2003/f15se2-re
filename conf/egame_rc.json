@@ -17,7 +17,7 @@
         {"seg": "seg000", "begin": "0x2049", "end": "0x206c", "from": "moveDataFar", "to": "endp"},
         {"seg": "seg000", "begin": "0x206d", "end": "0x215b", "from": "moveStuff", "to": "endp"},
         {"seg": "seg000", "begin": "0x215c", "end": "0x21a8", "from": "moveNearFar", "to": "endp"},
-        {"seg": "seg000", "begin": "0x21a9", "end": "0x21c4", "from": "sub_121A9", "to": "endp"},
+        {"seg": "seg000", "begin": "0x21a9", "end": "0x21c4", "from": "setCommWorldbufPtr", "to": "endp"},
         {"seg": "seg000", "begin": "0x21c6", "end": "0x21c9", "from": "sub_121C6", "to": "endp"},
         {"seg": "seg000", "begin": "0x2278", "end": "0x2299", "from": "sub_12278", "to": "endp"},
         {"seg": "seg000", "begin": "0x2874", "end": "0x2897", "from": "load3DAll", "to": "endp"},
@@ -97,6 +97,7 @@
         "closeFileWrapper",
         "openFileWrapper",
         "otherKeyDispatch",
+        "setCommWorldbufPtr",
         "sub_121C6",
         "sub_12278",
         "sub_15557",
@@ -104,7 +105,8 @@
         "sub_1DD7E",
         "sub_1DD92",
         "sub_1DDAA",
-        "sub_21A7A"
+        "sub_21A7A",
+        "sub_21A7E"
     ],
     "publics": [ 
         "commData", "gameData", "hercFlag", "gfxModeUnset", "noJoy80", "noJoy80_2", "copyJoystickData", "setupOverlaySlots", "installCBreakHandler", "loadF15DgtlBin", "setupDac",
