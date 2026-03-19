@@ -24,10 +24,12 @@ from correlation_analyzer import (  # noqa: E402
     parse_mzdiff_output,
     summarize,
 )
+from donor_search import build_donor_report, build_support_symbol_report  # noqa: E402
 from ptr_hints import build_hints as build_ptr_hints  # noqa: E402
 
 SEG_COMMENT_RE = re.compile(r"seg([0-9A-Fa-f]{3}):(?:0x)?([0-9A-Fa-f]{4})")
 MNEMONIC_RE = re.compile(r"\b([A-Za-z][A-Za-z0-9]*)\b")
+DEFAULT_DONOR_DIR = Path("/home/xor/games/f14src/src")
 
 
 def run(cmd):
@@ -441,6 +443,20 @@ def render_report(bundle):
                 f"count={item['count']}{sample}{alias_text}{used_text}{window_text}"
             )
 
+    if bundle["donor_exact"]:
+        print("Donor exact match:")
+        match = bundle["donor_exact"][0]
+        print(f"- {match['relative_path']}:{match['start_line']}-{match['end_line']}")
+    if bundle["donor_support"]:
+        print("Donor support hints:")
+        for item in bundle["donor_support"][:5]:
+            if item.get("best_exact_match"):
+                match = item["best_exact_match"]
+                print(f"- {item['symbol']} -> {match['relative_path']}:{match['start_line']}")
+            elif item.get("best_reference_hit"):
+                hit = item["best_reference_hit"]
+                print(f"- {item['symbol']} -> {hit['relative_path']}:{hit['line']}")
+
     if bundle["c_window"]:
         print("C window:")
         for item in bundle["c_window"]:
@@ -523,6 +539,26 @@ def build_llm_prompt(bundle):
                 f"{item['name']} var_off=0x{(item['var_offset'] or 0):x} "
                 f"count={item['count']}{sample}{alias_text}{used_text}{window_text}"
             )
+        lines.append("```")
+        lines.append("")
+    if bundle["donor_exact"]:
+        lines.append("Donor exact match:")
+        lines.append("```text")
+        match = bundle["donor_exact"][0]
+        lines.append(f"{match['relative_path']}:{match['start_line']}-{match['end_line']}")
+        lines.append(match["snippet"].rstrip())
+        lines.append("```")
+        lines.append("")
+    if bundle["donor_support"]:
+        lines.append("Donor support hints:")
+        lines.append("```text")
+        for item in bundle["donor_support"][:5]:
+            if item.get("best_exact_match"):
+                match = item["best_exact_match"]
+                lines.append(f"{item['symbol']} -> {match['relative_path']}:{match['start_line']}")
+            elif item.get("best_reference_hit"):
+                hit = item["best_reference_hit"]
+                lines.append(f"{item['symbol']} -> {hit['relative_path']}:{hit['line']}")
         lines.append("```")
         lines.append("")
     if bundle["c_window"]:
@@ -676,6 +712,8 @@ def main():
     notes = add_expression_notes(notes, c_window, cod_entries)
     ptr_hint_report = None
     ptr_hints = []
+    donor_exact = []
+    donor_support = []
     if c_file:
         try:
             ptr_hint_report = build_ptr_hints(args.target, function_name)
@@ -696,6 +734,27 @@ def main():
                     )
         except RuntimeError:
             ptr_hint_report = None
+    if DEFAULT_DONOR_DIR.exists():
+        donor_report = build_donor_report(function_name, str(DEFAULT_DONOR_DIR), max_refs=4)
+        donor_exact = donor_report.get("exact_matches", [])
+        if donor_exact:
+            notes.append(
+                f"Donor search found {len(donor_exact)} exact match(es); the best one is {donor_exact[0]['relative_path']}:{donor_exact[0]['start_line']}."
+            )
+        support_report = build_support_symbol_report(
+            function_name,
+            "src/egame_rc.asm" if args.target == "egame" else "src/start_rc.asm",
+            str(DEFAULT_DONOR_DIR),
+            max_symbols=6,
+            max_refs=3,
+            lst_source=lst_file,
+            map_file=target_map,
+        )
+        donor_support = support_report.get("support_symbols", [])
+        if donor_support:
+            notes.append(
+                f"Donor support search found {len(donor_support)} helper-symbol hit(s) for this routine."
+            )
 
     bundle = {
         "function": function_name,
@@ -716,6 +775,8 @@ def main():
         "soft_diffs": soft_diffs,
         "ptr_hints": ptr_hints,
         "ptr_hint_report": ptr_hint_report,
+        "donor_exact": donor_exact,
+        "donor_support": donor_support,
         "notes": notes,
     }
 

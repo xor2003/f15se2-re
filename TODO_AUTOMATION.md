@@ -12,7 +12,8 @@
 - Tighten the integrated adjust bundle:
   - keep `ptr-hints` visible in `adjust`/`refresh`
   - trim noisy hints when a routine touches many globals
-  - surface supporting donor hints in the same ranked, local-window-aware style
+  - rank donor support hints by local relevance, not only by first helper hit
+  - trim noisy donor support when the asm routine calls many helpers
 
 ## Later
 
