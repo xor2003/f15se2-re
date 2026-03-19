@@ -14,6 +14,10 @@
   - keep validating new soft-only heuristics against at least one positive routine and two negative control routines before committing them
   - use `UpdateFlightModelAndHUD` as a near-case and find or create a cleaner routine that exercises the push/immediate-drift heuristic directly
   - use `UpdateFlightModelAndHUD` as the current near-case for stack-slot drift too, unless a cleaner early-window trigger appears
+- Keep toolkit tests in lockstep with behavior:
+  - extend `tests/test_toolkit_heuristics.py` whenever a new heuristic or guard is added
+  - keep one positive and at least two negative/control cases for each new soft-only heuristic
+  - add CLI-level smoke tests for `adjust`/`analyze` output shaping if the Python toolkit grows more complex
 - Review more repo tools and capture the useful ones in workflow docs:
   - keep documenting which `mzretools` outputs are actionable in the tight decompilation loop
   - keep `mzdup` as an offline duplicate-hunting step, not part of the tight edit loop

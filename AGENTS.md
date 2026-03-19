@@ -88,6 +88,8 @@ Practical findings from local testing:
 - `make verify-egame`: compare rebuilt `EGAME.EXE` against `bin/egame.exe`
 - `make verify-start`: compare rebuilt `start.exe` against `bin/start.exe`
 - `make analyze`: run `mzdiff` and feed the output into `tools/correlation_analyzer.py`
+- `python3 -m unittest tests/test_toolkit_heuristics.py`: run the Python regression tests for toolkit heuristics before and after changing `tools/adjust_function.py`
+- `python3 -m py_compile tools/adjust_function.py tools/decomp_workflow.py tools/correlation_analyzer.py tools/ptr_hints.py tools/donor_search.py tools/hint_pressure.py`: quick syntax smoke test for the current Python toolkit
 
 ## Generated Compiler Listings
 
@@ -165,6 +167,7 @@ Findings from trying the toolkit on already converted functions:
 - the soft-diff notes now also distinguish same-shaped `call` target drift from local control-flow breakage. In current testing this helps `UpdateFlightModelAndHUD` read as possible helper/thunk address drift rather than immediate evidence that the surrounding C structure is wrong
 - a same-shaped `push`-setup drift recognizer is now wired into the soft-diff notes too. The current sample set still does not trigger it as a primary note, but `UpdateFlightModelAndHUD` shows a near-case with early `push [bp-..]` drift around the `ARCTAN` call setup, which is a good future validation target
 - a same-shaped stack-slot drift recognizer is also wired into the soft-diff notes now. It looks for repeated early `[bp-..]` operand drift on the same instruction shape, which should help separate local temporary-slot churn from real control-flow damage. In the current `egame` sample set it still behaves as a guarded near-case rather than a primary trigger; `UpdateFlightModelAndHUD` remains the best validation target because its early diffs include local slot churn around the `ARCTAN` setup, but not densely enough yet to trip the note
+- `tests/test_toolkit_heuristics.py` now regression-tests the current heuristic set, including positive and negative controls for paired `AX/DX` drift, fan-out store drift, and same-shaped call-target drift. Keep it updated when changing `heuristic_notes()`
 
 If the donor tree exists, `iterate` and `draft` automatically mine it for exact matches or reference hits. Treat donor code as hint material only:
 
