@@ -155,6 +155,7 @@ Findings from trying the toolkit on already converted functions:
 - donor support hints are now ranked by the active C window too, so helpers already visible in the mismatch region, like `ARCTAN` in `UpdateFlightModelAndHUD`, are explicitly called out as local hints instead of being buried in generic support output
 - when a donor helper is both local and has an exact body available, `adjust` now inlines the top donor snippet directly into the bundle. In current testing this pulls in the `ARCTAN` body from `MATH.ASM` for `UpdateFlightModelAndHUD`, while routines with only loose helper references stay compact
 - long donor snippets are now summarized to a bounded head/tail view inside `adjust`, so large helper bodies stay visible without drowning out the current mismatch window
+- the human-facing `adjust` report and `--llm-prompt` view now cap lower-priority ptr/donor entries while keeping the ranked full lists in the bundle data, so readability improves without throwing away machine-usable context
 
 If the donor tree exists, `iterate` and `draft` automatically mine it for exact matches or reference hits. Treat donor code as hint material only:
 

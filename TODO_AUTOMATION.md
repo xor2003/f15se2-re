@@ -11,9 +11,9 @@
   - keep `mzdup` as an offline duplicate-hunting step, not part of the tight edit loop
 - Tighten the integrated adjust bundle:
   - keep `ptr-hints` visible in `adjust`/`refresh`
-  - trim noisy hints when a routine touches many globals
-  - trim noisy donor support when the asm routine calls many helpers
   - collapse or hide lower-priority ptr/donor sections when the bundle gets too large
+  - tune the display limits against routines with larger hint sets
+  - consider a `--full-hints` mode for explicit deep dives
 
 ## Later
 

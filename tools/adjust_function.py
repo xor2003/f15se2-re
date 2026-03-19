@@ -31,6 +31,8 @@ SEG_COMMENT_RE = re.compile(r"seg([0-9A-Fa-f]{3}):(?:0x)?([0-9A-Fa-f]{4})")
 MNEMONIC_RE = re.compile(r"\b([A-Za-z][A-Za-z0-9]*)\b")
 DEFAULT_DONOR_DIR = Path("/home/xor/games/f14src/src")
 MAX_DONOR_SNIPPET_LINES = 24
+MAX_RENDERED_PTR_HINTS = 5
+MAX_RENDERED_DONOR_HINTS = 3
 
 
 def run(cmd):
@@ -492,7 +494,7 @@ def render_report(bundle):
 
     if bundle["ptr_hints"]:
         print("Global/pointer hints:")
-        for item in bundle["ptr_hints"][:10]:
+        for item in bundle["ptr_hints"][:MAX_RENDERED_PTR_HINTS]:
             alias_text = ""
             if item["aliases"]:
                 alias_text = f" aliases={','.join(item['aliases'][:3])}"
@@ -509,6 +511,9 @@ def render_report(bundle):
                 f"- {item['name']} var_off=0x{(item['var_offset'] or 0):x} "
                 f"count={item['count']}{sample}{alias_text}{used_text}{window_text}"
             )
+        hidden = len(bundle["ptr_hints"]) - MAX_RENDERED_PTR_HINTS
+        if hidden > 0:
+            print(f"- ... {hidden} more ptr-hint entries hidden")
 
     if bundle["donor_exact"]:
         print("Donor exact match:")
@@ -516,7 +521,7 @@ def render_report(bundle):
         print(f"- {match['relative_path']}:{match['start_line']}-{match['end_line']}")
     if bundle["donor_support"]:
         print("Donor support hints:")
-        for item in bundle["donor_support"][:5]:
+        for item in bundle["donor_support"][:MAX_RENDERED_DONOR_HINTS]:
             window_text = " window_hit=yes" if item.get("window_hit") else ""
             if item.get("best_exact_match"):
                 match = item["best_exact_match"]
@@ -524,6 +529,9 @@ def render_report(bundle):
             elif item.get("best_reference_hit"):
                 hit = item["best_reference_hit"]
                 print(f"- {item['symbol']} -> {hit['relative_path']}:{hit['line']}{window_text}")
+        hidden = len(bundle["donor_support"]) - MAX_RENDERED_DONOR_HINTS
+        if hidden > 0:
+            print(f"- ... {hidden} more donor-support entries hidden")
     if bundle["top_donor_snippet"]:
         print("Top donor snippet:")
         print(f"- {bundle['top_donor_snippet']['label']}")
@@ -604,7 +612,7 @@ def build_llm_prompt(bundle):
     if bundle["ptr_hints"]:
         lines.append("Global/pointer hints for this routine:")
         lines.append("```text")
-        for item in bundle["ptr_hints"][:10]:
+        for item in bundle["ptr_hints"][:MAX_RENDERED_PTR_HINTS]:
             alias_text = f" aliases={','.join(item['aliases'][:3])}" if item["aliases"] else ""
             used_text = f" used_in_c={','.join(item['used_in_c'])}" if item["used_in_c"] else ""
             window_text = f" window_hits={','.join(item['window_hits'])}" if item.get("window_hits") else ""
@@ -617,6 +625,9 @@ def build_llm_prompt(bundle):
                 f"{item['name']} var_off=0x{(item['var_offset'] or 0):x} "
                 f"count={item['count']}{sample}{alias_text}{used_text}{window_text}"
             )
+        hidden = len(bundle["ptr_hints"]) - MAX_RENDERED_PTR_HINTS
+        if hidden > 0:
+            lines.append(f"... {hidden} more ptr-hint entries hidden")
         lines.append("```")
         lines.append("")
     if bundle["donor_exact"]:
@@ -630,7 +641,7 @@ def build_llm_prompt(bundle):
     if bundle["donor_support"]:
         lines.append("Donor support hints:")
         lines.append("```text")
-        for item in bundle["donor_support"][:5]:
+        for item in bundle["donor_support"][:MAX_RENDERED_DONOR_HINTS]:
             window_text = " window_hit=yes" if item.get("window_hit") else ""
             if item.get("best_exact_match"):
                 match = item["best_exact_match"]
@@ -638,6 +649,9 @@ def build_llm_prompt(bundle):
             elif item.get("best_reference_hit"):
                 hit = item["best_reference_hit"]
                 lines.append(f"{item['symbol']} -> {hit['relative_path']}:{hit['line']}{window_text}")
+        hidden = len(bundle["donor_support"]) - MAX_RENDERED_DONOR_HINTS
+        if hidden > 0:
+            lines.append(f"... {hidden} more donor-support entries hidden")
         lines.append("```")
         lines.append("")
     if bundle["top_donor_snippet"]:
