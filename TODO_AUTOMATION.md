@@ -6,8 +6,11 @@
   - better signed vs unsigned branch detection
   - better temporary/evaluation-order suggestions
   - better call-target drift explanations
+- Feed `ptr-hints` into the normal adjust loop:
+  - show matched globals alongside `adjust`/`refresh` bundles
+  - use `mzptr` as a naming/pointer-offset aid, not as a code-reference tracer
 - Review more repo tools and capture the useful ones in workflow docs:
-  - follow up on `mzptr` as the most promising helper for local/global naming support
+  - keep documenting which `mzretools` outputs are actionable in the tight decompilation loop
   - keep `mzdup` as an offline duplicate-hunting step, not part of the tight edit loop
 
 ## Later

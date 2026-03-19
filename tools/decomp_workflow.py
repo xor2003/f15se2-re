@@ -103,6 +103,11 @@ def main():
     dups.add_argument("--maxdist", type=int)
     dups.add_argument("--rebuilt", action="store_true", help="Use the rebuilt executable in build/ instead of the reference binary in bin/")
 
+    ptr_hints = sub.add_parser("ptr-hints")
+    ptr_hints.add_argument("function")
+    ptr_hints.add_argument("--target", choices=["egame", "start"], default="egame")
+    ptr_hints.add_argument("--json", action="store_true")
+
     verify = sub.add_parser("verify")
     verify.add_argument("--target", choices=["egame", "start", "all"], default="egame")
 
@@ -276,6 +281,12 @@ def main():
         if args.maxdist is not None:
             cmd.extend(["--maxdist", str(args.maxdist)])
         cmd.extend([args.signature_file, exe_path, target_map])
+        raise SystemExit(run(cmd).returncode)
+
+    if args.command == "ptr-hints":
+        cmd = [sys.executable, "tools/ptr_hints.py", "--target", args.target, "--function", args.function]
+        if args.json:
+            cmd.append("--json")
         raise SystemExit(run(cmd).returncode)
 
     if args.command == "verify":

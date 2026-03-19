@@ -63,9 +63,12 @@ Practical findings from local testing:
 
 - `mzptr` and `mzsig` expect an executable that actually matches the provided map file; in this repo that usually means the reference binaries in `bin/`, not the rebuilt outputs in `build/`
 - `python3 tools/decomp_workflow.py ptrs --target egame` works as a variable-discovery aid, but its own output warns that variables with more than 1-2 hits are often false positives
+- `mzptr` is not a code xref tracer for the current routine; it reports executable locations where variable offsets appear to be stored, so it is most useful for pointer/naming cleanup rather than direct asm-to-C control-flow matching
 - `python3 tools/decomp_workflow.py sigs --target egame --output build/egame.sig --overwrite` works and currently extracts signatures from the reference `egame.exe`
 - `mzdup` is useful in principle for duplicate hunting, but on the current `egame` signature set it appears expensive/slow enough that it should be treated as an offline analysis step, not something to run in the tight edit-adjust loop by default
 - `mzhdr build/EGAME.EXE -l` reports the load-module offset (`0x200` in the current build), which is helpful when sanity-checking map/exe relationships
+- `python3 tools/decomp_workflow.py ptr-hints <function> --target egame` is now the practical `mzptr` entrypoint: it maps `mzptr` variables back onto named globals used by the target C routine by combining `map/egame.map`, `lst/egame.lst`, and `egame_rc.lst`
+- in current local testing, `ptr-hints` produces useful matches for already converted routines such as `ProcessPlayerInputAndAI`, `UpdateFlightModelAndHUD`, and `otherKeyDispatch`, with an inferred `egame_rc.lst` BSS-to-map shift of `0x66c0`
 
 ## Core Workflow
 
@@ -110,6 +113,7 @@ Use these helpers before touching `conf/` by hand:
 - `python3 tools/decomp_workflow.py adjust --target egame --function otherKeyDispatch`
 - `python3 tools/decomp_workflow.py refresh --target egame --function otherKeyDispatch --snapshot-dir /tmp/f15-adjust`
 - `python3 tools/decomp_workflow.py ptrs --target egame`
+- `python3 tools/decomp_workflow.py ptr-hints ProcessPlayerInputAndAI --target egame`
 - `python3 tools/decomp_workflow.py sigs --target egame --output build/egame.sig --overwrite`
 - `python3 tools/decomp_workflow.py dups build/egame.sig --target egame`
 - `python3 tools/decomp_workflow.py iterate --target egame`
@@ -157,6 +161,7 @@ If a function was already extracted out of `src/egame_rc.asm`, the draft helper 
 Helper-tool usage guidance:
 
 - use `ptrs` when data object naming or pointer replacement is the current bottleneck
+- use `ptr-hints <function>` when a specific C-owned routine needs a filtered view of `mzptr` hints for globals already referenced by that routine
 - use `sigs` to build a reusable signature file from the reference binary, not from an in-progress rebuilt binary
 - use `dups` sparingly, as a side analysis pass for duplicate discovery rather than part of every edit cycle
 
