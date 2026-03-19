@@ -18,6 +18,7 @@
   - treat repeated helper-call setup blocks separately from generic push drift, because stable `push/push/call` rhythm often means the call shape still matches even when symbols move
   - treat repeated literal-load/jump-tail blocks separately from generic branch drift, because case/error dispatch code often keeps the same shared tail while labels and literals slide
   - treat repeated constant table/register setup separately from generic immediate drift, because palette/table-heavy code often stages the same pointer roles with different base addresses
+  - treat repeated bare helper-call drift separately from push-heavy setup drift, because some routines like `gfxInit` repeat the same helper calls with very little argument staging
   - use `UpdateFlightModelAndHUD` as a near-case and find or create a cleaner routine that exercises the push/immediate-drift heuristic directly
   - use `UpdateFlightModelAndHUD` as the current near-case for stack-slot drift too, unless a cleaner early-window trigger appears
 - Next 20 heuristic candidates, ordered as a working backlog:

@@ -207,6 +207,23 @@ class HeuristicNotesTest(unittest.TestCase):
             notes,
         )
 
+    def test_recognizes_repeated_bare_helper_call_drift(self):
+        notes = heuristic_notes(
+            "soft",
+            None,
+            [
+                diff("DIFF_OP1", "call far 0x228b0ebe", "call far 0x152e0f22"),
+                diff("DIFF_OP1", "call far 0x228b0ebe", "call far 0x152e0f22"),
+                diff("DIFF_OP1", "call far 0x228b1035", "call far 0x152e1099"),
+                diff("DIFF_OP2", "les bx, [0x9df6]", "les bx, [0xa144]"),
+                diff("DIFF_OP1", "call far 0x228b1035", "call far 0x152e1099"),
+            ],
+        )
+        self.assertTrue(
+            any("repeat the same helper-call shape" in note for note in notes),
+            notes,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

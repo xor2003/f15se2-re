@@ -279,6 +279,11 @@ def heuristic_notes(focus_kind, record_or_error, soft_diffs):
             notes.append(
                 "The first soft diff is a same-shaped call operand drift, which can be an external/helper target or thunk-layout difference rather than a local control-flow mismatch."
             )
+        repeated_call_like = [
+            item
+            for item in soft_diffs[:8]
+            if item["ref_instr"].startswith("call ") and item["tgt_instr"].startswith("call ")
+        ]
         if len(soft_diffs) >= 3 and len({item["tgt_instr"] for item in soft_diffs[:3]}) >= 2:
             notes.append("Multiple nearby soft diffs suggest reworking the whole local expression/block, not only the exact failing line.")
         early = soft_diffs[:4]
@@ -356,6 +361,10 @@ def heuristic_notes(focus_kind, record_or_error, soft_diffs):
         if focus_kind == "soft" and len(call_setup_pushes) >= 2 and len(call_setup_calls) >= 2:
             notes.append(
                 "The early soft diffs repeat a helper-call setup pattern with matching push/call shape, which usually means argument staging still matches and only source symbols or storage locations differ."
+            )
+        if focus_kind == "soft" and len(repeated_call_like) >= 2 and len(call_setup_pushes) < 2:
+            notes.append(
+                "The early soft diffs repeat the same helper-call shape without much argument staging drift, which usually means the call sites still line up and only helper/thunk addresses differ."
             )
         literal_jump_window = soft_diffs[:8]
         literal_loads = [
