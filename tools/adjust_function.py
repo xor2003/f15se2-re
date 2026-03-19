@@ -669,6 +669,44 @@ def add_shape_notes(notes, anchor_lst_entries, block_match):
                 )
                 break
 
+    if compare_len >= 7:
+        for idx in range(compare_len - 3):
+            if idx + 6 >= len(ref_stream[:compare_len]) or idx + 5 >= len(cod_stream[:compare_len]):
+                break
+            ref_curr = ref_stream[idx]
+            ref_next = ref_stream[idx + 1]
+            ref_next2 = ref_stream[idx + 2]
+            ref_next3 = ref_stream[idx + 3]
+            ref_next4 = ref_stream[idx + 4]
+            ref_next5 = ref_stream[idx + 5]
+            ref_next6 = ref_stream[idx + 6]
+            cod_curr = cod_stream[idx]
+            cod_next = cod_stream[idx + 1]
+            cod_next2 = cod_stream[idx + 2]
+            cod_next3 = cod_stream[idx + 3]
+            cod_next4 = cod_stream[idx + 4]
+            cod_next5 = cod_stream[idx + 5]
+            if (
+                ref_curr["text"].lower().startswith("mov ax,")
+                and ref_next["text"].lower().startswith("mov cl, 0x")
+                and ref_next2["text"].lower().startswith("shr ax, cl")
+                and ref_next3["text"].lower().startswith("add ah, 0x")
+                and ref_next4["text"].lower().startswith("sub cx, cx")
+                and ref_next5["text"].lower().startswith("push cx")
+                and ref_next6["text"].lower().startswith("push ax")
+                and cod_curr["instruction"].lower().startswith("mov si,")
+                and cod_next["instruction"].lower().startswith("mov cl, 0x")
+                and cod_next2["instruction"].lower().startswith("shr si, cl")
+                and cod_next3["instruction"].lower().startswith("add si, 0x")
+                and cod_next4["instruction"].lower().startswith("mov [bp-")
+                and ", si" in cod_next4["instruction"].lower()
+                and cod_next5["instruction"].lower().startswith("sub ax, ax")
+            ):
+                notes.append(
+                    "The generated block widens an unsigned scale factor into SI and materializes a full add-immediate path, where the reference keeps the scaled value in AX and zero-extends it with sub cx, cx before the long multiply."
+                )
+                break
+
     return notes
 
 

@@ -297,6 +297,35 @@ class HeuristicNotesTest(unittest.TestCase):
             notes,
         )
 
+    def test_add_shape_notes_recognizes_widened_si_scale_factor(self):
+        notes = add_shape_notes(
+            [],
+            [
+                lst(0x4B1C, "mov ax, [0x581e]"),
+                lst(0x4B1F, "mov cl, 0x7"),
+                lst(0x4B21, "shr ax, cl"),
+                lst(0x4B23, "add ah, 0x4"),
+                lst(0x4B26, "sub cx, cx"),
+                lst(0x4B28, "push cx"),
+                lst(0x4B29, "push ax"),
+            ],
+            {
+                "items": [
+                    cod(0x1898, "mov si, [0x5882]"),
+                    cod(0x189c, "mov cl, 0x7"),
+                    cod(0x189e, "shr si, cl"),
+                    cod(0x18a0, "add si, 0x400"),
+                    cod(0x18a4, "mov [bp-0x10], si"),
+                    cod(0x18a7, "sub ax, ax"),
+                    cod(0x18a9, "push ax"),
+                ]
+            },
+        )
+        self.assertTrue(
+            any("widens an unsigned scale factor into SI" in note for note in notes),
+            notes,
+        )
+
     def test_recognizes_repeated_bare_helper_call_drift(self):
         notes = heuristic_notes(
             "soft",
