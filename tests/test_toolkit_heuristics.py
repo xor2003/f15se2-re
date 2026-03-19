@@ -136,6 +136,23 @@ class HeuristicNotesTest(unittest.TestCase):
             notes,
         )
 
+    def test_recognizes_far_pointer_reload_drift(self):
+        notes = heuristic_notes(
+            "soft",
+            None,
+            [
+                diff("DIFF_OP2", "les bx, [0x9df6]", "les bx, [0xa144]"),
+                diff("DIFF_OP1", "call 0x688", "call 0x349c"),
+                diff("DIFF_OP2", "les bx, [0x9df6]", "les bx, [0xa144]"),
+                diff("DIFF_OP1", "call 0x688", "call 0x349c"),
+                diff("DIFF_OP2", "les bx, [0x9df6]", "les bx, [0xa144]"),
+            ],
+        )
+        self.assertTrue(
+            any("repeated far-pointer reloads" in note for note in notes),
+            notes,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

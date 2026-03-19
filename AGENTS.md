@@ -90,6 +90,7 @@ Practical findings from local testing:
 - `make analyze`: run `mzdiff` and feed the output into `tools/correlation_analyzer.py`
 - `python3 -m unittest tests/test_toolkit_heuristics.py`: run the Python regression tests for toolkit heuristics before and after changing `tools/adjust_function.py`
 - `python3 -m py_compile tools/adjust_function.py tools/decomp_workflow.py tools/correlation_analyzer.py tools/ptr_hints.py tools/donor_search.py tools/hint_pressure.py`: quick syntax smoke test for the current Python toolkit
+- `python3 tools/decomp_workflow.py adjust --target egame --function <name>` now defaults to a slightly wider nearby soft-diff window (`8` entries), which is important for later early-block patterns like repeated far-pointer reloads
 
 ## Generated Compiler Listings
 
@@ -165,10 +166,11 @@ Findings from trying the toolkit on already converted functions:
 - the soft-diff notes now also recognize repeated AX/DX copy drift in early `mov` blocks. In current testing this helps `ProcessPlayerInputAndAI` read as a likely 32-bit global copy or split-store block with symbol/layout drift, instead of implying that the surrounding C structure is already badly wrong. The trigger is now intentionally narrow: it stays out of generic store-fanout routines like `InitializeGameSettings`
 - the soft-diff notes now also recognize one-value fan-out store blocks. In current testing this helps `InitializeGameSettings` read as a likely “load one setting, then splash it into several globals” block with layout drift, while staying out of `ProcessPlayerInputAndAI` and `UpdateFlightModelAndHUD`
 - the soft-diff notes now also recognize prologue stack-frame size drift. In current testing this helps `main` read as a local/temp-footprint mismatch (`sub sp, 0x6` vs `0x4`) instead of prematurely implying broken control flow
+- the soft-diff notes now also recognize repeated far-pointer reloads. In current testing this helps `main` read as repeated access to the same far struct/overlay base (`les bx, [...]`) with layout drift, instead of implying that the repeated helper-call sequence is already structurally wrong
 - the soft-diff notes now also distinguish same-shaped `call` target drift from local control-flow breakage. In current testing this helps `UpdateFlightModelAndHUD` read as possible helper/thunk address drift rather than immediate evidence that the surrounding C structure is wrong
 - a same-shaped `push`-setup drift recognizer is now wired into the soft-diff notes too. The current sample set still does not trigger it as a primary note, but `UpdateFlightModelAndHUD` shows a near-case with early `push [bp-..]` drift around the `ARCTAN` call setup, which is a good future validation target
 - a same-shaped stack-slot drift recognizer is also wired into the soft-diff notes now. It looks for repeated early `[bp-..]` operand drift on the same instruction shape, which should help separate local temporary-slot churn from real control-flow damage. In the current `egame` sample set it still behaves as a guarded near-case rather than a primary trigger; `UpdateFlightModelAndHUD` remains the best validation target because its early diffs include local slot churn around the `ARCTAN` setup, but not densely enough yet to trip the note
-- `tests/test_toolkit_heuristics.py` now regression-tests the current heuristic set, including positive and negative controls for paired `AX/DX` drift, fan-out store drift, prologue stack-frame drift, and same-shaped call-target drift. Keep it updated when changing `heuristic_notes()`
+- `tests/test_toolkit_heuristics.py` now regression-tests the current heuristic set, including positive and negative controls for paired `AX/DX` drift, fan-out store drift, prologue stack-frame drift, repeated far-pointer reload drift, and same-shaped call-target drift. Keep it updated when changing `heuristic_notes()`
 
 If the donor tree exists, `iterate` and `draft` automatically mine it for exact matches or reference hits. Treat donor code as hint material only:
 

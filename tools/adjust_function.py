@@ -327,6 +327,16 @@ def heuristic_notes(focus_kind, record_or_error, soft_diffs):
             notes.append(
                 "The early soft diffs look like a one-value fan-out store block, which usually means one loaded setting or flag is still being copied into several globals and only the target layout differs."
             )
+        far_ptr_like = [
+            item
+            for item in soft_diffs[:8]
+            if item["ref_instr"].startswith("les bx, [")
+            and item["tgt_instr"].startswith("les bx, [")
+        ]
+        if focus_kind == "soft" and len(far_ptr_like) >= 2:
+            notes.append(
+                "The early soft diffs include repeated far-pointer reloads, which usually means the code is still walking the same far struct or overlay data and only the base storage/layout differs."
+            )
         push_like = [item for item in early if item["ref_instr"].startswith("push") and item["tgt_instr"].startswith("push")]
         if len(push_like) >= 2:
             notes.append(
@@ -817,7 +827,7 @@ def main():
     parser.add_argument("--c-radius", type=int, default=8, help="Source lines of C context on each side")
     parser.add_argument("--asm-radius", type=lambda x: int(x, 0), default=0x20, help="Reference asm byte radius")
     parser.add_argument("--cod-radius", type=int, default=3, help="COD source-line radius")
-    parser.add_argument("--soft-limit", type=int, default=5, help="Maximum nearby soft diffs to include")
+    parser.add_argument("--soft-limit", type=int, default=8, help="Maximum nearby soft diffs to include")
     parser.add_argument("--llm-prompt", action="store_true", help="Render an LLM-ready adjustment prompt instead of the normal report")
     parser.add_argument("--prompt-output", help="Write the LLM prompt to a file")
     parser.add_argument("--snapshot-dir", help="Write the current adjust bundle as JSON into this directory")
