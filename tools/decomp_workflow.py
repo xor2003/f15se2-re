@@ -71,6 +71,14 @@ def main():
     adjust.add_argument("--snapshot-dir")
     adjust.add_argument("--json", action="store_true")
 
+    refresh = sub.add_parser("refresh")
+    refresh.add_argument("--target", choices=["egame", "start"], default="egame")
+    refresh.add_argument("--function")
+    refresh.add_argument("--snapshot-dir")
+    refresh.add_argument("--use-current", action="store_true", help="Reuse the current mzdiff/build state instead of running make first")
+    refresh.add_argument("--llm-prompt", action="store_true")
+    refresh.add_argument("--prompt-output")
+
     verify = sub.add_parser("verify")
     verify.add_argument("--target", choices=["egame", "start", "all"], default="egame")
 
@@ -200,6 +208,20 @@ def main():
             cmd.extend(["--snapshot-dir", args.snapshot_dir])
         if args.json:
             cmd.append("--json")
+        raise SystemExit(run(cmd).returncode)
+
+    if args.command == "refresh":
+        cmd = [sys.executable, "tools/adjust_function.py", "--target", args.target]
+        if args.function:
+            cmd.extend(["--function", args.function])
+        if not args.use_current:
+            cmd.append("--fresh")
+        if args.snapshot_dir:
+            cmd.extend(["--snapshot-dir", args.snapshot_dir])
+        if args.llm_prompt:
+            cmd.append("--llm-prompt")
+        if args.prompt_output:
+            cmd.extend(["--prompt-output", args.prompt_output])
         raise SystemExit(run(cmd).returncode)
 
     if args.command == "verify":

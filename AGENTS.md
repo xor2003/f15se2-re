@@ -100,6 +100,7 @@ Use these helpers before touching `conf/` by hand:
 - `python3 tools/decomp_workflow.py analyze --target egame --fresh`
 - `python3 tools/decomp_workflow.py analyze --target egame --function otherKeyDispatch --top 5`
 - `python3 tools/decomp_workflow.py adjust --target egame --function otherKeyDispatch`
+- `python3 tools/decomp_workflow.py refresh --target egame --function otherKeyDispatch --snapshot-dir /tmp/f15-adjust`
 - `python3 tools/decomp_workflow.py iterate --target egame`
 - `python3 tools/decomp_workflow.py draft ARCTAN --target egame`
 - `python3 tools/donor_search.py --function ARCTAN --donor-dir /home/xor/games/f14src/src`
@@ -120,11 +121,12 @@ There are two common modes:
 The preferred sequence is:
 
 1. `python3 tools/decomp_workflow.py iterate --target egame --fresh`
-2. `python3 tools/decomp_workflow.py adjust --target egame --function <routine>` to get the exact C, `.COD`, and original asm window for the next edit
-3. make the smallest possible C adjustment or start a draft for the missing routine
-4. `python3 tools/decomp_workflow.py analyze --target egame --function <routine> --top 5`
-5. once stable, update `conf/` through `tools/conf_edit.py`
-6. rerun `make analyze` or `make verify-egame`
+2. `python3 tools/decomp_workflow.py refresh --target egame --function <routine> --snapshot-dir /tmp/f15-adjust` to rerun the loop and regenerate the current adjustment bundle
+3. `python3 tools/decomp_workflow.py adjust --target egame --function <routine>` to inspect the exact C, `.COD`, and original asm window interactively
+4. make the smallest possible C adjustment or start a draft for the missing routine
+5. `python3 tools/decomp_workflow.py analyze --target egame --function <routine> --top 5`
+6. once stable, update `conf/` through `tools/conf_edit.py`
+7. rerun `make analyze` or `make verify-egame`
 
 If the donor tree exists, `iterate` and `draft` automatically mine it for exact matches or reference hits. Treat donor code as hint material only:
 
