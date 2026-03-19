@@ -295,7 +295,16 @@ def heuristic_notes(focus_kind, record_or_error, soft_diffs):
             and any(reg in item["ref_instr"] for reg in (" ax", " dx", ",ax", ",dx"))
             and any(reg in item["tgt_instr"] for reg in (" ax", " dx", ",ax", ",dx"))
         ]
-        if focus_kind == "soft" and len(pair_like) >= 4:
+        pair_text = " ".join(
+            item["ref_instr"] + " " + item["tgt_instr"]
+            for item in pair_like
+        )
+        if (
+            focus_kind == "soft"
+            and len(pair_like) >= 4
+            and "ax" in pair_text
+            and "dx" in pair_text
+        ):
             notes.append(
                 "The early soft diffs look like a repeated AX/DX copy block, which usually means a 32-bit global copy or split store is still shape-matching and only the referenced symbols/layout differ."
             )
