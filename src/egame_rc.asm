@@ -4,6 +4,7 @@ DOSSEG
 EXTRN _Dist2D:PROC
 EXTRN _MainGameLoop:PROC
 EXTRN _ProcessPlayerInputAndAI:PROC
+EXTRN _UpdateRotationMatrix:PROC
 EXTRN _UpdateFlightModelAndHUD:PROC
 EXTRN _closeFileWrapper:PROC
 EXTRN _openFileWrapper:PROC
@@ -11,6 +12,8 @@ EXTRN _otherKeyDispatch:PROC
 EXTRN _setCommWorldbufPtr:PROC
 EXTRN _sub_121C6:PROC
 EXTRN _sub_12278:PROC
+EXTRN _sub_1543B:PROC
+EXTRN _sub_15540:PROC
 EXTRN _sub_15557:PROC
 EXTRN _sub_1DD5E:PROC
 EXTRN _sub_1DD7E:PROC
@@ -315,10 +318,12 @@ PUBLIC _g_velocity
 PUBLIC _word_330BE
 PUBLIC _sub_1613B
 PUBLIC _randlmul
+PUBLIC _word_380D8
 PUBLIC _byte_380DD
 PUBLIC _forceRange
 PUBLIC _word_336EC
 PUBLIC __strcpy
+PUBLIC _sub_154B7
 PUBLIC _sub_1606C
 PUBLIC _tempStrcpy
 PUBLIC _word_38FE8
@@ -328,7 +333,6 @@ PUBLIC _FixedPointMul
 PUBLIC _abs_word
 PUBLIC _word_3AFA8
 PUBLIC ___aNlmul
-PUBLIC _UpdateRotationMatrix
 PUBLIC _word_3BEC8
 PUBLIC _unk_38092
 PUBLIC _strBuf
@@ -1202,26 +1206,11 @@ _sub_15237 proc near
     retn
 _sub_15237 endp
 ; ------------------------------seg000:0x5410------------------------------
-; ------------------------------seg000:0x5411------------------------------
-_UpdateRotationMatrix proc near
-    retn
-_UpdateRotationMatrix endp
-; ------------------------------seg000:0x543a------------------------------
-; ------------------------------seg000:0x543b------------------------------
-sub_1543B proc near
-    retn
-sub_1543B endp
-; ------------------------------seg000:0x54b6------------------------------
 ; ------------------------------seg000:0x54b7------------------------------
-sub_154B7 proc near
+_sub_154B7 proc near
     retn
-sub_154B7 endp
+_sub_154B7 endp
 ; ------------------------------seg000:0x553f------------------------------
-; ------------------------------seg000:0x5540------------------------------
-sub_15540 proc near
-    retn
-sub_15540 endp
-; ------------------------------seg000:0x5556------------------------------
 ; ------------------------------seg000:0x5fdb------------------------------
 _UpdateThrottleState proc near
     retn
@@ -17598,7 +17587,7 @@ _word_380D0 dw 0
     db 0
     db 0
     db 0
-word_380D8 dw 0
+_word_380D8 dw 0
 byte_380DA db 0
     db 0 ;align 2
     db 1
