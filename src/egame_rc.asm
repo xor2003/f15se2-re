@@ -1,12 +1,23 @@
 .8086
 DOSSEG
 .MODEL SMALL
+EXTRN _Dist2D:PROC
+EXTRN _MainGameLoop:PROC
 EXTRN _ProcessPlayerInputAndAI:PROC
 EXTRN _UpdateFlightModelAndHUD:PROC
-EXTRN _sub_21A7A:PROC
+EXTRN _closeFileWrapper:PROC
+EXTRN _openFileWrapper:PROC
 EXTRN _otherKeyDispatch:PROC
+EXTRN _setCommWorldbufPtr:PROC
+EXTRN _sub_121C6:PROC
+EXTRN _sub_12278:PROC
 EXTRN _sub_15557:PROC
-EXTRN _Dist2D:PROC
+EXTRN _sub_1DD5E:PROC
+EXTRN _sub_1DD7E:PROC
+EXTRN _sub_1DD92:PROC
+EXTRN _sub_1DDAA:PROC
+EXTRN _sub_21A7A:PROC
+EXTRN _sub_21A7E:PROC
 PUBLIC _commData
 PUBLIC _gameData
 PUBLIC _hercFlag
@@ -75,6 +86,10 @@ PUBLIC _unk_3B202
 PUBLIC _byte_3AFAC
 PUBLIC _word_3401A
 PUBLIC _openFile
+PUBLIC _createFile
+PUBLIC _readFile1
+PUBLIC _readFile2
+PUBLIC _sub_1DF4F
 PUBLIC _closeFile
 PUBLIC _off_38334
 PUBLIC _off_3834C
@@ -515,11 +530,6 @@ OVL_HDR_FIRSTPTR  = 24h
 
 ; ==============================================================================
 .CODE ;seg000 segment byte public 'CODE' use16
-; ------------------------------seg000:0x211------------------------------
-MainGameLoop proc near
-    retn
-MainGameLoop endp
-; ------------------------------seg000:0x293------------------------------
 ; ------------------------------seg000:0x294------------------------------
 sub_10294 proc near
     retn
@@ -718,11 +728,6 @@ sub_11F3E proc near
     retn
 sub_11F3E endp
 ; ------------------------------seg000:0x2048------------------------------
-; ------------------------------seg000:0x21a9------------------------------
-setCommWorldbufPtr proc near
-    retn
-setCommWorldbufPtr endp
-; ------------------------------seg000:0x21c4------------------------------
 ; ------------------------------seg000:0x21c6------------------------------
 callLoad3DAll proc near
     retn
@@ -1682,26 +1687,6 @@ sub_1DBE0 proc near
     retn
 sub_1DBE0 endp
 ; ------------------------------seg000:0xdbff------------------------------
-; ------------------------------seg000:0xdd5e------------------------------
-sub_1DD5E proc near
-    retn
-sub_1DD5E endp
-; ------------------------------seg000:0xdd6e------------------------------
-; ------------------------------seg000:0xdd7e------------------------------
-sub_1DD7E proc near
-    retn
-sub_1DD7E endp
-; ------------------------------seg000:0xdd91------------------------------
-; ------------------------------seg000:0xdd92------------------------------
-sub_1DD92 proc near
-    retn
-sub_1DD92 endp
-; ------------------------------seg000:0xdda8------------------------------
-; ------------------------------seg000:0xddaa------------------------------
-sub_1DDAA proc near
-    retn
-sub_1DDAA endp
-; ------------------------------seg000:0xddc3------------------------------
 ; ------------------------------seg000:0xddc4------------------------------
 _openFile proc near
     path = word ptr 4
@@ -1755,7 +1740,7 @@ loc_1DE0D:
 _openFile endp
 ; ------------------------------seg000:0xde1a------------------------------
 ; ------------------------------seg000:0xde1b------------------------------
-createFile proc near
+_createFile proc near
     arg_0 = word ptr 4
     arg_2 = word ptr 6
     push bp
@@ -1804,7 +1789,7 @@ loc_1DE64:
     mov sp, bp
     pop bp
     retn
-createFile endp
+_createFile endp
 ; ------------------------------seg000:0xde71------------------------------
 ; ------------------------------seg000:0xde72------------------------------
 _closeFile proc near
@@ -1833,14 +1818,14 @@ loc_1DE8B:
 _closeFile endp
 ; ------------------------------seg000:0xde92------------------------------
 ; ------------------------------seg000:0xde94------------------------------
-readFile1 proc near
+_readFile1 proc near
     retn
-readFile1 endp
+_readFile1 endp
 ; ------------------------------seg000:0xdebe------------------------------
 ; ------------------------------seg000:0xdebf------------------------------
-readFile2 proc near
+_readFile2 proc near
     retn
-readFile2 endp
+_readFile2 endp
 ; ------------------------------seg000:0xdeec------------------------------
 ; ------------------------------seg000:0xdf16------------------------------
 read512FromFileIntoBuf proc near
@@ -1863,7 +1848,7 @@ loc_1DF35:
 read512FromFileIntoBuf endp
 ; ------------------------------seg000:0xdf36------------------------------
 ; ------------------------------seg000:0xdf4f------------------------------
-sub_1DF4F proc near
+_sub_1DF4F proc near
     arg_0 = word ptr 4
     arg_2 = word ptr 6
     arg_4 = word ptr 8
@@ -1928,7 +1913,7 @@ printString_1DF9B:
 loc_1DFB7:
     mov ax, 4C00h
     int 21h ;DOS - 2+ - QUIT WITH EXIT CODE (EXIT)
-sub_1DF4F endp ;AL = exit code
+_sub_1DF4F endp ;AL = exit code
 ; ------------------------------seg000:0xdfba------------------------------
 ; ------------------------------seg000:0xe0aa------------------------------
 _picBlit proc near
