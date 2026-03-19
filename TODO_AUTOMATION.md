@@ -2,10 +2,10 @@
 
 ## Current Priority
 
-- Detect likely compiler-shape issues automatically:
-  - condition compiled with different signedness
-  - temporary forcing different evaluation order
-  - call/branch drift caused by early control-flow reshaping
+- Refine compiler-shape heuristics further:
+  - better signed vs unsigned branch detection
+  - better temporary/evaluation-order suggestions
+  - better call-target drift explanations
 - Review more repo tools and capture the useful ones in workflow docs:
   - `mzsig` for routine signatures
   - `mzdup` for duplicate detection

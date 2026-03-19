@@ -315,6 +315,29 @@ def add_shape_notes(notes, anchor_lst_entries, block_match):
     return notes
 
 
+def add_expression_notes(notes, c_window, cod_window):
+    c_text = "\n".join(item["text"] for item in c_window)
+    cod_c_text = "\n".join(item["c_code"] for item in cod_window if item["c_code"])
+    cod_instrs = [asm["instruction"] for entry in cod_window for asm in entry["assembly"]]
+    cod_mnemonics = [extract_mnemonic(instr) for instr in cod_instrs]
+
+    if any(mn in {"cwd", "idiv"} for mn in cod_mnemonics):
+        if "/" in c_text or "/" in cod_c_text:
+            notes.append("Signed divide/sign-extension is present in the generated block; keep casts and operand signedness extremely explicit around the division expression.")
+
+    if any(mn in {"inc", "dec"} for mn in cod_mnemonics):
+        if "++" in c_text or "--" in c_text or "++" in cod_c_text or "--" in cod_c_text:
+            notes.append("Increment/decrement side effects occur inside the generated block; consider splitting them into separate statements if evaluation order looks wrong.")
+
+    if cod_mnemonics.count("jmp") >= 2 and ("?" in c_text or "?" in cod_c_text):
+        notes.append("The current logic compiles into multiple jumps around a conditional expression; an explicit if/else may give closer branch shape than a ternary.")
+
+    if cod_mnemonics.count("push") >= 4 and cod_mnemonics.count("call") >= 2:
+        notes.append("This region is argument-heavy and call-heavy; reducing nested expressions or reusing simple locals may help MSC keep the call sequence closer to the reference.")
+
+    return notes
+
+
 def render_report(bundle):
     print(f"Focus routine: {bundle['function']}")
     print(f"Focus kind: {bundle['focus_kind']}")
@@ -546,6 +569,7 @@ def main():
     notes = add_alignment_notes(notes, source_anchor, map_routine["begin"] + reference_offset if map_routine and reference_offset is not None else None)
     notes = add_block_match_notes(notes, best_cod_block_match)
     notes = add_shape_notes(notes, anchor_lst_entries, best_cod_block_match)
+    notes = add_expression_notes(notes, c_window, cod_entries)
 
     bundle = {
         "function": function_name,
