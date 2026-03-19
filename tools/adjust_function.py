@@ -273,6 +273,15 @@ def heuristic_notes(focus_kind, record_or_error, soft_diffs):
             notes.append("Early operand diffs often mean the compiler changed store order, temporary lifetimes, or signedness before the first hard mismatch.")
         if len(soft_diffs) >= 3 and len({item["tgt_instr"] for item in soft_diffs[:3]}) >= 2:
             notes.append("Multiple nearby soft diffs suggest reworking the whole local expression/block, not only the exact failing line.")
+        early = soft_diffs[:4]
+        if (
+            early
+            and all(item["status"] in {"DIFF_OP1", "DIFF_OP2", "DIFF"} for item in early)
+            and all(item["ref_instr"].startswith("mov ") and item["tgt_instr"].startswith("mov ") for item in early)
+        ):
+            notes.append(
+                "The first soft diffs are all mov-shaped address/operand drifts, which usually means global/layout differences in an otherwise matching block rather than a real control-flow mismatch."
+            )
     if not notes:
         notes.append("Start from the first reported C line and inspect the preceding block for control-flow or temporary-shape differences.")
     return notes

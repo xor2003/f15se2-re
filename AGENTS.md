@@ -159,6 +159,7 @@ Findings from trying the toolkit on already converted functions:
 - `adjust --full-hints` now disables that compact display cap for explicit deep dives; in current testing on the existing sample routines the visible output stays the same because their ranked hint sets are already under the compact thresholds
 - `python3 tools/decomp_workflow.py hint-pressure --target egame` now surveys ptr/donor hint counts across all `c-owned` routines. In the current `egame` state, the noisiest routines are `ProcessPlayerInputAndAI` (6 combined hints), `otherKeyDispatch` (5), and `UpdateFlightModelAndHUD` (4), which means the present compact-display caps are not yet being stressed by the shipped sample set
 - `hint-pressure` now degrades gracefully when ptr hints are unavailable for a target. In the current `start` state, `bin/start.exe` is missing, so ptr pressure cannot be measured there yet; donor pressure across current `c-owned` `start` routines is effectively zero
+- the adjust heuristics now call out low-risk prologue/global-address drift patterns in soft-diff routines. In current testing this helps `ProcessPlayerInputAndAI` read as mostly `mov`/operand-address drift instead of falsely suggesting a major control-flow mismatch
 
 If the donor tree exists, `iterate` and `draft` automatically mine it for exact matches or reference hits. Treat donor code as hint material only:
 
