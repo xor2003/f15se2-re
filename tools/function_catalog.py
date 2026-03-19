@@ -74,17 +74,30 @@ def index_extracts(config):
     return out
 
 
+def routine_aliases(routine):
+    aliases = [routine["name"]]
+    image_begin = 0x10000 + routine.get("segment_base", 0) * 0x10 + routine["begin"]
+    hex_alias = f"sub_{image_begin:X}"
+    if hex_alias not in aliases:
+        aliases.append(hex_alias)
+    lower_alias = hex_alias.lower()
+    if lower_alias not in aliases:
+        aliases.append(lower_alias)
+    return aliases
+
+
 def infer_status(routine, extract_idx, externs, preserves, c_owners):
     name = routine["name"]
+    aliases = routine_aliases(routine)
     key = (routine["segment"], routine["begin"], routine["end"])
-    extracted = key in extract_idx or name in extract_idx
-    externed = name in externs
-    preserved = name in preserves
-    has_c = name in c_owners
+    extracted = key in extract_idx or any(alias in extract_idx for alias in aliases)
+    externed = any(alias in externs for alias in aliases)
+    preserved = any(alias in preserves for alias in aliases)
+    has_c = any(alias in c_owners for alias in aliases)
     assembly = "assembly" in routine["attrs"]
     complete = "complete" in routine["attrs"]
 
-    if extracted and externed and has_c:
+    if externed and has_c:
         return "c-owned"
     if extracted and not externed:
         return "extracted-only"
@@ -100,7 +113,7 @@ def infer_status(routine, extract_idx, externs, preserves, c_owners):
 
 
 def build_catalog(map_path, conf_path, src_dir):
-    _, routines = parse_map(map_path)
+    segments, routines = parse_map(map_path)
     conf = load_conf(conf_path)
     extract_idx = index_extracts(conf)
     externs = set(conf.get("externs", []))
@@ -109,12 +122,17 @@ def build_catalog(map_path, conf_path, src_dir):
     catalog = []
     for routine in routines:
         entry = dict(routine)
-        name = routine["name"]
+        entry["segment_base"] = segments.get(routine["segment"], {}).get("base", 0)
+        aliases = routine_aliases(routine)
         entry["size"] = routine["end"] - routine["begin"] + 1
-        entry["extracted"] = (routine["segment"], routine["begin"], routine["end"]) in extract_idx or name in extract_idx
-        entry["externed"] = name in externs
-        entry["preserved"] = name in preserves
-        entry["c_files"] = c_owners.get(name, [])
+        entry["aliases"] = aliases
+        entry["extracted"] = (routine["segment"], routine["begin"], routine["end"]) in extract_idx or any(alias in extract_idx for alias in aliases)
+        entry["externed"] = any(alias in externs for alias in aliases)
+        entry["preserved"] = any(alias in preserves for alias in aliases)
+        c_files = []
+        for alias in aliases:
+            c_files.extend(c_owners.get(alias, []))
+        entry["c_files"] = sorted(set(c_files))
         entry["status"] = infer_status(routine, extract_idx, externs, preserves, c_owners)
         catalog.append(entry)
     return catalog

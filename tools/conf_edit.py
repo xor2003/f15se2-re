@@ -19,21 +19,30 @@ def load_conf(path):
 
 
 def parse_map(path):
+    segments = {}
     routines = {}
     for raw_line in Path(path).read_text(encoding="utf-8", errors="replace").splitlines():
         line = raw_line.strip()
-        if not line or line.startswith("#") or SEGMENT_RE.match(line):
+        if not line or line.startswith("#"):
+            continue
+        if match := SEGMENT_RE.match(line):
+            segments[match.group(1)] = {
+                "class": match.group(2),
+                "base": int(match.group(3), 16),
+            }
             continue
         match = ROUTINE_RE.match(line)
         if not match:
             continue
+        segment_name = match.group(2)
         routines[match.group(1)] = {
             "name": match.group(1),
-            "segment": match.group(2),
+            "segment": segment_name,
             "kind": match.group(3),
             "begin": int(match.group(4), 16),
             "end": int(match.group(5), 16),
             "attrs": sorted(set((match.group(6) or "").split())),
+            "image_begin": 0x10000 + (segments.get(segment_name, {}).get("base", 0) << 4) + int(match.group(4), 16),
         }
     return routines
 
@@ -59,7 +68,7 @@ def make_extract_entry(routine):
         "seg": routine["segment"],
         "begin": f"0x{routine['begin']:x}",
         "end": f"0x{routine['end']:x}",
-        "from": routine["name"],
+        "from": routine["symbol"],
         "to": "endp",
     }
 
@@ -75,10 +84,43 @@ def dedupe_strings(items):
     return out
 
 
+def routine_aliases(routine):
+    aliases = [routine["name"]]
+    hex_alias = f"sub_{routine['image_begin']:X}"
+    if hex_alias not in aliases:
+        aliases.append(hex_alias)
+    lower_alias = hex_alias.lower()
+    if lower_alias not in aliases:
+        aliases.append(lower_alias)
+    return aliases
+
+
+def choose_symbol_name(routine, conf):
+    aliases = routine_aliases(routine)
+    range_match = next(
+        (
+            item
+            for item in conf.get("extract", [])
+            if item.get("seg") == routine["segment"]
+            and int(item.get("begin", "0"), 16) == routine["begin"]
+            and int(item.get("end", "0"), 16) == routine["end"]
+            and item.get("from")
+        ),
+        None,
+    )
+    if range_match:
+        return range_match["from"]
+    for extern_name in conf.get("externs", []):
+        if extern_name in aliases:
+            return extern_name
+    return aliases[1] if routine["name"].startswith("routine_") and len(aliases) > 1 else routine["name"]
+
+
 def remove_extracts(extracts, routine):
+    aliases = set(routine_aliases(routine))
     out = []
     for item in extracts:
-        same_name = item.get("from") == routine["name"]
+        same_name = item.get("from") in aliases
         same_range = (
             item.get("seg") == routine["segment"]
             and int(item.get("begin", "0"), 16) == routine["begin"]
@@ -91,17 +133,20 @@ def remove_extracts(extracts, routine):
 
 
 def promote(conf, routine):
+    routine = dict(routine)
+    routine["symbol"] = choose_symbol_name(routine, conf)
     conf["extract"] = remove_extracts(conf.get("extract", []), routine)
     conf["extract"].append(make_extract_entry(routine))
     conf["extract"].sort(key=lambda item: (item.get("seg", ""), int(item.get("begin", "0"), 16), int(item.get("end", "0"), 16)))
-    conf["externs"] = dedupe_strings(conf.get("externs", []) + [routine["name"]])
+    conf["externs"] = dedupe_strings(conf.get("externs", []) + [routine["symbol"]])
     conf["externs"].sort()
     return conf
 
 
 def demote(conf, routine):
+    aliases = set(routine_aliases(routine))
     conf["extract"] = remove_extracts(conf.get("extract", []), routine)
-    conf["externs"] = [item for item in conf.get("externs", []) if item != routine["name"]]
+    conf["externs"] = [item for item in conf.get("externs", []) if item not in aliases]
     return conf
 
 
@@ -123,10 +168,13 @@ def main():
     routine = routines[args.function]
 
     if args.action == "show":
+        aliases = routine_aliases(routine)
         result = {
             "routine": routine,
+            "aliases": aliases,
+            "symbol": choose_symbol_name(routine, conf),
             "extract_present": any(
-                item.get("from") == routine["name"]
+                item.get("from") in aliases
                 or (
                     item.get("seg") == routine["segment"]
                     and int(item.get("begin", "0"), 16) == routine["begin"]
@@ -134,7 +182,7 @@ def main():
                 )
                 for item in conf.get("extract", [])
             ),
-            "extern_present": routine["name"] in conf.get("externs", []),
+            "extern_present": any(alias in conf.get("externs", []) for alias in aliases),
         }
         print(json.dumps(result, indent=2))
         return
