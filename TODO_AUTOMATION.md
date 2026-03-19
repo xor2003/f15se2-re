@@ -12,6 +12,7 @@
   - keep widening the soft-only pattern library from real cases like paired AX/DX split-copy drift
   - if generic store-fanout routines like `InitializeGameSettings` need extra help, add a separate heuristic for that shape instead of broadening the AX/DX split-copy trigger
   - keep validating new soft-only heuristics against at least one positive routine and two negative control routines before committing them
+  - keep checking early prologue drift separately from later block drift, because stack-frame size mismatches are often a local-count issue, not a control-flow issue
   - use `UpdateFlightModelAndHUD` as a near-case and find or create a cleaner routine that exercises the push/immediate-drift heuristic directly
   - use `UpdateFlightModelAndHUD` as the current near-case for stack-slot drift too, unless a cleaner early-window trigger appears
 - Keep toolkit tests in lockstep with behavior:

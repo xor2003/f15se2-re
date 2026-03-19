@@ -271,6 +271,10 @@ def heuristic_notes(focus_kind, record_or_error, soft_diffs):
         first = soft_diffs[0]
         if first["status"] in {"DIFF_OP1", "DIFF_OP2"}:
             notes.append("Early operand diffs often mean the compiler changed store order, temporary lifetimes, or signedness before the first hard mismatch.")
+        if first["ref_instr"].startswith("sub sp,") and first["tgt_instr"].startswith("sub sp,"):
+            notes.append(
+                "The first soft diff is a stack-frame size drift in the prologue, which usually means the current C block has a different local/temp footprint rather than different control flow."
+            )
         if first["ref_instr"].startswith("call") and first["tgt_instr"].startswith("call"):
             notes.append(
                 "The first soft diff is a same-shaped call operand drift, which can be an external/helper target or thunk-layout difference rather than a local control-flow mismatch."

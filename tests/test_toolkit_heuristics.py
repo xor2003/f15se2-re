@@ -121,6 +121,21 @@ class HeuristicNotesTest(unittest.TestCase):
             notes,
         )
 
+    def test_recognizes_prologue_stack_frame_drift(self):
+        notes = heuristic_notes(
+            "soft",
+            None,
+            [
+                diff("DIFF_OP2", "sub sp, 0x6", "sub sp, 0x4"),
+                diff("DIFF_OP1", "mov [0x9df8], ax", "mov [0xa146], ax"),
+                diff("DIFF_OP1", "mov word [0x9df6], 0x0", "mov word [0xa144], 0x0"),
+            ],
+        )
+        self.assertTrue(
+            any("stack-frame size drift in the prologue" in note for note in notes),
+            notes,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
