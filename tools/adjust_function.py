@@ -414,6 +414,28 @@ def rank_donor_support(donor_support, c_window):
     return ranked
 
 
+def top_donor_snippet(donor_exact, donor_support):
+    if donor_exact:
+        match = donor_exact[0]
+        if match.get("snippet"):
+            return {
+                "kind": "exact",
+                "label": f"{match['relative_path']}:{match['start_line']}-{match['end_line']}",
+                "snippet": match["snippet"],
+            }
+    for item in donor_support:
+        match = item.get("best_exact_match")
+        if not match or not match.get("snippet"):
+            continue
+        return {
+            "kind": "support",
+            "label": f"{item['symbol']} -> {match['relative_path']}:{match['start_line']}-{match['end_line']}",
+            "snippet": match["snippet"],
+            "window_hit": item.get("window_hit", False),
+        }
+    return None
+
+
 def render_report(bundle):
     print(f"Focus routine: {bundle['function']}")
     print(f"Focus kind: {bundle['focus_kind']}")
@@ -475,6 +497,11 @@ def render_report(bundle):
             elif item.get("best_reference_hit"):
                 hit = item["best_reference_hit"]
                 print(f"- {item['symbol']} -> {hit['relative_path']}:{hit['line']}{window_text}")
+    if bundle["top_donor_snippet"]:
+        print("Top donor snippet:")
+        print(f"- {bundle['top_donor_snippet']['label']}")
+        for line in bundle["top_donor_snippet"]["snippet"].rstrip().splitlines():
+            print(f"    {line}")
 
     if bundle["c_window"]:
         print("C window:")
@@ -579,6 +606,13 @@ def build_llm_prompt(bundle):
             elif item.get("best_reference_hit"):
                 hit = item["best_reference_hit"]
                 lines.append(f"{item['symbol']} -> {hit['relative_path']}:{hit['line']}{window_text}")
+        lines.append("```")
+        lines.append("")
+    if bundle["top_donor_snippet"]:
+        lines.append("Top donor snippet:")
+        lines.append("```text")
+        lines.append(bundle["top_donor_snippet"]["label"])
+        lines.append(bundle["top_donor_snippet"]["snippet"].rstrip())
         lines.append("```")
         lines.append("")
     if bundle["c_window"]:
@@ -734,6 +768,7 @@ def main():
     ptr_hints = []
     donor_exact = []
     donor_support = []
+    donor_snippet = None
     if c_file:
         try:
             ptr_hint_report = build_ptr_hints(args.target, function_name)
@@ -782,6 +817,9 @@ def main():
                     + ", ".join(dict.fromkeys(local_support))
                     + "."
                 )
+        donor_snippet = top_donor_snippet(donor_exact, donor_support)
+        if donor_snippet:
+            notes.append(f"Included the top donor snippet from {donor_snippet['label']}.")
 
     bundle = {
         "function": function_name,
@@ -804,6 +842,7 @@ def main():
         "ptr_hint_report": ptr_hint_report,
         "donor_exact": donor_exact,
         "donor_support": donor_support,
+        "top_donor_snippet": donor_snippet,
         "notes": notes,
     }
 

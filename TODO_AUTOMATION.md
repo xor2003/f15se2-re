@@ -13,7 +13,7 @@
   - keep `ptr-hints` visible in `adjust`/`refresh`
   - trim noisy hints when a routine touches many globals
   - trim noisy donor support when the asm routine calls many helpers
-  - surface likely helper bodies/snippets directly for top local donor hits
+  - cap or summarize very long donor helper bodies so the main bundle stays readable
 
 ## Later
 
