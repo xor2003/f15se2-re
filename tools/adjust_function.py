@@ -286,6 +286,11 @@ def heuristic_notes(focus_kind, record_or_error, soft_diffs):
             notes.append(
                 "The first soft diffs are all mov-shaped address/operand drifts, which usually means global/layout differences in an otherwise matching block rather than a real control-flow mismatch."
             )
+        push_like = [item for item in early if item["ref_instr"].startswith("push") and item["tgt_instr"].startswith("push")]
+        if len(push_like) >= 2:
+            notes.append(
+                "The first soft diffs include same-shaped push setup drift, which often means argument ordering/immediate layout noise around a helper call rather than a control-flow problem."
+            )
     if not notes:
         notes.append("Start from the first reported C line and inspect the preceding block for control-flow or temporary-shape differences.")
     return notes
