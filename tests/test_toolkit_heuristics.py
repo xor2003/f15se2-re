@@ -224,6 +224,24 @@ class HeuristicNotesTest(unittest.TestCase):
             notes,
         )
 
+    def test_recognizes_callback_vector_install_drift(self):
+        notes = heuristic_notes(
+            "soft",
+            None,
+            [
+                diff("DIFF_OP1", "mov word [0x504a], 0x1", "mov word [0x50ae], 0x1"),
+                diff("DIFF_OP1", "mov word [0x5054], 0x1", "mov word [0x50b8], 0x1"),
+                diff("DIFF_OP1", "call 0x3df2", "call 0x365a"),
+                diff("DIFF_OP1", "mov cs:[0x3d67], bx", "mov cs:[0x3655], bx"),
+                diff("DIFF_OP1", "mov cs:[0x3d69], es", "mov cs:[0x3657], es"),
+                diff("DIFF_OP2", "lds dx, cs:[0x3d01]", "lds dx, cs:[0x3646]"),
+            ],
+        )
+        self.assertTrue(
+            any("callback/vector install setup" in note for note in notes),
+            notes,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

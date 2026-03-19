@@ -401,6 +401,28 @@ def heuristic_notes(focus_kind, record_or_error, soft_diffs):
             notes.append(
                 "The early soft diffs look like repeated constant table/register setup, which usually means the same palette/table pointers are being staged and only the table addresses differ."
             )
+        callback_install_like = [
+            item
+            for item in soft_diffs[:10]
+            if item["ref_instr"].startswith("mov cs:[")
+            and item["tgt_instr"].startswith("mov cs:[")
+        ]
+        far_load_like = [
+            item
+            for item in soft_diffs[:10]
+            if (
+                item["ref_instr"].startswith("lds ")
+                or item["ref_instr"].startswith("les ")
+            )
+            and (
+                item["tgt_instr"].startswith("lds ")
+                or item["tgt_instr"].startswith("les ")
+            )
+        ]
+        if focus_kind == "soft" and len(callback_install_like) >= 2 and len(far_load_like) >= 1:
+            notes.append(
+                "The early soft diffs look like callback/vector install setup, which usually means the same far handler pointers are being captured and only the storage slots or vector addresses differ."
+            )
         stack_slot_like = [
             item
             for item in early
