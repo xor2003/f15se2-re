@@ -30,6 +30,7 @@ from ptr_hints import build_hints as build_ptr_hints  # noqa: E402
 SEG_COMMENT_RE = re.compile(r"seg([0-9A-Fa-f]{3}):(?:0x)?([0-9A-Fa-f]{4})")
 MNEMONIC_RE = re.compile(r"\b([A-Za-z][A-Za-z0-9]*)\b")
 DEFAULT_DONOR_DIR = Path("/home/xor/games/f14src/src")
+MAX_DONOR_SNIPPET_LINES = 24
 
 
 def run(cmd):
@@ -436,6 +437,32 @@ def top_donor_snippet(donor_exact, donor_support):
     return None
 
 
+def summarize_donor_snippet(snippet, max_lines=MAX_DONOR_SNIPPET_LINES):
+    lines = snippet.rstrip().splitlines()
+    if len(lines) <= max_lines:
+        return {
+            "snippet": "\n".join(lines) + ("\n" if lines else ""),
+            "truncated": False,
+            "original_line_count": len(lines),
+            "shown_line_count": len(lines),
+            "omitted_line_count": 0,
+        }
+
+    head_count = max_lines // 2
+    tail_count = max_lines - head_count - 1
+    shown = lines[:head_count]
+    omitted = len(lines) - (head_count + tail_count)
+    shown.append(f"... [{omitted} donor lines omitted] ...")
+    shown.extend(lines[-tail_count:])
+    return {
+        "snippet": "\n".join(shown) + "\n",
+        "truncated": True,
+        "original_line_count": len(lines),
+        "shown_line_count": len(shown),
+        "omitted_line_count": omitted,
+    }
+
+
 def render_report(bundle):
     print(f"Focus routine: {bundle['function']}")
     print(f"Focus kind: {bundle['focus_kind']}")
@@ -500,6 +527,11 @@ def render_report(bundle):
     if bundle["top_donor_snippet"]:
         print("Top donor snippet:")
         print(f"- {bundle['top_donor_snippet']['label']}")
+        if bundle["top_donor_snippet"].get("truncated"):
+            print(
+                f"- showing {bundle['top_donor_snippet']['shown_line_count']} of "
+                f"{bundle['top_donor_snippet']['original_line_count']} donor lines"
+            )
         for line in bundle["top_donor_snippet"]["snippet"].rstrip().splitlines():
             print(f"    {line}")
 
@@ -612,6 +644,11 @@ def build_llm_prompt(bundle):
         lines.append("Top donor snippet:")
         lines.append("```text")
         lines.append(bundle["top_donor_snippet"]["label"])
+        if bundle["top_donor_snippet"].get("truncated"):
+            lines.append(
+                f"[showing {bundle['top_donor_snippet']['shown_line_count']} of "
+                f"{bundle['top_donor_snippet']['original_line_count']} donor lines]"
+            )
         lines.append(bundle["top_donor_snippet"]["snippet"].rstrip())
         lines.append("```")
         lines.append("")
@@ -819,7 +856,13 @@ def main():
                 )
         donor_snippet = top_donor_snippet(donor_exact, donor_support)
         if donor_snippet:
+            donor_snippet.update(summarize_donor_snippet(donor_snippet["snippet"]))
             notes.append(f"Included the top donor snippet from {donor_snippet['label']}.")
+            if donor_snippet.get("truncated"):
+                notes.append(
+                    f"Summarized the donor snippet to {donor_snippet['shown_line_count']} shown lines "
+                    f"from {donor_snippet['original_line_count']} total."
+                )
 
     bundle = {
         "function": function_name,
