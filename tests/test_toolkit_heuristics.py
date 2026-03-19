@@ -222,6 +222,81 @@ class HeuristicNotesTest(unittest.TestCase):
             notes,
         )
 
+    def test_recognizes_shift_plus_zero_extend_scale_setup_drift(self):
+        notes = heuristic_notes(
+            "soft",
+            None,
+            [
+                diff("DIFF_OP2", "mov ax, [0x581e]", "mov ax, [0x5882]"),
+                diff("DIFF_OP2", "mov cl, 0x7", "mov cl, 0x7"),
+                diff("DIFF_OP1", "shr ax, cl", "shr ax, cl"),
+                diff("DIFF_OP2", "add ah, 0x4", "add ah, 0x4"),
+                diff("DIFF_OP1", "sub cx, cx", "sub cx, cx"),
+                diff("DIFF_OP1", "push cx", "push cx"),
+                diff("DIFF_OP1", "push ax", "push ax"),
+                diff("DIFF_OP1", "call 0xecb0", "call 0x5338"),
+                diff("DIFF_OP2", "mov ax, [0x5820]", "mov ax, [0x5884]"),
+                diff("DIFF_OP2", "mov cl, 0x6", "mov cl, 0x6"),
+                diff("DIFF_OP1", "shr ax, cl", "shr ax, cl"),
+                diff("DIFF_OP2", "add ah, 0x4", "add ah, 0x4"),
+                diff("DIFF_OP1", "sub cx, cx", "sub cx, cx"),
+                diff("DIFF_OP1", "push cx", "push cx"),
+                diff("DIFF_OP1", "push ax", "push ax"),
+                diff("DIFF_OP1", "call 0xecb0", "call 0x5338"),
+            ],
+        )
+        self.assertTrue(
+            any("shift-plus-zero-extend scale setup" in note for note in notes),
+            notes,
+        )
+
+    def test_scale_setup_drift_does_not_fire_for_generic_push_call_setup(self):
+        notes = heuristic_notes(
+            "soft",
+            None,
+            [
+                diff("DIFF_OP1", "push [0x6424]", "push [0x6488]"),
+                diff("DIFF_OP1", "push [0x6426]", "push [0x648a]"),
+                diff("DIFF_OP1", "call 0xeb00", "call 0x5126"),
+                diff("DIFF_OP1", "push [0x6424]", "push [0x6488]"),
+                diff("DIFF_OP1", "push [0x6426]", "push [0x648a]"),
+                diff("DIFF_OP1", "call 0xeb00", "call 0x5126"),
+            ],
+        )
+        self.assertFalse(
+            any("shift-plus-zero-extend scale setup" in note for note in notes),
+            notes,
+        )
+
+    def test_add_shape_notes_recognizes_spilled_scale_factor(self):
+        notes = add_shape_notes(
+            [],
+            [
+                lst(0x4B1C, "mov ax, [0x581e]"),
+                lst(0x4B1F, "mov cl, 0x7"),
+                lst(0x4B21, "shr ax, cl"),
+                lst(0x4B23, "add ah, 0x4"),
+                lst(0x4B26, "sub cx, cx"),
+                lst(0x4B28, "push cx"),
+                lst(0x4B29, "push ax"),
+            ],
+            {
+                "items": [
+                    cod(0x1898, "mov ax, [0x5882]"),
+                    cod(0x189b, "mov cl, 0x7"),
+                    cod(0x189d, "shr ax, cl"),
+                    cod(0x189f, "add ah, 0x4"),
+                    cod(0x18a2, "mov [bp-0x10], ax"),
+                    cod(0x18a5, "mov ax, [bp-0x30]"),
+                    cod(0x18a8, "cwd"),
+                ]
+            },
+        )
+        self.assertTrue(
+            any("spills a computed scale factor" in note for note in notes),
+            notes,
+        )
+
     def test_recognizes_repeated_bare_helper_call_drift(self):
         notes = heuristic_notes(
             "soft",

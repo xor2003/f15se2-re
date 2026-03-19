@@ -435,6 +435,61 @@ def heuristic_notes(focus_kind, record_or_error, soft_diffs):
             notes.append(
                 "The early soft diffs look like repeated constant table/register setup, which usually means the same palette/table pointers are being staged and only the table addresses differ."
             )
+        scale_setup_window = soft_diffs[:16]
+        shift_scale_like = [
+            item
+            for item in scale_setup_window
+            if item["ref_instr"].startswith("mov cl, 0x")
+            and item["tgt_instr"].startswith("mov cl, 0x")
+        ]
+        shift_apply_like = [
+            item
+            for item in scale_setup_window
+            if (
+                item["ref_instr"].startswith("shr ax, cl")
+                or item["ref_instr"].startswith("sar ax, cl")
+            )
+            and (
+                item["tgt_instr"].startswith("shr ax, cl")
+                or item["tgt_instr"].startswith("sar ax, cl")
+            )
+        ]
+        add_high_like = [
+            item
+            for item in scale_setup_window
+            if item["ref_instr"].startswith("add ah, 0x")
+            and item["tgt_instr"].startswith("add ah, 0x")
+        ]
+        zero_extend_like = [
+            item
+            for item in scale_setup_window
+            if item["ref_instr"].startswith("sub cx, cx")
+            and item["tgt_instr"].startswith("sub cx, cx")
+        ]
+        push_cx_like = [
+            item
+            for item in scale_setup_window
+            if item["ref_instr"].startswith("push cx")
+            and item["tgt_instr"].startswith("push cx")
+        ]
+        push_ax_like = [
+            item
+            for item in scale_setup_window
+            if item["ref_instr"].startswith("push ax")
+            and item["tgt_instr"].startswith("push ax")
+        ]
+        if (
+            focus_kind == "soft"
+            and len(shift_scale_like) >= 2
+            and len(shift_apply_like) >= 2
+            and len(add_high_like) >= 2
+            and len(zero_extend_like) >= 2
+            and len(push_cx_like) >= 2
+            and len(push_ax_like) >= 2
+        ):
+            notes.append(
+                "The early soft diffs look like repeated shift-plus-zero-extend scale setup around a long multiply, which usually means the same unsigned scale factors are being staged and only the source globals or temporary layout differ."
+            )
         callback_install_like = [
             item
             for item in soft_diffs[:10]
@@ -587,6 +642,32 @@ def add_shape_notes(notes, anchor_lst_entries, block_match):
     cod_has_signed_div = any(item["mnemonic"] in {"cwd", "idiv"} for item in cod_stream[:compare_len])
     if cod_has_signed_div and not ref_has_signed_div:
         notes.append("The generated block introduced signed division/sign-extension instructions not seen in the matched reference window; recheck signedness and integer promotion.")
+
+    if compare_len >= 5:
+        for idx in range(compare_len - 1):
+            if idx + 3 >= len(ref_stream[:compare_len]):
+                break
+            ref_curr = ref_stream[idx]
+            ref_next = ref_stream[idx + 1]
+            ref_next2 = ref_stream[idx + 2]
+            ref_next3 = ref_stream[idx + 3]
+            cod_curr = cod_stream[idx]
+            cod_next = cod_stream[idx + 1]
+            if (
+                ref_curr["mnemonic"] == "add"
+                and "ah," in ref_curr["text"].lower()
+                and ref_next["text"].lower().startswith("sub cx, cx")
+                and ref_next2["text"].lower().startswith("push cx")
+                and ref_next3["text"].lower().startswith("push ax")
+                and cod_curr["mnemonic"] == "add"
+                and "ah," in cod_curr["instruction"].lower()
+                and cod_next["instruction"].lower().startswith("mov [bp-")
+                and ", ax" in cod_next["instruction"].lower()
+            ):
+                notes.append(
+                    "The generated block spills a computed scale factor to a stack slot right after building it in AX, where the reference keeps that value live and zero-extends it directly into the long multiply setup."
+                )
+                break
 
     return notes
 
