@@ -27,7 +27,6 @@
         {"seg": "seg000", "begin": "0x2f8c", "end": "0x2fae", "from": "printError", "to": "endp"},
         {"seg": "seg000", "begin": "0x2faf", "end": "0x2fd9", "from": "strcpyFromDot", "to": "endp"},
         {"seg": "seg000", "begin": "0x3f72", "end": "0x51f8", "from": "otherKeyDispatch", "to": "endp"},
-        {"seg": "seg000", "begin": "0x5557", "end": "0x55aa", "from": "sub_15557", "to": "endp"},
         {"seg": "seg000", "begin": "0x55ab", "end": "0x5fda", "from": "ProcessPlayerInputAndAI", "to": "endp"},
         {"seg": "seg000", "begin": "0x8e50", "end": "0x9484", "from": "UpdateFlightModelAndHUD", "to": "endp"},
         {"seg": "seg000", "begin": "0x9e44", "end": "0x9e5c", "from": "sub_19E44", "to": "endp"},
