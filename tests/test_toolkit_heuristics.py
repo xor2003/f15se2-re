@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from tools.adjust_function import heuristic_notes
+from tools.adjust_function import add_shape_notes, heuristic_notes
 
 
 def diff(status, ref_instr, tgt_instr):
@@ -15,6 +15,21 @@ def diff(status, ref_instr, tgt_instr):
         "status": status,
         "ref_instr": ref_instr,
         "tgt_instr": tgt_instr,
+    }
+
+
+def lst(offset, instruction):
+    return {
+        "offset": offset,
+        "text": f"seg000:{offset:04x} {instruction}",
+    }
+
+
+def cod(address, instruction):
+    return {
+        "address": address,
+        "instruction": instruction,
+        "mnemonic": instruction.split()[0].lower(),
     }
 
 
@@ -241,6 +256,99 @@ class HeuristicNotesTest(unittest.TestCase):
             any("callback/vector install setup" in note for note in notes),
             notes,
         )
+
+
+class ShapeNotesTest(unittest.TestCase):
+    def test_recognizes_branch_signedness_drift(self):
+        notes = add_shape_notes(
+            [],
+            [
+                lst(0x100, "cmp ax, 0x4e"),
+                lst(0x103, "jl short loc_1"),
+            ],
+            {
+                "items": [
+                    cod(0x200, "cmp ax, 0x4e"),
+                    cod(0x203, "jb $L1"),
+                ]
+            },
+        )
+        self.assertTrue(any("Branch signedness drift" in note for note in notes), notes)
+
+    def test_recognizes_zero_check_materialization_drift(self):
+        notes = add_shape_notes(
+            [],
+            [
+                lst(0x120, "cmp ax, 0"),
+                lst(0x123, "jz short loc_2"),
+            ],
+            {
+                "items": [
+                    cod(0x220, "test ax, ax"),
+                    cod(0x222, "jz $L2"),
+                ]
+            },
+        )
+        self.assertTrue(
+            any("Zero/nonzero condition materialization drift" in note for note in notes),
+            notes,
+        )
+
+    def test_recognizes_extra_mov_pressure(self):
+        notes = add_shape_notes(
+            [],
+            [
+                lst(0x140, "mov ax, [0x1000]"),
+                lst(0x144, "cmp ax, 0"),
+                lst(0x147, "jz short loc_3"),
+                lst(0x144, "call 0x2000"),
+            ],
+            {
+                "items": [
+                    cod(0x240, "mov ax, [0x1000]"),
+                    cod(0x244, "mov dx, ax"),
+                    cod(0x246, "mov bx, dx"),
+                    cod(0x248, "call 0x2000"),
+                ]
+            },
+        )
+        self.assertTrue(any("extra mov instructions" in note for note in notes), notes)
+
+    def test_recognizes_extra_push_pressure(self):
+        notes = add_shape_notes(
+            [],
+            [
+                lst(0x160, "push ax"),
+                lst(0x162, "cmp bx, 0"),
+                lst(0x165, "jz short loc_4"),
+                lst(0x168, "call 0x2200"),
+            ],
+            {
+                "items": [
+                    cod(0x260, "push ax"),
+                    cod(0x262, "push bx"),
+                    cod(0x264, "push cx"),
+                    cod(0x266, "call 0x2200"),
+                ]
+            },
+        )
+        self.assertTrue(any("materializes more stack arguments" in note for note in notes), notes)
+
+    def test_recognizes_signed_division_drift(self):
+        notes = add_shape_notes(
+            [],
+            [
+                lst(0x180, "xor dx, dx"),
+                lst(0x182, "div cx"),
+            ],
+            {
+                "items": [
+                    cod(0x280, "cwd"),
+                    cod(0x281, "idiv cx"),
+                ]
+            },
+        )
+        self.assertTrue(any("signed division/sign-extension" in note for note in notes), notes)
 
 
 if __name__ == "__main__":

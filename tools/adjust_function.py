@@ -43,6 +43,40 @@ def run_capture(cmd):
     return subprocess.run(cmd, cwd=ROOT, check=False, capture_output=True, text=True)
 
 
+def build_log_paths_for_target(target):
+    stem = "EGAME" if target == "egame" else "start"
+    build_dir = ROOT / "build"
+    return {
+        "dos_log": build_dir / f"{stem}.dos.log",
+        "emu_log": build_dir / f"{stem}.emu.log",
+        "bat": build_dir / f"{stem}.dosbuild.bat",
+        "meta": build_dir / f"{stem}.dosbuild.meta",
+        "generic_log": build_dir / "LOG.TXT",
+    }
+
+
+def emit_build_log_summary(target, tail_lines=60):
+    paths = build_log_paths_for_target(target)
+    existing = [(label, path) for label, path in paths.items() if path.exists()]
+    if not existing:
+        return
+
+    print("Build log artifacts:")
+    for label, path in existing:
+        print(f"- {label}: {path}")
+
+    preferred = paths["dos_log"] if paths["dos_log"].exists() else paths["generic_log"]
+    if not preferred.exists():
+        return
+
+    lines = preferred.read_text(encoding="utf-8", errors="replace").splitlines()
+    if not lines:
+        return
+    print(f"Last {min(tail_lines, len(lines))} lines from {preferred}:")
+    for line in lines[-tail_lines:]:
+        print(line)
+
+
 def pick_focus(function_name, hard_errors, records, top_routines):
     if function_name:
         hard = next((item for item in hard_errors if item["routine"] == function_name), None)
@@ -476,6 +510,36 @@ def jump_family(mnemonic):
     return None
 
 
+def zero_check_family(instr_text):
+    text = instr_text.split(";", 1)[0].strip().lower()
+    if text.startswith("cmp ") and re.search(r",\s*(?:0x0|0)\b", text):
+        return "cmp_zero"
+    if text.startswith("test "):
+        return "test"
+    if text.startswith("or "):
+        parts = [part.strip() for part in text[3:].split(",", 1)]
+        if len(parts) == 2 and parts[0] == parts[1]:
+            return "or_self"
+    return None
+
+
+def first_zero_check_branch_pair(stream):
+    for idx, item in enumerate(stream):
+        family = zero_check_family(item.get("text") or item.get("instruction", ""))
+        if not family:
+            continue
+        for branch in stream[idx + 1 : idx + 3]:
+            mnemonic = branch["mnemonic"]
+            if mnemonic in {"jz", "jnz"}:
+                return {
+                    "family": family,
+                    "jump": mnemonic,
+                }
+            if mnemonic not in {"cmp", "test", "mov"}:
+                break
+    return None
+
+
 def add_shape_notes(notes, anchor_lst_entries, block_match):
     if not anchor_lst_entries or not block_match:
         return notes
@@ -496,6 +560,18 @@ def add_shape_notes(notes, anchor_lst_entries, block_match):
                 f"Branch signedness drift detected in the matched block ({ref_mn} vs {cod_mn}); check types and comparisons in the surrounding C condition."
             )
             break
+
+    ref_zero_pair = first_zero_check_branch_pair(ref_stream[:compare_len])
+    cod_zero_pair = first_zero_check_branch_pair(cod_stream[:compare_len])
+    if (
+        ref_zero_pair
+        and cod_zero_pair
+        and ref_zero_pair["family"] != cod_zero_pair["family"]
+        and ref_zero_pair["jump"] == cod_zero_pair["jump"]
+    ):
+        notes.append(
+            "Zero/nonzero condition materialization drift detected in the matched block; the condition role may still match even though one side uses cmp/test-style staging differently before the jz/jnz."
+        )
 
     ref_movs = sum(1 for item in ref_stream[:compare_len] if item["mnemonic"] == "mov")
     cod_movs = sum(1 for item in cod_stream[:compare_len] if item["mnemonic"] == "mov")
@@ -924,6 +1000,7 @@ def main():
         make_target = "analyze" if args.target == "egame" else "verify-start"
         rc = run(["make", make_target]).returncode
         if rc != 0:
+            emit_build_log_summary(args.target)
             raise SystemExit(rc)
 
     routines = parse_map_file(target_map)

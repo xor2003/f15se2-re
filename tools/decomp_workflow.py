@@ -20,6 +20,48 @@ def run_capture(cmd):
     return subprocess.run(cmd, cwd=ROOT, check=False, capture_output=True, text=True)
 
 
+def build_log_paths_for_target(target):
+    stem = "EGAME" if target == "egame" else "start"
+    build_dir = ROOT / "build"
+    return {
+        "dos_log": build_dir / f"{stem}.dos.log",
+        "emu_log": build_dir / f"{stem}.emu.log",
+        "bat": build_dir / f"{stem}.dosbuild.bat",
+        "meta": build_dir / f"{stem}.dosbuild.meta",
+        "generic_log": build_dir / "LOG.TXT",
+    }
+
+
+def emit_build_log_summary(target, tail_lines=60):
+    paths = build_log_paths_for_target(target)
+    existing = [(label, path) for label, path in paths.items() if path.exists()]
+    if not existing:
+        return
+
+    print("Build log artifacts:")
+    for label, path in existing:
+        print(f"- {label}: {path}")
+
+    preferred = paths["dos_log"] if paths["dos_log"].exists() else paths["generic_log"]
+    if not preferred.exists():
+        return
+
+    lines = preferred.read_text(encoding="utf-8", errors="replace").splitlines()
+    if not lines:
+        return
+    print(f"Last {min(tail_lines, len(lines))} lines from {preferred}:")
+    for line in lines[-tail_lines:]:
+        print(line)
+
+
+def run_make_with_logs(target_name, build_target):
+    rc = run(["make", build_target]).returncode
+    target = "egame" if "egame" in build_target or build_target == "analyze" else "start"
+    if rc != 0:
+        emit_build_log_summary(target)
+    return rc
+
+
 def tool_path(name):
     return str(MZRE_DEBUG / name)
 
@@ -116,6 +158,10 @@ def main():
     hint_pressure.add_argument("--top", type=int, default=10)
     hint_pressure.add_argument("--json", action="store_true")
 
+    build_log = sub.add_parser("build-log")
+    build_log.add_argument("--target", choices=["egame", "start"], default="egame")
+    build_log.add_argument("--tail", type=int, default=60)
+
     verify = sub.add_parser("verify")
     verify.add_argument("--target", choices=["egame", "start", "all"], default="egame")
 
@@ -174,7 +220,7 @@ def main():
     if args.command == "analyze":
         if args.fresh:
             make_target = "analyze" if args.target == "egame" else "verify-start"
-            rc = run(["make", make_target]).returncode
+            rc = run_make_with_logs(args.target, make_target)
             if rc != 0:
                 raise SystemExit(rc)
         mzdiff_file = args.mzdiff_file or ("build/mzdiff_egame.txt" if args.target == "egame" else "build/mzdiff_start.txt")
@@ -311,19 +357,32 @@ def main():
 
     if args.command == "verify":
         if args.target == "all":
-            raise SystemExit(run(["make", "verify"]).returncode)
+            rc = run(["make", "verify"]).returncode
+            if rc != 0:
+                emit_build_log_summary("start")
+                emit_build_log_summary("egame")
+            raise SystemExit(rc)
         target = "verify-egame" if args.target == "egame" else "verify-start"
-        raise SystemExit(run(["make", target]).returncode)
+        raise SystemExit(run_make_with_logs(args.target, target))
+
+    if args.command == "build-log":
+        emit_build_log_summary(args.target, tail_lines=args.tail)
+        raise SystemExit(0)
 
     if args.command == "iterate":
         if args.fresh:
             make_target = "analyze" if args.target == "egame" else "verify-start"
-            rc = run(["make", make_target]).returncode
+            rc = run_make_with_logs(args.target, make_target)
             if rc != 0:
                 raise SystemExit(rc)
 
         mzdiff_file = "build/mzdiff_egame.txt" if args.target == "egame" else "build/mzdiff_start.txt"
         lst_file = "lst/egame.lst" if args.target == "egame" else "lst/start.lst"
+
+        if not Path(mzdiff_file).exists():
+            print(f"Expected analysis file is missing: {mzdiff_file}")
+            emit_build_log_summary(args.target)
+            raise SystemExit(1)
 
         analysis = run_capture(
             [

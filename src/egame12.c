@@ -630,14 +630,14 @@ switch_break:
     
     
     // seg000:4A9A
-    _strcpy(unk_38FD0, _itoa(g_gees / 16, strBuf, 10));
+    strcpy(unk_38FD0, itoa(g_gees / 16, strBuf, 10));
     // seg000:4AA8
-    _strcat(unk_38FD0, ".");
+    strcat(unk_38FD0, ".");
     
     // seg000:4AD3
-    _strcat(unk_38FD0, _itoa((abs(g_gees) & 0xF) >> 1, strBuf, 10));
+    strcat(unk_38FD0, itoa((abs(g_gees) & 0xF) >> 1, strBuf, 10));
     // seg000:4AE1
-    _strcat(unk_38FD0, "G");
+    strcat(unk_38FD0, "G");
 
     // seg000:4AFB
     var_32 = (((int32)(g_thrust - sinX(g_ourPitch, 80))) * ((int32)800)) / ((int32)100);
@@ -645,10 +645,12 @@ switch_break:
     // seg000:4B16
     word_3C5A6 = 100;
     // seg000:4B30
-    var_32 = (( ((uint32)(((uint16)g_viewZ >> 7) + 0x0400)) * ((int32)(var_32)) ) >> 10);
+    temp_1 = ((uint16)g_viewZ >> 7) + 0x0400;
+    var_32 = ((int32)temp_1 * (int32)var_32) >> 10;
      
     // seg000:4B56
-    word_3C5A6 = (uint32)((int32)100 * (int32)((word_380D0 >> 6) + 0x0400)) >> 10;
+    temp_1 = (word_380D0 >> 6) + 0x0400;
+    word_3C5A6 = ((int32)100 * (int32)temp_1) >> 10;
     
     // seg000:4B83
     var_32 = ((int32)var_32) * ((int32)(-((word_33098 >> 9) - 100))) / (int32)90;
@@ -657,7 +659,7 @@ switch_break:
     var_32 = (((int32)var_32) * ((int32)(128 - g_gees))) >> 7;
     
     // seg000:4BC7
-    word_3C5A6 = ((int32)sub_15557(g_gees * 4) * (int32)word_3C5A6) >> 8;
+    word_3C5A6 = ((int32)sub_15557(g_gees * 4) * (int32)word_3C5A6) >> 3;
     // seg000:4BDA
     word_3C5A6 = abs(word_3C5A6);
 

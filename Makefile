@@ -30,6 +30,7 @@ LINKFLAGS := /M /INFORMATION
 DOSDIR := dos
 TOOLCHAIN_DIR := $(DOSDIR)/$(C_TOOLCHAIN)
 VERIFY_FLAGS := --verbose --loose --ctx 50 --asm
+DOSBOX_TIMEOUT ?= 180
 
 SRCTOP := src
 SRCDIR := $(SRCTOP)
@@ -41,7 +42,7 @@ HDRS := $(addprefix $(SRCDIR)/,$(HDRFILES))
 asmobj = $(addprefix $(1)/,$(2:.asm=.obj))
 cobj = $(addprefix $(1)/,$(2:.c=.obj))
 
-.PHONY: f15-se2 clean f15-se2-test verify verify-debug verify-start test reasm start-gen-asm start hello debug tools analyze
+.PHONY: f15-se2 clean f15-se2-test verify verify-debug verify-start test reasm start-gen-asm start hello debug tools analyze one-egame one-start
 all: f15-se2
 
 #
@@ -308,6 +309,12 @@ verify-egame: $(MZDIFF) $(EGAME_EXE) $(EGAME_VRF_REF)
 analyze: verify-egame
 	$(MZDIFF) $(EGAME_VRF_REF):$(EGAME_VRF_REFEP) $(EGAME_EXE):$(EGAME_VRF_TGTEP) $(VERIFY_FLAGS) --map map/egame.map > $(BUILDDIR)/mzdiff_egame.txt
 	python tools/correlation_analyzer.py $(BUILDDIR)/mzdiff_egame.txt --map-file map/egame.map --lst-file $(LSTDIR)/egame.lst --src-dir $(SRCDIR)
+
+one-egame:
+	DOSBOX_TIMEOUT=$(DOSBOX_TIMEOUT) python3 tools/decomp_workflow.py iterate --target egame --fresh
+
+one-start:
+	DOSBOX_TIMEOUT=$(DOSBOX_TIMEOUT) python3 tools/decomp_workflow.py iterate --target start --fresh
 
 TOOLS := $(TOOLDIR)/ovltool $(TOOLDIR)/vgapal $(TOOLDIR)/wldparse
 f15-tools: $(TOOLDIR) $(TOOLS)

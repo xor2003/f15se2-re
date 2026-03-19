@@ -21,15 +21,17 @@ void far sub_21A7E() {
 
 // ==== seg000:0x21c6 ====
 int sub_121C6() {
-    load3DAll();
+    return load3DAll();
 }
 
 // ==== seg000:0x2278 ====
 int sub_12278(int arg_0) {
-    uint8 var_2;
-    if (arg_0 > 0) { // 2284
-        var_2 = (uint8)arg_0 + byte_3790C[0];
-        while (var_2 != byte_3790C[0]) {}
+    uint8 target_tick;
+
+    if (arg_0 > 0) {
+        target_tick = (uint8)arg_0 + byte_3790C[0];
+        while (target_tick != byte_3790C[0]) {
+        }
     }
 }
 
@@ -67,10 +69,30 @@ int load15Flt3d3() {
 
 // ==== seg000:0xdd4c ====
 int openFileWrapper(char *path, int mode) {
-    openFile(path, mode);
+    return openFile(path, mode);
+}
+
+// ==== seg000:0xdd5e ====
+int sub_1DD5E(char *path, int attr) {
+    return createFile(path, attr);
 }
 
 // ==== seg000:0xdd70 ====
 int closeFileWrapper(int arg_0) {
-    closeFile(arg_0);
+    return closeFile(arg_0);
+}
+
+// ==== seg000:0xdd7e ====
+int sub_1DD7E(int arg_0, void *arg_2, int arg_4) {
+    return readFile1(arg_0, arg_2, arg_4);
+}
+
+// ==== seg000:0xdd92 ====
+int sub_1DD92(int arg_0, void *arg_2, int arg_4, int arg_6) {
+    return readFile2(arg_0, arg_2, arg_4, arg_6);
+}
+
+// ==== seg000:0xddaa ====
+int sub_1DDAA(int arg_0, void *arg_2, int arg_4, int arg_6, int arg_8) {
+    return sub_1DF4F(arg_0, arg_2, arg_4, arg_6, arg_8);
 }
