@@ -11,6 +11,32 @@ int UpdateRotationMatrix()
     return result;
 }
 
+int sub_1543B(int arg_0, int arg_2)
+{
+    int sign_0;
+    int sign_2;
+    unsigned long abs_0;
+    unsigned long abs_2;
+    int result;
+
+    sign_0 = 1;
+    sign_2 = 1;
+    if (arg_0 < 0) {
+        sign_0 = -1;
+    }
+    if (arg_2 < 0) {
+        sign_2 = -1;
+    }
+
+    abs_0 = (unsigned long)(unsigned int)abs(arg_0);
+    abs_2 = (unsigned long)(unsigned int)abs(arg_2);
+    result = (int)(abs_2 / abs_0);
+    result >>= 1;
+    result *= sign_2;
+    result *= sign_0;
+    return result;
+}
+
 int sub_15540(int angle)
 {
     return 0x4000 - sub_154B7(angle);
