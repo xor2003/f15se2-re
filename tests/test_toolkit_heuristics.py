@@ -172,6 +172,24 @@ class HeuristicNotesTest(unittest.TestCase):
             notes,
         )
 
+    def test_recognizes_literal_load_and_jump_tail_drift(self):
+        notes = heuristic_notes(
+            "soft",
+            None,
+            [
+                diff("DIFF_OP2", "mov ax, 0x5f7c", "mov ax, 0x5fe0"),
+                diff("DIFF_OP1", "jmp 0xdf80", "jmp 0x38cf"),
+                diff("DIFF_OP2", "mov ax, 0x5f8c", "mov ax, 0x5ff0"),
+                diff("DIFF_OP1", "jmp 0xdf80", "jmp 0x38cf"),
+                diff("DIFF_OP2", "mov ax, 0x5fa7", "mov ax, 0x600b"),
+                diff("DIFF_OP1", "jmp 0xdf80", "jmp 0x38cf"),
+            ],
+        )
+        self.assertTrue(
+            any("literal-load and jump-to-shared-tail blocks" in note for note in notes),
+            notes,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

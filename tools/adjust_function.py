@@ -357,6 +357,23 @@ def heuristic_notes(focus_kind, record_or_error, soft_diffs):
             notes.append(
                 "The early soft diffs repeat a helper-call setup pattern with matching push/call shape, which usually means argument staging still matches and only source symbols or storage locations differ."
             )
+        literal_jump_window = soft_diffs[:8]
+        literal_loads = [
+            item
+            for item in literal_jump_window
+            if item["ref_instr"].startswith("mov ax, 0x")
+            and item["tgt_instr"].startswith("mov ax, 0x")
+        ]
+        jump_like = [
+            item
+            for item in literal_jump_window
+            if item["ref_instr"].startswith("jmp ")
+            and item["tgt_instr"].startswith("jmp ")
+        ]
+        if focus_kind == "soft" and len(literal_loads) >= 2 and len(jump_like) >= 2:
+            notes.append(
+                "The early soft diffs look like repeated literal-load and jump-to-shared-tail blocks, which usually means the case structure still matches and only literal addresses or shared-tail placement differ."
+            )
         stack_slot_like = [
             item
             for item in early
