@@ -7,9 +7,8 @@
   - better temporary/evaluation-order suggestions
   - better call-target drift explanations
 - Review more repo tools and capture the useful ones in workflow docs:
-  - `mzsig` for routine signatures
-  - `mzdup` for duplicate detection
-  - `mzptr` for data-reference discovery
+  - follow up on `mzptr` as the most promising helper for local/global naming support
+  - keep `mzdup` as an offline duplicate-hunting step, not part of the tight edit loop
 
 ## Later
 

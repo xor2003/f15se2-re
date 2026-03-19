@@ -59,6 +59,14 @@ Other `mzretools` binaries worth knowing:
 - `mzptr`: scans an exe + map for data references and variable usage
 - `mzhdr`: inspects DOS MZ headers and load-module offsets
 
+Practical findings from local testing:
+
+- `mzptr` and `mzsig` expect an executable that actually matches the provided map file; in this repo that usually means the reference binaries in `bin/`, not the rebuilt outputs in `build/`
+- `python3 tools/decomp_workflow.py ptrs --target egame` works as a variable-discovery aid, but its own output warns that variables with more than 1-2 hits are often false positives
+- `python3 tools/decomp_workflow.py sigs --target egame --output build/egame.sig --overwrite` works and currently extracts signatures from the reference `egame.exe`
+- `mzdup` is useful in principle for duplicate hunting, but on the current `egame` signature set it appears expensive/slow enough that it should be treated as an offline analysis step, not something to run in the tight edit-adjust loop by default
+- `mzhdr build/EGAME.EXE -l` reports the load-module offset (`0x200` in the current build), which is helpful when sanity-checking map/exe relationships
+
 ## Core Workflow
 
 1. Keep the current baseline valid.
@@ -138,6 +146,12 @@ If the donor tree exists, `iterate` and `draft` automatically mine it for exact 
 - never assume donor code is binary-faithful without recompiling and checking `mzdiff`
 
 If a function was already extracted out of `src/egame_rc.asm`, the draft helper falls back to `lst/*.lst` plus `map/*.map` so it can still recover the original asm body for prompting.
+
+Helper-tool usage guidance:
+
+- use `ptrs` when data object naming or pointer replacement is the current bottleneck
+- use `sigs` to build a reusable signature file from the reference binary, not from an in-progress rebuilt binary
+- use `dups` sparingly, as a side analysis pass for duplicate discovery rather than part of every edit cycle
 
 ## Translation Notes
 
