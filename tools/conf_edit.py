@@ -7,6 +7,7 @@ from pathlib import Path
 
 SEGMENT_RE = re.compile(r"^(\w+)\s+(CODE|DATA|STACK)\s+([0-9a-fA-F]+)$")
 ROUTINE_RE = re.compile(r"^([\w_]+):\s+(\w+)\s+(NEAR|FAR)\s+([0-9a-fA-F]+)-([0-9a-fA-F]+)(?:\s+(.*))?$")
+LST_PROC_RE = re.compile(r"^\s*(?:\w+:)?([0-9A-Fa-f]+)\s+([\w_]+)\s+proc\s+(near|far)\b", re.I)
 
 
 def strip_json_comments(text):
@@ -18,9 +19,25 @@ def load_conf(path):
     return json.loads(strip_json_comments(text))
 
 
+def parse_lst_names(path):
+    names = {}
+    lst_path = Path(path)
+    if not lst_path.is_file():
+        return names
+    for raw_line in lst_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if match := LST_PROC_RE.match(raw_line):
+            names[int(match.group(1), 16)] = match.group(2)
+    return names
+
+
 def parse_map(path):
     segments = {}
     routines = {}
+    map_path = Path(path)
+    lst_names = parse_lst_names(map_path.with_suffix(".lst"))
+    if not lst_names:
+        project_lst = map_path.parent.parent / "lst" / f"{map_path.stem}.lst"
+        lst_names = parse_lst_names(project_lst)
     for raw_line in Path(path).read_text(encoding="utf-8", errors="replace").splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#"):
@@ -35,14 +52,16 @@ def parse_map(path):
         if not match:
             continue
         segment_name = match.group(2)
+        begin = int(match.group(4), 16)
         routines[match.group(1)] = {
             "name": match.group(1),
             "segment": segment_name,
             "kind": match.group(3),
-            "begin": int(match.group(4), 16),
+            "begin": begin,
             "end": int(match.group(5), 16),
             "attrs": sorted(set((match.group(6) or "").split())),
             "image_begin": 0x10000 + (segments.get(segment_name, {}).get("base", 0) << 4) + int(match.group(4), 16),
+            "lst_name": lst_names.get(begin),
         }
     return routines
 
@@ -86,6 +105,9 @@ def dedupe_strings(items):
 
 def routine_aliases(routine):
     aliases = [routine["name"]]
+    lst_name = routine.get("lst_name")
+    if lst_name and lst_name not in aliases:
+        aliases.append(lst_name)
     hex_alias = f"sub_{routine['image_begin']:X}"
     if hex_alias not in aliases:
         aliases.append(hex_alias)

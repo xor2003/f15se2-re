@@ -15,6 +15,7 @@ C_FUNC_RE = re.compile(
     r"^\s*(?:unsigned\s+)?(?:void|char|int|long|__int\d+)\s+(?:__cdecl\s+)?(?:far\s+)?(\w+)\s*\([^;{}]*\)\s*\{",
     re.M,
 )
+LST_PROC_RE = re.compile(r"^\s*(?:\w+:)?([0-9A-Fa-f]+)\s+([\w_]+)\s+proc\s+(near|far)\b", re.I)
 
 
 def strip_json_comments(text):
@@ -26,9 +27,25 @@ def load_conf(path):
     return json.loads(strip_json_comments(text))
 
 
+def parse_lst_names(path):
+    names = {}
+    lst_path = Path(path)
+    if not lst_path.is_file():
+        return names
+    for raw_line in lst_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if match := LST_PROC_RE.match(raw_line):
+            names[int(match.group(1), 16)] = match.group(2)
+    return names
+
+
 def parse_map(path):
     segments = {}
     routines = []
+    map_path = Path(path)
+    lst_names = parse_lst_names(map_path.with_suffix(".lst"))
+    if not lst_names:
+        project_lst = map_path.parent.parent / "lst" / f"{map_path.stem}.lst"
+        lst_names = parse_lst_names(project_lst)
     for raw_line in Path(path).read_text(encoding="utf-8", errors="replace").splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#"):
@@ -41,14 +58,16 @@ def parse_map(path):
             continue
         if match := ROUTINE_RE.match(line):
             attrs = set((match.group(6) or "").split())
+            begin = int(match.group(4), 16)
             routines.append(
                 {
                     "name": match.group(1),
                     "segment": match.group(2),
                     "kind": match.group(3),
-                    "begin": int(match.group(4), 16),
+                    "begin": begin,
                     "end": int(match.group(5), 16),
                     "attrs": sorted(attrs),
+                    "lst_name": lst_names.get(begin),
                 }
             )
     return segments, routines
@@ -76,6 +95,9 @@ def index_extracts(config):
 
 def routine_aliases(routine):
     aliases = [routine["name"]]
+    lst_name = routine.get("lst_name")
+    if lst_name and lst_name not in aliases:
+        aliases.append(lst_name)
     image_begin = 0x10000 + routine.get("segment_base", 0) * 0x10 + routine["begin"]
     hex_alias = f"sub_{image_begin:X}"
     if hex_alias not in aliases:
