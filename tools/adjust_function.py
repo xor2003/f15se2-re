@@ -308,6 +308,21 @@ def heuristic_notes(focus_kind, record_or_error, soft_diffs):
             notes.append(
                 "The early soft diffs look like a repeated AX/DX copy block, which usually means a 32-bit global copy or split store is still shape-matching and only the referenced symbols/layout differ."
             )
+        fanout_window = soft_diffs[:5]
+        fanout_stores = [
+            item
+            for item in fanout_window
+            if (item["ref_instr"].startswith("mov [") or item["ref_instr"].startswith("mov byte ["))
+            and (item["tgt_instr"].startswith("mov [") or item["tgt_instr"].startswith("mov byte ["))
+        ]
+        if (
+            focus_kind == "soft"
+            and len(fanout_stores) >= 4
+            and not ("dx" in pair_text and len(pair_like) >= 4)
+        ):
+            notes.append(
+                "The early soft diffs look like a one-value fan-out store block, which usually means one loaded setting or flag is still being copied into several globals and only the target layout differs."
+            )
         push_like = [item for item in early if item["ref_instr"].startswith("push") and item["tgt_instr"].startswith("push")]
         if len(push_like) >= 2:
             notes.append(
