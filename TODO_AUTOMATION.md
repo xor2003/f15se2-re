@@ -6,12 +6,13 @@
   - better signed vs unsigned branch detection
   - better temporary/evaluation-order suggestions
   - better call-target drift explanations
-- Feed `ptr-hints` into the normal adjust loop:
-  - show matched globals alongside `adjust`/`refresh` bundles
-  - use `mzptr` as a naming/pointer-offset aid, not as a code-reference tracer
 - Review more repo tools and capture the useful ones in workflow docs:
   - keep documenting which `mzretools` outputs are actionable in the tight decompilation loop
   - keep `mzdup` as an offline duplicate-hunting step, not part of the tight edit loop
+- Tighten the integrated adjust bundle:
+  - keep `ptr-hints` visible in `adjust`/`refresh`
+  - rank pointer/global hints by likely relevance to the current mismatch window
+  - trim noisy hints when a routine touches many globals
 
 ## Later
 

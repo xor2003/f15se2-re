@@ -149,6 +149,7 @@ Findings from trying the toolkit on already converted functions:
 - `ProcessPlayerInputAndAI` and `UpdateFlightModelAndHUD` are useful soft-diff test cases for already C-owned routines
 - function-scoped `analyze --function ...` should suppress unrelated hard mismatches from other routines, otherwise the output is misleading
 - for soft-diff routines, the most useful `.COD` block match is usually the local match near the current `.COD` window, not the best match anywhere in the whole function
+- `adjust` now includes `ptr-hints` inline, which makes the main edit bundle more useful for routines that already touch named globals and pointer-like data objects
 
 If the donor tree exists, `iterate` and `draft` automatically mine it for exact matches or reference hits. Treat donor code as hint material only:
 
@@ -162,6 +163,7 @@ Helper-tool usage guidance:
 
 - use `ptrs` when data object naming or pointer replacement is the current bottleneck
 - use `ptr-hints <function>` when a specific C-owned routine needs a filtered view of `mzptr` hints for globals already referenced by that routine
+- expect the same `ptr-hints` data to show up inside `adjust` and `refresh` bundles now; use it as supporting evidence when deciding whether a hardcoded offset should become a named global/pointer expression
 - use `sigs` to build a reusable signature file from the reference binary, not from an in-progress rebuilt binary
 - use `dups` sparingly, as a side analysis pass for duplicate discovery rather than part of every edit cycle
 

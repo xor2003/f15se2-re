@@ -24,6 +24,7 @@ from correlation_analyzer import (  # noqa: E402
     parse_mzdiff_output,
     summarize,
 )
+from ptr_hints import build_hints as build_ptr_hints  # noqa: E402
 
 SEG_COMMENT_RE = re.compile(r"seg([0-9A-Fa-f]{3}):(?:0x)?([0-9A-Fa-f]{4})")
 MNEMONIC_RE = re.compile(r"\b([A-Za-z][A-Za-z0-9]*)\b")
@@ -398,6 +399,23 @@ def render_report(bundle):
         print(f"- ref: {bundle['focus_record']['ref_instr']}")
         print(f"- tgt: {bundle['focus_record']['tgt_instr']}")
 
+    if bundle["ptr_hints"]:
+        print("Global/pointer hints:")
+        for item in bundle["ptr_hints"][:10]:
+            alias_text = ""
+            if item["aliases"]:
+                alias_text = f" aliases={','.join(item['aliases'][:3])}"
+            used_text = ""
+            if item["used_in_c"]:
+                used_text = f" used_in_c={','.join(item['used_in_c'])}"
+            sample = ""
+            if item["ref_segname"] and item["ref_offset"] is not None:
+                sample = f" sample_ref={item['ref_segname']}:0x{item['ref_offset']:x}"
+            print(
+                f"- {item['name']} var_off=0x{(item['var_offset'] or 0):x} "
+                f"count={item['count']}{sample}{alias_text}{used_text}"
+            )
+
     if bundle["c_window"]:
         print("C window:")
         for item in bundle["c_window"]:
@@ -463,6 +481,23 @@ def build_llm_prompt(bundle):
         lines.append(f"- status: {bundle['focus_record']['status']}")
         lines.append(f"- ref: {bundle['focus_record']['ref_instr']}")
         lines.append(f"- tgt: {bundle['focus_record']['tgt_instr']}")
+        lines.append("")
+    if bundle["ptr_hints"]:
+        lines.append("Global/pointer hints for this routine:")
+        lines.append("```text")
+        for item in bundle["ptr_hints"][:10]:
+            alias_text = f" aliases={','.join(item['aliases'][:3])}" if item["aliases"] else ""
+            used_text = f" used_in_c={','.join(item['used_in_c'])}" if item["used_in_c"] else ""
+            sample = (
+                f" sample_ref={item['ref_segname']}:0x{item['ref_offset']:x}"
+                if item["ref_segname"] and item["ref_offset"] is not None
+                else ""
+            )
+            lines.append(
+                f"{item['name']} var_off=0x{(item['var_offset'] or 0):x} "
+                f"count={item['count']}{sample}{alias_text}{used_text}"
+            )
+        lines.append("```")
         lines.append("")
     if bundle["c_window"]:
         lines.append("Current C window:")
@@ -613,6 +648,18 @@ def main():
     notes = add_block_match_notes(notes, preferred_cod_block_match)
     notes = add_shape_notes(notes, anchor_lst_entries, preferred_cod_block_match)
     notes = add_expression_notes(notes, c_window, cod_entries)
+    ptr_hint_report = None
+    ptr_hints = []
+    if c_file:
+        try:
+            ptr_hint_report = build_ptr_hints(args.target, function_name)
+            ptr_hints = ptr_hint_report.get("matched_hints", [])
+            if ptr_hints:
+                notes.append(
+                    f"ptr-hints found {len(ptr_hints)} relevant global/pointer candidates already used by this routine."
+                )
+        except RuntimeError:
+            ptr_hint_report = None
 
     bundle = {
         "function": function_name,
@@ -631,6 +678,8 @@ def main():
         "anchor_lst_window": anchor_lst_entries,
         "mismatch_lst_window": mismatch_lst_entries,
         "soft_diffs": soft_diffs,
+        "ptr_hints": ptr_hints,
+        "ptr_hint_report": ptr_hint_report,
         "notes": notes,
     }
 
