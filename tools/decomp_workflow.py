@@ -74,6 +74,7 @@ def main():
     adjust.add_argument("--llm-prompt", action="store_true")
     adjust.add_argument("--prompt-output")
     adjust.add_argument("--snapshot-dir")
+    adjust.add_argument("--full-hints", action="store_true")
     adjust.add_argument("--json", action="store_true")
 
     refresh = sub.add_parser("refresh")
@@ -83,6 +84,7 @@ def main():
     refresh.add_argument("--use-current", action="store_true", help="Reuse the current mzdiff/build state instead of running make first")
     refresh.add_argument("--llm-prompt", action="store_true")
     refresh.add_argument("--prompt-output")
+    refresh.add_argument("--full-hints", action="store_true")
 
     ptrs = sub.add_parser("ptrs")
     ptrs.add_argument("--target", choices=["egame", "start"], default="egame")
@@ -237,6 +239,8 @@ def main():
             cmd.extend(["--prompt-output", args.prompt_output])
         if args.snapshot_dir:
             cmd.extend(["--snapshot-dir", args.snapshot_dir])
+        if args.full_hints:
+            cmd.append("--full-hints")
         if args.json:
             cmd.append("--json")
         raise SystemExit(run(cmd).returncode)
@@ -249,6 +253,8 @@ def main():
             cmd.append("--fresh")
         if args.snapshot_dir:
             cmd.extend(["--snapshot-dir", args.snapshot_dir])
+        if args.full_hints:
+            cmd.append("--full-hints")
         if args.llm_prompt:
             cmd.append("--llm-prompt")
         if args.prompt_output:

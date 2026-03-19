@@ -465,7 +465,7 @@ def summarize_donor_snippet(snippet, max_lines=MAX_DONOR_SNIPPET_LINES):
     }
 
 
-def render_report(bundle):
+def render_report(bundle, full_hints=False):
     print(f"Focus routine: {bundle['function']}")
     print(f"Focus kind: {bundle['focus_kind']}")
     if bundle["c_file"]:
@@ -494,7 +494,9 @@ def render_report(bundle):
 
     if bundle["ptr_hints"]:
         print("Global/pointer hints:")
-        for item in bundle["ptr_hints"][:MAX_RENDERED_PTR_HINTS]:
+        ptr_limit = None if full_hints else MAX_RENDERED_PTR_HINTS
+        ptr_items = bundle["ptr_hints"] if ptr_limit is None else bundle["ptr_hints"][:ptr_limit]
+        for item in ptr_items:
             alias_text = ""
             if item["aliases"]:
                 alias_text = f" aliases={','.join(item['aliases'][:3])}"
@@ -511,7 +513,7 @@ def render_report(bundle):
                 f"- {item['name']} var_off=0x{(item['var_offset'] or 0):x} "
                 f"count={item['count']}{sample}{alias_text}{used_text}{window_text}"
             )
-        hidden = len(bundle["ptr_hints"]) - MAX_RENDERED_PTR_HINTS
+        hidden = 0 if full_hints else len(bundle["ptr_hints"]) - MAX_RENDERED_PTR_HINTS
         if hidden > 0:
             print(f"- ... {hidden} more ptr-hint entries hidden")
 
@@ -521,7 +523,9 @@ def render_report(bundle):
         print(f"- {match['relative_path']}:{match['start_line']}-{match['end_line']}")
     if bundle["donor_support"]:
         print("Donor support hints:")
-        for item in bundle["donor_support"][:MAX_RENDERED_DONOR_HINTS]:
+        donor_limit = None if full_hints else MAX_RENDERED_DONOR_HINTS
+        donor_items = bundle["donor_support"] if donor_limit is None else bundle["donor_support"][:donor_limit]
+        for item in donor_items:
             window_text = " window_hit=yes" if item.get("window_hit") else ""
             if item.get("best_exact_match"):
                 match = item["best_exact_match"]
@@ -529,7 +533,7 @@ def render_report(bundle):
             elif item.get("best_reference_hit"):
                 hit = item["best_reference_hit"]
                 print(f"- {item['symbol']} -> {hit['relative_path']}:{hit['line']}{window_text}")
-        hidden = len(bundle["donor_support"]) - MAX_RENDERED_DONOR_HINTS
+        hidden = 0 if full_hints else len(bundle["donor_support"]) - MAX_RENDERED_DONOR_HINTS
         if hidden > 0:
             print(f"- ... {hidden} more donor-support entries hidden")
     if bundle["top_donor_snippet"]:
@@ -583,7 +587,7 @@ def render_report(bundle):
             print(f"  tgt: {item['tgt_instr']}")
 
 
-def build_llm_prompt(bundle):
+def build_llm_prompt(bundle, full_hints=False):
     lines = []
     lines.append("Adjust the C code for this MSC 5.1 decompilation routine to move it closer to binary identity.")
     lines.append("Make the smallest possible source changes in the shown C region.")
@@ -612,7 +616,9 @@ def build_llm_prompt(bundle):
     if bundle["ptr_hints"]:
         lines.append("Global/pointer hints for this routine:")
         lines.append("```text")
-        for item in bundle["ptr_hints"][:MAX_RENDERED_PTR_HINTS]:
+        ptr_limit = None if full_hints else MAX_RENDERED_PTR_HINTS
+        ptr_items = bundle["ptr_hints"] if ptr_limit is None else bundle["ptr_hints"][:ptr_limit]
+        for item in ptr_items:
             alias_text = f" aliases={','.join(item['aliases'][:3])}" if item["aliases"] else ""
             used_text = f" used_in_c={','.join(item['used_in_c'])}" if item["used_in_c"] else ""
             window_text = f" window_hits={','.join(item['window_hits'])}" if item.get("window_hits") else ""
@@ -625,7 +631,7 @@ def build_llm_prompt(bundle):
                 f"{item['name']} var_off=0x{(item['var_offset'] or 0):x} "
                 f"count={item['count']}{sample}{alias_text}{used_text}{window_text}"
             )
-        hidden = len(bundle["ptr_hints"]) - MAX_RENDERED_PTR_HINTS
+        hidden = 0 if full_hints else len(bundle["ptr_hints"]) - MAX_RENDERED_PTR_HINTS
         if hidden > 0:
             lines.append(f"... {hidden} more ptr-hint entries hidden")
         lines.append("```")
@@ -641,7 +647,9 @@ def build_llm_prompt(bundle):
     if bundle["donor_support"]:
         lines.append("Donor support hints:")
         lines.append("```text")
-        for item in bundle["donor_support"][:MAX_RENDERED_DONOR_HINTS]:
+        donor_limit = None if full_hints else MAX_RENDERED_DONOR_HINTS
+        donor_items = bundle["donor_support"] if donor_limit is None else bundle["donor_support"][:donor_limit]
+        for item in donor_items:
             window_text = " window_hit=yes" if item.get("window_hit") else ""
             if item.get("best_exact_match"):
                 match = item["best_exact_match"]
@@ -649,7 +657,7 @@ def build_llm_prompt(bundle):
             elif item.get("best_reference_hit"):
                 hit = item["best_reference_hit"]
                 lines.append(f"{item['symbol']} -> {hit['relative_path']}:{hit['line']}{window_text}")
-        hidden = len(bundle["donor_support"]) - MAX_RENDERED_DONOR_HINTS
+        hidden = 0 if full_hints else len(bundle["donor_support"]) - MAX_RENDERED_DONOR_HINTS
         if hidden > 0:
             lines.append(f"... {hidden} more donor-support entries hidden")
         lines.append("```")
@@ -716,7 +724,7 @@ def build_llm_prompt(bundle):
     return "\n".join(lines).rstrip() + "\n"
 
 
-def write_snapshot(bundle, snapshot_dir, llm_prompt=False):
+def write_snapshot(bundle, snapshot_dir, llm_prompt=False, full_hints=False):
     snapshot_root = Path(snapshot_dir)
     snapshot_root.mkdir(parents=True, exist_ok=True)
     stem = f"{bundle['function']}.json"
@@ -726,7 +734,7 @@ def write_snapshot(bundle, snapshot_dir, llm_prompt=False):
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     if llm_prompt:
         prompt_path = snapshot_root / f"{bundle['function']}.prompt.txt"
-        prompt_path.write_text(build_llm_prompt(bundle), encoding="utf-8")
+        prompt_path.write_text(build_llm_prompt(bundle, full_hints=full_hints), encoding="utf-8")
     return path
 
 
@@ -743,6 +751,7 @@ def main():
     parser.add_argument("--llm-prompt", action="store_true", help="Render an LLM-ready adjustment prompt instead of the normal report")
     parser.add_argument("--prompt-output", help="Write the LLM prompt to a file")
     parser.add_argument("--snapshot-dir", help="Write the current adjust bundle as JSON into this directory")
+    parser.add_argument("--full-hints", action="store_true", help="Show all ranked ptr/donor hints instead of the compact default view")
     parser.add_argument("--json", action="store_true", help="Emit JSON")
     args = parser.parse_args()
 
@@ -904,19 +913,19 @@ def main():
     }
 
     if args.snapshot_dir:
-        write_snapshot(bundle, args.snapshot_dir, llm_prompt=True)
+        write_snapshot(bundle, args.snapshot_dir, llm_prompt=True, full_hints=args.full_hints)
 
     if args.json:
         print(json.dumps(bundle, indent=2))
         return
     if args.llm_prompt:
-        prompt = build_llm_prompt(bundle)
+        prompt = build_llm_prompt(bundle, full_hints=args.full_hints)
         if args.prompt_output:
             Path(args.prompt_output).write_text(prompt, encoding="utf-8")
         else:
             print(prompt, end="")
         return
-    render_report(bundle)
+    render_report(bundle, full_hints=args.full_hints)
 
 
 if __name__ == "__main__":

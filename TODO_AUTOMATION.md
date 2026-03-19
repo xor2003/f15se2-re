@@ -13,7 +13,7 @@
   - keep `ptr-hints` visible in `adjust`/`refresh`
   - collapse or hide lower-priority ptr/donor sections when the bundle gets too large
   - tune the display limits against routines with larger hint sets
-  - consider a `--full-hints` mode for explicit deep dives
+  - test `--full-hints` on routines with genuinely large hint sets
 
 ## Later
 
