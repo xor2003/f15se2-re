@@ -8,7 +8,7 @@
   - better call-target drift explanations
   - recognize more low-risk soft-diff patterns beyond mov/global-address drift
   - recognize low-risk same-shaped push/immediate drift around helper calls
-  - find or create a real routine case that exercises the push/immediate-drift heuristic
+  - use `UpdateFlightModelAndHUD` as a near-case and find or create a cleaner routine that exercises the push/immediate-drift heuristic directly
 - Review more repo tools and capture the useful ones in workflow docs:
   - keep documenting which `mzretools` outputs are actionable in the tight decompilation loop
   - keep `mzdup` as an offline duplicate-hunting step, not part of the tight edit loop

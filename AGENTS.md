@@ -161,7 +161,7 @@ Findings from trying the toolkit on already converted functions:
 - `hint-pressure` now degrades gracefully when ptr hints are unavailable for a target. In the current `start` state, `bin/start.exe` is missing, so ptr pressure cannot be measured there yet; donor pressure across current `c-owned` `start` routines is effectively zero
 - the adjust heuristics now call out low-risk prologue/global-address drift patterns in soft-diff routines. In current testing this helps `ProcessPlayerInputAndAI` read as mostly `mov`/operand-address drift instead of falsely suggesting a major control-flow mismatch
 - the soft-diff notes now also distinguish same-shaped `call` target drift from local control-flow breakage. In current testing this helps `UpdateFlightModelAndHUD` read as possible helper/thunk address drift rather than immediate evidence that the surrounding C structure is wrong
-- a same-shaped `push`-setup drift recognizer is now wired into the soft-diff notes too, but the current sample routines do not yet exercise it, so it remains a prepared heuristic waiting for a better trigger case
+- a same-shaped `push`-setup drift recognizer is now wired into the soft-diff notes too. The current sample set still does not trigger it as a primary note, but `UpdateFlightModelAndHUD` shows a near-case with early `push [bp-..]` drift around the `ARCTAN` call setup, which is a good future validation target
 
 If the donor tree exists, `iterate` and `draft` automatically mine it for exact matches or reference hits. Treat donor code as hint material only:
 
