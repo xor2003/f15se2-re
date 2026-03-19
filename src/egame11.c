@@ -45,7 +45,7 @@ void drawCockpit() {
 }
 
 // ==== seg000:0x211 ====
-int sub_10211() {
+int MainGameLoop() {
     FP_OFF(dword_38FE2) = OFF_BDA_FLOPPYMOTOR; // floppy motor runtime in bda???
     FP_SEG(dword_38FE2) = 0;
     // 224

@@ -11,7 +11,7 @@
         {"seg": "seg000", "begin": "0x0", "end": "0x0", "from": "padding"},
         {"seg": "seg000", "begin": "0x10", "end": "0x146", "from": "main", "to": "endp"},
         {"seg": "seg000", "begin": "0x147", "end": "0x210", "from": "drawCockpit", "to": "endp"},
-        {"seg": "seg000", "begin": "0x211", "end": "0x293", "from": "sub_10211", "to": "endp"},
+        {"seg": "seg000", "begin": "0x211", "end": "0x293", "from": "MainGameLoop", "to": "endp"},
         {"seg": "seg000", "begin": "0x29a", "end": "0x2e0", "from": "gfxInit", "to": "endp"},
         {"seg": "seg000", "begin": "0x1e0e", "end": "0x1f3d", "from": "InitializeCockpitData", "to": "endp"},
         {"seg": "seg000", "begin": "0x2049", "end": "0x206c", "from": "moveDataFar", "to": "endp"},
@@ -92,6 +92,7 @@
     ],
     "externs": [
         "Dist2D",
+        "MainGameLoop",
         "ProcessPlayerInputAndAI",
         "UpdateFlightModelAndHUD",
         "closeFileWrapper",

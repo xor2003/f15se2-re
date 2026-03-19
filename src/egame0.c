@@ -47,7 +47,7 @@ int main(void) {
     gfxBufPtr = commData->gfxInitResult;
     sub_21A7E();
     drawCockpit();
-    sub_10211();
+    MainGameLoop();
     if (commData->setupUseJoy == 1) {
         // 10c
         restoreJoystickData(commData->joyData);
