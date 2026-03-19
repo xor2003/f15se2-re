@@ -11,8 +11,8 @@
   - keep `mzdup` as an offline duplicate-hunting step, not part of the tight edit loop
 - Tighten the integrated adjust bundle:
   - keep `ptr-hints` visible in `adjust`/`refresh`
-  - rank pointer/global hints by likely relevance to the current mismatch window
   - trim noisy hints when a routine touches many globals
+  - surface supporting donor hints in the same ranked, local-window-aware style
 
 ## Later
 

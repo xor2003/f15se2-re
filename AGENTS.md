@@ -150,6 +150,7 @@ Findings from trying the toolkit on already converted functions:
 - function-scoped `analyze --function ...` should suppress unrelated hard mismatches from other routines, otherwise the output is misleading
 - for soft-diff routines, the most useful `.COD` block match is usually the local match near the current `.COD` window, not the best match anywhere in the whole function
 - `adjust` now includes `ptr-hints` inline, which makes the main edit bundle more useful for routines that already touch named globals and pointer-like data objects
+- the inline `ptr-hints` list is now ranked by the current C edit window first; for example, `UpdateFlightModelAndHUD` correctly bubbles `word_330C2` to the top because it appears inside the active mismatch window
 
 If the donor tree exists, `iterate` and `draft` automatically mine it for exact matches or reference hits. Treat donor code as hint material only:
 

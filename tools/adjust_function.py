@@ -372,6 +372,28 @@ def add_expression_notes(notes, c_window, cod_window):
     return notes
 
 
+def rank_ptr_hints(ptr_hints, c_window):
+    if not ptr_hints:
+        return []
+    c_text = "\n".join(item["text"] for item in c_window)
+
+    def sort_key(item):
+        names = []
+        names.extend(item.get("used_in_c", []))
+        names.extend(item.get("aliases", []))
+        window_hits = sum(1 for name in names if name and name in c_text)
+        sample_bonus = 0 if item.get("ref_offset") is not None else 1
+        return (-window_hits, sample_bonus, item.get("count", 9999), item.get("name", ""))
+
+    ranked = sorted(ptr_hints, key=sort_key)
+    for item in ranked:
+        names = []
+        names.extend(item.get("used_in_c", []))
+        names.extend(item.get("aliases", []))
+        item["window_hits"] = [name for name in names if name and name in c_text]
+    return ranked
+
+
 def render_report(bundle):
     print(f"Focus routine: {bundle['function']}")
     print(f"Focus kind: {bundle['focus_kind']}")
@@ -408,12 +430,15 @@ def render_report(bundle):
             used_text = ""
             if item["used_in_c"]:
                 used_text = f" used_in_c={','.join(item['used_in_c'])}"
+            window_text = ""
+            if item.get("window_hits"):
+                window_text = f" window_hits={','.join(item['window_hits'])}"
             sample = ""
             if item["ref_segname"] and item["ref_offset"] is not None:
                 sample = f" sample_ref={item['ref_segname']}:0x{item['ref_offset']:x}"
             print(
                 f"- {item['name']} var_off=0x{(item['var_offset'] or 0):x} "
-                f"count={item['count']}{sample}{alias_text}{used_text}"
+                f"count={item['count']}{sample}{alias_text}{used_text}{window_text}"
             )
 
     if bundle["c_window"]:
@@ -488,6 +513,7 @@ def build_llm_prompt(bundle):
         for item in bundle["ptr_hints"][:10]:
             alias_text = f" aliases={','.join(item['aliases'][:3])}" if item["aliases"] else ""
             used_text = f" used_in_c={','.join(item['used_in_c'])}" if item["used_in_c"] else ""
+            window_text = f" window_hits={','.join(item['window_hits'])}" if item.get("window_hits") else ""
             sample = (
                 f" sample_ref={item['ref_segname']}:0x{item['ref_offset']:x}"
                 if item["ref_segname"] and item["ref_offset"] is not None
@@ -495,7 +521,7 @@ def build_llm_prompt(bundle):
             )
             lines.append(
                 f"{item['name']} var_off=0x{(item['var_offset'] or 0):x} "
-                f"count={item['count']}{sample}{alias_text}{used_text}"
+                f"count={item['count']}{sample}{alias_text}{used_text}{window_text}"
             )
         lines.append("```")
         lines.append("")
@@ -654,10 +680,20 @@ def main():
         try:
             ptr_hint_report = build_ptr_hints(args.target, function_name)
             ptr_hints = ptr_hint_report.get("matched_hints", [])
+            ptr_hints = rank_ptr_hints(ptr_hints, c_window)
             if ptr_hints:
                 notes.append(
                     f"ptr-hints found {len(ptr_hints)} relevant global/pointer candidates already used by this routine."
                 )
+                local_names = []
+                for item in ptr_hints[:3]:
+                    local_names.extend(item.get("window_hits", []))
+                if local_names:
+                    notes.append(
+                        "The current C window already mentions these ptr-hint globals: "
+                        + ", ".join(dict.fromkeys(local_names))
+                        + "."
+                    )
         except RuntimeError:
             ptr_hint_report = None
 
