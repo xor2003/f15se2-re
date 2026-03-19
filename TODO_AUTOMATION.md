@@ -12,8 +12,8 @@
 - Tighten the integrated adjust bundle:
   - keep `ptr-hints` visible in `adjust`/`refresh`
   - collapse or hide lower-priority ptr/donor sections when the bundle gets too large
-  - tune the display limits against routines with larger hint sets
-  - test `--full-hints` on routines with genuinely large hint sets
+  - re-run `hint-pressure` as more routines become `c-owned` and retune the display limits when the pressure profile grows
+  - test `--full-hints` again once a routine actually exceeds the compact caps
 
 ## Later
 

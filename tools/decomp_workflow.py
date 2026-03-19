@@ -110,6 +110,12 @@ def main():
     ptr_hints.add_argument("--target", choices=["egame", "start"], default="egame")
     ptr_hints.add_argument("--json", action="store_true")
 
+    hint_pressure = sub.add_parser("hint-pressure")
+    hint_pressure.add_argument("--target", choices=["egame", "start"], default="egame")
+    hint_pressure.add_argument("--donor-dir", default=default_donor_dir())
+    hint_pressure.add_argument("--top", type=int, default=10)
+    hint_pressure.add_argument("--json", action="store_true")
+
     verify = sub.add_parser("verify")
     verify.add_argument("--target", choices=["egame", "start", "all"], default="egame")
 
@@ -291,6 +297,14 @@ def main():
 
     if args.command == "ptr-hints":
         cmd = [sys.executable, "tools/ptr_hints.py", "--target", args.target, "--function", args.function]
+        if args.json:
+            cmd.append("--json")
+        raise SystemExit(run(cmd).returncode)
+
+    if args.command == "hint-pressure":
+        cmd = [sys.executable, "tools/hint_pressure.py", "--target", args.target, "--top", str(args.top)]
+        if args.donor_dir:
+            cmd.extend(["--donor-dir", args.donor_dir])
         if args.json:
             cmd.append("--json")
         raise SystemExit(run(cmd).returncode)
