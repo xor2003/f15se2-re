@@ -9,6 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DONOR_DIR = "/home/xor/games/f14src/src"
+MZRE_DEBUG = ROOT / "mzretools" / "debug"
 
 
 def run(cmd):
@@ -17,6 +18,10 @@ def run(cmd):
 
 def run_capture(cmd):
     return subprocess.run(cmd, cwd=ROOT, check=False, capture_output=True, text=True)
+
+
+def tool_path(name):
+    return str(MZRE_DEBUG / name)
 
 
 def default_donor_dir():
@@ -79,6 +84,25 @@ def main():
     refresh.add_argument("--llm-prompt", action="store_true")
     refresh.add_argument("--prompt-output")
 
+    ptrs = sub.add_parser("ptrs")
+    ptrs.add_argument("--target", choices=["egame", "start"], default="egame")
+    ptrs.add_argument("--rebuilt", action="store_true", help="Use the rebuilt executable in build/ instead of the reference binary in bin/")
+
+    sigs = sub.add_parser("sigs")
+    sigs.add_argument("--target", choices=["egame", "start"], default="egame")
+    sigs.add_argument("--output")
+    sigs.add_argument("--overwrite", action="store_true")
+    sigs.add_argument("--min", type=int)
+    sigs.add_argument("--max", type=int)
+    sigs.add_argument("--rebuilt", action="store_true", help="Use the rebuilt executable in build/ instead of the reference binary in bin/")
+
+    dups = sub.add_parser("dups")
+    dups.add_argument("signature_file")
+    dups.add_argument("--target", choices=["egame", "start"], default="egame")
+    dups.add_argument("--minsize", type=int)
+    dups.add_argument("--maxdist", type=int)
+    dups.add_argument("--rebuilt", action="store_true", help="Use the rebuilt executable in build/ instead of the reference binary in bin/")
+
     verify = sub.add_parser("verify")
     verify.add_argument("--target", choices=["egame", "start", "all"], default="egame")
 
@@ -93,6 +117,8 @@ def main():
 
     target_map = f"map/{args.target}.map" if args.target == "start" else "map/egame.map"
     target_conf = f"conf/{args.target}_rc.json" if args.target == "start" else "conf/egame_rc.json"
+    target_exe = "build/START.EXE" if args.target == "start" else "build/EGAME.EXE"
+    reference_exe = "bin/start.exe" if args.target == "start" else "bin/egame.exe"
 
     if args.command == "catalog":
         cmd = [sys.executable, "tools/function_catalog.py", "--map", target_map, "--conf", target_conf]
@@ -222,6 +248,34 @@ def main():
             cmd.append("--llm-prompt")
         if args.prompt_output:
             cmd.extend(["--prompt-output", args.prompt_output])
+        raise SystemExit(run(cmd).returncode)
+
+    if args.command == "ptrs":
+        exe_path = target_exe if args.rebuilt else reference_exe
+        cmd = [tool_path("mzptr"), exe_path, target_map]
+        raise SystemExit(run(cmd).returncode)
+
+    if args.command == "sigs":
+        output = args.output or ("build/start.sig" if args.target == "start" else "build/egame.sig")
+        exe_path = target_exe if args.rebuilt else reference_exe
+        cmd = [tool_path("mzsig")]
+        if args.overwrite:
+            cmd.append("--overwrite")
+        if args.min is not None:
+            cmd.extend(["--min", str(args.min)])
+        if args.max is not None:
+            cmd.extend(["--max", str(args.max)])
+        cmd.extend([exe_path, target_map, output])
+        raise SystemExit(run(cmd).returncode)
+
+    if args.command == "dups":
+        exe_path = target_exe if args.rebuilt else reference_exe
+        cmd = [tool_path("mzdup")]
+        if args.minsize is not None:
+            cmd.extend(["--minsize", str(args.minsize)])
+        if args.maxdist is not None:
+            cmd.extend(["--maxdist", str(args.maxdist)])
+        cmd.extend([args.signature_file, exe_path, target_map])
         raise SystemExit(run(cmd).returncode)
 
     if args.command == "verify":

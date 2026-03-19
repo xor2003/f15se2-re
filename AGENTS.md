@@ -101,6 +101,9 @@ Use these helpers before touching `conf/` by hand:
 - `python3 tools/decomp_workflow.py analyze --target egame --function otherKeyDispatch --top 5`
 - `python3 tools/decomp_workflow.py adjust --target egame --function otherKeyDispatch`
 - `python3 tools/decomp_workflow.py refresh --target egame --function otherKeyDispatch --snapshot-dir /tmp/f15-adjust`
+- `python3 tools/decomp_workflow.py ptrs --target egame`
+- `python3 tools/decomp_workflow.py sigs --target egame --output build/egame.sig --overwrite`
+- `python3 tools/decomp_workflow.py dups build/egame.sig --target egame`
 - `python3 tools/decomp_workflow.py iterate --target egame`
 - `python3 tools/decomp_workflow.py draft ARCTAN --target egame`
 - `python3 tools/donor_search.py --function ARCTAN --donor-dir /home/xor/games/f14src/src`
