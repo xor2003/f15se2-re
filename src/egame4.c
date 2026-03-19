@@ -1,6 +1,16 @@
 #include "egame.h"
 #include <stdlib.h> /* For abs() */
 
+int UpdateRotationMatrix()
+{
+    int result;
+
+    result = sub_20BAE(0x57BE, g_ourHead, g_ourPitch, g_ourRoll);
+    byte_380DD = 0;
+    word_380D8 = 0;
+    return result;
+}
+
 int sub_15540(int angle)
 {
     return 0x4000 - sub_154B7(angle);
