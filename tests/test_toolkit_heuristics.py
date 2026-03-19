@@ -153,6 +153,25 @@ class HeuristicNotesTest(unittest.TestCase):
             notes,
         )
 
+    def test_recognizes_repeated_helper_call_setup_drift(self):
+        notes = heuristic_notes(
+            "soft",
+            None,
+            [
+                diff("DIFF_OP1", "cmp word [0x9760], 0x0", "cmp word [0x9aae], 0x0"),
+                diff("DIFF_OP1", "push [0x6424]", "push [0x6488]"),
+                diff("DIFF_OP1", "push [0x6426]", "push [0x648a]"),
+                diff("DIFF_OP1", "call 0xeb00", "call 0x5126"),
+                diff("DIFF_OP1", "push [0x6424]", "push [0x6488]"),
+                diff("DIFF_OP1", "push [0x6426]", "push [0x648a]"),
+                diff("DIFF_OP1", "call 0xeb00", "call 0x5126"),
+            ],
+        )
+        self.assertTrue(
+            any("repeat a helper-call setup pattern" in note for note in notes),
+            notes,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

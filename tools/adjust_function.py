@@ -342,6 +342,21 @@ def heuristic_notes(focus_kind, record_or_error, soft_diffs):
             notes.append(
                 "The first soft diffs include same-shaped push setup drift, which often means argument ordering/immediate layout noise around a helper call rather than a control-flow problem."
             )
+        call_setup_window = soft_diffs[:8]
+        call_setup_pushes = [
+            item
+            for item in call_setup_window
+            if item["ref_instr"].startswith("push ") and item["tgt_instr"].startswith("push ")
+        ]
+        call_setup_calls = [
+            item
+            for item in call_setup_window
+            if item["ref_instr"].startswith("call ") and item["tgt_instr"].startswith("call ")
+        ]
+        if focus_kind == "soft" and len(call_setup_pushes) >= 2 and len(call_setup_calls) >= 2:
+            notes.append(
+                "The early soft diffs repeat a helper-call setup pattern with matching push/call shape, which usually means argument staging still matches and only source symbols or storage locations differ."
+            )
         stack_slot_like = [
             item
             for item in early
