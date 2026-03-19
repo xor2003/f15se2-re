@@ -14,6 +14,7 @@
   - collapse or hide lower-priority ptr/donor sections when the bundle gets too large
   - re-run `hint-pressure` as more routines become `c-owned` and retune the display limits when the pressure profile grows
   - test `--full-hints` again once a routine actually exceeds the compact caps
+  - re-check `start` pressure once `bin/start.exe` is available for ptr analysis
 
 ## Later
 

@@ -158,6 +158,7 @@ Findings from trying the toolkit on already converted functions:
 - the human-facing `adjust` report and `--llm-prompt` view now cap lower-priority ptr/donor entries while keeping the ranked full lists in the bundle data, so readability improves without throwing away machine-usable context
 - `adjust --full-hints` now disables that compact display cap for explicit deep dives; in current testing on the existing sample routines the visible output stays the same because their ranked hint sets are already under the compact thresholds
 - `python3 tools/decomp_workflow.py hint-pressure --target egame` now surveys ptr/donor hint counts across all `c-owned` routines. In the current `egame` state, the noisiest routines are `ProcessPlayerInputAndAI` (6 combined hints), `otherKeyDispatch` (5), and `UpdateFlightModelAndHUD` (4), which means the present compact-display caps are not yet being stressed by the shipped sample set
+- `hint-pressure` now degrades gracefully when ptr hints are unavailable for a target. In the current `start` state, `bin/start.exe` is missing, so ptr pressure cannot be measured there yet; donor pressure across current `c-owned` `start` routines is effectively zero
 
 If the donor tree exists, `iterate` and `draft` automatically mine it for exact matches or reference hits. Treat donor code as hint material only:
 
