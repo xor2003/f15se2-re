@@ -152,6 +152,7 @@ Findings from trying the toolkit on already converted functions:
 - `adjust` now includes `ptr-hints` inline, which makes the main edit bundle more useful for routines that already touch named globals and pointer-like data objects
 - the inline `ptr-hints` list is now ranked by the current C edit window first; for example, `UpdateFlightModelAndHUD` correctly bubbles `word_330C2` to the top because it appears inside the active mismatch window
 - `adjust` now also carries donor hints inline: exact donor matches when they exist, plus helper-symbol hits when the routine itself has no direct donor twin. In current testing this surfaces `ARCTAN` for `UpdateFlightModelAndHUD` and `kbhit`/`bios_keybrd` support for `otherKeyDispatch`
+- donor support hints are now ranked by the active C window too, so helpers already visible in the mismatch region, like `ARCTAN` in `UpdateFlightModelAndHUD`, are explicitly called out as local hints instead of being buried in generic support output
 
 If the donor tree exists, `iterate` and `draft` automatically mine it for exact matches or reference hits. Treat donor code as hint material only:
 

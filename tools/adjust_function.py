@@ -396,6 +396,24 @@ def rank_ptr_hints(ptr_hints, c_window):
     return ranked
 
 
+def rank_donor_support(donor_support, c_window):
+    if not donor_support:
+        return []
+    c_text = "\n".join(item["text"] for item in c_window)
+
+    def sort_key(item):
+        symbol = item.get("symbol", "")
+        window_hit = 1 if symbol and symbol in c_text else 0
+        exact_bonus = 0 if item.get("best_exact_match") else 1
+        return (-window_hit, exact_bonus, item.get("reference_hit_count", 9999), symbol)
+
+    ranked = sorted(donor_support, key=sort_key)
+    for item in ranked:
+        symbol = item.get("symbol", "")
+        item["window_hit"] = bool(symbol and symbol in c_text)
+    return ranked
+
+
 def render_report(bundle):
     print(f"Focus routine: {bundle['function']}")
     print(f"Focus kind: {bundle['focus_kind']}")
@@ -450,12 +468,13 @@ def render_report(bundle):
     if bundle["donor_support"]:
         print("Donor support hints:")
         for item in bundle["donor_support"][:5]:
+            window_text = " window_hit=yes" if item.get("window_hit") else ""
             if item.get("best_exact_match"):
                 match = item["best_exact_match"]
-                print(f"- {item['symbol']} -> {match['relative_path']}:{match['start_line']}")
+                print(f"- {item['symbol']} -> {match['relative_path']}:{match['start_line']}{window_text}")
             elif item.get("best_reference_hit"):
                 hit = item["best_reference_hit"]
-                print(f"- {item['symbol']} -> {hit['relative_path']}:{hit['line']}")
+                print(f"- {item['symbol']} -> {hit['relative_path']}:{hit['line']}{window_text}")
 
     if bundle["c_window"]:
         print("C window:")
@@ -553,12 +572,13 @@ def build_llm_prompt(bundle):
         lines.append("Donor support hints:")
         lines.append("```text")
         for item in bundle["donor_support"][:5]:
+            window_text = " window_hit=yes" if item.get("window_hit") else ""
             if item.get("best_exact_match"):
                 match = item["best_exact_match"]
-                lines.append(f"{item['symbol']} -> {match['relative_path']}:{match['start_line']}")
+                lines.append(f"{item['symbol']} -> {match['relative_path']}:{match['start_line']}{window_text}")
             elif item.get("best_reference_hit"):
                 hit = item["best_reference_hit"]
-                lines.append(f"{item['symbol']} -> {hit['relative_path']}:{hit['line']}")
+                lines.append(f"{item['symbol']} -> {hit['relative_path']}:{hit['line']}{window_text}")
         lines.append("```")
         lines.append("")
     if bundle["c_window"]:
@@ -750,11 +770,18 @@ def main():
             lst_source=lst_file,
             map_file=target_map,
         )
-        donor_support = support_report.get("support_symbols", [])
+        donor_support = rank_donor_support(support_report.get("support_symbols", []), c_window)
         if donor_support:
             notes.append(
                 f"Donor support search found {len(donor_support)} helper-symbol hit(s) for this routine."
             )
+            local_support = [item["symbol"] for item in donor_support[:3] if item.get("window_hit")]
+            if local_support:
+                notes.append(
+                    "The current C window already mentions these donor helper symbols: "
+                    + ", ".join(dict.fromkeys(local_support))
+                    + "."
+                )
 
     bundle = {
         "function": function_name,
