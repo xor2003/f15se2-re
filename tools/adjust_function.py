@@ -177,7 +177,7 @@ def cod_instruction_stream(cod_entries):
     return out
 
 
-def find_best_cod_block_match(cod_path, function_name, anchor_lst_entries):
+def find_best_cod_block_match(cod_path, function_name, anchor_lst_entries, center_address=None, max_distance=0x80):
     if not cod_path or not anchor_lst_entries:
         return None
     functions = parse_cod_file(cod_path)
@@ -195,6 +195,39 @@ def find_best_cod_block_match(cod_path, function_name, anchor_lst_entries):
 
     best = None
     window_len = min(len(ref_mnemonics), 16)
+    ref_slice = ref_mnemonics[:window_len]
+    for start in range(0, len(cod_stream) - window_len + 1):
+        window = cod_stream[start : start + window_len]
+        if center_address is not None:
+            if abs(window[0]["address"] - center_address) > max_distance and abs(window[-1]["address"] - center_address) > max_distance:
+                continue
+        score = sum(1 for idx in range(window_len) if window[idx]["mnemonic"] == ref_slice[idx])
+        if best is None or score > best["score"]:
+            best = {
+                "score": score,
+                "window_len": window_len,
+                "start_index": start,
+                "start_address": window[0]["address"],
+                "end_address": window[-1]["address"],
+                "line_num": window[0]["line_num"],
+                "items": window,
+            }
+    if not best or best["score"] == 0:
+        return None
+    return best
+
+
+def find_best_cod_block_match_from_entries(cod_entries, anchor_lst_entries):
+    if not cod_entries or not anchor_lst_entries:
+        return None
+    ref_mnemonics = lst_mnemonics(anchor_lst_entries)
+    if len(ref_mnemonics) < 4:
+        return None
+    cod_stream = cod_instruction_stream(cod_entries)
+    if len(cod_stream) < 4:
+        return None
+    best = None
+    window_len = min(len(ref_mnemonics), len(cod_stream), 16)
     ref_slice = ref_mnemonics[:window_len]
     for start in range(0, len(cod_stream) - window_len + 1):
         window = cod_stream[start : start + window_len]
@@ -255,12 +288,12 @@ def add_alignment_notes(notes, source_anchor, mismatch_reference_offset):
     return notes
 
 
-def add_block_match_notes(notes, block_match):
+def add_block_match_notes(notes, block_match, label="Best mnemonic-level .COD block match"):
     if not block_match:
         notes.append("No useful mnemonic-level block match was found between the source-anchored reference asm and generated .COD.")
         return notes
     notes.append(
-        f"Best mnemonic-level .COD block match starts near 0x{block_match['start_address']:x} "
+        f"{label} starts near 0x{block_match['start_address']:x} "
         f"(score {block_match['score']}/{block_match['window_len']})."
     )
     return notes
@@ -377,8 +410,8 @@ def render_report(bundle):
             for asm in item["assembly"]:
                 print(f"    0x{asm['address']:04x}: {asm['instruction']}")
 
-    if bundle["best_cod_block_match"]:
-        match = bundle["best_cod_block_match"]
+    if bundle["preferred_cod_block_match"]:
+        match = bundle["preferred_cod_block_match"]
         print(
             f"Best COD block match: line {match['line_num']}, "
             f"0x{match['start_address']:04x}-0x{match['end_address']:04x}, "
@@ -454,8 +487,8 @@ def build_llm_prompt(bundle):
             lines.append(item["text"])
         lines.append("```")
         lines.append("")
-    if bundle["best_cod_block_match"]:
-        match = bundle["best_cod_block_match"]
+    if bundle["preferred_cod_block_match"]:
+        match = bundle["preferred_cod_block_match"]
         lines.append("Best mnemonic-level generated .COD block match:")
         lines.append("```text")
         lines.append(
@@ -556,19 +589,29 @@ def main():
     c_window = read_source_window(c_file, c_line_num, args.c_radius)
     source_anchor = find_source_anchor(c_file, c_line_num)
     cod_entries = cod_window(cod_path, function_name, c_line_num, args.cod_radius) if cod_path else []
+    cod_center_address = None
+    if cod_line and cod_line.get("assembly"):
+        cod_center_address = cod_line["assembly"][0]["address"]
     anchor_lst_entries = []
     mismatch_lst_entries = []
     if source_anchor:
         anchor_lst_entries = lst_window(lst_file, source_anchor["segment"], source_anchor["offset"], args.asm_radius)
     if map_routine and reference_offset is not None:
         mismatch_lst_entries = lst_window(lst_file, map_routine["segment"], map_routine["begin"] + reference_offset, args.asm_radius)
-    best_cod_block_match = find_best_cod_block_match(cod_path, function_name, anchor_lst_entries)
+    best_cod_block_match = find_best_cod_block_match(
+        cod_path,
+        function_name,
+        anchor_lst_entries,
+        center_address=cod_center_address,
+    )
+    local_cod_block_match = find_best_cod_block_match_from_entries(cod_entries, anchor_lst_entries)
+    preferred_cod_block_match = local_cod_block_match or best_cod_block_match
 
     soft_diffs = collect_soft_diffs(records, function_name, args.soft_limit)
     notes = heuristic_notes(focus_kind, focus_item if focus_kind == "hard" else {"relevant_record": focus_record}, soft_diffs)
     notes = add_alignment_notes(notes, source_anchor, map_routine["begin"] + reference_offset if map_routine and reference_offset is not None else None)
-    notes = add_block_match_notes(notes, best_cod_block_match)
-    notes = add_shape_notes(notes, anchor_lst_entries, best_cod_block_match)
+    notes = add_block_match_notes(notes, preferred_cod_block_match)
+    notes = add_shape_notes(notes, anchor_lst_entries, preferred_cod_block_match)
     notes = add_expression_notes(notes, c_window, cod_entries)
 
     bundle = {
@@ -582,7 +625,9 @@ def main():
         "focus_record": focus_record,
         "c_window": c_window,
         "cod_window": cod_entries,
+        "local_cod_block_match": local_cod_block_match,
         "best_cod_block_match": best_cod_block_match,
+        "preferred_cod_block_match": preferred_cod_block_match,
         "anchor_lst_window": anchor_lst_entries,
         "mismatch_lst_window": mismatch_lst_entries,
         "soft_diffs": soft_diffs,

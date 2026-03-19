@@ -299,13 +299,21 @@ def enrich_hard_errors(hard_errors, records, routines, c_owners, src_dir):
     return enriched
 
 
-def report_hard_errors(enriched):
-    if not enriched:
+def report_hard_errors(enriched, function_filter=None):
+    visible = enriched
+    hidden_count = 0
+    if function_filter:
+        visible = [item for item in enriched if item["routine"] == function_filter]
+        hidden_count = len(enriched) - len(visible)
+
+    if not visible:
         print("No hard instruction mismatches found.")
+        if hidden_count:
+            print(f"(suppressed {hidden_count} hard mismatches outside {function_filter})")
         return
 
     print("Hard mismatches:")
-    for item in enriched:
+    for item in visible:
         print(f"- {item['routine']}")
         routine = item["map_routine"]
         relevant = item["relevant_record"]
@@ -327,6 +335,8 @@ def report_hard_errors(enriched):
                     f"  nearest COD addr: 0x{cod_line['nearest_address']:x} "
                     f"(delta 0x{cod_line['nearest_delta']:x})"
                 )
+    if hidden_count:
+        print(f"(suppressed {hidden_count} hard mismatches outside {function_filter})")
 
 
 def report_soft_diffs(records, routines, c_owners, src_dir, function_filter, top):
@@ -409,7 +419,7 @@ def main():
     for routine_name, count in top_routines:
         print(f"- {routine_name}: {count}")
 
-    report_hard_errors(enriched_hard_errors)
+    report_hard_errors(enriched_hard_errors, args.function)
     report_soft_diffs(records, routines, c_owners, args.src_dir, args.function, args.top)
 
 

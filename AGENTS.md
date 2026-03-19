@@ -139,6 +139,13 @@ The preferred sequence is:
 6. once stable, update `conf/` through `tools/conf_edit.py`
 7. rerun `make analyze` or `make verify-egame`
 
+Findings from trying the toolkit on already converted functions:
+
+- `otherKeyDispatch` is a good hard-mismatch test case for the full `refresh`/`adjust` loop
+- `ProcessPlayerInputAndAI` and `UpdateFlightModelAndHUD` are useful soft-diff test cases for already C-owned routines
+- function-scoped `analyze --function ...` should suppress unrelated hard mismatches from other routines, otherwise the output is misleading
+- for soft-diff routines, the most useful `.COD` block match is usually the local match near the current `.COD` window, not the best match anywhere in the whole function
+
 If the donor tree exists, `iterate` and `draft` automatically mine it for exact matches or reference hits. Treat donor code as hint material only:
 
 - exact helper matches like `ARCTAN` are often worth copying/adapting
