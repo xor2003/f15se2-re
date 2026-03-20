@@ -5,12 +5,42 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 SAMPLES="$ROOT/x16_samples"
 DOSBUILD="$ROOT/mzretools/tools/dosbuild.sh"
 UASM="$ROOT/UASM/GccUnixR/uasm"
+LIBDIR="$ROOT/dos/msc510/lib"
 SRC="$SAMPLES/IDEMO.C"
 MANIFEST="$SAMPLES/matrix_manifest.json"
 
 cd "$ROOT"
 
-rm -f "$SAMPLES"/*.OBJ "$SAMPLES"/*.EXE "$SAMPLES"/*.MAP "$SAMPLES"/*.COD "$SAMPLES"/*.COM "$SAMPLES"/*.LST
+ensure_compat_lib() {
+  local target=$1
+  local source=$2
+  if [ ! -f "$LIBDIR/$target" ]; then
+    cp "$LIBDIR/$source" "$LIBDIR/$target"
+  fi
+}
+
+ensure_compat_lib MLIBCE.LIB MLIBCR.LIB
+ensure_compat_lib LLIBCE.LIB LLIBCR.LIB
+
+cleanup_transients() {
+  rm -f \
+    "$SAMPLES"/*.dos.log \
+    "$SAMPLES"/*.emu.log \
+    "$SAMPLES"/*.dosbuild.bat \
+    "$SAMPLES"/*.dosbuild.meta \
+    "$SAMPLES"/*.rsp \
+    "$SAMPLES"/IDEMO.COD \
+    "$SAMPLES"/LOG.TXT
+}
+
+rm -f \
+  "$SAMPLES"/*.OBJ \
+  "$SAMPLES"/*.EXE \
+  "$SAMPLES"/*.MAP \
+  "$SAMPLES"/*.COD \
+  "$SAMPLES"/*.COM \
+  "$SAMPLES"/*.LST
+cleanup_transients
 cp "$SAMPLES/intdemo.c" "$SRC"
 
 variants=(
@@ -56,11 +86,15 @@ done
 
 for asm in ICOMDO ICOMBI; do
   echo "== Building $asm.COM =="
-  "$UASM" -q -0 -bin -Fl="$SAMPLES/${asm}.LST" -Fo"$SAMPLES/${asm}.COM" "$SAMPLES/${asm}.ASM"
+  (
+    cd "$SAMPLES"
+    "$UASM" -q -0 -bin -Fl="${asm}.LST" -Fo"${asm}.COM" "${asm}.ASM"
+  )
   emit_json "  {\n    \"id\": \"${asm}\",\n    \"format\": \"com\",\n    \"compiler\": \"uasm\",\n    \"source\": \"${asm}.ASM\",\n    \"memory_model\": \"tiny\",\n    \"optimization\": \"n/a\",\n    \"binary\": \"${asm}.COM\",\n    \"listing\": \"${asm}.LST\"\n  }"
 done
 
 printf '\n]\n' >> "$json_tmp"
 mv "$json_tmp" "$MANIFEST"
+cleanup_transients
 
 echo "Wrote $MANIFEST"

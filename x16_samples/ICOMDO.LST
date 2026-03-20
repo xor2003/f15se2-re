@@ -1,6 +1,6 @@
 UASM v2.56, Jan 10 2025, Masm-compatible assembler.
 
-x16_samples/ICOMDO.ASM
+ICOMDO.ASM
                                 .8086
                                 .MODEL TINY
                                 .CODE
@@ -426,4 +426,4 @@ Symbols:
 msg  . . . . . . . . . . . . . .        Byte[11]         110h _TEXT 
 start  . . . . . . . . . . . . .        L Near           100h _TEXT Public 
 
-x16_samples/ICOMDO.ASM: 14 lines, 2 passes, 1436 ms, 0 warnings, 0 errors
+ICOMDO.ASM: 14 lines, 2 passes, 1200 ms, 0 warnings, 0 errors
