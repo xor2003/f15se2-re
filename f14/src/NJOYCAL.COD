@@ -1,0 +1,1926 @@
+;	Static Name Aliases
+;
+;	$S719_ThrustVals	EQU	ThrustVals
+;	$S720_CoolyVals	EQU	CoolyVals
+;	$S721_RudderVals	EQU	RudderVals
+	TITLE   NJOYCAL.C
+	NAME    NJOYCAL
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+PUBLIC  _KeyJoyInstalled
+PUBLIC  _RpJoyX
+PUBLIC  _RpJoy
+PUBLIC  _RpJoyBackX
+PUBLIC  _RpJoyBack
+EXTRN	__acrtused:ABS
+EXTRN	_ReadJoy2:FAR
+EXTRN	_fwrite:NEAR
+EXTRN	_DrawLine:FAR
+EXTRN	_RectCopy:FAR
+EXTRN	_ScaleRotate:NEAR
+EXTRN	_RpPrint:FAR
+EXTRN	_LoadPicNoPal:NEAR
+EXTRN	_kbhit:NEAR
+EXTRN	_RemoveKeyJoy:NEAR
+EXTRN	_InstallKeyJoy:NEAR
+EXTRN	_WaitTicks:NEAR
+EXTRN	_fclose:NEAR
+EXTRN	_fopen:NEAR
+EXTRN	__bios_keybrd:NEAR
+EXTRN	_fread:NEAR
+EXTRN	_Trigger2:FAR
+EXTRN	_pstrlen:NEAR
+EXTRN	_InitJoy2:FAR
+EXTRN	_RudderType:WORD
+EXTRN	_GRPAGE0:BYTE
+EXTRN	_Joystick:WORD
+EXTRN	_ThrustStick:WORD
+EXTRN	_CoolyStick:WORD
+EXTRN	_RudderStick:WORD
+EXTRN	_MinStick:BYTE
+EXTRN	_MaxStick:BYTE
+EXTRN	_CenterPosition:BYTE
+EXTRN	_LowRange:BYTE
+EXTRN	_HighRange:BYTE
+EXTRN	_RawJoy:BYTE
+EXTRN	_DeadZone:BYTE
+EXTRN	_JoyVals:BYTE
+EXTRN	_KbSense:WORD
+EXTRN	_GRNDDETAIL:WORD
+EXTRN	_PLANEDETAIL:WORD
+EXTRN	_SKYDETAIL:WORD
+EXTRN	_MISSILETRAIL:WORD
+EXTRN	_MSGDETAIL:WORD
+EXTRN	_SNDDETAIL:WORD
+EXTRN	_StickType:WORD
+_DATA      SEGMENT
+	ORG	$+84
+$SG740	DB	'joypic.pic',  00H
+$SG745	DB	'Center Stick and Pedals',  00H
+$SG746	DB	'Center Joystick',  00H
+$SG747	DB	'Center Pedals',  00H
+$SG750	DB	'Move Stick Upper Left',  00H
+$SG752	DB	'Move Stick Lower Right',  00H
+$SG755	DB	'Move Pedals Left',  00H
+$SG757	DB	'Move Pedals Right',  00H
+$SG760	DB	'Move Throttle Down',  00H
+$SG762	DB	'Move Throttle Up',  00H
+$SG763	DB	'Adjust Dead Zone (+-)',  00H
+$SG780	DB	'Then press Trigger',  00H
+$SG781	DB	'Then press Trigger',  00H
+$SG836	DB	'rb',  00H
+$SG837	DB	'JOY.F14',  00H
+$SG856	DB	'wb',  00H
+$SG857	DB	'JOY.f14',  00H
+	ORG	$-347
+_RpJoyX	DW	00H
+	DW	00H
+	DW	00H
+	DW	013fH
+	DW	0c7H
+	DW	02H
+	DW	0fH
+	DW	07H
+	DW	02H
+_RpJoy	DW	DGROUP:_RpJoyX
+_RpJoyBackX	DW	01H
+	DW	00H
+	DW	00H
+	DW	013fH
+	DW	0c7H
+	DW	02H
+	DW	0fH
+	DW	07H
+	DW	02H
+_RpJoyBack	DW	DGROUP:_RpJoyBackX
+$S719_ThrustVals	DW	00H
+	DW	00H
+	DW	08H
+	DW	08H
+	DW	00H
+	DW	08H
+	DW	08H
+$S720_CoolyVals	DW	00H
+	DW	00H
+	DW	00H
+	DW	00H
+	DW	08H
+	DW	00H
+	DW	00H
+$S721_RudderVals	DW	00H
+	DW	00H
+	DW	04H
+	DW	00H
+	DW	00H
+	DW	00H
+	DW	00H
+_KeyJoyInstalled	DW	00H
+_DATA      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** #include <stdlib.h>
+;|*** #include <stdio.h>
+;|*** #include <bios.h>
+;|*** #include "library.h"
+;|*** #include "f15defs.h"
+;|*** #include "keycodes.h"
+;|*** 
+;|*** RPS RpJoyX  =  {0, 0,0, 319,199, JAM3, WHITE, LGREY, F_3x5B};
+;|*** RPS *RpJoy  = &RpJoyX;
+;|*** RPS RpJoyBackX  =  {1, 0,0, 319,199, JAM3, WHITE, LGREY, F_3x5B};
+;|*** RPS *RpJoyBack  = &RpJoyBackX;
+;|*** 
+;|*** extern  UWORD	Joystick;
+;|*** extern  UWORD   ThrustStick;
+;|*** extern  UWORD   CoolyStick;
+;|*** extern  UWORD   RudderStick;
+;|*** extern  UWORD   MinStick[];
+;|*** extern  UWORD   MaxStick[];
+;|*** extern  UWORD   CenterPosition[];
+;|*** extern  UWORD   LowRange[];
+;|*** extern  UWORD   HighRange[];
+;|*** extern  UWORD   RawJoy[];
+;|*** extern  UBYTE   DeadZone;
+;|*** extern UBYTE JoyVals[];
+;|*** 
+;|*** extern  int     KbSense;
+;|*** 
+;|*** extern	int	    GRNDDETAIL;
+;|*** extern	int	    PLANEDETAIL;
+;|*** extern  int     SKYDETAIL;
+;|*** extern	int 	MISSILETRAIL;
+;|*** extern  int 	MSGDETAIL;
+;|*** extern  int 	SNDDETAIL;
+;|*** extern  int     StickType;
+;|*** extern  int     RudderType;
+;|*** 
+;|*** #define CoordX(a) (a/4)
+;|*** #define CoordY(a) (a*3/16)
+;|*** 
+;|*** 
+;|*** #define  JBXL  0
+;|*** #define  JBXH  117
+;|*** #define  JBYL  70
+;|*** #define  JBYH  199
+;|*** #define  JBWID  ((JBXH-JBXL))
+;|*** #define  JBHT  ((JBYH-JBYL))
+;|*** #define  JBDSTXC  210
+;|*** #define  JBDSTYC  84
+;|*** 
+;|*** 
+;|*** #define  JCRSXL   121
+;|*** #define  JCRSXH   124
+;|*** #define  JCRSYL   70
+;|*** #define  JCRSYH   74
+;|*** #define  JCRSXC   123
+;|*** #define  JCRSYC   72
+;|*** #define  JCRSWID  6
+;|*** #define  JCRSHT   6
+;|*** 
+;|*** #define  JHSLDXL   121
+;|*** #define  JHSLDXH   124
+;|*** #define  JHSLDYL   78
+;|*** #define  JHSLDYH   85
+;|*** #define  JHSLDXC   122
+;|*** #define  JHSLDYC   81
+;|*** #define  JHSLDWID  5
+;|*** #define  JHSLDHT   8
+;|*** 
+;|*** #define  JVSLDXL   121
+;|*** #define  JVSLDXH   127
+;|*** #define  JVSLDYL   90
+;|*** #define  JVSLDYH   93
+;|*** #define  JVSLDXC   124
+;|*** #define  JVSLDYC   91
+;|*** #define  JVSLDWID  8
+;|*** #define  JVSLDHT   4
+;|*** 
+;|*** 
+;|*** #define  JBXDSTXL 158
+;|*** #define  JBXDSTXH 275
+;|*** #define  JBXDSTYL 20
+;|*** #define  JBXDSTYH 149
+;|*** #define  JCRSDSTXC 210
+;|*** #define  JCRSDSTYC 84
+;|*** #define  JTHRDSTXC 261
+;|*** #define  JTHRDSTYC 88
+;|*** #define  JRUDDSTXC 210
+;|*** #define  JRUDDSTYC 136
+;|*** 
+;|*** 
+;|*** extern   int   ScaleRotate(UWORD SOURCE, int XSC, int YSC, int WID, int HT, RPS *Rp, int XDC, int YDC, int SCALE, int ROLL, int TRNSCLR, int MIRROR);
+;|*** extern   int   GRPAGE0[];
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** //                    KB,   1 stick,  2 stx, stk&throt, ThrstMast, CH Pro &  VPilot sticks
+;|*** 
+;|*** static ThrustVals[] = {0,      0,       8,       8,       0,       8,       8  };
+;|*** static CoolyVals [] = {0,      0,       0,       0,       8,       0,       0  };
+;|*** static RudderVals[] = {0,      0,       4,       0,       0,       0,       0  };
+;|*** 
+;|*** int   KeyJoyInstalled=0;
+;|*** //***************************************************************************
+;|*** SetJoysticks(int i)
+;|*** {
+; Line 106
+	PUBLIC	_SetJoysticks
+_SetJoysticks	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+	*** 000003	56 			push	si
+;	i = 4
+;|*** 
+;|***    StickType = i;
+; Line 108
+	*** 000004	8b 46 04 		mov	ax,WORD PTR [bp+4]	;i
+	*** 000007	a3 00 00 		mov	_StickType,ax
+;|***    Joystick = i ? 2+1 : 0;
+; Line 109
+	*** 00000a	0b c0 			or	ax,ax
+	*** 00000c	74 06 			je	$L20000
+	*** 00000e	b8 03 00 		mov	ax,3
+	*** 000011	eb 03 			jmp	SHORT $L20001
+	*** 000013	90 			nop	
+					$L20000:
+	*** 000014	2b c0 			sub	ax,ax
+					$L20001:
+	*** 000016	a3 00 00 		mov	_Joystick,ax
+;|***    ThrustStick = ThrustVals[i];
+; Line 110
+	*** 000019	8b 76 04 		mov	si,WORD PTR [bp+4]	;i
+	*** 00001c	d1 e6 			shl	si,1
+	*** 00001e	8b 84 28 00 		mov	ax,WORD PTR $S719_ThrustVals[si]
+	*** 000022	a3 00 00 		mov	_ThrustStick,ax
+;|***    CoolyStick = CoolyVals[i];
+; Line 111
+	*** 000025	8b 84 36 00 		mov	ax,WORD PTR $S720_CoolyVals[si]
+	*** 000029	a3 00 00 		mov	_CoolyStick,ax
+;|***    RudderStick |= RudderVals[i];
+; Line 112
+	*** 00002c	8b 84 44 00 		mov	ax,WORD PTR $S721_RudderVals[si]
+	*** 000030	09 06 00 00 		or	_RudderStick,ax
+;|*** 
+;|***    if (i)
+; Line 114
+	*** 000034	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;i
+	*** 000038	74 14 			je	$I726
+;|***       {
+; Line 115
+;|***       if (KeyJoyInstalled)
+; Line 116
+	*** 00003a	83 3e 52 00 00 		cmp	WORD PTR _KeyJoyInstalled,0
+	*** 00003f	74 1d 			je	$I730
+;|***          {
+; Line 117
+;|***          RemoveKeyJoy();
+; Line 118
+	*** 000041	e8 00 00 		call	_RemoveKeyJoy
+;|***          KeyJoyInstalled=0;
+; Line 119
+	*** 000044	c7 06 52 00 00 00 	mov	WORD PTR _KeyJoyInstalled,0
+;|***          }
+; Line 120
+;|***       }
+; Line 121
+;|***    else
+; Line 122
+	*** 00004a	5e 			pop	si
+	*** 00004b	5d 			pop	bp
+	*** 00004c	c3 			ret	
+	*** 00004d	90 			nop	
+					$I726:
+;|***       {
+; Line 123
+;|***       if (KeyJoyInstalled==0)
+; Line 124
+	*** 00004e	83 3e 52 00 00 		cmp	WORD PTR _KeyJoyInstalled,0
+	*** 000053	75 09 			jne	$I730
+;|***          {
+; Line 125
+;|***          InstallKeyJoy();
+; Line 126
+	*** 000055	e8 00 00 		call	_InstallKeyJoy
+;|***          KeyJoyInstalled=1;
+; Line 127
+	*** 000058	c7 06 52 00 01 00 	mov	WORD PTR _KeyJoyInstalled,1
+;|***          }
+; Line 128
+;|***       }
+; Line 129
+					$I730:
+;|*** }
+; Line 130
+	*** 00005e	5e 			pop	si
+	*** 00005f	5d 			pop	bp
+	*** 000060	c3 			ret	
+	*** 000061	90 			nop	
+
+_SetJoysticks	ENDP
+;|*** GetRidOfKeyJoy()
+;|*** {
+; Line 132
+	PUBLIC	_GetRidOfKeyJoy
+_GetRidOfKeyJoy	PROC NEAR
+;|***    if (KeyJoyInstalled)
+; Line 133
+	*** 000062	83 3e 52 00 00 		cmp	WORD PTR _KeyJoyInstalled,0
+	*** 000067	74 09 			je	$I734
+;|***       {
+; Line 134
+;|***       RemoveKeyJoy();
+; Line 135
+	*** 000069	e8 00 00 		call	_RemoveKeyJoy
+;|***       KeyJoyInstalled=0;
+; Line 136
+	*** 00006c	c7 06 52 00 00 00 	mov	WORD PTR _KeyJoyInstalled,0
+;|***       }
+; Line 137
+;|*** }
+; Line 138
+					$I734:
+	*** 000072	c3 			ret	
+	*** 000073	90 			nop	
+
+_GetRidOfKeyJoy	ENDP
+;|*** 
+;|*** 
+;|*** //***************************************************************************
+;|*** JoyRecal (int x, int y)
+;|*** {
+; Line 143
+	PUBLIC	_JoyRecal
+_JoyRecal	PROC NEAR
+	*** 000074	55 			push	bp
+	*** 000075	8b ec 			mov	bp,sp
+	*** 000077	83 ec 02 		sub	sp,2
+;	x = 4
+;	y = 6
+;	b = -2
+;|*** 	int   b;
+;|*** 
+;|*** 	LoadPicNoPal (1, "joypic.pic");
+; Line 146
+	*** 00007a	b8 54 00 		mov	ax,OFFSET DGROUP:$SG740
+	*** 00007d	50 			push	ax
+	*** 00007e	b8 01 00 		mov	ax,1
+	*** 000081	50 			push	ax
+	*** 000082	e8 00 00 		call	_LoadPicNoPal
+	*** 000085	83 c4 04 		add	sp,4
+;|*** 
+;|*** 	if (Joystick||RudderStick) {
+; Line 148
+	*** 000088	83 3e 00 00 00 		cmp	WORD PTR _Joystick,0
+	*** 00008d	75 0a 			jne	$I742
+	*** 00008f	83 3e 00 00 00 		cmp	WORD PTR _RudderStick,0
+	*** 000094	75 03 			jne	$JCC148
+	*** 000096	e9 cb 00 		jmp	$I741
+					$JCC148:
+					$I742:
+;|*** 		DeadZone=12;
+; Line 149
+	*** 000099	c6 06 00 00 0c 		mov	BYTE PTR _DeadZone,12
+;|*** 		InitJoy2(Joystick|RudderStick); // purposely do not init the Cooly Hat or ThrottleInitJoy2(Joystick|RudderStick); // purposely do not init the Cooly Hat or Throttle
+; Line 150
+	*** 00009e	a1 00 00 		mov	ax,_Joystick
+	*** 0000a1	0b 06 00 00 		or	ax,_RudderStick
+	*** 0000a5	50 			push	ax
+	*** 0000a6	9a 00 00 00 00 		call	FAR PTR _InitJoy2
+	*** 0000ab	83 c4 02 		add	sp,2
+;|*** 		if (NWaitShowJoy(Joystick ? (RudderStick ?
+;|*** 			"Center Stick and Pedals":
+;|*** 			"Center Joystick"):
+;|*** 			"Center Pedals",-1)==-1   )
+; Line 154
+	*** 0000ae	b8 ff ff 		mov	ax,-1
+	*** 0000b1	50 			push	ax
+	*** 0000b2	83 3e 00 00 00 		cmp	WORD PTR _Joystick,0
+	*** 0000b7	74 13 			je	$L20002
+	*** 0000b9	83 3e 00 00 00 		cmp	WORD PTR _RudderStick,0
+	*** 0000be	74 06 			je	$L20004
+	*** 0000c0	b8 5f 00 		mov	ax,OFFSET DGROUP:$SG745
+	*** 0000c3	eb 0a 			jmp	SHORT $L20003
+	*** 0000c5	90 			nop	
+					$L20004:
+	*** 0000c6	b8 77 00 		mov	ax,OFFSET DGROUP:$SG746
+	*** 0000c9	eb 04 			jmp	SHORT $L20003
+	*** 0000cb	90 			nop	
+					$L20002:
+	*** 0000cc	b8 87 00 		mov	ax,OFFSET DGROUP:$SG747
+					$L20003:
+	*** 0000cf	50 			push	ax
+	*** 0000d0	e8 00 00 		call	_NWaitShowJoy
+	*** 0000d3	83 c4 04 		add	sp,4
+	*** 0000d6	40 			inc	ax
+	*** 0000d7	75 03 			jne	$JCC215
+	*** 0000d9	e9 88 00 		jmp	$I741
+					$JCC215:
+;|*** 			return;
+; Line 155
+	*** 0000dc	83 3e 00 00 00 		cmp	WORD PTR _Joystick,0
+	*** 0000e1	74 22 			je	$I748
+;|*** 
+;|*** 		if (Joystick) {
+;|*** 			if (NWaitShowJoy("Move Stick Upper Left",5)==-1)
+; Line 158
+	*** 0000e3	b8 05 00 		mov	ax,5
+	*** 0000e6	50 			push	ax
+	*** 0000e7	b8 95 00 		mov	ax,OFFSET DGROUP:$SG750
+	*** 0000ea	50 			push	ax
+	*** 0000eb	e8 00 00 		call	_NWaitShowJoy
+	*** 0000ee	83 c4 04 		add	sp,4
+	*** 0000f1	40 			inc	ax
+	*** 0000f2	74 70 			je	$I741
+;|*** 				return;
+; Line 159
+	*** 0000f4	b8 0a 00 		mov	ax,10
+	*** 0000f7	50 			push	ax
+	*** 0000f8	b8 ab 00 		mov	ax,OFFSET DGROUP:$SG752
+	*** 0000fb	50 			push	ax
+	*** 0000fc	e8 00 00 		call	_NWaitShowJoy
+	*** 0000ff	83 c4 04 		add	sp,4
+	*** 000102	40 			inc	ax
+	*** 000103	74 5f 			je	$I741
+;|*** 			if (NWaitShowJoy("Move Stick Lower Right",10)==-1)
+;|*** 				return;
+; Line 161
+;|*** 		}
+;|*** 
+;|*** 		if (RudderStick) {
+; Line 164
+					$I748:
+	*** 000105	83 3e 00 00 00 		cmp	WORD PTR _RudderStick,0
+	*** 00010a	74 22 			je	$I753
+;|*** 			if (NWaitShowJoy("Move Pedals Left",16)==-1 )
+; Line 165
+	*** 00010c	b8 10 00 		mov	ax,16
+	*** 00010f	50 			push	ax
+	*** 000110	b8 c2 00 		mov	ax,OFFSET DGROUP:$SG755
+	*** 000113	50 			push	ax
+	*** 000114	e8 00 00 		call	_NWaitShowJoy
+	*** 000117	83 c4 04 		add	sp,4
+	*** 00011a	40 			inc	ax
+	*** 00011b	74 47 			je	$I741
+;|*** 				return;
+; Line 166
+	*** 00011d	b8 20 00 		mov	ax,32
+	*** 000120	50 			push	ax
+	*** 000121	b8 d3 00 		mov	ax,OFFSET DGROUP:$SG757
+	*** 000124	50 			push	ax
+	*** 000125	e8 00 00 		call	_NWaitShowJoy
+	*** 000128	83 c4 04 		add	sp,4
+	*** 00012b	40 			inc	ax
+	*** 00012c	74 36 			je	$I741
+;|*** 			if (NWaitShowJoy("Move Pedals Right",32)==-1 )
+;|*** 				return;
+; Line 168
+;|*** 		}
+;|*** 
+;|*** 		if (ThrustStick) {
+; Line 171
+					$I753:
+	*** 00012e	83 3e 00 00 00 		cmp	WORD PTR _ThrustStick,0
+	*** 000133	74 22 			je	$I758
+;|*** 			if (NWaitShowJoy("Move Throttle Down",64)==-1 )
+; Line 172
+	*** 000135	b8 40 00 		mov	ax,64
+	*** 000138	50 			push	ax
+	*** 000139	b8 e5 00 		mov	ax,OFFSET DGROUP:$SG760
+	*** 00013c	50 			push	ax
+	*** 00013d	e8 00 00 		call	_NWaitShowJoy
+	*** 000140	83 c4 04 		add	sp,4
+	*** 000143	40 			inc	ax
+	*** 000144	74 1e 			je	$I741
+;|*** 				return;
+; Line 173
+	*** 000146	b8 80 00 		mov	ax,128
+	*** 000149	50 			push	ax
+	*** 00014a	b8 f8 00 		mov	ax,OFFSET DGROUP:$SG762
+	*** 00014d	50 			push	ax
+	*** 00014e	e8 00 00 		call	_NWaitShowJoy
+	*** 000151	83 c4 04 		add	sp,4
+	*** 000154	40 			inc	ax
+	*** 000155	74 0d 			je	$I741
+;|*** 			if (NWaitShowJoy("Move Throttle Up",128)==-1 )
+;|*** 				return;
+; Line 175
+;|*** 		}
+;|*** 		NWaitShowJoy("Adjust Dead Zone (+-)",0);
+; Line 177
+					$I758:
+	*** 000157	2b c0 			sub	ax,ax
+	*** 000159	50 			push	ax
+	*** 00015a	b8 09 01 		mov	ax,OFFSET DGROUP:$SG763
+	*** 00015d	50 			push	ax
+	*** 00015e	e8 00 00 		call	_NWaitShowJoy
+	*** 000161	83 c4 04 		add	sp,4
+;|*** 	}
+; Line 178
+;|*** }
+; Line 179
+					$I741:
+	*** 000164	8b e5 			mov	sp,bp
+	*** 000166	5d 			pop	bp
+	*** 000167	c3 			ret	
+	*** 000168	90 			nop	
+	*** 000169	90 			nop	
+
+_JoyRecal	ENDP
+;|*** 
+;|*** //***************************************************************************
+;|*** NShowJoy(char *msg,struct STX j)
+;|*** {
+; Line 183
+	PUBLIC	_NShowJoy
+_NShowJoy	PROC NEAR
+	*** 00016a	55 			push	bp
+	*** 00016b	8b ec 			mov	bp,sp
+	*** 00016d	83 ec 0e 		sub	sp,14
+	*** 000170	57 			push	di
+	*** 000171	56 			push	si
+;	SEG = -14
+;	x = -6
+;	y = -10
+;	w = -4
+;	z = -12
+;	d = -2
+;	i = -8
+;	msg = 4
+;	j = 6
+;|***    int   SEG;
+;|***    int   x,y,w,z,d,i;
+;|*** 
+;|***    SEG= GRPAGE0[RpJoyBack->PageNr];
+; Line 187
+	*** 000172	8b 1e 26 00 		mov	bx,_RpJoyBack
+	*** 000176	8b 1f 			mov	bx,WORD PTR [bx]
+	*** 000178	d1 e3 			shl	bx,1
+	*** 00017a	8b 87 00 00 		mov	ax,WORD PTR _GRPAGE0[bx]
+	*** 00017e	89 46 f2 		mov	WORD PTR [bp-14],ax	;SEG
+;|*** 
+;|***    x=j.x;
+; Line 189
+	*** 000181	8a 46 06 		mov	al,BYTE PTR [bp+6]	;j
+	*** 000184	98 			cbw	
+	*** 000185	89 46 fa 		mov	WORD PTR [bp-6],ax	;x
+;|***    y=j.y;
+; Line 190
+	*** 000188	8a 46 07 		mov	al,BYTE PTR [bp+7]
+	*** 00018b	98 			cbw	
+	*** 00018c	89 46 f6 		mov	WORD PTR [bp-10],ax	;y
+;|***    w=j.w;
+; Line 191
+	*** 00018f	8a 46 08 		mov	al,BYTE PTR [bp+8]
+	*** 000192	98 			cbw	
+	*** 000193	89 46 fc 		mov	WORD PTR [bp-4],ax	;w
+;|***    z=j.z;
+; Line 192
+	*** 000196	8a 46 09 		mov	al,BYTE PTR [bp+9]
+	*** 000199	98 			cbw	
+	*** 00019a	89 46 f4 		mov	WORD PTR [bp-12],ax	;z
+;|*** 
+;|***    x/= 4;
+; Line 194
+	*** 00019d	b9 04 00 		mov	cx,4
+	*** 0001a0	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;x
+	*** 0001a3	99 			cwd	
+	*** 0001a4	f7 f9 			idiv	cx
+	*** 0001a6	89 46 fa 		mov	WORD PTR [bp-6],ax	;x
+;|***    y/= 4;
+; Line 195
+	*** 0001a9	8b 46 f6 		mov	ax,WORD PTR [bp-10]	;y
+	*** 0001ac	99 			cwd	
+	*** 0001ad	f7 f9 			idiv	cx
+	*** 0001af	89 46 f6 		mov	WORD PTR [bp-10],ax	;y
+;|***    w/= 4;
+; Line 196
+	*** 0001b2	8b 46 fc 		mov	ax,WORD PTR [bp-4]	;w
+	*** 0001b5	99 			cwd	
+	*** 0001b6	f7 f9 			idiv	cx
+	*** 0001b8	89 46 fc 		mov	WORD PTR [bp-4],ax	;w
+;|***    z/= 4;
+; Line 197
+	*** 0001bb	8b 46 f4 		mov	ax,WORD PTR [bp-12]	;z
+	*** 0001be	99 			cwd	
+	*** 0001bf	f7 f9 			idiv	cx
+	*** 0001c1	89 46 f4 		mov	WORD PTR [bp-12],ax	;z
+;|*** 
+;|*** // fix for radial
+;|***    d= x*x+ y*y;
+; Line 200
+	*** 0001c4	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;x
+	*** 0001c7	f7 e8 			imul	ax
+	*** 0001c9	8b c8 			mov	cx,ax
+	*** 0001cb	8b 46 f6 		mov	ax,WORD PTR [bp-10]	;y
+	*** 0001ce	f7 e8 			imul	ax
+	*** 0001d0	03 c8 			add	cx,ax
+	*** 0001d2	89 4e fe 		mov	WORD PTR [bp-2],cx	;d
+;|***    for (i=1;i<65;i++) {
+; Line 201
+	*** 0001d5	c7 46 f8 01 00 		mov	WORD PTR [bp-8],1	;i
+	*** 0001da	eb 03 			jmp	SHORT $F775
+					$FC776:
+	*** 0001dc	ff 46 f8 		inc	WORD PTR [bp-8]	;i
+					$F775:
+	*** 0001df	83 7e f8 41 		cmp	WORD PTR [bp-8],65	;i
+	*** 0001e3	7d 0a 			jge	$FB777
+;|***       if ((i*i)>d) break;
+; Line 202
+	*** 0001e5	8b 46 f8 		mov	ax,WORD PTR [bp-8]	;i
+	*** 0001e8	f7 e8 			imul	ax
+	*** 0001ea	3b 46 fe 		cmp	ax,WORD PTR [bp-2]	;d
+	*** 0001ed	7e ed 			jle	$FC776
+					$FB777:
+;|***    }
+;|*** 
+;|***    x= (x<0)? -((x*x)/i):((x*x)/i);
+; Line 205
+	*** 0001ef	83 7e fa 00 		cmp	WORD PTR [bp-6],0	;x
+	*** 0001f3	7d 0f 			jge	$L20006
+	*** 0001f5	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;x
+	*** 0001f8	f7 e8 			imul	ax
+	*** 0001fa	99 			cwd	
+	*** 0001fb	8b 4e f8 		mov	cx,WORD PTR [bp-8]	;i
+	*** 0001fe	f7 f9 			idiv	cx
+	*** 000200	f7 d8 			neg	ax
+	*** 000202	eb 0b 			jmp	SHORT $L20007
+					$L20006:
+	*** 000204	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;x
+	*** 000207	f7 e8 			imul	ax
+	*** 000209	99 			cwd	
+	*** 00020a	8b 4e f8 		mov	cx,WORD PTR [bp-8]	;i
+	*** 00020d	f7 f9 			idiv	cx
+					$L20007:
+	*** 00020f	89 46 fa 		mov	WORD PTR [bp-6],ax	;x
+;|***    y= (y<0)? -((y*y)/i):((y*y)/i);
+; Line 206
+	*** 000212	83 7e f6 00 		cmp	WORD PTR [bp-10],0	;y
+	*** 000216	7d 10 			jge	$L20008
+	*** 000218	8b 46 f6 		mov	ax,WORD PTR [bp-10]	;y
+	*** 00021b	f7 e8 			imul	ax
+	*** 00021d	99 			cwd	
+	*** 00021e	8b 4e f8 		mov	cx,WORD PTR [bp-8]	;i
+	*** 000221	f7 f9 			idiv	cx
+	*** 000223	f7 d8 			neg	ax
+	*** 000225	eb 0c 			jmp	SHORT $L20009
+	*** 000227	90 			nop	
+					$L20008:
+	*** 000228	8b 46 f6 		mov	ax,WORD PTR [bp-10]	;y
+	*** 00022b	f7 e8 			imul	ax
+	*** 00022d	99 			cwd	
+	*** 00022e	8b 4e f8 		mov	cx,WORD PTR [bp-8]	;i
+	*** 000231	f7 f9 			idiv	cx
+					$L20009:
+	*** 000233	89 46 f6 		mov	WORD PTR [bp-10],ax	;y
+;|*** 
+;|*** // copy backgrnd to spare area
+;|***    RectCopy(RpJoyBack, JBXL, JBYL, JBXH-JBXL,JBYH-JBYL, RpJoyBack, JBXDSTXL, JBXDSTYL);
+; Line 209
+	*** 000236	b8 14 00 		mov	ax,20
+	*** 000239	50 			push	ax
+	*** 00023a	b8 9e 00 		mov	ax,158
+	*** 00023d	50 			push	ax
+	*** 00023e	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 000242	b8 81 00 		mov	ax,129
+	*** 000245	50 			push	ax
+	*** 000246	b8 75 00 		mov	ax,117
+	*** 000249	50 			push	ax
+	*** 00024a	b8 46 00 		mov	ax,70
+	*** 00024d	50 			push	ax
+	*** 00024e	2b c0 			sub	ax,ax
+	*** 000250	50 			push	ax
+	*** 000251	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 000255	9a 00 00 00 00 		call	FAR PTR _RectCopy
+	*** 00025a	83 c4 10 		add	sp,16
+;|*** 
+;|*** // set dead zone
+;|***    DrawLine(RpJoyBack, JCRSDSTXC-DeadZone/2, JCRSDSTYC-DeadZone/2, JCRSDSTXC+DeadZone/2, JCRSDSTYC-DeadZone/2,WHITE);
+; Line 212
+	*** 00025d	a0 00 00 		mov	al,_DeadZone
+	*** 000260	2a e4 			sub	ah,ah
+	*** 000262	d1 e8 			shr	ax,1
+	*** 000264	8b f0 			mov	si,ax
+	*** 000266	b8 54 00 		mov	ax,84
+	*** 000269	2b c6 			sub	ax,si
+	*** 00026b	8b f8 			mov	di,ax
+	*** 00026d	b8 0f 00 		mov	ax,15
+	*** 000270	50 			push	ax
+	*** 000271	57 			push	di
+	*** 000272	8d 84 d2 00 		lea	ax,WORD PTR [si+210]
+	*** 000276	50 			push	ax
+	*** 000277	57 			push	di
+	*** 000278	b8 d2 00 		mov	ax,210
+	*** 00027b	2b c6 			sub	ax,si
+	*** 00027d	50 			push	ax
+	*** 00027e	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 000282	9a 00 00 00 00 		call	FAR PTR _DrawLine
+	*** 000287	83 c4 0c 		add	sp,12
+;|***    DrawLine(RpJoyBack, JCRSDSTXC+DeadZone/2, JCRSDSTYC-DeadZone/2, JCRSDSTXC+DeadZone/2, JCRSDSTYC+DeadZone/2,WHITE);
+; Line 213
+	*** 00028a	a0 00 00 		mov	al,_DeadZone
+	*** 00028d	2a e4 			sub	ah,ah
+	*** 00028f	d1 e8 			shr	ax,1
+	*** 000291	8b f0 			mov	si,ax
+	*** 000293	8d 84 d2 00 		lea	ax,WORD PTR [si+210]
+	*** 000297	8b f8 			mov	di,ax
+	*** 000299	b8 0f 00 		mov	ax,15
+	*** 00029c	50 			push	ax
+	*** 00029d	8d 44 54 		lea	ax,WORD PTR [si+84]
+	*** 0002a0	50 			push	ax
+	*** 0002a1	57 			push	di
+	*** 0002a2	b8 54 00 		mov	ax,84
+	*** 0002a5	2b c6 			sub	ax,si
+	*** 0002a7	50 			push	ax
+	*** 0002a8	57 			push	di
+	*** 0002a9	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 0002ad	9a 00 00 00 00 		call	FAR PTR _DrawLine
+	*** 0002b2	83 c4 0c 		add	sp,12
+;|***    DrawLine(RpJoyBack, JCRSDSTXC+DeadZone/2, JCRSDSTYC+DeadZone/2, JCRSDSTXC-DeadZone/2, JCRSDSTYC+DeadZone/2,WHITE);
+; Line 214
+	*** 0002b5	a0 00 00 		mov	al,_DeadZone
+	*** 0002b8	2a e4 			sub	ah,ah
+	*** 0002ba	d1 e8 			shr	ax,1
+	*** 0002bc	8b f0 			mov	si,ax
+	*** 0002be	8d 44 54 		lea	ax,WORD PTR [si+84]
+	*** 0002c1	8b f8 			mov	di,ax
+	*** 0002c3	b8 0f 00 		mov	ax,15
+	*** 0002c6	50 			push	ax
+	*** 0002c7	57 			push	di
+	*** 0002c8	b8 d2 00 		mov	ax,210
+	*** 0002cb	2b c6 			sub	ax,si
+	*** 0002cd	50 			push	ax
+	*** 0002ce	57 			push	di
+	*** 0002cf	8d 84 d2 00 		lea	ax,WORD PTR [si+210]
+	*** 0002d3	50 			push	ax
+	*** 0002d4	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 0002d8	9a 00 00 00 00 		call	FAR PTR _DrawLine
+	*** 0002dd	83 c4 0c 		add	sp,12
+;|***    DrawLine(RpJoyBack, JCRSDSTXC-DeadZone/2, JCRSDSTYC+DeadZone/2, JCRSDSTXC-DeadZone/2, JCRSDSTYC-DeadZone/2,WHITE);
+; Line 215
+	*** 0002e0	a0 00 00 		mov	al,_DeadZone
+	*** 0002e3	2a e4 			sub	ah,ah
+	*** 0002e5	d1 e8 			shr	ax,1
+	*** 0002e7	8b f0 			mov	si,ax
+	*** 0002e9	b8 d2 00 		mov	ax,210
+	*** 0002ec	2b c6 			sub	ax,si
+	*** 0002ee	8b f8 			mov	di,ax
+	*** 0002f0	b8 0f 00 		mov	ax,15
+	*** 0002f3	50 			push	ax
+	*** 0002f4	b8 54 00 		mov	ax,84
+	*** 0002f7	2b c6 			sub	ax,si
+	*** 0002f9	50 			push	ax
+	*** 0002fa	57 			push	di
+	*** 0002fb	8d 44 54 		lea	ax,WORD PTR [si+84]
+	*** 0002fe	50 			push	ax
+	*** 0002ff	57 			push	di
+	*** 000300	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 000304	9a 00 00 00 00 		call	FAR PTR _DrawLine
+	*** 000309	83 c4 0c 		add	sp,12
+;|*** 
+;|*** 
+;|*** // copy joy cursor
+;|***    ScaleRotate(SEG, JCRSXC, JCRSYC, JCRSWID, JCRSHT,RpJoyBack,JCRSDSTXC+x,JCRSDSTYC+y, 0x100, 0, 0, 0);
+; Line 219
+	*** 00030c	2b c0 			sub	ax,ax
+	*** 00030e	50 			push	ax
+	*** 00030f	50 			push	ax
+	*** 000310	50 			push	ax
+	*** 000311	b8 00 01 		mov	ax,256
+	*** 000314	50 			push	ax
+	*** 000315	8b 46 f6 		mov	ax,WORD PTR [bp-10]	;y
+	*** 000318	05 54 00 		add	ax,84
+	*** 00031b	50 			push	ax
+	*** 00031c	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;x
+	*** 00031f	05 d2 00 		add	ax,210
+	*** 000322	50 			push	ax
+	*** 000323	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 000327	b8 06 00 		mov	ax,6
+	*** 00032a	50 			push	ax
+	*** 00032b	50 			push	ax
+	*** 00032c	b8 48 00 		mov	ax,72
+	*** 00032f	50 			push	ax
+	*** 000330	b8 7b 00 		mov	ax,123
+	*** 000333	50 			push	ax
+	*** 000334	ff 76 f2 		push	WORD PTR [bp-14]	;SEG
+	*** 000337	e8 00 00 		call	_ScaleRotate
+	*** 00033a	83 c4 18 		add	sp,24
+;|*** 
+;|*** //   if (ThrustStick)
+;|*** //      {
+;|*** //   ScaleRotate( SEG, JSLDXC,JSLDYC, JSLDWID, JSLDHT, RpJoyBack, JTHRDSTXC, JTHRDSTYC-w, 0x100, 0, -1, 0);
+;|***    RectCopy (RpJoyBack, JVSLDXL, JVSLDYL, JVSLDWID,JVSLDHT, RpJoyBack, JTHRDSTXC-(JVSLDWID/2), JTHRDSTYC-z-(JVSLDHT/2));
+; Line 224
+	*** 00033d	b8 56 00 		mov	ax,86
+	*** 000340	2b 46 f4 		sub	ax,WORD PTR [bp-12]	;z
+	*** 000343	50 			push	ax
+	*** 000344	b8 01 01 		mov	ax,257
+	*** 000347	50 			push	ax
+	*** 000348	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 00034c	b8 04 00 		mov	ax,4
+	*** 00034f	50 			push	ax
+	*** 000350	b8 08 00 		mov	ax,8
+	*** 000353	50 			push	ax
+	*** 000354	b8 5a 00 		mov	ax,90
+	*** 000357	50 			push	ax
+	*** 000358	b8 79 00 		mov	ax,121
+	*** 00035b	50 			push	ax
+	*** 00035c	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 000360	9a 00 00 00 00 		call	FAR PTR _RectCopy
+	*** 000365	83 c4 10 		add	sp,16
+;|*** //      }
+;|*** 
+;|*** //   if (RudderStick)
+;|*** //      {
+;|*** //   ScaleRotate( SEG, JSLDXC,JSLDYC, JSLDWID, JSLDHT,RpJoyBack, JRUDDSTXC+z,JRUDDSTYC, 0x100, 0, -1, 0);
+;|***    RectCopy (RpJoyBack, JHSLDXL, JHSLDYL, JHSLDWID,JHSLDHT, RpJoyBack, JRUDDSTXC+w-(JHSLDWID/2), JRUDDSTYC-(JHSLDHT/2));
+; Line 230
+	*** 000368	b8 84 00 		mov	ax,132
+	*** 00036b	50 			push	ax
+	*** 00036c	8b 46 fc 		mov	ax,WORD PTR [bp-4]	;w
+	*** 00036f	05 d0 00 		add	ax,208
+	*** 000372	50 			push	ax
+	*** 000373	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 000377	b8 08 00 		mov	ax,8
+	*** 00037a	50 			push	ax
+	*** 00037b	b8 05 00 		mov	ax,5
+	*** 00037e	50 			push	ax
+	*** 00037f	b8 4e 00 		mov	ax,78
+	*** 000382	50 			push	ax
+	*** 000383	b8 79 00 		mov	ax,121
+	*** 000386	50 			push	ax
+	*** 000387	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 00038b	9a 00 00 00 00 		call	FAR PTR _RectCopy
+	*** 000390	83 c4 10 		add	sp,16
+;|*** //      }
+;|*** 
+;|***    RpJoyBack->APen= BLACK;
+; Line 233
+	*** 000393	8b 1e 26 00 		mov	bx,_RpJoyBack
+	*** 000397	c7 47 0c 00 00 		mov	WORD PTR [bx+12],0
+;|***    CenterPrint(RpJoyBack, JBDSTXC+1, JBXDSTYL+6+1, msg);
+; Line 234
+	*** 00039c	ff 76 04 		push	WORD PTR [bp+4]	;msg
+	*** 00039f	b8 1b 00 		mov	ax,27
+	*** 0003a2	50 			push	ax
+	*** 0003a3	b8 d3 00 		mov	ax,211
+	*** 0003a6	50 			push	ax
+	*** 0003a7	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 0003ab	e8 00 00 		call	_CenterPrint
+	*** 0003ae	83 c4 08 		add	sp,8
+;|***    CenterPrint(RpJoyBack, JBDSTXC+1, JBXDSTYL+12+1, "Then press Trigger");
+; Line 235
+	*** 0003b1	b8 1f 01 		mov	ax,OFFSET DGROUP:$SG780
+	*** 0003b4	50 			push	ax
+	*** 0003b5	b8 21 00 		mov	ax,33
+	*** 0003b8	50 			push	ax
+	*** 0003b9	b8 d3 00 		mov	ax,211
+	*** 0003bc	50 			push	ax
+	*** 0003bd	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 0003c1	e8 00 00 		call	_CenterPrint
+	*** 0003c4	83 c4 08 		add	sp,8
+;|***    RpJoyBack->APen= 0x33;
+; Line 236
+	*** 0003c7	8b 1e 26 00 		mov	bx,_RpJoyBack
+	*** 0003cb	c7 47 0c 33 00 		mov	WORD PTR [bx+12],51
+;|***    CenterPrint(RpJoyBack, JBDSTXC, JBXDSTYL+6, msg);
+; Line 237
+	*** 0003d0	ff 76 04 		push	WORD PTR [bp+4]	;msg
+	*** 0003d3	b8 1a 00 		mov	ax,26
+	*** 0003d6	50 			push	ax
+	*** 0003d7	b8 d2 00 		mov	ax,210
+	*** 0003da	50 			push	ax
+	*** 0003db	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 0003df	e8 00 00 		call	_CenterPrint
+	*** 0003e2	83 c4 08 		add	sp,8
+;|***    CenterPrint(RpJoyBack, JBDSTXC, JBXDSTYL+12, "Then press Trigger");
+; Line 238
+	*** 0003e5	b8 32 01 		mov	ax,OFFSET DGROUP:$SG781
+	*** 0003e8	50 			push	ax
+	*** 0003e9	b8 20 00 		mov	ax,32
+	*** 0003ec	50 			push	ax
+	*** 0003ed	b8 d2 00 		mov	ax,210
+	*** 0003f0	50 			push	ax
+	*** 0003f1	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 0003f5	e8 00 00 		call	_CenterPrint
+	*** 0003f8	83 c4 08 		add	sp,8
+;|*** 
+;|***    RectCopy(RpJoyBack, JBXDSTXL, JBXDSTYL, JBXDSTXH-JBXDSTXL,JBXDSTYH-JBXDSTYL, RpJoy, JBXDSTXL, JBXDSTYL);
+; Line 240
+	*** 0003fb	b8 14 00 		mov	ax,20
+	*** 0003fe	50 			push	ax
+	*** 0003ff	b8 9e 00 		mov	ax,158
+	*** 000402	50 			push	ax
+	*** 000403	ff 36 12 00 		push	WORD PTR _RpJoy
+	*** 000407	b8 81 00 		mov	ax,129
+	*** 00040a	50 			push	ax
+	*** 00040b	b8 75 00 		mov	ax,117
+	*** 00040e	50 			push	ax
+	*** 00040f	b8 14 00 		mov	ax,20
+	*** 000412	50 			push	ax
+	*** 000413	b8 9e 00 		mov	ax,158
+	*** 000416	50 			push	ax
+	*** 000417	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 00041b	9a 00 00 00 00 		call	FAR PTR _RectCopy
+	*** 000420	83 c4 10 		add	sp,16
+;|*** }
+; Line 241
+	*** 000423	5e 			pop	si
+	*** 000424	5f 			pop	di
+	*** 000425	8b e5 			mov	sp,bp
+	*** 000427	5d 			pop	bp
+	*** 000428	c3 			ret	
+	*** 000429	90 			nop	
+
+_NShowJoy	ENDP
+;|*** 
+;|*** //***************************************************************************
+;|*** NWaitShowJoy(char *msg, int vals)
+;|*** {
+; Line 245
+	PUBLIC	_NWaitShowJoy
+_NWaitShowJoy	PROC NEAR
+	*** 00042a	55 			push	bp
+	*** 00042b	8b ec 			mov	bp,sp
+	*** 00042d	83 ec 08 		sub	sp,8
+	*** 000430	56 			push	si
+;	msg = 4
+;	vals = 6
+;	i = -4
+;	v = -2
+;	j = -8
+;|***    int   i,v;
+;|***    struct STX j;
+;|*** 
+;|***    while (Trigger2(0)==0)
+; Line 249
+					$FC789:
+	*** 000431	2b c0 			sub	ax,ax
+	*** 000433	50 			push	ax
+	*** 000434	9a 00 00 00 00 		call	FAR PTR _Trigger2
+	*** 000439	83 c4 02 		add	sp,2
+	*** 00043c	0b c0 			or	ax,ax
+	*** 00043e	74 03 			je	$JCC1086
+	*** 000440	e9 4b 01 		jmp	$FB790
+					$JCC1086:
+;|***       {
+; Line 250
+;|***       if (kbhit())
+; Line 251
+	*** 000443	e8 00 00 		call	_kbhit
+	*** 000446	0b c0 			or	ax,ax
+	*** 000448	74 2c 			je	$SB794
+;|***          {
+; Line 252
+;|***          switch (_bios_keybrd (_KEYBRD_READ))
+; Line 253
+	*** 00044a	2b c0 			sub	ax,ax
+	*** 00044c	50 			push	ax
+	*** 00044d	e8 00 00 		call	__bios_keybrd
+	*** 000450	83 c4 02 		add	sp,2
+	*** 000453	3d 2b 0d 		cmp	ax,3371
+	*** 000456	74 12 			je	$SC797
+	*** 000458	77 68 			ja	$L20010
+	*** 00045a	3d 1b 01 		cmp	ax,283
+	*** 00045d	75 03 			jne	$JCC1117
+	*** 00045f	e9 84 01 		jmp	$SC801
+					$JCC1117:
+	*** 000462	3d 2d 0c 		cmp	ax,3117
+	*** 000465	74 45 			je	$SC799
+	*** 000467	eb 0d 			jmp	SHORT $SB794
+	*** 000469	90 			nop	
+					$SC797:
+;|***             {
+;|***             case PADPLUS:
+;|***             case PLUS:
+;|***             case INCPOWER:
+;|***                if (DeadZone<63) DeadZone+=4;
+; Line 258
+	*** 00046a	80 3e 00 00 3f 		cmp	BYTE PTR _DeadZone,63
+	*** 00046f	73 05 			jae	$SB794
+	*** 000471	80 06 00 00 04 		add	BYTE PTR _DeadZone,4
+;|***                break;
+; Line 259
+					$SB794:
+;|*** 
+;|***             case PADMINUS:
+;|***             case DECPOWER:
+;|***                if (DeadZone>7)  DeadZone-=4;
+;|***                break;
+;|***             case ESCKEY:
+;|***                return(-1);
+;|***             case ENTER:
+;|***                return(0);
+;|***             }
+;|***          }
+; Line 270
+;|*** 
+;|***       WaitTicks (1);
+; Line 272
+	*** 000476	b8 01 00 		mov	ax,1
+	*** 000479	50 			push	ax
+	*** 00047a	e8 00 00 		call	_WaitTicks
+	*** 00047d	83 c4 02 		add	sp,2
+;|***       j =ReadJoy2(Joystick|RudderStick|ThrustStick|CoolyStick);
+; Line 273
+	*** 000480	a1 00 00 		mov	ax,_Joystick
+	*** 000483	0b 06 00 00 		or	ax,_RudderStick
+	*** 000487	0b 06 00 00 		or	ax,_ThrustStick
+	*** 00048b	0b 06 00 00 		or	ax,_CoolyStick
+	*** 00048f	50 			push	ax
+	*** 000490	9a 00 00 00 00 		call	FAR PTR _ReadJoy2
+	*** 000495	83 c4 02 		add	sp,2
+	*** 000498	89 46 f8 		mov	WORD PTR [bp-8],ax	;j
+	*** 00049b	89 56 fa 		mov	WORD PTR [bp-6],dx
+;|*** 
+;|***       if (vals==-1)
+; Line 275
+	*** 00049e	83 7e 06 ff 		cmp	WORD PTR [bp+6],-1	;vals
+	*** 0004a2	75 78 			jne	$I804
+;|***          {
+; Line 276
+;|***          for (i=0;i<4;i++)
+; Line 277
+	*** 0004a4	c7 46 fc 00 00 		mov	WORD PTR [bp-4],0	;i
+	*** 0004a9	eb 30 			jmp	SHORT $F805
+	*** 0004ab	90 			nop	
+					$SC799:
+;|***                if (DeadZone>7)  DeadZone-=4;
+; Line 263
+	*** 0004ac	80 3e 00 00 07 		cmp	BYTE PTR _DeadZone,7
+	*** 0004b1	76 c3 			jbe	$SB794
+	*** 0004b3	80 2e 00 00 04 		sub	BYTE PTR _DeadZone,4
+;|***                break;
+; Line 264
+	*** 0004b8	eb bc 			jmp	SHORT $SB794
+					$SC802:
+;|***             case ESCKEY:
+;|***                return(-1);
+;|***             case ENTER:
+;|***                return(0);
+; Line 268
+	*** 0004ba	2b c0 			sub	ax,ax
+	*** 0004bc	5e 			pop	si
+	*** 0004bd	8b e5 			mov	sp,bp
+	*** 0004bf	5d 			pop	bp
+	*** 0004c0	c3 			ret	
+	*** 0004c1	90 			nop	
+					$L20010:
+	*** 0004c2	3d 3d 0d 		cmp	ax,3389
+	*** 0004c5	74 a3 			je	$SC797
+	*** 0004c7	3d 0d 1c 		cmp	ax,7181
+	*** 0004ca	74 ee 			je	$SC802
+	*** 0004cc	3d 2d 4a 		cmp	ax,18989
+	*** 0004cf	74 db 			je	$SC799
+	*** 0004d1	3d 2b 4e 		cmp	ax,20011
+	*** 0004d4	74 94 			je	$SC797
+	*** 0004d6	eb 9e 			jmp	SHORT $SB794
+					$FC806:
+	*** 0004d8	ff 46 fc 		inc	WORD PTR [bp-4]	;i
+					$F805:
+	*** 0004db	83 7e fc 04 		cmp	WORD PTR [bp-4],4	;i
+	*** 0004df	7d 2b 			jge	$FB807
+;|***             }
+;|***          }
+;|*** 
+;|***       WaitTicks (1);
+;|***       j =ReadJoy2(Joystick|RudderStick|ThrustStick|CoolyStick);
+;|*** 
+;|***       if (vals==-1)
+;|***          {
+;|***          for (i=0;i<4;i++)
+;|***             {
+; Line 278
+;|***             MinStick[i] = RawJoy[i];
+; Line 279
+	*** 0004e1	8b 76 fc 		mov	si,WORD PTR [bp-4]	;i
+	*** 0004e4	d1 e6 			shl	si,1
+	*** 0004e6	8b 84 00 00 		mov	ax,WORD PTR _RawJoy[si]
+	*** 0004ea	89 84 00 00 		mov	WORD PTR _MinStick[si],ax
+;|***             LowRange[i] = CenterPosition[i]-MinStick[i];
+; Line 280
+	*** 0004ee	8b 84 00 00 		mov	ax,WORD PTR _CenterPosition[si]
+	*** 0004f2	2b 84 00 00 		sub	ax,WORD PTR _MinStick[si]
+	*** 0004f6	89 84 00 00 		mov	WORD PTR _LowRange[si],ax
+;|***             MaxStick[i]  = RawJoy[i];
+; Line 281
+	*** 0004fa	8b 84 00 00 		mov	ax,WORD PTR _RawJoy[si]
+	*** 0004fe	89 84 00 00 		mov	WORD PTR _MaxStick[si],ax
+;|***             HighRange[i] = MaxStick[i]-CenterPosition[i];
+; Line 282
+	*** 000502	2b 84 00 00 		sub	ax,WORD PTR _CenterPosition[si]
+	*** 000506	89 84 00 00 		mov	WORD PTR _HighRange[si],ax
+;|***             }
+; Line 283
+	*** 00050a	eb cc 			jmp	SHORT $FC806
+					$FB807:
+;|***          j.x=j.y=j.w=j.z=0;
+; Line 284
+	*** 00050c	2a c0 			sub	al,al
+	*** 00050e	88 46 fb 		mov	BYTE PTR [bp-5],al
+	*** 000511	88 46 fa 		mov	BYTE PTR [bp-6],al
+	*** 000514	88 46 f9 		mov	BYTE PTR [bp-7],al
+	*** 000517	88 46 f8 		mov	BYTE PTR [bp-8],al	;j
+;|***          }
+; Line 285
+;|***       else
+; Line 286
+	*** 00051a	eb 56 			jmp	SHORT $I808
+					$I804:
+;|***          {
+; Line 287
+;|***          for (i=0,v=vals;i<4;i++,(v=(v>>2)))
+; Line 288
+	*** 00051c	c7 46 fc 00 00 		mov	WORD PTR [bp-4],0	;i
+	*** 000521	8b 46 06 		mov	ax,WORD PTR [bp+6]	;vals
+	*** 000524	89 46 fe 		mov	WORD PTR [bp-2],ax	;v
+	*** 000527	eb 43 			jmp	SHORT $F809
+	*** 000529	90 			nop	
+					$FC810:
+;|***             {
+; Line 289
+;|***             if (v&1)
+; Line 290
+	*** 00052a	f6 46 fe 01 		test	BYTE PTR [bp-2],1	;v
+	*** 00052e	74 19 			je	$I812
+;|***                {
+; Line 291
+;|***                MinStick[i] = RawJoy[i];
+; Line 292
+	*** 000530	8b 76 fc 		mov	si,WORD PTR [bp-4]	;i
+	*** 000533	d1 e6 			shl	si,1
+	*** 000535	8b 84 00 00 		mov	ax,WORD PTR _RawJoy[si]
+	*** 000539	89 84 00 00 		mov	WORD PTR _MinStick[si],ax
+;|***                LowRange[i] = CenterPosition[i]-MinStick[i];
+; Line 293
+	*** 00053d	8b 84 00 00 		mov	ax,WORD PTR _CenterPosition[si]
+	*** 000541	2b 84 00 00 		sub	ax,WORD PTR _MinStick[si]
+	*** 000545	89 84 00 00 		mov	WORD PTR _LowRange[si],ax
+;|***                }
+; Line 294
+;|***             if (v&2)
+; Line 295
+					$I812:
+	*** 000549	f6 46 fe 02 		test	BYTE PTR [bp-2],2	;v
+	*** 00054d	74 15 			je	$L20013
+;|***                {
+; Line 296
+;|***                MaxStick[i]  = RawJoy[i];
+; Line 297
+	*** 00054f	8b 76 fc 		mov	si,WORD PTR [bp-4]	;i
+	*** 000552	d1 e6 			shl	si,1
+	*** 000554	8b 84 00 00 		mov	ax,WORD PTR _RawJoy[si]
+	*** 000558	89 84 00 00 		mov	WORD PTR _MaxStick[si],ax
+;|***                HighRange[i] = MaxStick[i]-CenterPosition[i];
+; Line 298
+	*** 00055c	2b 84 00 00 		sub	ax,WORD PTR _CenterPosition[si]
+	*** 000560	89 84 00 00 		mov	WORD PTR _HighRange[si],ax
+;|***                }
+; Line 299
+;|***             }
+; Line 300
+					$L20013:
+	*** 000564	ff 46 fc 		inc	WORD PTR [bp-4]	;i
+	*** 000567	b1 02 			mov	cl,2
+	*** 000569	d3 7e fe 		sar	WORD PTR [bp-2],cl	;v
+					$F809:
+	*** 00056c	83 7e fc 04 		cmp	WORD PTR [bp-4],4	;i
+	*** 000570	7c b8 			jl	$FC810
+;|***          }
+; Line 301
+					$I808:
+;|*** 
+;|***       WaitTicks(10);
+; Line 303
+	*** 000572	b8 0a 00 		mov	ax,10
+	*** 000575	50 			push	ax
+	*** 000576	e8 00 00 		call	_WaitTicks
+	*** 000579	83 c4 02 		add	sp,2
+;|***       NShowJoy(msg,j);
+; Line 304
+	*** 00057c	ff 76 fa 		push	WORD PTR [bp-6]
+	*** 00057f	ff 76 f8 		push	WORD PTR [bp-8]	;j
+	*** 000582	ff 76 04 		push	WORD PTR [bp+4]	;msg
+	*** 000585	e8 e2 fb 		call	_NShowJoy
+	*** 000588	83 c4 06 		add	sp,6
+;|***       }
+; Line 305
+	*** 00058b	e9 a3 fe 		jmp	$FC789
+					$FB790:
+;|*** 
+;|***    if (vals==-1)
+; Line 307
+	*** 00058e	83 7e 06 ff 		cmp	WORD PTR [bp+6],-1	;vals
+	*** 000592	75 10 			jne	$I814
+;|***       InitJoy2(Joystick|RudderStick); // purposely do not init the Cooly Hat or Throttle
+; Line 308
+	*** 000594	a1 00 00 		mov	ax,_Joystick
+	*** 000597	0b 06 00 00 		or	ax,_RudderStick
+	*** 00059b	50 			push	ax
+	*** 00059c	9a 00 00 00 00 		call	FAR PTR _InitJoy2
+	*** 0005a1	83 c4 02 		add	sp,2
+;|*** 
+;|*** 
+;|***    while (Trigger2(0))
+; Line 311
+					$I814:
+	*** 0005a4	2b c0 			sub	ax,ax
+	*** 0005a6	50 			push	ax
+	*** 0005a7	9a 00 00 00 00 		call	FAR PTR _Trigger2
+	*** 0005ac	83 c4 02 		add	sp,2
+	*** 0005af	0b c0 			or	ax,ax
+	*** 0005b1	75 03 			jne	$JCC1457
+	*** 0005b3	e9 04 ff 		jmp	$SC802
+					$JCC1457:
+;|***       {
+; Line 312
+;|***       if (kbhit())
+; Line 313
+	*** 0005b6	e8 00 00 		call	_kbhit
+	*** 0005b9	0b c0 			or	ax,ax
+	*** 0005bb	74 0e 			je	$SB820
+;|***          {
+; Line 314
+;|***          switch (_bios_keybrd (_KEYBRD_READ))
+; Line 315
+	*** 0005bd	2b c0 			sub	ax,ax
+	*** 0005bf	50 			push	ax
+	*** 0005c0	e8 00 00 		call	__bios_keybrd
+	*** 0005c3	83 c4 02 		add	sp,2
+	*** 0005c6	3d 1b 01 		cmp	ax,283
+	*** 0005c9	74 1b 			je	$SC801
+					$SB820:
+;|***             {
+;|***             case ESCKEY:
+;|***                return(-1);
+;|***             }
+;|***          }
+; Line 320
+;|***       WaitTicks(10);
+; Line 321
+	*** 0005cb	b8 0a 00 		mov	ax,10
+	*** 0005ce	50 			push	ax
+	*** 0005cf	e8 00 00 		call	_WaitTicks
+	*** 0005d2	83 c4 02 		add	sp,2
+;|***       NShowJoy(msg,j);
+; Line 322
+	*** 0005d5	ff 76 fa 		push	WORD PTR [bp-6]
+	*** 0005d8	ff 76 f8 		push	WORD PTR [bp-8]	;j
+	*** 0005db	ff 76 04 		push	WORD PTR [bp+4]	;msg
+	*** 0005de	e8 89 fb 		call	_NShowJoy
+	*** 0005e1	83 c4 06 		add	sp,6
+;|***       }
+; Line 323
+	*** 0005e4	eb be 			jmp	SHORT $I814
+					$SC801:
+;|***                return(-1);
+; Line 266
+	*** 0005e6	b8 ff ff 		mov	ax,-1
+	*** 0005e9	5e 			pop	si
+	*** 0005ea	8b e5 			mov	sp,bp
+	*** 0005ec	5d 			pop	bp
+	*** 0005ed	c3 			ret	
+
+_NWaitShowJoy	ENDP
+;|***             case ENTER:
+;|***                return(0);
+;|***             }
+;|***          }
+;|*** 
+;|***       WaitTicks (1);
+;|***       j =ReadJoy2(Joystick|RudderStick|ThrustStick|CoolyStick);
+;|*** 
+;|***       if (vals==-1)
+;|***          {
+;|***          for (i=0;i<4;i++)
+;|***             {
+;|***             MinStick[i] = RawJoy[i];
+;|***             LowRange[i] = CenterPosition[i]-MinStick[i];
+;|***             MaxStick[i]  = RawJoy[i];
+;|***             HighRange[i] = MaxStick[i]-CenterPosition[i];
+;|***             }
+;|***          j.x=j.y=j.w=j.z=0;
+;|***          }
+;|***       else
+;|***          {
+;|***          for (i=0,v=vals;i<4;i++,(v=(v>>2)))
+;|***             {
+;|***             if (v&1)
+;|***                {
+;|***                MinStick[i] = RawJoy[i];
+;|***                LowRange[i] = CenterPosition[i]-MinStick[i];
+;|***                }
+;|***             if (v&2)
+;|***                {
+;|***                MaxStick[i]  = RawJoy[i];
+;|***                HighRange[i] = MaxStick[i]-CenterPosition[i];
+;|***                }
+;|***             }
+;|***          }
+;|*** 
+;|***       WaitTicks(10);
+;|***       NShowJoy(msg,j);
+;|***       }
+;|*** 
+;|***    if (vals==-1)
+;|***       InitJoy2(Joystick|RudderStick); // purposely do not init the Cooly Hat or Throttle
+;|*** 
+;|*** 
+;|***    while (Trigger2(0))
+;|***       {
+;|***       if (kbhit())
+;|***          {
+;|***          switch (_bios_keybrd (_KEYBRD_READ))
+;|***             {
+;|***             case ESCKEY:
+;|***                return(-1);
+;|***             }
+;|***          }
+;|***       WaitTicks(10);
+;|***       NShowJoy(msg,j);
+;|***       }
+;|***    return(0);
+;|*** }
+;|*** //**********************************************************************
+;|*** RedrawJoyBox()
+;|*** {
+; Line 328
+	PUBLIC	_RedrawJoyBox
+_RedrawJoyBox	PROC NEAR
+;|*** 	RectCopy(RpJoyBack, JBXDSTXL, JBXDSTYL, JBXDSTXH-JBXDSTXL,JBXDSTYH-JBXDSTYL, RpJoy, JBXDSTXL, JBXDSTYL);
+; Line 329
+	*** 0005ee	b8 14 00 		mov	ax,20
+	*** 0005f1	50 			push	ax
+	*** 0005f2	b8 9e 00 		mov	ax,158
+	*** 0005f5	50 			push	ax
+	*** 0005f6	ff 36 12 00 		push	WORD PTR _RpJoy
+	*** 0005fa	b8 81 00 		mov	ax,129
+	*** 0005fd	50 			push	ax
+	*** 0005fe	b8 75 00 		mov	ax,117
+	*** 000601	50 			push	ax
+	*** 000602	b8 14 00 		mov	ax,20
+	*** 000605	50 			push	ax
+	*** 000606	b8 9e 00 		mov	ax,158
+	*** 000609	50 			push	ax
+	*** 00060a	ff 36 26 00 		push	WORD PTR _RpJoyBack
+	*** 00060e	9a 00 00 00 00 		call	FAR PTR _RectCopy
+	*** 000613	83 c4 10 		add	sp,16
+;|*** 
+;|*** }
+; Line 331
+	*** 000616	c3 			ret	
+	*** 000617	90 			nop	
+
+_RedrawJoyBox	ENDP
+;|*** 
+;|*** //***************************************************************************
+;|*** CenterPrint (RPS *Rp, int x, int y, char *str )
+;|*** {
+; Line 335
+	PUBLIC	_CenterPrint
+_CenterPrint	PROC NEAR
+	*** 000618	55 			push	bp
+	*** 000619	8b ec 			mov	bp,sp
+;	Rp = 4
+;	x = 6
+;	y = 8
+;	str = 10
+;|***    x -= ((pstrlen(Rp, str)+1)/2);
+; Line 336
+	*** 00061b	ff 76 0a 		push	WORD PTR [bp+10]	;str
+	*** 00061e	ff 76 04 		push	WORD PTR [bp+4]	;Rp
+	*** 000621	e8 00 00 		call	_pstrlen
+	*** 000624	83 c4 04 		add	sp,4
+	*** 000627	40 			inc	ax
+	*** 000628	99 			cwd	
+	*** 000629	2b c2 			sub	ax,dx
+	*** 00062b	d1 f8 			sar	ax,1
+	*** 00062d	29 46 06 		sub	WORD PTR [bp+6],ax	;x
+;|***     RpPrint (Rp, x,y, str);
+; Line 337
+	*** 000630	ff 76 0a 		push	WORD PTR [bp+10]	;str
+	*** 000633	ff 76 08 		push	WORD PTR [bp+8]	;y
+	*** 000636	ff 76 06 		push	WORD PTR [bp+6]	;x
+	*** 000639	ff 76 04 		push	WORD PTR [bp+4]	;Rp
+	*** 00063c	9a 00 00 00 00 		call	FAR PTR _RpPrint
+	*** 000641	83 c4 08 		add	sp,8
+;|*** }
+; Line 338
+	*** 000644	5d 			pop	bp
+	*** 000645	c3 			ret	
+
+_CenterPrint	ENDP
+;|*** 
+;|*** //***************************************************************************
+;|*** int GetJoyConfig()
+;|*** {
+; Line 342
+	PUBLIC	_GetJoyConfig
+_GetJoyConfig	PROC NEAR
+	*** 000646	55 			push	bp
+	*** 000647	8b ec 			mov	bp,sp
+	*** 000649	83 ec 04 		sub	sp,4
+;	f = -2
+;	offset = -4
+;|*** 
+;|*** 	FILE *f ;
+;|*** 	int offset;
+;|*** 
+;|*** 	f = fopen ("JOY.F14", "rb") ;
+; Line 347
+	*** 00064c	b8 45 01 		mov	ax,OFFSET DGROUP:$SG836
+	*** 00064f	50 			push	ax
+	*** 000650	b8 48 01 		mov	ax,OFFSET DGROUP:$SG837
+	*** 000653	50 			push	ax
+	*** 000654	e8 00 00 		call	_fopen
+	*** 000657	83 c4 04 		add	sp,4
+	*** 00065a	89 46 fe 		mov	WORD PTR [bp-2],ax	;f
+;|*** 
+;|***     fread(&offset,			sizeof (int), 1, f);
+; Line 349
+	*** 00065d	50 			push	ax
+	*** 00065e	b8 01 00 		mov	ax,1
+	*** 000661	50 			push	ax
+	*** 000662	b8 02 00 		mov	ax,2
+	*** 000665	50 			push	ax
+	*** 000666	8d 46 fc 		lea	ax,WORD PTR [bp-4]	;offset
+	*** 000669	50 			push	ax
+	*** 00066a	e8 00 00 		call	_fread
+	*** 00066d	83 c4 08 		add	sp,8
+;|***     fread(&KbSense,			sizeof (int), 1, f);
+; Line 350
+	*** 000670	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 000673	b8 01 00 		mov	ax,1
+	*** 000676	50 			push	ax
+	*** 000677	b8 02 00 		mov	ax,2
+	*** 00067a	50 			push	ax
+	*** 00067b	b8 00 00 		mov	ax,OFFSET _KbSense
+	*** 00067e	50 			push	ax
+	*** 00067f	e8 00 00 		call	_fread
+	*** 000682	83 c4 08 		add	sp,8
+;|*** 	if (KbSense<0 || KbSense>2) KbSense=0;
+; Line 351
+	*** 000685	83 3e 00 00 00 		cmp	WORD PTR _KbSense,0
+	*** 00068a	7c 07 			jl	$I839
+	*** 00068c	83 3e 00 00 02 		cmp	WORD PTR _KbSense,2
+	*** 000691	7e 06 			jle	$I838
+					$I839:
+	*** 000693	c7 06 00 00 00 00 	mov	WORD PTR _KbSense,0
+;|***     fread(&SNDDETAIL,		sizeof (int), 1, f);
+; Line 352
+					$I838:
+	*** 000699	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 00069c	b8 01 00 		mov	ax,1
+	*** 00069f	50 			push	ax
+	*** 0006a0	b8 02 00 		mov	ax,2
+	*** 0006a3	50 			push	ax
+	*** 0006a4	b8 00 00 		mov	ax,OFFSET _SNDDETAIL
+	*** 0006a7	50 			push	ax
+	*** 0006a8	e8 00 00 		call	_fread
+	*** 0006ab	83 c4 08 		add	sp,8
+;|*** 	if (SNDDETAIL<0 || SNDDETAIL>3) SNDDETAIL=0;
+; Line 353
+	*** 0006ae	83 3e 00 00 00 		cmp	WORD PTR _SNDDETAIL,0
+	*** 0006b3	7c 07 			jl	$I841
+	*** 0006b5	83 3e 00 00 03 		cmp	WORD PTR _SNDDETAIL,3
+	*** 0006ba	7e 06 			jle	$I840
+					$I841:
+	*** 0006bc	c7 06 00 00 00 00 	mov	WORD PTR _SNDDETAIL,0
+;|***     fread(&MSGDETAIL,		sizeof (int), 1, f);
+; Line 354
+					$I840:
+	*** 0006c2	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 0006c5	b8 01 00 		mov	ax,1
+	*** 0006c8	50 			push	ax
+	*** 0006c9	b8 02 00 		mov	ax,2
+	*** 0006cc	50 			push	ax
+	*** 0006cd	b8 00 00 		mov	ax,OFFSET _MSGDETAIL
+	*** 0006d0	50 			push	ax
+	*** 0006d1	e8 00 00 		call	_fread
+	*** 0006d4	83 c4 08 		add	sp,8
+;|*** 	if (MSGDETAIL<0 || MSGDETAIL>3) MSGDETAIL=0;
+; Line 355
+	*** 0006d7	83 3e 00 00 00 		cmp	WORD PTR _MSGDETAIL,0
+	*** 0006dc	7c 07 			jl	$I843
+	*** 0006de	83 3e 00 00 03 		cmp	WORD PTR _MSGDETAIL,3
+	*** 0006e3	7e 06 			jle	$I842
+					$I843:
+	*** 0006e5	c7 06 00 00 00 00 	mov	WORD PTR _MSGDETAIL,0
+;|***     fread(&SKYDETAIL,		sizeof (int), 1, f);
+; Line 356
+					$I842:
+	*** 0006eb	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 0006ee	b8 01 00 		mov	ax,1
+	*** 0006f1	50 			push	ax
+	*** 0006f2	b8 02 00 		mov	ax,2
+	*** 0006f5	50 			push	ax
+	*** 0006f6	b8 00 00 		mov	ax,OFFSET _SKYDETAIL
+	*** 0006f9	50 			push	ax
+	*** 0006fa	e8 00 00 		call	_fread
+	*** 0006fd	83 c4 08 		add	sp,8
+;|*** 	if (SKYDETAIL<0 || SKYDETAIL>3) SKYDETAIL=0;
+; Line 357
+	*** 000700	83 3e 00 00 00 		cmp	WORD PTR _SKYDETAIL,0
+	*** 000705	7c 07 			jl	$I845
+	*** 000707	83 3e 00 00 03 		cmp	WORD PTR _SKYDETAIL,3
+	*** 00070c	7e 06 			jle	$I844
+					$I845:
+	*** 00070e	c7 06 00 00 00 00 	mov	WORD PTR _SKYDETAIL,0
+;|***     fread(&GRNDDETAIL,		sizeof (int), 1, f);
+; Line 358
+					$I844:
+	*** 000714	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 000717	b8 01 00 		mov	ax,1
+	*** 00071a	50 			push	ax
+	*** 00071b	b8 02 00 		mov	ax,2
+	*** 00071e	50 			push	ax
+	*** 00071f	b8 00 00 		mov	ax,OFFSET _GRNDDETAIL
+	*** 000722	50 			push	ax
+	*** 000723	e8 00 00 		call	_fread
+	*** 000726	83 c4 08 		add	sp,8
+;|*** 	if (GRNDDETAIL<0 || GRNDDETAIL>3) GRNDDETAIL=0;
+; Line 359
+	*** 000729	83 3e 00 00 00 		cmp	WORD PTR _GRNDDETAIL,0
+	*** 00072e	7c 07 			jl	$I847
+	*** 000730	83 3e 00 00 03 		cmp	WORD PTR _GRNDDETAIL,3
+	*** 000735	7e 06 			jle	$I846
+					$I847:
+	*** 000737	c7 06 00 00 00 00 	mov	WORD PTR _GRNDDETAIL,0
+;|***     fread(&PLANEDETAIL,		sizeof (int), 1, f);
+; Line 360
+					$I846:
+	*** 00073d	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 000740	b8 01 00 		mov	ax,1
+	*** 000743	50 			push	ax
+	*** 000744	b8 02 00 		mov	ax,2
+	*** 000747	50 			push	ax
+	*** 000748	b8 00 00 		mov	ax,OFFSET _PLANEDETAIL
+	*** 00074b	50 			push	ax
+	*** 00074c	e8 00 00 		call	_fread
+	*** 00074f	83 c4 08 		add	sp,8
+;|*** 	if (PLANEDETAIL<0 || PLANEDETAIL>3) PLANEDETAIL=3;
+; Line 361
+	*** 000752	83 3e 00 00 00 		cmp	WORD PTR _PLANEDETAIL,0
+	*** 000757	7c 07 			jl	$I849
+	*** 000759	83 3e 00 00 03 		cmp	WORD PTR _PLANEDETAIL,3
+	*** 00075e	7e 06 			jle	$I848
+					$I849:
+	*** 000760	c7 06 00 00 03 00 	mov	WORD PTR _PLANEDETAIL,3
+;|***     fread(&MISSILETRAIL,	sizeof (int), 1, f);
+; Line 362
+					$I848:
+	*** 000766	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 000769	b8 01 00 		mov	ax,1
+	*** 00076c	50 			push	ax
+	*** 00076d	b8 02 00 		mov	ax,2
+	*** 000770	50 			push	ax
+	*** 000771	b8 00 00 		mov	ax,OFFSET _MISSILETRAIL
+	*** 000774	50 			push	ax
+	*** 000775	e8 00 00 		call	_fread
+	*** 000778	83 c4 08 		add	sp,8
+;|*** 	if (MISSILETRAIL<0 || MISSILETRAIL>2) MISSILETRAIL=0;
+; Line 363
+	*** 00077b	83 3e 00 00 00 		cmp	WORD PTR _MISSILETRAIL,0
+	*** 000780	7c 07 			jl	$I851
+	*** 000782	83 3e 00 00 02 		cmp	WORD PTR _MISSILETRAIL,2
+	*** 000787	7e 06 			jle	$I850
+					$I851:
+	*** 000789	c7 06 00 00 00 00 	mov	WORD PTR _MISSILETRAIL,0
+;|*** 
+;|*** 	fread(&StickType, 		sizeof(int),1,f);
+; Line 365
+					$I850:
+	*** 00078f	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 000792	b8 01 00 		mov	ax,1
+	*** 000795	50 			push	ax
+	*** 000796	b8 02 00 		mov	ax,2
+	*** 000799	50 			push	ax
+	*** 00079a	b8 00 00 		mov	ax,OFFSET _StickType
+	*** 00079d	50 			push	ax
+	*** 00079e	e8 00 00 		call	_fread
+	*** 0007a1	83 c4 08 		add	sp,8
+;|*** 	fread(&RudderType,		sizeof(int),1,f);
+; Line 366
+	*** 0007a4	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 0007a7	b8 01 00 		mov	ax,1
+	*** 0007aa	50 			push	ax
+	*** 0007ab	b8 02 00 		mov	ax,2
+	*** 0007ae	50 			push	ax
+	*** 0007af	b8 00 00 		mov	ax,OFFSET _RudderType
+	*** 0007b2	50 			push	ax
+	*** 0007b3	e8 00 00 		call	_fread
+	*** 0007b6	83 c4 08 		add	sp,8
+;|***     fread(&Joystick,    	sizeof (unsigned), 1, f) ; // 3 when enabled
+; Line 367
+	*** 0007b9	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 0007bc	b8 01 00 		mov	ax,1
+	*** 0007bf	50 			push	ax
+	*** 0007c0	b8 02 00 		mov	ax,2
+	*** 0007c3	50 			push	ax
+	*** 0007c4	b8 00 00 		mov	ax,OFFSET _Joystick
+	*** 0007c7	50 			push	ax
+	*** 0007c8	e8 00 00 		call	_fread
+	*** 0007cb	83 c4 08 		add	sp,8
+;|***     fread(&ThrustStick, 	sizeof (unsigned), 1, f) ; // 8 when enabled
+; Line 368
+	*** 0007ce	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 0007d1	b8 01 00 		mov	ax,1
+	*** 0007d4	50 			push	ax
+	*** 0007d5	b8 02 00 		mov	ax,2
+	*** 0007d8	50 			push	ax
+	*** 0007d9	b8 00 00 		mov	ax,OFFSET _ThrustStick
+	*** 0007dc	50 			push	ax
+	*** 0007dd	e8 00 00 		call	_fread
+	*** 0007e0	83 c4 08 		add	sp,8
+;|***     fread(&CoolyStick,  	sizeof (unsigned), 1, f) ; // 8 when enabled
+; Line 369
+	*** 0007e3	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 0007e6	b8 01 00 		mov	ax,1
+	*** 0007e9	50 			push	ax
+	*** 0007ea	b8 02 00 		mov	ax,2
+	*** 0007ed	50 			push	ax
+	*** 0007ee	b8 00 00 		mov	ax,OFFSET _CoolyStick
+	*** 0007f1	50 			push	ax
+	*** 0007f2	e8 00 00 		call	_fread
+	*** 0007f5	83 c4 08 		add	sp,8
+;|***     fread(&RudderStick, 	sizeof (unsigned), 1, f) ; // 4 when enabled
+; Line 370
+	*** 0007f8	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 0007fb	b8 01 00 		mov	ax,1
+	*** 0007fe	50 			push	ax
+	*** 0007ff	b8 02 00 		mov	ax,2
+	*** 000802	50 			push	ax
+	*** 000803	b8 00 00 		mov	ax,OFFSET _RudderStick
+	*** 000806	50 			push	ax
+	*** 000807	e8 00 00 		call	_fread
+	*** 00080a	83 c4 08 		add	sp,8
+;|*** 
+;|***     fread(&JoyVals[0], sizeof (unsigned char), 52, f) ;  // 56 bytes long
+; Line 372
+	*** 00080d	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 000810	b8 34 00 		mov	ax,52
+	*** 000813	50 			push	ax
+	*** 000814	b8 01 00 		mov	ax,1
+	*** 000817	50 			push	ax
+	*** 000818	b8 00 00 		mov	ax,OFFSET _JoyVals
+	*** 00081b	50 			push	ax
+	*** 00081c	e8 00 00 		call	_fread
+	*** 00081f	83 c4 08 		add	sp,8
+;|*** 
+;|***     fread(&DeadZone, sizeof (char), 1, f) ;
+; Line 374
+	*** 000822	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 000825	b8 01 00 		mov	ax,1
+	*** 000828	50 			push	ax
+	*** 000829	50 			push	ax
+	*** 00082a	b8 00 00 		mov	ax,OFFSET _DeadZone
+	*** 00082d	50 			push	ax
+	*** 00082e	e8 00 00 		call	_fread
+	*** 000831	83 c4 08 		add	sp,8
+;|*** 
+;|*** 	fclose(f) ;
+; Line 376
+	*** 000834	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 000837	e8 00 00 		call	_fclose
+	*** 00083a	83 c4 02 		add	sp,2
+;|*** }
+; Line 377
+	*** 00083d	8b e5 			mov	sp,bp
+	*** 00083f	5d 			pop	bp
+	*** 000840	c3 			ret	
+	*** 000841	90 			nop	
+
+_GetJoyConfig	ENDP
+;|*** 
+;|*** //***************************************************************************
+;|*** int SaveJoyConfig()
+;|*** {
+; Line 381
+	PUBLIC	_SaveJoyConfig
+_SaveJoyConfig	PROC NEAR
+	*** 000842	55 			push	bp
+	*** 000843	8b ec 			mov	bp,sp
+	*** 000845	83 ec 04 		sub	sp,4
+;	f = -2
+;	offset = -4
+;|*** 	FILE *f ;
+;|*** 	int offset=16;
+; Line 383
+	*** 000848	c7 46 fc 10 00 		mov	WORD PTR [bp-4],16	;offset
+;|*** 
+;|***     f = fopen ("JOY.f14", "wb");
+; Line 385
+	*** 00084d	b8 50 01 		mov	ax,OFFSET DGROUP:$SG856
+	*** 000850	50 			push	ax
+	*** 000851	b8 53 01 		mov	ax,OFFSET DGROUP:$SG857
+	*** 000854	50 			push	ax
+	*** 000855	e8 00 00 		call	_fopen
+	*** 000858	83 c4 04 		add	sp,4
+	*** 00085b	89 46 fe 		mov	WORD PTR [bp-2],ax	;f
+;|*** 
+;|***     fwrite(&offset,			sizeof (int), 1, f);
+; Line 387
+	*** 00085e	50 			push	ax
+	*** 00085f	b8 01 00 		mov	ax,1
+	*** 000862	50 			push	ax
+	*** 000863	b8 02 00 		mov	ax,2
+	*** 000866	50 			push	ax
+	*** 000867	8d 46 fc 		lea	ax,WORD PTR [bp-4]	;offset
+	*** 00086a	50 			push	ax
+	*** 00086b	e8 00 00 		call	_fwrite
+	*** 00086e	83 c4 08 		add	sp,8
+;|***     fwrite(&KbSense,		sizeof (int), 1, f);
+; Line 388
+	*** 000871	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 000874	b8 01 00 		mov	ax,1
+	*** 000877	50 			push	ax
+	*** 000878	b8 02 00 		mov	ax,2
+	*** 00087b	50 			push	ax
+	*** 00087c	b8 00 00 		mov	ax,OFFSET _KbSense
+	*** 00087f	50 			push	ax
+	*** 000880	e8 00 00 		call	_fwrite
+	*** 000883	83 c4 08 		add	sp,8
+;|***     fwrite(&SNDDETAIL,		sizeof (int), 1, f);
+; Line 389
+	*** 000886	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 000889	b8 01 00 		mov	ax,1
+	*** 00088c	50 			push	ax
+	*** 00088d	b8 02 00 		mov	ax,2
+	*** 000890	50 			push	ax
+	*** 000891	b8 00 00 		mov	ax,OFFSET _SNDDETAIL
+	*** 000894	50 			push	ax
+	*** 000895	e8 00 00 		call	_fwrite
+	*** 000898	83 c4 08 		add	sp,8
+;|***     fwrite(&MSGDETAIL,		sizeof (int), 1, f);
+; Line 390
+	*** 00089b	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 00089e	b8 01 00 		mov	ax,1
+	*** 0008a1	50 			push	ax
+	*** 0008a2	b8 02 00 		mov	ax,2
+	*** 0008a5	50 			push	ax
+	*** 0008a6	b8 00 00 		mov	ax,OFFSET _MSGDETAIL
+	*** 0008a9	50 			push	ax
+	*** 0008aa	e8 00 00 		call	_fwrite
+	*** 0008ad	83 c4 08 		add	sp,8
+;|***     fwrite(&SKYDETAIL,		sizeof (int), 1, f);
+; Line 391
+	*** 0008b0	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 0008b3	b8 01 00 		mov	ax,1
+	*** 0008b6	50 			push	ax
+	*** 0008b7	b8 02 00 		mov	ax,2
+	*** 0008ba	50 			push	ax
+	*** 0008bb	b8 00 00 		mov	ax,OFFSET _SKYDETAIL
+	*** 0008be	50 			push	ax
+	*** 0008bf	e8 00 00 		call	_fwrite
+	*** 0008c2	83 c4 08 		add	sp,8
+;|***     fwrite(&GRNDDETAIL,		sizeof (int), 1, f);
+; Line 392
+	*** 0008c5	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 0008c8	b8 01 00 		mov	ax,1
+	*** 0008cb	50 			push	ax
+	*** 0008cc	b8 02 00 		mov	ax,2
+	*** 0008cf	50 			push	ax
+	*** 0008d0	b8 00 00 		mov	ax,OFFSET _GRNDDETAIL
+	*** 0008d3	50 			push	ax
+	*** 0008d4	e8 00 00 		call	_fwrite
+	*** 0008d7	83 c4 08 		add	sp,8
+;|***     fwrite(&PLANEDETAIL,	sizeof (int), 1, f);
+; Line 393
+	*** 0008da	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 0008dd	b8 01 00 		mov	ax,1
+	*** 0008e0	50 			push	ax
+	*** 0008e1	b8 02 00 		mov	ax,2
+	*** 0008e4	50 			push	ax
+	*** 0008e5	b8 00 00 		mov	ax,OFFSET _PLANEDETAIL
+	*** 0008e8	50 			push	ax
+	*** 0008e9	e8 00 00 		call	_fwrite
+	*** 0008ec	83 c4 08 		add	sp,8
+;|***     fwrite(&MISSILETRAIL,	sizeof (int), 1, f);
+; Line 394
+	*** 0008ef	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 0008f2	b8 01 00 		mov	ax,1
+	*** 0008f5	50 			push	ax
+	*** 0008f6	b8 02 00 		mov	ax,2
+	*** 0008f9	50 			push	ax
+	*** 0008fa	b8 00 00 		mov	ax,OFFSET _MISSILETRAIL
+	*** 0008fd	50 			push	ax
+	*** 0008fe	e8 00 00 		call	_fwrite
+	*** 000901	83 c4 08 		add	sp,8
+;|*** 
+;|*** 	fwrite(&StickType, 		sizeof (int),1,f);
+; Line 396
+	*** 000904	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 000907	b8 01 00 		mov	ax,1
+	*** 00090a	50 			push	ax
+	*** 00090b	b8 02 00 		mov	ax,2
+	*** 00090e	50 			push	ax
+	*** 00090f	b8 00 00 		mov	ax,OFFSET _StickType
+	*** 000912	50 			push	ax
+	*** 000913	e8 00 00 		call	_fwrite
+	*** 000916	83 c4 08 		add	sp,8
+;|*** 	fwrite(&RudderType,		sizeof (int),1,f);
+; Line 397
+	*** 000919	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 00091c	b8 01 00 		mov	ax,1
+	*** 00091f	50 			push	ax
+	*** 000920	b8 02 00 		mov	ax,2
+	*** 000923	50 			push	ax
+	*** 000924	b8 00 00 		mov	ax,OFFSET _RudderType
+	*** 000927	50 			push	ax
+	*** 000928	e8 00 00 		call	_fwrite
+	*** 00092b	83 c4 08 		add	sp,8
+;|*** 
+;|***     fwrite (&Joystick,		sizeof (unsigned), 1, f) ; // 3 when enabled
+; Line 399
+	*** 00092e	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 000931	b8 01 00 		mov	ax,1
+	*** 000934	50 			push	ax
+	*** 000935	b8 02 00 		mov	ax,2
+	*** 000938	50 			push	ax
+	*** 000939	b8 00 00 		mov	ax,OFFSET _Joystick
+	*** 00093c	50 			push	ax
+	*** 00093d	e8 00 00 		call	_fwrite
+	*** 000940	83 c4 08 		add	sp,8
+;|***     fwrite (&ThrustStick,	sizeof (unsigned), 1, f) ; // 8 when enabled
+; Line 400
+	*** 000943	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 000946	b8 01 00 		mov	ax,1
+	*** 000949	50 			push	ax
+	*** 00094a	b8 02 00 		mov	ax,2
+	*** 00094d	50 			push	ax
+	*** 00094e	b8 00 00 		mov	ax,OFFSET _ThrustStick
+	*** 000951	50 			push	ax
+	*** 000952	e8 00 00 		call	_fwrite
+	*** 000955	83 c4 08 		add	sp,8
+;|***     fwrite (&CoolyStick,	sizeof (unsigned), 1, f) ; // 8 when enabled
+; Line 401
+	*** 000958	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 00095b	b8 01 00 		mov	ax,1
+	*** 00095e	50 			push	ax
+	*** 00095f	b8 02 00 		mov	ax,2
+	*** 000962	50 			push	ax
+	*** 000963	b8 00 00 		mov	ax,OFFSET _CoolyStick
+	*** 000966	50 			push	ax
+	*** 000967	e8 00 00 		call	_fwrite
+	*** 00096a	83 c4 08 		add	sp,8
+;|***     fwrite (&RudderStick,	sizeof (unsigned), 1, f) ; // 4 when enabled
+; Line 402
+	*** 00096d	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 000970	b8 01 00 		mov	ax,1
+	*** 000973	50 			push	ax
+	*** 000974	b8 02 00 		mov	ax,2
+	*** 000977	50 			push	ax
+	*** 000978	b8 00 00 		mov	ax,OFFSET _RudderStick
+	*** 00097b	50 			push	ax
+	*** 00097c	e8 00 00 		call	_fwrite
+	*** 00097f	83 c4 08 		add	sp,8
+;|***     fwrite (&JoyVals[0],	sizeof (unsigned char), 52, f) ;  // 56 bytes long
+; Line 403
+	*** 000982	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 000985	b8 34 00 		mov	ax,52
+	*** 000988	50 			push	ax
+	*** 000989	b8 01 00 		mov	ax,1
+	*** 00098c	50 			push	ax
+	*** 00098d	b8 00 00 		mov	ax,OFFSET _JoyVals
+	*** 000990	50 			push	ax
+	*** 000991	e8 00 00 		call	_fwrite
+	*** 000994	83 c4 08 		add	sp,8
+;|***     fwrite (&DeadZone,		sizeof (char), 1, f) ;
+; Line 404
+	*** 000997	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 00099a	b8 01 00 		mov	ax,1
+	*** 00099d	50 			push	ax
+	*** 00099e	50 			push	ax
+	*** 00099f	b8 00 00 		mov	ax,OFFSET _DeadZone
+	*** 0009a2	50 			push	ax
+	*** 0009a3	e8 00 00 		call	_fwrite
+	*** 0009a6	83 c4 08 		add	sp,8
+;|*** 	fclose (f) ;
+; Line 405
+	*** 0009a9	ff 76 fe 		push	WORD PTR [bp-2]	;f
+	*** 0009ac	e8 00 00 		call	_fclose
+	*** 0009af	83 c4 02 		add	sp,2
+;|*** }
+; Line 406
+	*** 0009b2	8b e5 			mov	sp,bp
+	*** 0009b4	5d 			pop	bp
+	*** 0009b5	c3 			ret	
+
+_SaveJoyConfig	ENDP
+_TEXT	ENDS
+END
+;|*** 

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>The thing won’t START | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="The thing won’t START" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<meta property="og:description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<link rel="canonical" href="/f15-se2/2024/12/31/unstart.html" />
+<meta property="og:url" content="/f15-se2/2024/12/31/unstart.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-12-31T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="The thing won’t START" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2024-12-31T00:00:00+00:00","datePublished":"2024-12-31T00:00:00+00:00","description":"(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)","headline":"The thing won’t START","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2024/12/31/unstart.html"},"url":"/f15-se2/2024/12/31/unstart.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">The thing won&#39;t START</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2024-12-31T00:00:00+00:00" itemprop="datePublished">Dec 31, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><small>(<em>This post is part of a <a href="/category/f15-se2.html">series</a> on the subject of my hobby project, which is recreating the C source code for the 1989 game <a href="/f15-se2/2022/06/05/origins.html">F-15 Strike Eagle II</a> by reverse engineering the original binaries.</em>)</small></p>
+
+<p>As mentioned before, the state of the project right now is that although the first executable (<code class="language-plaintext highlighter-rouge">START.EXE</code>) has been successfully reconstructed, it unfortunately freezes upon startup. I decided to write up the situation and the steps I tried to resolve the problem, hoping maybe putting it into ordered words might give me an idea on how to progress.</p>
+
+<h1 id="doing-it-the-hard-way">Doing it the hard way</h1>
+
+<p>First thing I tried was looking in the DosBox debugger to try and figure out where the freeze occurs. This is only a little bit easier than doing the same for the original executable, as DosBox does not show me symbol names, and I need to switch back and forth between it, the disassembly and the code editor.
+I also discovered the breakpoints are not very reliable. When I place a breakpoint on a location, it will fire the first time around, but when I continue, it was not firing the second time, leading me to believe control was not returning there, instead going into some invalid code and freezing.</p>
+
+<p>This leads us to the sad fact that debugging real mode DOS applications is a pain. In Linux, I would probably get a <code class="language-plaintext highlighter-rouge">SIGSEGV</code> that I could catch in the debugger and solve months ago. Here, if something goes wrong, the code will happily jump into the weeds and roll around in there indefinitely.</p>
+
+<p>In any case, once the freeze was observed, breaking manually (Alt-Break, or Alt-Fn-B for Logitech keyboards missing a Break key) did not lead to any enlightenment. Usually, I would find myself in a weird <code class="language-plaintext highlighter-rouge">CS=F000</code> location, seemingly containing some internal DosBox code for handling keyboard input (not sure if it has to do with my pressing Alt-Break, which would be stupid). Bottom line, I can’t figure out where it freezes from just looking in the debugger.</p>
+
+<p>I recall there being some bugs with breakpoints in vanilla DosBox (which is pretty much unmaintained at this point), so it would be a good idea to try <a href="https://www.dosbox-staging.org/">dosbox-staging</a> instead - will try later.</p>
+
+<h1 id="why-not-use-the-right-tool-for-the-job">Why not use the right tool for the job?</h1>
+
+<p>But in any case, I shouldn’t be having so much trouble. I have the source code for this binary, after all, so I should be able to comfortably debug with symbols. The executable cannot be launched directly without substantial work done by the loader and setup (<code class="language-plaintext highlighter-rouge">F15.COM</code> and <code class="language-plaintext highlighter-rouge">SU.EXE</code> in the original game), but luckily I have the loader reimplemented already, so I tweaked it a bit to run <code class="language-plaintext highlighter-rouge">START.EXE</code> under <a href="https://en.wikipedia.org/wiki/CodeView">CodeView</a>. That seems to have been the approach taken by Microprose as well, as I found a path to the CodeView executable in <code class="language-plaintext highlighter-rouge">F15.COM</code>, though there’s no more code that uses it.</p>
+
+<p>Unfortunately, CodeView does not run well under DosBox. Well, it barely runs at all, and switching in and out of the debugger from graphical mode seems to completely corrupt the display. This is really my fault as the DosBox readme clearly says it’s not intended for running any other software than games. I really should be whipped for running the compiler under it, but them’s the breaks.</p>
+
+<p>I will keep trying to run CodeView under VirtualBox, 86box and PCem. But I’ve run into problems trying to mount hard disk images (vdi/vhd/img/…) from those to upload my executables for debugging on WSL, which apparently does not support loadable modules, on which the userspace filesystem utilities seem to depend. Should be easily doable from a vanilla Linux box, but this was getting too annoying, so I decided to leave it for now.</p>
+
+<h1 id="instrumentation-to-the-rescue">Instrumentation to the rescue</h1>
+
+<p>As I already remarked, I already have the source code, so how about instrumenting it? Ain’t no better thing than a little <code class="language-plaintext highlighter-rouge">printf</code>-debugging, amirite?</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="c1">// I need to be able to turn all this crap off at a flick </span>
+<span class="c1">// of a switch for the "release" version, so that my comparison </span>
+<span class="c1">// with the original still works</span>
+<span class="cp">#ifdef DEBUG
+#define TRACE(x) my_trace x
+</span>
+<span class="c1">// print stuff out to a logfile, accept args through a va_list</span>
+<span class="kt">void</span> <span class="nf">my_vtrace</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">fmt</span><span class="p">,</span> <span class="kt">va_list</span> <span class="n">ap</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">static</span> <span class="kt">FILE</span> <span class="o">*</span><span class="n">stream</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">stream</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">stream</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">"start.log"</span><span class="p">,</span> <span class="s">"w"</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">stream</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">printf</span><span class="p">(</span><span class="s">"Unable to open debug stream"</span><span class="p">);</span>
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="n">setbuf</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+        <span class="n">fprintf</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="s">"Successfully opened debug log</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="n">vfprintf</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">fmt</span><span class="p">,</span> <span class="n">ap</span><span class="p">);</span>
+    <span class="n">fprintf</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="n">fflush</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// this is the actual main trace function, the previous one is</span>
+<span class="c1">// just so that I can pass variable args into it</span>
+<span class="kt">void</span> <span class="n">my_trace</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">fmt</span><span class="p">,</span> <span class="p">...)</span> <span class="p">{</span>
+    <span class="kt">va_list</span> <span class="n">ap</span><span class="p">;</span>
+    <span class="n">va_start</span><span class="p">(</span><span class="n">ap</span><span class="p">,</span> <span class="n">fmt</span><span class="p">);</span>
+    <span class="n">my_vtrace</span><span class="p">(</span><span class="n">fmt</span><span class="p">,</span> <span class="n">ap</span><span class="p">);</span>
+    <span class="n">va_end</span><span class="p">(</span><span class="n">ap</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// convenience trace function for calling from assembly code,</span>
+<span class="c1">// where I want to be able to define the log messages directly</span>
+<span class="c1">// in the code segment, so I will need to be passing a far pointer to it</span>
+<span class="kt">void</span> <span class="n">my_fartrace</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="n">far</span> <span class="o">*</span><span class="n">msg</span><span class="p">,</span> <span class="p">...)</span> <span class="p">{</span>
+    <span class="k">static</span> <span class="kt">char</span> <span class="n">tracebuf</span><span class="p">[</span><span class="mi">128</span><span class="p">];</span>
+    <span class="k">const</span> <span class="kt">char</span> <span class="n">FAR</span> <span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="n">msg</span><span class="p">;</span>
+    <span class="kt">size_t</span> <span class="n">size</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">idx</span><span class="p">;</span>
+    <span class="kt">va_list</span> <span class="n">ap</span><span class="p">;</span>
+    <span class="c1">// figure out the format string length</span>
+    <span class="k">while</span> <span class="p">(</span><span class="o">*</span><span class="n">ptr</span><span class="o">++</span> <span class="o">!=</span> <span class="sc">'\0'</span><span class="p">)</span> <span class="n">size</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">ptr</span> <span class="o">=</span> <span class="n">msg</span><span class="p">;</span>
+    <span class="c1">// copy the format string from the far pointer into a near buf for printing</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="n">size</span> <span class="o">&amp;&amp;</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">127</span><span class="p">;</span> <span class="o">++</span><span class="n">idx</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">tracebuf</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="o">*</span><span class="n">ptr</span><span class="o">++</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">tracebuf</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="sc">'\0'</span><span class="p">;</span>
+    <span class="n">va_start</span><span class="p">(</span><span class="n">ap</span><span class="p">,</span> <span class="n">msg</span><span class="p">);</span>
+    <span class="c1">// call the regular trace function</span>
+    <span class="n">my_vtrace</span><span class="p">(</span><span class="n">tracebuf</span><span class="p">,</span> <span class="n">ap</span><span class="p">);</span>
+    <span class="n">va_end</span><span class="p">(</span><span class="n">ap</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="cp">#else // not DEBUG
+#define TRACE(x) // empty macro
+#endif</span></code></pre></figure>
+
+<p>I implemented some rudimentary logging facilities in the game, both from the C and assembly side, then peppered the code of <code class="language-plaintext highlighter-rouge">main()</code> with traces at important locations, to try to narrow down the area where it was freezing. Soon I had my suspect; the function for showing the first splash image with the MPS Labs logo was apparently not returning:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="c1">// [...]</span>
+    <span class="cm">/* 0xa3 */</span>
+    <span class="n">TRACE</span><span class="p">((</span><span class="s">"main: init audio"</span><span class="p">));</span>
+    <span class="n">audio_jump_65</span><span class="p">();</span>
+    <span class="n">audio_jump_64</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="cm">/* 0xb4 */</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">*</span><span class="n">needSplash</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">TRACE</span><span class="p">((</span><span class="s">"main: doing splash"</span><span class="p">));</span>
+        <span class="cm">/* 0xc1 doSplash:  */</span>
+        <span class="n">gameData</span><span class="o">-&gt;</span><span class="n">flag1</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="n">gameData</span><span class="o">-&gt;</span><span class="n">difficulty</span> <span class="o">=</span> <span class="mh">0xffff</span><span class="p">;</span>
+        <span class="n">gameData</span><span class="o">-&gt;</span><span class="n">theater</span> <span class="o">=</span> <span class="mh">0xffff</span><span class="p">;</span>
+        <span class="n">gfx_jump_3d_null</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span>
+        <span class="cm">/* 0xeb */</span>
+        <span class="c1">// 🟢 this shows up in the log</span>
+        <span class="n">TRACE</span><span class="p">((</span><span class="s">"main: showing labs"</span><span class="p">));</span>
+        <span class="n">openShowPic</span><span class="p">(</span><span class="n">aLabs_pic</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        <span class="n">gfx_jump_50_null</span><span class="p">();</span>
+        <span class="cm">/* 0xfd */</span>
+        <span class="c1">// 🔴 this does not</span>
+        <span class="n">TRACE</span><span class="p">((</span><span class="s">"main: setting timer irq handler"</span><span class="p">));</span> 
+        <span class="n">setTimerIrqHandler</span><span class="p">();</span></code></pre></figure>
+
+<p>I started going deeper, into <code class="language-plaintext highlighter-rouge">openShowPic()</code> and beyond, adding trace macros. Soon I found myself in assembly code, it was clear the problem was there. This presented the additional challenge of calling the variadic function from assembly, and doing so conditionally. I came up with this:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="c1">; MASM also supports conditional assembly</span>
+<span class="nf">IFDEF</span> <span class="nv">DEBUG</span>
+<span class="c1">; make the C trace function callable from assembly code</span>
+<span class="nf">EXTRN</span> <span class="nv">_my_fartrace</span><span class="p">:</span><span class="nv">PROC</span>
+<span class="c1">; No way to make a variadic macro, but I'm probably not going to need</span>
+<span class="c1">; more than 3 args, and I can always add more if needed</span>
+<span class="nf">trace</span> <span class="nv">MACRO</span> <span class="nv">msg</span><span class="p">,</span><span class="nv">v1</span><span class="p">,</span><span class="nv">v2</span><span class="p">,</span><span class="nv">v3</span>
+    <span class="c1">; the amount of stuff to take off the stack at the end differs </span>
+    <span class="c1">; depending on how many args there are</span>
+    <span class="nf">popsize</span> <span class="err">=</span> <span class="mi">4</span>
+    <span class="c1">; we are modifying the ax register, so make a backup of the value</span>
+    <span class="nf">push</span> <span class="nb">ax</span>
+    <span class="c1">; "if (not) blank", lets me specify different behaviour</span>
+    <span class="c1">; depending on whether the arguments are present or not</span>
+    <span class="nf">IFNB</span> <span class="o">&lt;</span><span class="nv">v3</span><span class="o">&gt;</span>
+    <span class="nf">push</span> <span class="p">[</span><span class="nv">v3</span><span class="p">]</span>
+    <span class="nf">popsize</span> <span class="err">=</span> <span class="nv">popsize</span> <span class="o">+</span> <span class="mi">2</span>
+    <span class="nf">ENDIF</span>
+    <span class="nf">IFNB</span> <span class="o">&lt;</span><span class="nv">v2</span><span class="o">&gt;</span>
+    <span class="nf">push</span> <span class="p">[</span><span class="nv">v2</span><span class="p">]</span>
+    <span class="nf">popsize</span> <span class="err">=</span> <span class="nv">popsize</span> <span class="o">+</span> <span class="mi">2</span>
+    <span class="nf">ENDIF</span>
+    <span class="nf">IFNB</span> <span class="o">&lt;</span><span class="nv">v1</span><span class="o">&gt;</span>
+    <span class="nf">push</span> <span class="p">[</span><span class="nv">v1</span><span class="p">]</span>
+    <span class="nf">popsize</span> <span class="err">=</span> <span class="nv">popsize</span> <span class="o">+</span> <span class="mi">2</span>
+    <span class="nf">ENDIF</span>
+    <span class="c1">; push a far pointer to the format string</span>
+    <span class="nf">mov</span> <span class="nb">ax</span><span class="p">,</span><span class="nv">offset</span> <span class="nv">msg</span>
+    <span class="nf">push</span> <span class="nb">cs</span>
+    <span class="nf">push</span> <span class="nb">ax</span>
+    <span class="c1">; call the C function for logging</span>
+    <span class="nf">call</span> <span class="nv">_my_fartrace</span>
+    <span class="c1">; clean up the args</span>
+    <span class="nf">add</span> <span class="nb">sp</span><span class="p">,</span><span class="nv">popsize</span>
+    <span class="c1">; restore the value of ax</span>
+    <span class="nf">pop</span> <span class="nb">ax</span>
+<span class="nf">ENDM</span>
+<span class="nf">ELSE</span> 
+    <span class="c1">; empty macro in release mode, just like in C</span>
+    <span class="nf">trace</span> <span class="nv">MACRO</span> <span class="nv">msg</span><span class="p">,</span><span class="nv">v1</span><span class="p">,</span><span class="nv">v2</span><span class="p">,</span><span class="nv">v3</span>
+    <span class="nf">ENDM</span>
+<span class="nf">ENDIF</span></code></pre></figure>
+
+<p>It took a while to get all this working, but I’m pretty happy with the result. However, the results still raised more questions rather than provide answers. I got as far as this assembly routine:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="c1">; trace messages for debugging</span>
+<span class="nf">msg1</span> <span class="nv">db</span> <span class="err">'</span><span class="nv">showPicFile</span><span class="p">():</span> <span class="nv">entering</span><span class="p">,</span> <span class="nv">handle</span> <span class="o">%</span><span class="nv">d</span> <span class="nv">pagenum</span> <span class="o">%</span><span class="nv">d</span><span class="s">',0
+msg2 db '</span><span class="nv">showPicFile</span><span class="p">():</span> <span class="nv">after</span> <span class="nv">gfx_3b_clearbuf</span><span class="p">,</span> <span class="nv">handle</span> <span class="o">%</span><span class="nv">d</span> <span class="nv">pageidx</span> <span class="o">%</span><span class="nv">d</span><span class="s">',0
+msg3 db '</span><span class="nv">showPicFile</span><span class="p">():</span> <span class="nv">after</span> <span class="nv">fillrow</span><span class="s">',0
+msg4 db '</span><span class="nv">showPicFile</span><span class="p">():</span> <span class="nv">exiting</span><span class="s">',0
+msg5 db '</span><span class="nv">showPicFile</span><span class="p">():</span> <span class="nv">gfx_35</span> <span class="nv">returned</span><span class="s">',0
+msg6 db '</span><span class="nv">showPicFile</span><span class="p">():</span> <span class="o">---</span><span class="nv">row</span> <span class="o">%</span><span class="nv">u</span><span class="p">,</span> <span class="nv">rowOffset</span> <span class="mi">0</span><span class="nv">x</span><span class="o">%</span><span class="nv">x</span><span class="s">',0
+msg8 db '</span><span class="nv">showPicFile</span><span class="p">():</span> <span class="nv">before</span> <span class="nv">loop</span><span class="p">,</span> <span class="nv">screenBufSize</span> <span class="err">=</span> <span class="mi">0</span><span class="nv">x</span><span class="o">%</span><span class="nv">x</span><span class="err">'</span><span class="p">,</span><span class="mi">0</span>
+
+<span class="c1">; ------------------------------startCode1:0x33d0------------------------------</span>
+<span class="nf">_showPicFile</span> <span class="nv">proc</span> <span class="nv">near</span>
+    <span class="nf">handle</span> <span class="err">=</span> <span class="kt">word</span> <span class="nv">ptr</span> <span class="mi">4</span>
+    <span class="nf">pageNum</span> <span class="err">=</span> <span class="kt">word</span> <span class="nv">ptr</span> <span class="mi">6</span>
+    <span class="nf">push</span> <span class="nb">bp</span>
+    <span class="nf">mov</span> <span class="nb">bp</span><span class="p">,</span> <span class="nb">sp</span>
+    <span class="nf">push</span> <span class="nb">di</span>
+    <span class="nf">push</span> <span class="nb">si</span>
+    <span class="nf">push</span> <span class="nb">es</span>
+    <span class="nf">push</span> <span class="nb">bp</span>
+    <span class="c1">; calling the trace macro to print stuff using the C routine</span>
+    <span class="nf">trace</span> <span class="nv">msg1</span><span class="p">,</span><span class="nb">bp</span><span class="o">+</span><span class="mi">4</span><span class="p">,</span><span class="nb">bp</span><span class="o">+</span><span class="mi">6</span>
+    <span class="nf">mov</span> <span class="nb">ax</span><span class="p">,</span> <span class="nv">offset</span> <span class="nv">read512FromFileIntoBuf</span>
+    <span class="nf">mov</span> <span class="nv">_readFromFilePtr</span><span class="p">,</span> <span class="nb">ax</span>
+    <span class="nf">mov</span> <span class="nb">ax</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">handle</span><span class="p">]</span>
+    <span class="nf">mov</span> <span class="nv">_tmpFileHandle</span><span class="p">,</span> <span class="nb">ax</span>
+    <span class="nf">mov</span> <span class="nb">ax</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">pageNum</span><span class="p">]</span>
+    <span class="nf">mov</span> <span class="nv">_tmpPageIndex</span><span class="p">,</span> <span class="nb">ax</span>
+    <span class="nf">call</span> <span class="nv">nullsub_1</span>
+    <span class="nf">mov</span> <span class="nb">si</span><span class="p">,</span> <span class="nv">_tmpPageIndex</span>
+    <span class="c1">; get either vmem addr or allocated page buffer into es</span>
+    <span class="nf">call</span> <span class="nv">far</span> <span class="nv">ptr</span> <span class="nv">_gfx_jump_38_getPageBuf</span> 
+    <span class="nf">call</span> <span class="nv">far</span> <span class="nv">ptr</span> <span class="nv">_gfx_jump_3b_clearBuf</span> <span class="c1">;zeroes out 32000 bytes</span>
+    <span class="nf">trace</span> <span class="nv">msg2</span><span class="p">,</span><span class="nv">_tmpFileHandle</span><span class="p">,</span><span class="nv">_tmpPageIndex</span>
+    <span class="nf">mov</span> <span class="nv">_row</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="nf">mov</span> <span class="nv">_screenBufSize</span><span class="p">,</span> <span class="mh">0FA00h</span>
+    <span class="nf">trace</span> <span class="nv">msg8</span><span class="p">,</span><span class="nv">_screenBufSize</span>
+    <span class="c1">; iterates over rows of the image </span>
+<span class="nl">nextRow:</span>
+    <span class="nf">mov</span> <span class="nb">di</span><span class="p">,</span> <span class="nv">_row</span> <span class="c1">;argument for gfx slot</span>
+    <span class="nf">call</span> <span class="nv">far</span> <span class="nv">ptr</span> <span class="nv">_gfx_jump_3a_getRowOffset</span> <span class="c1">;returned in ax</span>
+    <span class="nf">mov</span> <span class="nv">_rowOffset</span><span class="p">,</span> <span class="nb">ax</span>
+    <span class="nf">trace</span> <span class="nv">msg6</span><span class="p">,</span> <span class="nv">_row</span><span class="p">,</span> <span class="nv">_rowOffset</span>
+    <span class="nf">call</span> <span class="nv">decodePicRow</span>
+    <span class="nf">mov</span> <span class="nb">di</span><span class="p">,</span> <span class="nv">_rowOffset</span>
+    <span class="nf">mov</span> <span class="nb">bp</span><span class="p">,</span> <span class="nv">offset</span> <span class="nv">_picDecodedRowBuf</span> <span class="c1">;source for memcpy</span>
+    <span class="nf">mov</span> <span class="nb">bx</span><span class="p">,</span> <span class="nv">_row</span>
+    <span class="nf">call</span> <span class="nv">far</span> <span class="nv">ptr</span> <span class="nv">_gfx_jump_33_fillRow</span> <span class="c1">;destination: es:di (gfx page:rowOffset)</span>
+    <span class="nf">trace</span> <span class="nv">msg3</span> 
+    <span class="nf">mov</span> <span class="nb">di</span><span class="p">,</span> <span class="nv">_rowOffset</span>
+    <span class="nf">call</span> <span class="nv">far</span> <span class="nv">ptr</span> <span class="nv">_gfx_jump_35</span>
+    <span class="nf">trace</span> <span class="nv">msg5</span>
+    <span class="nf">inc</span> <span class="nv">_row</span>
+    <span class="nf">sub</span> <span class="nv">_screenBufSize</span><span class="p">,</span> <span class="mi">320</span>
+    <span class="nf">jnz</span> <span class="nv">short</span> <span class="nv">nextRow</span> <span class="c1">;argument for gfx slot</span>
+    <span class="nf">trace</span> <span class="nv">msg4</span>
+    <span class="nf">pop</span> <span class="nb">bp</span>
+    <span class="nf">pop</span> <span class="nb">es</span>
+    <span class="nf">pop</span> <span class="nb">si</span>
+    <span class="nf">pop</span> <span class="nb">di</span>
+    <span class="nf">mov</span> <span class="nb">sp</span><span class="p">,</span> <span class="nb">bp</span>
+    <span class="nf">pop</span> <span class="nb">bp</span>
+    <span class="nf">retn</span>
+<span class="nf">_showPicFile</span> <span class="nv">endp</span></code></pre></figure>
+
+<p>Here’s the mystery part. When I notice the freeze and close the emulator, I can see the logs from several iterations of the loop iterating over the image rows. The destination offsets make sense, and the destination segment has the expected value of <code class="language-plaintext highlighter-rouge">0xA000</code>, the video memory.</p>
+
+<p>However, the code does not exactly freeze inside any of the routines. If I keep the emulator running longer, the log has entries for more rows (I got up to row 70 waiting for ~5mins). It seems to be progressing, just at a glacial pace? I might try leaving it on and see if it ever succeeds, but so far I haven’t found the patience so far. There seems to be something weird about how/when DosBox flushes the logfile to the host OS. I’m pretty sure I am losing some output lines when I’m closing the frozen game.</p>
+
+<p>I decided to add some extra code to my C tracing routine to include a time delta value in seconds from the previous log line, to see where the slowdown is occuring. But inspecting the output, I can see that almost all the deltas are 0 seconds, except for a single one taking 1 second. How can the program both be slow and fast at the same time?</p>
+
+<p>This is the worst kind of bug, a problem which changes, or appears to change its behaviour when I try to look at it. I can’t catch it in the debugger, and traces are unreliable. How can I figure out the cause of a problem which seems to defy causality?</p>
+
+<h1 id="this-is-going-to-take-a-while">This is going to take a while</h1>
+
+<p>For now, I seem to be out of (good) ideas. What I’m left with is as following:</p>
+
+<ol>
+  <li>Try using the dosbox-staging debugger and/or CodeView under a different emulator/hypervisor. Perhaps I can glean something from a more dependable debugging environment.</li>
+  <li>Compare the execution with the original executable, see if the variables have roughly the same values. Would be a pain though, maybe the DosBox debugger’s named variable lists (LV/SV/IV) could make it easier.</li>
+  <li>Perhaps my time delta logging has problems. Would need to check it against a <code class="language-plaintext highlighter-rouge">sleep()</code> call, but this compiler doesn’t have one, so I need to write one myself.</li>
+  <li>Try running the “frozen” game a little longer, see if it ever gets anywhere.</li>
+</ol>
+
+<p>One more thing that comes to mind is the layout of the data segment. Part of the point of all this was to make the executable independent of the data layout. But perhaps I missed some offset when changing numeric literals to variable offsets. Or there might be a piece of code that expects a piece of data residing right after another, and my executable doesn’t match that. So I could try making the data layout aligned with the original, at least for now. The good news with that is that since I still have all the data in assembly, most of it matches already. After dumping the data segments between the original and the recreation, then comparing the hex dumps in WinMerge, I can see they only seem to differ in the location where the libc data is placed - it comes in the middle of the data segment in the original, while my recreation has it at the end. I think I could tweak the linking order and get a perfect match, hopefully that might be enough to get it to run, then maybe I can figure out where it’s breaking by changing things a bit at a time.</p>
+
+<p>There’s also the more frightening prospect - perhaps a numeric constant was supposed to be just that, and I blithely changed it into an offset to a variable? That would be hard to find at this point.</p>
+
+<p>A lot of open questions, hardly any answers. But at least I’m back into it, interested and invested. I’m sure I can crack it given time. When I do, I’ll be sure to write up <a href="/f15-se2/2025/01/01/unstart2.html">Part 2</a>.</p>
+
+  </div><a class="u-url" href="/f15-se2/2024/12/31/unstart.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>More progress on EGAME | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="More progress on EGAME" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<meta property="og:description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<link rel="canonical" href="/f15-se2/2025/04/07/egame10.html" />
+<meta property="og:url" content="/f15-se2/2025/04/07/egame10.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2025-04-07T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="More progress on EGAME" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2025-04-07T00:00:00+00:00","datePublished":"2025-04-07T00:00:00+00:00","description":"(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)","headline":"More progress on EGAME","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2025/04/07/egame10.html"},"url":"/f15-se2/2025/04/07/egame10.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">More progress on EGAME</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2025-04-07T00:00:00+00:00" itemprop="datePublished">Apr 7, 2025
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><small>(<em>This post is part of a <a href="/category/f15-se2.html">series</a> on the subject of my hobby project, which is recreating the C source code for the 1989 game <a href="/f15-se2/2022/06/05/origins.html">F-15 Strike Eagle II</a> by reverse engineering the original binaries.</em>)</small></p>
+
+<p>I am happy to say the reconstruction for <code class="language-plaintext highlighter-rouge">EGAME.EXE</code> is progressing smoothly. I was planning to do an update after reaching 10% completion, but I work in increments of routines, and finishing the previous one only took me past 9%, so I needed to do one more before celebrating. It was a pretty hefty one (<code class="language-plaintext highlighter-rouge">sub_18E50</code>, at least called that for now), so I’m happy to report we are actually sitting around 14%, with about 10k of opcodes transcribed into C and 52k to go:</p>
+
+<pre>
+--- Routine map stats (static):
+Load module of executable is 167792/0x28f70 bytes
+Routine map of 400 routines covers 71986/0x11932 bytes (42% of the load module)
+Reachable code totals 73063/0x11d67 bytes (101% of the mapped area)
+Unreachable code totals 202/0xca bytes (0% of the mapped area)
+Excluded 122 routines take 5104/0x13f0 bytes (7% of the mapped area)
+Reachable area of excluded routines is 5281/0x14a1 bytes (7% of the reachable area)
+--- Comparison run stats (dynamic):
+Seen 82 routines, visited 49 and compared 9662/0x25be bytes of opcodes inside (13% of the reachable area)
+Ignored (seen but excluded) 33 routines totaling 1122/0x462 bytes (1% of the reachable area)
+Practical coverage (visited &amp; compared + ignored) is 10784/0x2a20 (<g>14%</g> of the reachable area)
+Theoretical(*) coverage (visited &amp; compared + reachable excluded area) is 14943/0x3a5f (<g>20%</g> of the reachable area)
+Missed (not seen and not excluded) 229 routines totaling 52517/0xcd25 bytes (<r>72%</r> of the covered area)
+(*) Any routines called only by ignored routines have not been seen and will lower the practical score,
+    but theoretically if we stepped into ignored routines, we would have seen and ignored any that were excluded.
+</pre>
+
+<p>Mind that some of that 52k will turn out to be assembly so not target for the reconstruction per se, but will need porting to C anyway. So ultimately, more work, just later.</p>
+
+<p>Seeing as it’s been almost exactly a month since I’ve started actually <a href="/f15-se2/2025/03/06/back-egame.html">transcribing the code</a>  (it was a lot of preparatory work to get the new executable building in my framework before that), that means that I’m roughly able to do 10k in a month, so theoretically if I went all in, I could probably finish the transcription within 5-6 months. Incidentally, this 10k/month lines up with what Fabien Sanglard based his calculations on when considering whether <a href="https://fabiensanglard.net/reverse_engineering_strike_commander/index.php">reversing Strike Commander</a> would be possible, before deciding it would take too many years. I think he might have been a bit pessimistic, because of those binaries’ size, a lot is bound to be data, some might be libc… But I’m still happy my game is smaller. 😁</p>
+
+<p>So, will <code class="language-plaintext highlighter-rouge">EGAME</code> be reconstructed around October? I really doubt it, it’s probably going to take a year or more. I actually plan to take it easy for a while, with summer around the corner and more family functions and activities that inevitably brings. I also want to play a few games that I bought on Steam a while back but didn’t even have time to check out. I’m not likely to stop completely, I’m just managing expectations (my own, mostly 😉) to clarify that I’m not going to be able to maintain this pace. But the future is looking bright, so don’t fret.</p>
+
+<p>With that out of the way, let’s look at some interesting code snippets that have popped up while doing the reconstruction.</p>
+
+<h2 id="bxsi">[bx+si]</h2>
+
+<p>I found this in the routine which loads <code class="language-plaintext highlighter-rouge">.3dt</code> (terrain) files. I don’t understand the format for now, but these functions will go a long way towards figuring it out one day.</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm">    <span class="nf">mov</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_8</span><span class="p">]</span>
+    <span class="c1">; ...</span>
+    <span class="nf">mov</span>	    <span class="nb">si</span><span class="p">,</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_4</span><span class="p">]</span>
+    <span class="nf">mov</span>	    <span class="nb">cl</span><span class="p">,</span>	<span class="mi">6</span>
+    <span class="nf">shl</span>	    <span class="nb">si</span><span class="p">,</span>	<span class="nb">cl</span>
+    <span class="nf">mov</span>	    <span class="nb">bx</span><span class="p">,</span>	<span class="nb">ax</span>
+    <span class="nf">shl</span>	    <span class="nb">bx</span><span class="p">,</span>	<span class="mi">1</span>
+    <span class="nf">mov</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_6</span><span class="p">]</span>
+    <span class="nf">add</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="nv">offset</span> <span class="nv">buf1_3dt</span>
+    <span class="nf">mov</span>	    <span class="kt">word</span><span class="nv">_1234</span><span class="p">[</span><span class="nb">bx</span><span class="o">+</span><span class="nb">si</span><span class="p">],</span>	<span class="nb">ax</span>
+    <span class="nf">mov</span>	    <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_A</span><span class="p">],</span>	<span class="mi">0</span></code></pre></figure>
+
+<p>After putting one index into <code class="language-plaintext highlighter-rouge">si</code> and another into <code class="language-plaintext highlighter-rouge">bx</code>, the code reaches into what looks like an array of integers using the <code class="language-plaintext highlighter-rouge">[bx+si]</code> memory addressing mode. But why didn’t it just build the index in one register? I tried various ways of writing the indexing expression before realizing this is actually a 2-dimensional array. The first shift by 6 is multiplying the column value in <code class="language-plaintext highlighter-rouge">var_4</code> by 64, which is the size of the row (32) times the size of the element (uint16: 2), then another shift on the row index multiplies it by 2 to get the final offset. It’s actually lucky that it uses a different indexing mode for matrices, else I might have had difficulties recognizing it as such. Now I can rename and declare <code class="language-plaintext highlighter-rouge">word_1234</code> as something more meaningful:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">extern</span> <span class="kt">int</span> <span class="n">matrix3dt_2</span><span class="p">[</span><span class="mi">5</span><span class="p">][</span><span class="mi">32</span><span class="p">];</span>
+
+<span class="kt">void</span> <span class="nf">load3DT</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">arg_0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// ...</span>
+    <span class="n">matrix3dt_2</span><span class="p">[</span><span class="n">var_4</span><span class="p">][</span><span class="n">var_8</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">int16</span><span class="p">)(</span><span class="n">buf1_3dt</span> <span class="o">+</span> <span class="n">var_6</span><span class="p">);</span>
+    <span class="c1">// ...</span>
+<span class="p">}</span></code></pre></figure>
+
+<h2 id="sub-sbb-and-add-and-what">sub-sbb-and-add-and-…what?</h2>
+
+<p>This time we is in the <code class="language-plaintext highlighter-rouge">.3d3</code> file loading routine, which I suspect are 3d models. Either way:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm">    <span class="nf">mov</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="nb">si</span><span class="nv">ze3d3_2</span>
+    <span class="nf">sub</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="mh">800h</span>
+    <span class="nf">sbb</span>	    <span class="nb">cx</span><span class="p">,</span>	<span class="nb">cx</span>
+    <span class="nf">and</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="nb">cx</span>
+    <span class="nf">add</span>	    <span class="nb">ah</span><span class="p">,</span>	<span class="mi">8</span>
+    <span class="nf">mov</span>	    <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_A</span><span class="p">],</span>	<span class="nb">ax</span></code></pre></figure>
+
+<p>We’ve seen <code class="language-plaintext highlighter-rouge">sub-sbb-neg</code> used by the compiler before as a way to perform branchless <code class="language-plaintext highlighter-rouge">NULL</code> checks, so that’s a hint it might be trying something similar. I’m using my old trusted technique of plotting the values for the significant cases. Here, it’s clearly trying to compare something against <code class="language-plaintext highlighter-rouge">0x800</code>, so let’s pick one value below, and one above it:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Instruction</th>
+      <th>Value (ax=0x1234)</th>
+      <th>Value (ax=0x200)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>mov ax, size3d3_2</td>
+      <td>ax=0x1234</td>
+      <td>ax=0x200</td>
+    </tr>
+    <tr>
+      <td>sbb cx, cx</td>
+      <td>cx=0</td>
+      <td>cx=0xffff</td>
+    </tr>
+    <tr>
+      <td>and ax, cx</td>
+      <td>ax=0</td>
+      <td>ax=0xfa00</td>
+    </tr>
+    <tr>
+      <td>add ah, 8</td>
+      <td>ax=0x800</td>
+      <td>ax=0x200</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Seeing the values makes it crystal clear that it’s just clamping the value to the range <code class="language-plaintext highlighter-rouge">0-0x800</code>. This simple code matches the binary arithmetic mess exactly:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">var_A</span> <span class="o">=</span> <span class="p">(</span><span class="n">size3d3_2</span> <span class="o">&gt;=</span> <span class="mh">0x800</span><span class="p">)</span> <span class="o">?</span> <span class="mh">0x800</span> <span class="o">:</span> <span class="n">size3d3_2</span><span class="p">;</span></code></pre></figure>
+
+<h2 id="i-really-need-a-clever-heading-for-this">I really need a clever heading for this</h2>
+
+<p>Still in the <code class="language-plaintext highlighter-rouge">.3d3</code> routine:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm">    <span class="nf">mov</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_A</span><span class="p">]</span> <span class="c1">; part of an earlier calculation</span>
+    <span class="nf">add</span>	    <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_E</span><span class="p">],</span>	<span class="nb">ax</span>
+    <span class="nf">cmp</span>	    <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_10</span><span class="p">],</span> <span class="mi">0</span>
+    <span class="nf">jnz</span>	    <span class="nv">short</span> <span class="nv">loc_12C56</span>
+    <span class="nf">mov</span>	    <span class="nb">si</span><span class="p">,</span>	<span class="nb">si</span><span class="nv">ze3d3</span>
+    <span class="nf">shl</span>	    <span class="nb">si</span><span class="p">,</span>	<span class="mi">1</span>
+    <span class="nf">add</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="nv">buf3d3</span><span class="p">[</span><span class="nb">si</span><span class="p">]</span> <span class="c1">; new calculation reuses value of var_A already in ax</span>
+    <span class="nf">mov</span>	    <span class="p">(</span><span class="nv">buf3d3</span><span class="o">+</span><span class="mi">2</span><span class="p">)[</span><span class="nb">si</span><span class="p">],</span> <span class="nb">ax</span></code></pre></figure>
+
+<p>The code is pretty simple:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">var_E</span> <span class="o">+=</span> <span class="n">var_A</span><span class="p">;</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">var_10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// 2c52</span>
+    <span class="n">buf3d3</span><span class="p">[</span><span class="n">size3d3</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">buf3d3</span><span class="p">[</span><span class="n">size3d3</span><span class="p">]</span> <span class="o">+</span> <span class="n">var_A</span><span class="p">;</span>
+<span class="p">}</span> <span class="c1">// 2c56</span></code></pre></figure>
+
+<p>…but the question is how to get the value of stack variable <code class="language-plaintext highlighter-rouge">var_A</code> in register <code class="language-plaintext highlighter-rouge">ax</code> from before the conditional jump to propagate to the addition operation within the conditional code. I tried in vain, but the compiler would reload the value of <code class="language-plaintext highlighter-rouge">buf3d3[si]</code> into ax, and add <code class="language-plaintext highlighter-rouge">var_A</code> to it.</p>
+
+<p>I really don’t remember too well how I got the idea, but when all else fails, try flipping signedness. Changing the declaration of <code class="language-plaintext highlighter-rouge">buf3d3</code> into <code class="language-plaintext highlighter-rouge">extern unsigned int buf3d3[]</code> solves this one, but don’t ask me why.</p>
+
+<h2 id="havent-had-enough-binary-arithmetic-magic-yet">Haven’t had enough binary arithmetic magic yet?</h2>
+
+<p>This routine ostensibly processes the cases for view switching in the plane:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm">    <span class="nf">mov</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="kt">word</span><span class="nv">_330C4</span>
+    <span class="nf">inc</span>	    <span class="nb">ax</span>
+    <span class="nf">cwd</span>
+    <span class="nf">sub</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="nb">dx</span>
+    <span class="nf">sar</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="mi">1</span>
+    <span class="nf">mov</span>	    <span class="nb">cx</span><span class="p">,</span>	<span class="kt">word</span><span class="nv">_336E8</span>
+    <span class="nf">sub</span>	    <span class="nb">cx</span><span class="p">,</span>	<span class="nb">ax</span>
+    <span class="nf">dec</span>	    <span class="nb">cx</span>
+    <span class="nf">and</span>	    <span class="nb">cx</span><span class="p">,</span>	<span class="mh">0Fh</span>
+    <span class="nf">mov</span>	    <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_E</span><span class="p">],</span>	<span class="nb">cx</span></code></pre></figure>
+
+<p>After seeing this, I got a bit nauseous, so decided it was time I had a stimulating conversation with my pal ChatGPT. I mean, obviously we’re trying to do some operation on a doubleword, but why subtract the older half from the younger? Anyway, they told me that:</p>
+
+<pre>
+sub ax, dx
+    This is the interesting part.
+    Since dx is either 0x0000 (for positive ax) or 0xFFFF (for negative ax), the subtraction effectively does:
+        If ax was non-negative (dx = 0x0000), then ax remains unchanged.
+        If ax was negative (dx = 0xFFFF), then ax = ax - (-1) = ax + 1.
+            This effectively cancels the inc ax instruction for negative values.
+This adjustment ensures that the rounding behavior for division by 2 is more symmetric.
+Normally, integer division truncates toward zero, but this modification makes negative numbers round more correctly toward the mathematical floor.
+Without sub ax, dx, a negative odd value would round incorrectly due to simple truncation.
+</pre>
+
+<p>Are they right? Who knows, right? It sounds so smart that I’m inclined to believe it. 😉 In any case, my buddy kindly made a table of values just like I enjoy, and it looks like it really is just a way to get division with <code class="language-plaintext highlighter-rouge">sar</code> to line up – I should really know better by now that <code class="language-plaintext highlighter-rouge">ax:dx</code> does not always equal doubleword, sometimes it’s just plain division. There’s really nothing interesting to the matching code:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">var_E</span> <span class="o">=</span> <span class="p">(</span><span class="n">word_336E8</span> <span class="o">-</span> <span class="p">((</span><span class="n">word_330C4</span>  <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xf</span><span class="p">;</span></code></pre></figure>
+
+<h2 id="divsion-came-knocking-again">Divsion came knocking again</h2>
+
+<p>I don’t even know what this routine does (yet). Within, we have this function call with a conditional in the middle of the arguments getting pushed onto the stack.</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm">    <span class="nf">mov</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="mh">0Fh</span>
+    <span class="nf">push</span>    <span class="nb">ax</span>
+    <span class="nf">mov</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="mh">36h</span> <span class="c1">; '6'</span>
+    <span class="nf">push</span>    <span class="nb">ax</span>
+    <span class="nf">mov</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="mh">0E4h</span> <span class="c1">; '�'</span>
+    <span class="nf">push</span>    <span class="nb">ax</span>
+    <span class="nf">cmp</span>	    <span class="kt">word</span><span class="nv">_380D0</span><span class="p">,</span>	<span class="mh">64h</span> <span class="c1">; 'd'</span>
+    <span class="nf">jnb</span>	    <span class="nv">short</span> <span class="nv">loc_192D5</span>
+    <span class="nf">mov</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="kt">word</span><span class="nv">_380D0</span>
+    <span class="nf">jmp</span>	    <span class="nv">short</span> <span class="nv">loc_192E7</span>
+<span class="nl">loc_192D5:</span>
+    <span class="nf">mov</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="kt">word</span><span class="nv">_380D0</span>
+    <span class="nf">sub</span>	    <span class="nb">dx</span><span class="p">,</span>	<span class="nb">dx</span>  <span class="c1">; extend into dx</span>
+    <span class="nf">mov</span>	    <span class="nb">cx</span><span class="p">,</span>	<span class="mi">5</span> <span class="c1">; ...divide by 5</span>
+    <span class="nf">div</span>	    <span class="nb">cx</span>
+    <span class="nf">mov</span>	    <span class="nb">cx</span><span class="p">,</span>	<span class="nb">ax</span> 
+    <span class="nf">shl</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="mi">1</span> 
+    <span class="nf">shl</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="mi">1</span> <span class="c1">; ...multiply by 4</span>
+    <span class="nf">add</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="nb">cx</span> <span class="c1">; ...add one more 🎵</span>
+<span class="nl">loc_192E7:</span>
+    <span class="nf">push</span>    <span class="nb">ax</span>
+    <span class="nf">call</span>    <span class="nv">sub_1A183</span></code></pre></figure>
+
+<p>The troublesome bit is the <code class="language-plaintext highlighter-rouge">add ax, cx</code>. For some reason, I kept writing it as:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">sub_1A183</span><span class="p">(</span><span class="n">word_380D0</span> <span class="o">&lt;</span> <span class="mh">0x64</span> <span class="o">?</span> <span class="n">word_380D0</span> <span class="o">:</span> <span class="p">(</span><span class="n">word_380D0</span> <span class="o">/</span> <span class="mi">5</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">+</span> <span class="p">(</span><span class="n">word_380D0</span> <span class="o">/</span> <span class="mi">5</span><span class="p">),</span> <span class="mh">0xe4</span><span class="p">,</span> <span class="mh">0x36</span><span class="p">,</span> <span class="mh">0xf</span><span class="p">);</span></code></pre></figure>
+
+<p>This does not match, the division is repeated, before adding the value. It took a while to click: multiply it by 4, add one more time makes 5!</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">sub_1A183</span><span class="p">(</span><span class="n">word_380D0</span> <span class="o">&lt;</span> <span class="mh">0x64</span> <span class="o">?</span> <span class="n">word_380D0</span> <span class="o">:</span> <span class="p">(</span><span class="n">word_380D0</span> <span class="o">/</span> <span class="mi">5</span><span class="p">)</span> <span class="o">*</span> <span class="mi">5</span><span class="p">,</span> <span class="mh">0xe4</span><span class="p">,</span> <span class="mh">0x36</span><span class="p">,</span> <span class="mh">0xf</span><span class="p">);</span></code></pre></figure>
+
+<p>This is as match. Looks dumb mathematically which is why I initially rejected it, but quickly remembered this is binary division, so this will strip the remainder off the value, performing rounding to a multiple of 5, essentially the equivalent of <code class="language-plaintext highlighter-rouge">word_380D0 - (word_380D0 % 5)</code>.</p>
+
+<h2 id="relax-that-was-the-last-one">Relax, that was the last one</h2>
+
+<p>I wanted to conclude this entry with some general discoveries. Mind that I’m not only doing the reconstruction, but investigation in IDA to properly mark variables, add declarations for automatic C header generation etc. Usually, I try not to follow the rabbit holes too deep and focus on the routine that I’m currently looking at, but sometimes a piece of information is missing, and I need to search elsewhere. At some point, I was trying to figure out the layout of some struct data, but the code in the current routine was only accessing two members out of 8, so I had to cast a wider net. This way, I finally found myself in this interesting code:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="c1">; ...</span>
+<span class="nl">loc_1D747:</span>
+    <span class="nf">cmp</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="mh">266Ch</span>
+    <span class="nf">jnz</span>	    <span class="nv">short</span> <span class="nv">loc_1D74F</span>
+    <span class="nf">jmp</span>	    <span class="nv">keyL_1D31D</span>
+<span class="nl">loc_1D74F:</span>
+    <span class="nf">jbe</span>	    <span class="nv">short</span> <span class="nv">loc_1D754</span>
+    <span class="nf">jmp</span>	    <span class="nv">loc_1D7EE</span>
+<span class="nl">loc_1D754:</span>
+    <span class="nf">cmp</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="mh">1970h</span>
+    <span class="nf">jnz</span>	    <span class="nv">short</span> <span class="nv">loc_1D75C</span>
+    <span class="nf">jmp</span>	    <span class="nv">keyP_1D605</span>
+<span class="nl">loc_1D75C:</span>
+    <span class="nf">ja</span>	    <span class="nv">short</span> <span class="nv">loc_1D79E</span>
+    <span class="nf">cmp</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="mh">1177h</span>
+    <span class="nf">jnz</span>	    <span class="nv">short</span> <span class="nv">loc_1D766</span>
+    <span class="nf">jmp</span>	    <span class="nv">keyW_1D5AF</span>
+<span class="nl">loc_1D766:</span>
+    <span class="nf">ja</span>	    <span class="nv">short</span> <span class="nv">loc_1D77B</span>
+    <span class="nf">cmp</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="mh">11Bh</span>
+    <span class="nf">jnz</span>	    <span class="nv">short</span> <span class="nv">loc_1D770</span>
+    <span class="nf">jmp</span>	    <span class="nv">keyEsc_1D6B6</span>
+<span class="nl">loc_1D770:</span>
+    <span class="nf">cmp</span>	    <span class="nb">ax</span><span class="p">,</span>	<span class="mh">0E08h</span>
+    <span class="nf">jnz</span>	    <span class="nv">short</span> <span class="nv">loc_1D778</span>
+    <span class="nf">jmp</span>	    <span class="nv">keyBkspc_1D641</span>
+<span class="c1">; ...</span></code></pre></figure>
+
+<p>This is a long series of checks of ax against seemingly arbitrary values which was orignally probably a <code class="language-plaintext highlighter-rouge">switch</code> statement, but I realized these were key <a href="https://stanislavs.org/helppc/scan_codes.html">scan codes</a>. This is the routine for dispatching keypresses! This is immensely helpful, because I know what the keys do in the game, so I can infer (even if broadly) the purpose of the routines that are invoked by the cases. I did some initial poking around and found a bunch of interesting avenues for further research. As it is with IDA, figuring out one bit in one place will sometimes unlock whole other areas for you, and you keep on doing that until you’re done.</p>
+
+<h2 id="fat-routines">Fat routines</h2>
+
+<p>I wanted to talk about are the sizes of the routines I’ve been encountering. Some are pretty significant. Last one I finished was almost 1600 bytes of code, which is not dramatic, but not trivial either, especially as it has multiple nested conditions and loops inside, which reminds me about how I used to need to do <a href="/f15-se2/2024/05/05/ghidra.html">desperate stuff</a> to get the control flow down. The current routine that I am supposed to do is over 4700 bytes! It’s one of the key dispatch routines I was excited about (there are actually two separate ones, not sure why yet). Anyway, this hints at maybe why why <a href="/f15-se2/2025/02/27/elephant.html">could not find</a> many routines from <em>Fleet Defender</em> in the F15SE2 code - a lot of this code appears to be huge, sprawling routines that cover many aspects of the game logic. Perhaps at some point there was a refactor of this codebase into more manageable, smaller bits, which would not be found with routine signatures, and would be little help in reconstructing the code even if we <em>could</em> find them. Perhaps the old, ugly code was decided to be too F15-specific, so it was thrown away at some point in time of the codebase’s lifetime as cruft, and did not carry over to either F15SE3, or some other step along the way. I’ll probably never know, but this kind of makes sense and closes down the quest for duplicate searching against the F-14 code leak.</p>
+
+<h2 id="transcription-101">Transcription 101</h2>
+
+<p>By the way, how am I managing to write all this convoluted code without getting confused? Recently, while doing the reconstruction, I started following a sort-of formalized approach to transcribing the code. It’s a pretty small detail, but enough of a gamechanger for me that I wanted to mention it. Basically, while working on a routine, I will write out hex offsets of the corresponding assembly opcodes as comments in the source code. Not for every line, but it’s very helpful if I ever need to go back from an offset to a place in the C code, which pops up pretty often. Anyway, this isn’t new, I’ve been doing it since the beginning. What I started doing was writing an offset comment on every opening and closing brace, and closing the braces immediately when I encounter them:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span> <span class="nf">sub_18E50</span><span class="p">(</span><span class="kt">int</span> <span class="n">arg_0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kt">int</span> <span class="n">var_2</span><span class="p">,</span> <span class="n">var_4</span><span class="p">,</span> <span class="n">var_6</span><span class="p">,</span> <span class="n">var_8</span><span class="p">,</span> <span class="n">var_A</span><span class="p">,</span> <span class="n">var_C</span><span class="p">,</span> <span class="n">var_E</span><span class="p">,</span> <span class="n">var_10</span><span class="p">,</span> <span class="n">var_12</span><span class="p">,</span> <span class="n">var_14</span><span class="p">,</span> <span class="n">var_16</span><span class="p">,</span> <span class="n">var_18</span><span class="p">,</span> <span class="n">var_1A</span><span class="p">;</span>
+    <span class="kt">char</span> <span class="n">var_1C</span><span class="p">;</span>
+    <span class="n">byte_3C5A0</span> <span class="o">=</span> <span class="n">gfx_jump_2d</span><span class="p">();</span>
+    <span class="n">var_16</span> <span class="o">=</span> <span class="n">waypoints</span><span class="p">[</span><span class="n">waypointIndex</span><span class="p">].</span><span class="n">field_0</span> <span class="o">-</span> <span class="n">word_3BEC0</span><span class="p">;</span>
+    <span class="n">var_1A</span> <span class="o">=</span> <span class="n">waypoints</span><span class="p">[</span><span class="n">waypointIndex</span><span class="p">].</span><span class="n">field_2</span> <span class="o">-</span> <span class="n">word_3BED0</span><span class="p">;</span>
+    <span class="c1">// 8e83</span>
+    <span class="n">word_3BE92</span> <span class="o">=</span> <span class="n">sub_1D008</span><span class="p">(</span><span class="n">var_16</span><span class="p">,</span> <span class="o">-</span><span class="n">var_1A</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">word_330C2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// 8e96</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">word_38FEA</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// 8e9d</span>
+            <span class="n">word_38FEA</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">keyValue</span> <span class="o">&amp;</span> <span class="mh">0x80</span><span class="p">))</span> <span class="p">{</span> <span class="c1">// 8eaa</span>
+                <span class="n">sub_19E44</span><span class="p">(</span><span class="mh">0xd</span><span class="p">);</span>
+                <span class="n">sub_19E5D</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x13f</span><span class="p">,</span> <span class="mh">0x60</span><span class="p">);</span>
+                <span class="n">gfx_jump_4f</span><span class="p">(</span><span class="mh">0x3c</span><span class="p">);</span>
+            <span class="p">}</span> <span class="c1">// 🔵 nothing here because it's the same as below, 0x8ed2</span>
+        <span class="p">}</span> <span class="c1">// 8ed2</span>
+        <span class="n">byte_37C2F</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">keyValue</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">byte_37C24</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// 8eeb</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">commData</span><span class="o">-&gt;</span><span class="n">setupUseJoy</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// 8ef9</span>
+                <span class="n">sub_19E44</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+                <span class="c1">// 🟢🟢🟢 working here</span>
+            <span class="p">}</span> <span class="c1">// 8fce                </span>
+        <span class="p">}</span> <span class="c1">// 93c4 // 🔵 have all these marked out in advance</span>
+    <span class="p">}</span> <span class="c1">// 93cf // 🔵</span>
+<span class="p">}</span> <span class="c1">// 9485 // 🔵</span></code></pre></figure>
+
+<p>Having these braces fixed at both ends as soon as I encounter the opening one lets me keep my bearings even inside pretty complex control structures. When I see a location in the IDA listing, I can immediately check if it matches some of my currently open blocks’ ending, and hence that I should move out of its scope. Likewise, I have a convention for IDA, where I rename its <code class="language-plaintext highlighter-rouge">loc_01234</code> labels to <code class="language-plaintext highlighter-rouge">if/else/endif/loop/..._01234</code> to make the listing more readable, but that’s not as important in my view, and I only do it where it’s especially difficult to figure stuff out.</p>
+
+<p>This of course assumes unoptimized code without any nastiness like deduplication or code block reordering. But luckily enough, most of the code I’ve seen so far has been compiled with the <a href="/f15-se2/2023/09/02/compiler3.html">elusive /Zi flag</a>, so the opcodes pretty much follow the C code one-to-one. But I’m sure something will surprise me one day. Oh well, even in such case following this pattern for as long as possible lets me know something is afoot when the jump sequence does not make sense.</p>
+
+<p>Thanks for reading, I’ll update around the 20-30% mark or if there is anything of interest.</p>
+
+
+  </div><a class="u-url" href="/f15-se2/2025/04/07/egame10.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

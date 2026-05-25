@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Hunting for the Right Compiler, Part 2 | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Hunting for the Right Compiler, Part 2" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(…continued from Part 1)" />
+<meta property="og:description" content="(…continued from Part 1)" />
+<link rel="canonical" href="/f15-se2/2023/05/18/compiler2.html" />
+<meta property="og:url" content="/f15-se2/2023/05/18/compiler2.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-05-18T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Hunting for the Right Compiler, Part 2" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2023-05-18T00:00:00+00:00","datePublished":"2023-05-18T00:00:00+00:00","description":"(…continued from Part 1)","headline":"Hunting for the Right Compiler, Part 2","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2023/05/18/compiler2.html"},"url":"/f15-se2/2023/05/18/compiler2.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Hunting for the Right Compiler, Part 2</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2023-05-18T00:00:00+00:00" itemprop="datePublished">May 18, 2023
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>(…continued from  <a href="/f15-se2/2023/05/17/compiler.html">Part 1</a>)</p>
+
+<p>(dramatic narrator voice) <em>when we left our intrepid hero, he was scratching his head, puzzled, over how to get an ancient C compiler to emit just the right instructions to move his game reverse engineering project forward. Disappointed by Microsoft compilers, his gaze now turned toward Borland, the last free kingdom of Men…</em> Wait, what???</p>
+
+<p>Sigh… okay, no drama, let me get straight to the facts.</p>
+
+<p>Before I get into the Borland misadventures, first a small detour back to Microsoft. The company also sold a hobbyist-oriented C compiler/IDE called <a href="https://en.wikipedia.org/wiki/QuickC">QuickC</a>. It was released as a standalone product, but it’s also included with MSC 5.1 (probably for the IDE), and can be selected with the <code class="language-plaintext highlighter-rouge">/qc</code> switch to the commandline compiler frontend executable, <code class="language-plaintext highlighter-rouge">CL.EXE</code>. It has its own (limited) set of optimization options. I checked its output, and even with optimizations enabled it looks worse than that of the regular MSC 5.1 compiler with optimizations disabled (<code class="language-plaintext highlighter-rouge">/Od</code>), which as you might recall from the previous part, was a complete mess. So we can probably strike QuickC off the list. I might try the standalone versions some day, but let’s move on for now.</p>
+
+<p>Keeping the 1989 date in mind, I picked the closest version of Turbo C, which would be 2.01, and soon found success with my problematic loop code. If you recall, the problem with trying to compile the loop with MSC was that it eliminated a superfluous intermediate jump that is present in the game’s original binaries, no matter what settings were used. Well, with Turbo C 2.01 it produces code that matches the original exactly, unless option <code class="language-plaintext highlighter-rouge">-O</code> is used, which makes sense because it enables loop optimization. The code that was the golden ticket was this <code class="language-plaintext highlighter-rouge">goto</code>-based variant:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="n">timerCounter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="n">waitForKey</span><span class="o">:</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">timerCounter</span> <span class="o">&lt;</span> <span class="n">TIMEOUT</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">check_keybuf</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">getkey</span><span class="p">();</span>
+            <span class="k">goto</span> <span class="n">keyOrTimeout</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">goto</span> <span class="n">waitForKey</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="nl">keyOrTimeout:</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">timerCounter</span> <span class="o">&lt;</span> <span class="n">MPS_TIMEOUT</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span> <span class="p">...</span></code></pre></figure>
+
+<p>I could not get it to emit matching code with any variant of a <code class="language-plaintext highlighter-rouge">for</code>, <code class="language-plaintext highlighter-rouge">while</code> or <code class="language-plaintext highlighter-rouge">do..while</code>-based loop, but I can live with the <code class="language-plaintext highlighter-rouge">goto</code>s. Anyway, the generated code is the following:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="err">00000039</span>  <span class="nf">C6066C0300</span>        <span class="nv">mov</span> <span class="kt">byte</span> <span class="p">[</span><span class="mh">0x36c</span><span class="p">],</span><span class="mh">0x0</span>
+<span class="err">0000003</span><span class="nf">E</span>  <span class="mi">803</span><span class="nv">E6C0377</span>        <span class="nv">cmp</span> <span class="kt">byte</span> <span class="p">[</span><span class="mh">0x36c</span><span class="p">],</span><span class="mh">0x78</span>
+<span class="err">00000043</span>  <span class="err">730</span><span class="nf">E</span>              <span class="nv">jnc</span> <span class="mh">0x53</span>
+<span class="err">00000045</span>  <span class="nf">E8C8FF</span>            <span class="nv">call</span> <span class="mh">0x10</span>
+<span class="err">00000048</span>  <span class="err">0</span><span class="nf">BC0</span>              <span class="nv">or</span> <span class="nb">ax</span><span class="p">,</span><span class="nb">ax</span>
+<span class="err">0000004</span><span class="nf">A</span>  <span class="mi">7505</span>              <span class="nv">jnz</span> <span class="mh">0x51</span> <span class="err">😍</span>
+<span class="err">0000004</span><span class="nf">C</span>  <span class="nv">E8C7FF</span>            <span class="nv">call</span> <span class="mh">0x16</span>
+<span class="err">0000004</span><span class="nf">F</span>  <span class="nv">EB02</span>              <span class="nv">jmp</span> <span class="nv">short</span> <span class="mh">0x53</span> <span class="err">😍😍😍</span>
+<span class="err">00000051</span>  <span class="nf">EBEB</span>              <span class="nv">jmp</span> <span class="nv">short</span> <span class="mh">0x3e</span>
+<span class="err">00000053</span>  <span class="err">803</span><span class="nf">E6C0377</span>        <span class="nv">cmp</span> <span class="kt">byte</span> <span class="p">[</span><span class="mh">0x36c</span><span class="p">],</span><span class="mh">0x78</span></code></pre></figure>
+
+<p>With <code class="language-plaintext highlighter-rouge">-O</code>, this is optimized to to a jump directly up to <code class="language-plaintext highlighter-rouge">0x3e</code> from <code class="language-plaintext highlighter-rouge">0x4a</code>, just like MSC does regarless of the options used. So the Borland compiler can generate code that’s just as good as the Microsoft one, but it gives the user more control over the amount of optimizations that are desired. So, that’s it then? We’re home free? Well, unfortunately not:</p>
+
+<pre>
+ninja@dell:eaglestrike$ ../mzretools/debug/mzdiff ida/start.exe:0x17 build-f15-se2/start.exe:0x18 --verbose --loose --sdiff 3 --variant --map map/start.map
+Comparing code between reference (entrypoint 1000:0017/010017) and other (entrypoint 1000:0018/010018) executables
+--- Now @1000:0017/010017, routine 1000:0010-1000:0482/000473: main, block 010010-010482/000473, compared @1000:0018/010018
+[...]
+1000:0057/010057: les bx, [0x77f2]                 =~ 1000:0058/010058: les bx, [0x5cd]
+1000:005b/01005b: push es:[bx+0x1e]                == 1000:005c/01005c: push es:[bx+0x1e]
+1000:005f/01005f: call 0x2a88 (down)               ~= 1000:0060/010060: call 0x470 (down)
+<o>1000:0062/010062: add sp, 0x2                      ~~ 1000:0063/010063: inc sp
+                                                      1000:0064/010064: inc sp</o>
+[...]
+<o>1000:00a8/0100a8: sub ax, ax                       ~~ 1000:00a6/0100a6: xor ax, ax</o>
+1000:00aa/0100aa: push ax                          == 1000:00a8/0100a8: push ax
+1000:00ab/0100ab: push ax                          == 1000:00a9/0100a9: push ax
+1000:00ac/0100ac: call far 0x16b50cac              ~= 1000:00aa/0100aa: call far 0x11c10286
+</pre>
+
+<p>The Turbo C compiler produces mismatches elsewhere in the code. Notably, after calling a function which takes a word-sized argument, it uses two <code class="language-plaintext highlighter-rouge">inc sp</code> instructions to take the argument off the stack where the original does <code class="language-plaintext highlighter-rouge">add sp,2</code>. The result is exactly the same, but there is a discrepancy. I have <code class="language-plaintext highlighter-rouge">mzdiff</code> running with the <code class="language-plaintext highlighter-rouge">--variant</code> option which I implemented to get around exactly this type of issue - it has a static lookup table of equivalent sequences of instructions and it displays the <code class="language-plaintext highlighter-rouge">~~</code> status and puts the instructions in a warning color to show that the add is equivalent to the two subequent increments. This happens when building the code with <code class="language-plaintext highlighter-rouge">-G</code> which enables favouring of fast code over small code - without it, it will emit <code class="language-plaintext highlighter-rouge">pop cx</code> instead, which also has the same result, but again, it’s not the same instruction.</p>
+
+<p>Another discrepancy in the above output is that whenever a register needs to be zeroed in order to be pushed onto the stack as an argument, Turbo C emits <code class="language-plaintext highlighter-rouge">xor ax,ax</code> instead of the desired <code class="language-plaintext highlighter-rouge">sub ax,ax</code>. Again, same result and the tool obliges us with <code class="language-plaintext highlighter-rouge">~~</code>, but the instructions are different.</p>
+
+<p>I again used my bruteforcing Python script to check various combinations of other compiler options (ones that appeared to even remotely be capable of having an influence), and some additional tricks with the code itself, like changing the argument’s type and/or signedness (I’ve seen that making a difference elsewhere) or changing the calling convention, but I never could get it to emit a match.</p>
+
+<p>I utter naughty words. It’s not the right compiler.</p>
+
+<p>There’s still hope, there are more compilers to try, this was just the newest possible one. I went ahead and tested TC 1.0, 1.5 and 2.0 manually, and with the bruteforcing script. The results were exactly the same. It appears this is just what the Borland compilers do around function calls, and it’s not configurable.</p>
+
+<p>Some weeks pass. Occasionally I try an idea, but nothing works. I implement options in the comparison tool to ignore a limited number of mismatching instructions, and continue with reconstructing the code instead of trying to get it to match perfectly. I am building the code with MSC 5.1. The tool shows warnings on the mismatches, but at least I feel like I’m making progress. No point in getting hung up on this, I have a game to reconstruct. Good thing I have the tool, I can control what counts for a match in the comparison.</p>
+
+<p>At some point, I get a flash. True that the original game was released in 1989, but I’m working with the updated scenario disk version. That one was released in 1991! This puts additional compilers on the table that I haven’t tested yet:</p>
+
+<ul>
+  <li>Turbo C++ 1.0/1.01 (1990)</li>
+  <li>Turbo C++ 3.0 (1991). There was never a Turbo C++ 2.0, probably because Borland wanted its latest compiler (which included C support) to have a higher version number than the discontinued Turbo C 2.0.</li>
+  <li>Borland C++ 2.0 (1991). Likewise, there never was a Borland C++ 1.0, probably for marketing reasons.</li>
+  <li>Borland C++ 3.0 (1991)</li>
+  <li>Microsoft C 6.0 (1990). This one is interesting because it supports inline assembly.</li>
+</ul>
+
+<p>I’ll save you the suspense, none of these matched either. The Microsoft one has more optimization options but it still optimizes unnecessary loop branches away unless the optimizations are all disabled, in which case the code turns out as hot garbage.</p>
+
+<p>TC++ 1.01 still uses <code class="language-plaintext highlighter-rouge">inc sp</code> and <code class="language-plaintext highlighter-rouge">xor ax,ax</code>. Interestingly, it also used <code class="language-plaintext highlighter-rouge">xor dx,dx</code> and pushed that as a zero value for the second function argument, while it had a zero in AX already. Go figure. It also needed the <code class="language-plaintext highlighter-rouge">-Z</code> option to prevent reloading a value that was already in a register, and <code class="language-plaintext highlighter-rouge">-Z</code> does not work unless <code class="language-plaintext highlighter-rouge">-O</code> is also specified, which enables loop optimization… which means my loop will come out too optimized again… Deadlocked.</p>
+
+<pre>
+1000:0039/010039: les bx, [bp-0x12]                =~ 1000:0039/010039: les bx, [bp-0x06] ; get far address value into ES:BX
+1000:003c/01003c: mov ax, es:[bx]                  == 1000:003c/01003c: mov ax, es:[bx]
+1000:003f/01003f: mov [0x77f4], ax                 ~= 1000:003f/01003f: mov [0x5d4], ax
+1000:0042/010042: mov word [0x77f2], 0x0           ~= 1000:0042/010042: mov word [0x5d2], 0x0
+<r>1000:0048/010048: mov ax, es:[bx]                  != 1000:0048/010048: les bx, [bp-0x06]</r> (Address value gets reloaded)
+</pre>
+
+<p>Turbo C++ 3.0 had a weird quirk where it would reload the far address value even with <code class="language-plaintext highlighter-rouge">-Z -O</code>. Could not get it to cooperate.</p>
+
+<p>Borland C++ 2.0 behaves exactly like Turbo C++ 1.01. Needs <code class="language-plaintext highlighter-rouge">-Z -G -O</code> to prevent register reload, loop gets optimized away. Still has 2x<code class="language-plaintext highlighter-rouge">inc sp</code> and <code class="language-plaintext highlighter-rouge">xor ax,ax</code>.</p>
+
+<p>Borland C++ 3.0 is interesting. For one, with <code class="language-plaintext highlighter-rouge">-G</code> it uses <code class="language-plaintext highlighter-rouge">add sp,2</code> instead of 2x<code class="language-plaintext highlighter-rouge">inc sp</code>, which is good. But it still does the <code class="language-plaintext highlighter-rouge">xor ax,ax</code> thing for zeroing out regs. In addition, there are some subtle differences around register reuse around far addresses:</p>
+
+<pre>
+1000:0039/010039: les bx, [bp-0x12]                =~ 1000:0039/010039: les bx, [bp-0x06]
+1000:003c/01003c: mov ax, es:[bx]                  == 1000:003c/01003c: mov ax, es:[bx]
+1000:003f/01003f: mov [0x77f4], ax                 ~= 1000:003f/01003f: mov [0x5d4], ax
+1000:0042/010042: mov word [0x77f2], 0x0           ~= 1000:0042/010042: mov word [0x5d2], 0x0
+<o>1000:0048/010048: mov ax, es:[bx]                  != 1000:0048/010048: mov [0x5d0], ax</o> (es:bx reused, AND ax reused 😵)
+1000:004b/01004b: mov [0x4606], ax                 ~= 1000:0048/010048: mov [0x5d0], ax (tool skipped the mismatch)
+[...]
+1000:00c1/0100c1: les bx, [0x4604]                 =~ 1000:00be/0100be: les bx, [0x5ce]
+1000:00c5/0100c5: mov word es:[bx+0x4e], 0x1       == 1000:00c2/0100c2: mov word es:[bx+0x4e], 0x1
+<o>1000:00cb/0100cb: les bx, [0x4604]                 != 1000:00c8/0100c8: mov word es:[bx+0x3e], 0xffff</o> (es:bx reused)
+1000:00cf/0100cf: mov word es:[bx+0x3e], 0xffff    == 1000:00c8/0100c8: mov word es:[bx+0x3e], 0xffff (next instruction matches)
+<o>1000:00d5/0100d5: les bx, [0x4604]                 != 1000:00ce/0100ce: mov word es:[bx+0x38], 0xffff</o> (ditto)
+1000:00d9/0100d9: mov word es:[bx+0x38], 0xffff    == 1000:00ce/0100ce: mov word es:[bx+0x38], 0xffff (ditto)
+</pre>
+
+<p>I ran out of compilers to try. On one hand, the superfluous jumps feel uniquely Borland-ish. On the other, the <code class="language-plaintext highlighter-rouge">add sp,2</code> <em>and</em> <code class="language-plaintext highlighter-rouge">sub ax,ax</code> feels almost uniquely Microsofty. There does not appear to be a compiler which does both at the same time.</p>
+
+<p>Well, perhaps then the loop was written using the inline assembly feature of MSC 6.0? Come to think of it, this could be a good time to compare the 1989 version of the game with the 1991 one. Perhaps the loop is also there in the older version? Sure enough, here it is:</p>
+
+<pre>
+ninja@dell:eaglestrike$ ../mzretools/debug/mzdiff ida/start_new.exe:0x100 ida/start_old.exe:0xf9 --verbose --loose
+Comparing code between reference (entrypoint 1000:0100/010100) and other (entrypoint 1000:00f9/0100f9) executables
+--- Now @1000:0100/010100, compared @1000:00f9/0100f9
+1000:0100/010100: mov byte [0x76e], 0x0            ~= 1000:00f9/0100f9: mov byte [0x52e], 0x0
+1000:0105/010105: cmp byte [0x76e], 0x78           ~= 1000:00fe/0100fe: cmp byte [0x52e], 0x78
+1000:010a/01010a: jnb 0x11e (down)                 ~= 1000:0103/010103: jnb 0x113 (down)
+1000:010c/01010c: call far 0x16b50c7a              ~= 1000:0105/010105: call far 0x16ac0a3a
+1000:0111/010111: or ax, ax                        == 1000:010a/01010a: or ax, ax
+1000:0113/010113: jnz 0x11c (down)                 ~= 1000:010c/01010c: jnz 0xfe (up)
+1000:0115/010115: call far 0x16b50c7f              ~= 1000:010e/01010e: call far 0x16ac0a3f
+<r>1000:011a/01011a: jmp short 0x11e (down)           != 1000:0113/010113: cmp byte [0x52e], 0x78</r>
+ERROR: Instruction mismatch in routine unknown at 1000:011a/01011a: jmp short 0x11e != 1000:0113/010113: cmp byte [0x52e], 0x78
+--- Context information for 10 additional instructions after mismatch location:
+1000:011c/01011c: jmp short 0x105 (up)             ~= 1000:0118/010118: jb 0x16b (down)
+1000:011e/01011e: cmp byte [0x76e], 0x78           != 1000:011a/01011a: call far 0x16ac09d1
+</pre>
+
+<p>Because the versions have actual code differences (beyond what comes from apparently using a different compiler), I’m pointing the tool to specific offsets in both to get them to converge, but the loop is present in both. The left one is the 1991 version, with the loop unoptimized like Borland can do. The one on the right is the 1989 version, optimized like MSC (or Borland with <code class="language-plaintext highlighter-rouge">-O</code>) would do. Elsewhere, both match up on register reuse, and usage of <code class="language-plaintext highlighter-rouge">add sp,2</code> and <code class="language-plaintext highlighter-rouge">sub ax,ax</code>. I’m pretty sure the 1989 version was actually built with MSC 5.1. Which means the loop could not have been written in inline assembly which is not supported in that compiler, unless they specifically rewrote it for the 1991 release, which I don’t find likely.</p>
+
+<p>Sadly, this is where things stand today. I still don’t know what compiler was used for the 1991 version. I wish I could end this post with a happy ending, but this is not a fairy tale, and I wanted to give a true account of the amount of research and trial and error goes into doing a project like this.</p>
+
+<p>The silver lining is that I stil have a viable path forward. Here are my possibilities:</p>
+
+<ol>
+  <li>I can move ahead with the reconstruction using either a Borland or Microsoft compiler, relying on the tool to skip the differences that are not critical. I can implement more advanced heuristics into the tool as the need arises.</li>
+  <li>I could force the loop to match with inline assembly of MSC 6.0. Screw backwards compatibility with 1989.</li>
+  <li>I could potentially try the standalone versions of QuickC from 1.0 up to 2.51, and QuickC for Windows 1.0 which came out in 1991 and could still target DOS, although based on my experience with QC bundled with MSC 5.1, I don’t think any of them are likely.</li>
+  <li>An observant reader might have noticed that in my submarine picture in Part 1 there is Watcom hovering on the horizon. Versions 6.0 and 7.0 of the Watcom C/C++ compiler could emit real-mode 16bit code (the subsequent versions focused on protected mode of the 386), and Watcom was very popular with game developers, although I think it was mostly after the protected mode version was used to create <em>Doom</em>. Sadly, I could not find a copy of the 16bit version anywhere. The modern OpenWatcom project is also a possiblity.</li>
+</ol>
+
+<p>If I ever make a breakthrough on this, there might be a <a href="/f15-se2/2023/09/02/compiler3.html">Part 3</a> of this post, but for now I’m going with option #1. I have <code class="language-plaintext highlighter-rouge">main()</code> of <code class="language-plaintext highlighter-rouge">START.EXE</code> fully reconstructed into “mostly matching” state, and am moving onto other functions, encountering difficulties along the way, but so far being able to overcome them. I’ll write up more findings related to those in subsequent posts, but regarding the compiler, that’s it for now.  Good fight, good night.</p>
+
+  </div><a class="u-url" href="/f15-se2/2023/05/18/compiler2.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

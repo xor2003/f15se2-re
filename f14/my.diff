@@ -1,0 +1,35 @@
+diff --git a/Makefile b/Makefile
+index 49008b1..cde2fdd 100644
+--- a/Makefile
++++ b/Makefile
+@@ -18,7 +18,8 @@ CXXFLAGS := -Wfatal-errors
+ UASMFLAGS := -q -0 -Zm
+ # DOS C compiler: no stack probes, debug mode
+ C_TOOLCHAIN ?= msc510
+-MSC_CFLAGS ?= /Gs /Zi /Id:\f15-se2
++#MSC_CFLAGS ?= /Gs /Zi /Id:\f15-se2
++MSC_CFLAGS ?= /Gs /Ot /Fc /Id:\f15-se2
+ # DOS assembler
+ ASM_TOOLCHAIN ?= masm510
+ # masm: suppress output in case of successful assembly
+@@ -26,7 +27,7 @@ ASFLAGS := /t
+ # DOS linker
+ LINK_TOOLCHAIN ?= msc510
+ # ms link: verbose, create mapfile, no default libs
+-LINKFLAGS := /M /I
++LINKFLAGS := /M #/I
+ DOSDIR := dos
+ TOOLCHAIN_DIR := $(DOSDIR)/$(C_TOOLCHAIN)
+ 
+@@ -222,3 +223,4 @@ $(TOOLDIR)/vgapal: $(SRCTOP)/vgapal.c
+ 
+ $(TOOLDIR)/wldparse: $(SRCTOP)/wldparse.cpp
+ 	g++ -o $@ $^ -I$(SRCDIR)
++
+diff --git a/mzretools b/mzretools
+index 313bf9a..4b08a83 160000
+--- a/mzretools
++++ b/mzretools
+@@ -1 +1 @@
+-Subproject commit 313bf9a93dcd037dcaff5af4b602b10906675cd1
++Subproject commit 4b08a8354fa98992092f87ff48a2ed0b9882c80a-dirty

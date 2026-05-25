@@ -1,0 +1,1705 @@
+;	Static Name Aliases
+;
+	TITLE   MESSAGE.C
+	NAME    MESSAGE
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+PUBLIC  _MRp
+PUBLIC  _lastmsgview
+PUBLIC  _LastMsgSeat
+PUBLIC  _newmsg
+PUBLIC  _MyMSG
+PUBLIC  _MyMSGTYP
+PUBLIC  _msgtime
+PUBLIC  _Mupdate
+PUBLIC  _MsgEMS
+PUBLIC  _MsgOnScreen
+PUBLIC  _MSGRp
+EXTRN	__acrtused:ABS
+EXTRN	_GETTIME:FAR
+EXTRN	_strcpy:NEAR
+EXTRN	_DrawLine:FAR
+EXTRN	_strlen:NEAR
+EXTRN	_RectCopy:FAR
+EXTRN	_RpPrint:FAR
+EXTRN	_strncpy:NEAR
+EXTRN	_MakeEMSFileBlock:NEAR
+EXTRN	_RectFill:FAR
+EXTRN	_MapEmsFile:NEAR
+EXTRN	_fmemcpy:NEAR
+EXTRN	_mprintf:NEAR
+EXTRN	_Sound:NEAR
+EXTRN	_itoa:NEAR
+EXTRN	_ltoa:NEAR
+EXTRN	_strcat:NEAR
+_BSS      SEGMENT
+COMM NEAR	_HudMsg:	BYTE:	 300
+COMM NEAR	_MsgCount:	BYTE:	 10
+COMM NEAR	_MsgSrc:	BYTE:	 10
+EXTRN	_landingstatus:WORD
+EXTRN	_Rp3D:WORD
+EXTRN	_Rp1:WORD
+EXTRN	_OurAlt:WORD
+EXTRN	_OurHead:WORD
+EXTRN	_Knots:WORD
+EXTRN	_GRPAGE0:BYTE
+EXTRN	_BackSeat:WORD
+EXTRN	_MSGDETAIL:WORD
+COMM NEAR	_ntmp:	BYTE:	 10
+EXTRN	_View:WORD
+EXTRN	_Speedy:WORD
+EXTRN	_ejected:WORD
+_BSS      ENDS
+_DATA      SEGMENT
+	ORG	$+2
+$SG1077	DB	0aH,  0dH,  00H
+$SG1108	DB	'MSG.EMS',  00H
+	ORG	$+155
+$SG1213	DB	'HEADING     ALTITUDE       AIRSPEED     ',  00H
+$SG1217	DB	'X ',  00H
+	ORG	$-212
+_MsgOnScreen	DW	00H
+	ORG	$+12
+_MSGRp	DW	01H
+	DW	00H
+	DW	00H
+	DW	013fH
+	DW	0c7H
+	DW	02H
+	DW	02H
+	DW	00H
+	DW	01H
+_MRp	DW	DGROUP:_MSGRp
+_lastmsgview	DW	0ffffH
+_LastMsgSeat	DW	0ffffH
+_newmsg	DW	00H
+_MyMSG	DB	00H
+ 	DB	119 DUP(0)
+
+_MyMSGTYP	DW	00H
+_msgtime	DW	00H
+_Mupdate	DW	00H
+_MsgEMS	DW	00H
+_DATA      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** #include <dos.h>
+;|*** #include "library.h"
+;|*** #include "f15defs.h"
+;|*** #include "world.h"
+;|*** #include "sdata.h"
+;|*** #include "cockpit.h"
+;|*** #include <string.h>
+;|*** #include "planeai.h"
+;|*** #include "sounds.h"
+;|*** 
+;|*** #define MAXMESSAGES 5
+;|*** #define MAXMSGLEN   60
+;|*** 
+;|*** char    HudMsg[MAXMESSAGES][MAXMSGLEN];
+;|*** int     MsgCount[MAXMESSAGES];
+;|*** int		MsgSrc[MAXMESSAGES];
+;|*** 
+;|*** int MsgOnScreen=0;
+;|*** 
+;|*** extern	RPS		*Rp3D, *Rp2,*Rp1,*Rp3;
+;|*** extern  int     FrameRate;
+;|*** extern  int     GettingMsg;
+;|*** extern  int     View;
+;|*** 
+;|*** extern	UWORD	OurAlt;
+;|*** extern  long	RadarAlt;
+;|*** extern	int	    OurHead;
+;|*** extern  int     Knots;
+;|*** extern	UWORD	GRPAGE0[];
+;|*** extern  int     BackSeat;
+;|*** extern int MSGDETAIL;
+;|*** 
+;|*** 
+;|*** //***************************************************************************
+;|*** Messages()
+;|*** {
+; Line 36
+	PUBLIC	_Messages
+_Messages	PROC NEAR
+;|*** 	if ((View!=PADLOCK) && (View!=PILOT))
+; Line 37
+	*** 000000	83 3e 00 00 47 		cmp	WORD PTR _View,71
+	*** 000005	74 0a 			je	$I1066
+	*** 000007	83 3e 00 00 48 		cmp	WORD PTR _View,72
+	*** 00000c	74 03 			je	$I1066
+;|*** 		MyMessages();
+; Line 38
+	*** 00000e	e8 00 00 		call	_MyMessages
+;|*** }
+; Line 39
+					$I1066:
+	*** 000011	c3 			ret	
+
+_Messages	ENDP
+;|*** 
+;|*** //***************************************************************************
+;|*** Message(char *s,int src)
+;|*** {
+; Line 43
+	PUBLIC	_Message
+_Message	PROC NEAR
+	*** 000012	55 			push	bp
+	*** 000013	8b ec 			mov	bp,sp
+	*** 000015	83 ec 06 		sub	sp,6
+;	s = 4
+;	src = 6
+;	i = -6
+;	min = -4
+;	slot = -2
+;|***     int i, min, slot;
+;|*** 
+;|***     if (ejected) return(1);
+; Line 46
+	*** 000018	83 3e 00 00 00 		cmp	WORD PTR _ejected,0
+	*** 00001d	74 07 			je	$I1075
+	*** 00001f	b8 01 00 		mov	ax,1
+	*** 000022	8b e5 			mov	sp,bp
+	*** 000024	5d 			pop	bp
+	*** 000025	c3 			ret	
+					$I1075:
+	*** 000026	ff 76 04 		push	WORD PTR [bp+4]	;s
+	*** 000029	e8 00 00 		call	_mprintf
+	*** 00002c	83 c4 02 		add	sp,2
+;|*** 
+;|*** 	mprintf(s);
+;|*** 	mprintf("\n\r");
+; Line 49
+	*** 00002f	b8 02 00 		mov	ax,OFFSET DGROUP:$SG1077
+	*** 000032	50 			push	ax
+	*** 000033	e8 00 00 		call	_mprintf
+	*** 000036	83 c4 02 		add	sp,2
+;|*** 
+;|*** 	if (MSGDETAIL==3) return(0);
+; Line 51
+	*** 000039	83 3e 00 00 03 		cmp	WORD PTR _MSGDETAIL,3
+	*** 00003e	75 06 			jne	$I1078
+					$L20002:
+	*** 000040	2b c0 			sub	ax,ax
+	*** 000042	8b e5 			mov	sp,bp
+	*** 000044	5d 			pop	bp
+	*** 000045	c3 			ret	
+					$I1078:
+	*** 000046	83 3e 00 00 02 		cmp	WORD PTR _MSGDETAIL,2
+	*** 00004b	75 06 			jne	$I1079
+	*** 00004d	83 7e 06 04 		cmp	WORD PTR [bp+6],4	;src
+	*** 000051	74 ed 			je	$L20002
+					$I1079:
+	*** 000053	83 3e 00 00 01 		cmp	WORD PTR _MSGDETAIL,1
+	*** 000058	75 06 			jne	$I1080
+	*** 00005a	83 7e 06 02 		cmp	WORD PTR [bp+6],2	;src
+	*** 00005e	74 e0 			je	$L20002
+					$I1080:
+	*** 000060	ff 76 06 		push	WORD PTR [bp+6]	;src
+	*** 000063	ff 76 04 		push	WORD PTR [bp+4]	;s
+	*** 000066	e8 00 00 		call	_MyMessage
+	*** 000069	83 c4 04 		add	sp,4
+;|*** 	if ((MSGDETAIL==2) && (src==GAME_MSG)) return(0);
+;|*** 	if ((MSGDETAIL==1) && (src==RIO_MSG)) return(0);
+;|*** 	MyMessage(s,src);
+;|*** }
+; Line 55
+	*** 00006c	8b e5 			mov	sp,bp
+	*** 00006e	5d 			pop	bp
+	*** 00006f	c3 			ret	
+
+_Message	ENDP
+;|*** 
+;|*** //***************************************************************************
+;|*** MsgBox (Len, StartX, StartY)
+;|*** {
+; Line 59
+	PUBLIC	_MsgBox
+_MsgBox	PROC NEAR
+	*** 000070	55 			push	bp
+	*** 000071	8b ec 			mov	bp,sp
+	*** 000073	56 			push	si
+;	Len = 4
+;	StartX = 6
+;	StartY = 8
+;|***     RectFill (Rp3D, StartX-1, StartY-1, Len+1+1, 7, LGREY);
+; Line 60
+	*** 000074	b8 07 00 		mov	ax,7
+	*** 000077	50 			push	ax
+	*** 000078	50 			push	ax
+	*** 000079	8b 46 04 		mov	ax,WORD PTR [bp+4]	;Len
+	*** 00007c	05 02 00 		add	ax,2
+	*** 00007f	50 			push	ax
+	*** 000080	8b 46 08 		mov	ax,WORD PTR [bp+8]	;StartY
+	*** 000083	48 			dec	ax
+	*** 000084	50 			push	ax
+	*** 000085	8b 46 06 		mov	ax,WORD PTR [bp+6]	;StartX
+	*** 000088	48 			dec	ax
+	*** 000089	50 			push	ax
+	*** 00008a	ff 36 00 00 		push	WORD PTR _Rp3D
+	*** 00008e	9a 00 00 00 00 		call	FAR PTR _RectFill
+	*** 000093	83 c4 0c 		add	sp,12
+;|***     DrawLine (Rp3D, StartX-2, StartY-2, StartX+Len+1, StartY-2, WHITE);
+; Line 61
+	*** 000096	8b 76 08 		mov	si,WORD PTR [bp+8]	;StartY
+	*** 000099	83 ee 02 		sub	si,2
+	*** 00009c	b8 0f 00 		mov	ax,15
+	*** 00009f	50 			push	ax
+	*** 0000a0	56 			push	si
+	*** 0000a1	8b 46 06 		mov	ax,WORD PTR [bp+6]	;StartX
+	*** 0000a4	03 46 04 		add	ax,WORD PTR [bp+4]	;Len
+	*** 0000a7	40 			inc	ax
+	*** 0000a8	50 			push	ax
+	*** 0000a9	56 			push	si
+	*** 0000aa	8b 46 06 		mov	ax,WORD PTR [bp+6]	;StartX
+	*** 0000ad	2d 02 00 		sub	ax,2
+	*** 0000b0	50 			push	ax
+	*** 0000b1	ff 36 00 00 		push	WORD PTR _Rp3D
+	*** 0000b5	9a 00 00 00 00 		call	FAR PTR _DrawLine
+	*** 0000ba	83 c4 0c 		add	sp,12
+;|***     DrawLine (Rp3D, StartX-1, StartY+6, StartX+Len+1, StartY+6, DGREY);
+; Line 62
+	*** 0000bd	8b 76 08 		mov	si,WORD PTR [bp+8]	;StartY
+	*** 0000c0	83 c6 06 		add	si,6
+	*** 0000c3	b8 08 00 		mov	ax,8
+	*** 0000c6	50 			push	ax
+	*** 0000c7	56 			push	si
+	*** 0000c8	8b 46 06 		mov	ax,WORD PTR [bp+6]	;StartX
+	*** 0000cb	03 46 04 		add	ax,WORD PTR [bp+4]	;Len
+	*** 0000ce	40 			inc	ax
+	*** 0000cf	50 			push	ax
+	*** 0000d0	56 			push	si
+	*** 0000d1	8b 46 06 		mov	ax,WORD PTR [bp+6]	;StartX
+	*** 0000d4	48 			dec	ax
+	*** 0000d5	50 			push	ax
+	*** 0000d6	ff 36 00 00 		push	WORD PTR _Rp3D
+	*** 0000da	9a 00 00 00 00 		call	FAR PTR _DrawLine
+	*** 0000df	83 c4 0c 		add	sp,12
+;|***     DrawLine (Rp3D, StartX-2, StartY-1, StartX-2,       StartY+5, WHITE);
+; Line 63
+	*** 0000e2	8b 76 06 		mov	si,WORD PTR [bp+6]	;StartX
+	*** 0000e5	83 ee 02 		sub	si,2
+	*** 0000e8	b8 0f 00 		mov	ax,15
+	*** 0000eb	50 			push	ax
+	*** 0000ec	8b 46 08 		mov	ax,WORD PTR [bp+8]	;StartY
+	*** 0000ef	05 05 00 		add	ax,5
+	*** 0000f2	50 			push	ax
+	*** 0000f3	56 			push	si
+	*** 0000f4	8b 46 08 		mov	ax,WORD PTR [bp+8]	;StartY
+	*** 0000f7	48 			dec	ax
+	*** 0000f8	50 			push	ax
+	*** 0000f9	56 			push	si
+	*** 0000fa	ff 36 00 00 		push	WORD PTR _Rp3D
+	*** 0000fe	9a 00 00 00 00 		call	FAR PTR _DrawLine
+	*** 000103	83 c4 0c 		add	sp,12
+;|***     DrawLine (Rp3D, StartX+Len+1, StartY-1, StartX+Len+1, StartY+5, DGREY);
+; Line 64
+	*** 000106	8b 76 06 		mov	si,WORD PTR [bp+6]	;StartX
+	*** 000109	03 76 04 		add	si,WORD PTR [bp+4]	;Len
+	*** 00010c	46 			inc	si
+	*** 00010d	b8 08 00 		mov	ax,8
+	*** 000110	50 			push	ax
+	*** 000111	8b 46 08 		mov	ax,WORD PTR [bp+8]	;StartY
+	*** 000114	05 05 00 		add	ax,5
+	*** 000117	50 			push	ax
+	*** 000118	56 			push	si
+	*** 000119	8b 46 08 		mov	ax,WORD PTR [bp+8]	;StartY
+	*** 00011c	48 			dec	ax
+	*** 00011d	50 			push	ax
+	*** 00011e	56 			push	si
+	*** 00011f	ff 36 00 00 		push	WORD PTR _Rp3D
+	*** 000123	9a 00 00 00 00 		call	FAR PTR _DrawLine
+	*** 000128	83 c4 0c 		add	sp,12
+;|*** }
+; Line 65
+	*** 00012b	5e 			pop	si
+	*** 00012c	5d 			pop	bp
+	*** 00012d	c3 			ret	
+
+_MsgBox	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** RPS MSGRp={1, 0,0, 319,199, JAM3, GREEN, BLACK, 1};
+;|*** RPS *MRp=&MSGRp;
+;|*** 
+;|*** int lastmsgview=-1;
+;|*** int LastMsgSeat=-1;
+;|*** int newmsg=0;
+;|*** char MyMSG[120]={0};
+;|*** int  MyMSGTYP=0;
+;|*** int msgtime=0;
+;|*** int   Mupdate=0;
+;|*** int   MsgEMS=0;
+;|*** MyMessages()
+;|*** {
+; Line 82
+	PUBLIC	_MyMessages
+_MyMessages	PROC NEAR
+	*** 00012e	55 			push	bp
+	*** 00012f	8b ec 			mov	bp,sp
+	*** 000131	83 ec 12 		sub	sp,18
+	*** 000134	56 			push	si
+;	outside = -18
+;	P = -4
+;	SRC = -10
+;	cnt = -6
+;	lastmsg = -14
+;	lastmsgnum = -12
+;	msgplace = -16
+;|***    int   outside;
+;|***    char far *P;
+;|***    char far *SRC;
+;|***    int cnt, lastmsg, lastmsgnum;
+;|***    int msgplace;
+;|*** 
+;|*** 	if (MsgEMS==0) {
+; Line 89
+	*** 000135	83 3e a6 00 00 		cmp	WORD PTR _MsgEMS,0
+	*** 00013a	75 1b 			jne	$I1107
+;|*** 	// try to get ems for messages
+;|*** 		if ((MsgEMS=MakeEMSFileBlock("MSG.EMS",(320*16/16) ))==0)
+; Line 91
+	*** 00013c	b8 40 01 		mov	ax,320
+	*** 00013f	50 			push	ax
+	*** 000140	b8 05 00 		mov	ax,OFFSET DGROUP:$SG1108
+	*** 000143	50 			push	ax
+	*** 000144	e8 00 00 		call	_MakeEMSFileBlock
+	*** 000147	83 c4 04 		add	sp,4
+	*** 00014a	a3 a6 00 		mov	_MsgEMS,ax
+	*** 00014d	0b c0 			or	ax,ax
+	*** 00014f	75 06 			jne	$I1107
+;|*** 			MsgEMS=-1; // cant get it no inside messages !!!!
+; Line 92
+	*** 000151	c7 06 a6 00 ff ff 	mov	WORD PTR _MsgEMS,-1
+;|*** 	}
+; Line 93
+					$I1107:
+;|*** 
+;|*** 	Rp1->Length1=199;
+; Line 95
+	*** 000157	8b 1e 00 00 		mov	bx,_Rp1
+	*** 00015b	c7 47 08 c7 00 		mov	WORD PTR [bx+8],199
+;|*** 
+;|*** 	switch (View) {
+; Line 97
+	*** 000160	a1 00 00 		mov	ax,_View
+	*** 000163	0b c0 			or	ax,ax
+	*** 000165	7c 05 			jl	$SD1114
+	*** 000167	3d 05 00 		cmp	ax,5
+	*** 00016a	7e 08 			jle	$SC1113
+					$SD1114:
+;|*** 		case REARRIGHT:
+;|*** 		case REARLEFT:
+;|*** 		case FRONT:
+;|*** 		case DOWN:
+;|*** 		case RIGHT:
+;|*** 		case LEFT:
+;|***     		outside=0;
+;|***     		break;
+;|*** 		default:
+;|***     		outside=1;
+; Line 107
+	*** 00016c	c7 46 ee 01 00 		mov	WORD PTR [bp-18],1	;outside
+;|*** 	}
+; Line 108
+	*** 000171	eb 06 			jmp	SHORT $SB1110
+	*** 000173	90 			nop	
+					$SC1113:
+;|***     		outside=0;
+; Line 104
+	*** 000174	c7 46 ee 00 00 		mov	WORD PTR [bp-18],0	;outside
+;|***     		break;
+; Line 105
+					$SB1110:
+;|*** 		default:
+;|***     		outside=1;
+;|*** 	}
+;|*** 
+;|*** 	if ((lastmsgview!=View)||(BackSeat!=LastMsgSeat)) {
+; Line 110
+	*** 000179	a1 00 00 		mov	ax,_View
+	*** 00017c	39 06 22 00 		cmp	_lastmsgview,ax
+	*** 000180	75 09 			jne	$I1116
+	*** 000182	a1 24 00 		mov	ax,_LastMsgSeat
+	*** 000185	39 06 00 00 		cmp	_BackSeat,ax
+	*** 000189	74 4e 			je	$I1115
+					$I1116:
+;|*** 		lastmsgview=View;
+; Line 111
+	*** 00018b	a1 00 00 		mov	ax,_View
+	*** 00018e	a3 22 00 		mov	_lastmsgview,ax
+;|*** 		LastMsgSeat=BackSeat;
+; Line 112
+	*** 000191	a1 00 00 		mov	ax,_BackSeat
+	*** 000194	a3 24 00 		mov	_LastMsgSeat,ax
+;|*** 		if (outside==0) {
+; Line 113
+	*** 000197	83 7e ee 00 		cmp	WORD PTR [bp-18],0	;outside
+	*** 00019b	75 36 			jne	$I1117
+;|***     		// save the cockpit mask here
+;|***     		FP_SEG(P)=MapEmsFile(MsgEMS,0);
+; Line 115
+	*** 00019d	2b c0 			sub	ax,ax
+	*** 00019f	50 			push	ax
+	*** 0001a0	ff 36 a6 00 		push	WORD PTR _MsgEMS
+	*** 0001a4	e8 00 00 		call	_MapEmsFile
+	*** 0001a7	83 c4 04 		add	sp,4
+	*** 0001aa	89 46 fe 		mov	WORD PTR [bp-2],ax
+;|***     		FP_OFF(P)=0;
+; Line 116
+	*** 0001ad	c7 46 fc 00 00 		mov	WORD PTR [bp-4],0	;P
+;|***     		FP_SEG(SRC)=GRPAGE0[0];
+; Line 117
+	*** 0001b2	a1 00 00 		mov	ax,WORD PTR _GRPAGE0
+	*** 0001b5	89 46 f8 		mov	WORD PTR [bp-8],ax
+;|***     		FP_OFF(SRC)=192*320;
+; Line 118
+	*** 0001b8	c7 46 f6 00 f0 		mov	WORD PTR [bp-10],-4096	;SRC
+;|***     		fmemcpy(SRC,P,320*8);
+; Line 119
+	*** 0001bd	b8 00 0a 		mov	ax,2560
+	*** 0001c0	50 			push	ax
+	*** 0001c1	ff 76 fe 		push	WORD PTR [bp-2]
+	*** 0001c4	ff 76 fc 		push	WORD PTR [bp-4]	;P
+	*** 0001c7	ff 76 f8 		push	WORD PTR [bp-8]
+	*** 0001ca	ff 76 f6 		push	WORD PTR [bp-10]	;SRC
+	*** 0001cd	e8 00 00 		call	_fmemcpy
+	*** 0001d0	83 c4 0a 		add	sp,10
+;|*** 		}
+; Line 120
+;|*** 		Mupdate=1;
+; Line 121
+					$I1117:
+	*** 0001d3	c7 06 a4 00 01 00 	mov	WORD PTR _Mupdate,1
+;|*** 	}
+; Line 122
+;|*** 
+;|*** 
+;|*** 	if (outside) {
+; Line 125
+					$I1115:
+	*** 0001d9	83 7e ee 00 		cmp	WORD PTR [bp-18],0	;outside
+	*** 0001dd	74 6d 			je	$I1120
+;|*** 		if (Mupdate) {
+; Line 126
+	*** 0001df	83 3e a4 00 00 		cmp	WORD PTR _Mupdate,0
+	*** 0001e4	74 44 			je	$I1121
+;|***     		OutSideMSGBox(MRp);
+; Line 127
+	*** 0001e6	ff 36 20 00 		push	WORD PTR _MRp
+	*** 0001ea	e8 00 00 		call	_OutSideMSGBox
+	*** 0001ed	83 c4 02 		add	sp,2
+;|***     		OutSideHeading(MRp);
+; Line 128
+	*** 0001f0	ff 36 20 00 		push	WORD PTR _MRp
+	*** 0001f4	e8 00 00 		call	_OutSideHeading
+	*** 0001f7	83 c4 02 		add	sp,2
+;|***     		Mupdate=0;
+; Line 129
+	*** 0001fa	c7 06 a4 00 00 00 	mov	WORD PTR _Mupdate,0
+;|*** 			RectCopy(MRp,0,170,320,30,Rp1,0,170);
+; Line 130
+	*** 000200	b8 aa 00 		mov	ax,170
+	*** 000203	50 			push	ax
+	*** 000204	2b c0 			sub	ax,ax
+	*** 000206	50 			push	ax
+	*** 000207	ff 36 00 00 		push	WORD PTR _Rp1
+	*** 00020b	b8 1e 00 		mov	ax,30
+	*** 00020e	50 			push	ax
+	*** 00020f	b8 40 01 		mov	ax,320
+	*** 000212	50 			push	ax
+	*** 000213	b8 aa 00 		mov	ax,170
+					$L20007:
+	*** 000216	50 			push	ax
+	*** 000217	2b c0 			sub	ax,ax
+	*** 000219	50 			push	ax
+	*** 00021a	ff 36 20 00 		push	WORD PTR _MRp
+	*** 00021e	9a 00 00 00 00 		call	FAR PTR _RectCopy
+	*** 000223	83 c4 10 		add	sp,16
+;|*** 		} else {
+; Line 131
+	*** 000226	e9 af 00 		jmp	$I1128
+	*** 000229	90 			nop	
+					$I1121:
+;|*** 			OutSideHeading(MRp);
+; Line 132
+	*** 00022a	ff 36 20 00 		push	WORD PTR _MRp
+	*** 00022e	e8 00 00 		call	_OutSideHeading
+	*** 000231	83 c4 02 		add	sp,2
+;|*** 			RectCopy(MRp,0,176,320,20,Rp1,0,176);
+; Line 133
+	*** 000234	b8 b0 00 		mov	ax,176
+	*** 000237	50 			push	ax
+	*** 000238	2b c0 			sub	ax,ax
+	*** 00023a	50 			push	ax
+	*** 00023b	ff 36 00 00 		push	WORD PTR _Rp1
+	*** 00023f	b8 14 00 		mov	ax,20
+	*** 000242	50 			push	ax
+	*** 000243	b8 40 01 		mov	ax,320
+	*** 000246	50 			push	ax
+	*** 000247	b8 b0 00 		mov	ax,176
+	*** 00024a	eb ca 			jmp	SHORT $L20007
+					$I1120:
+;|*** 		}
+;|*** 	} else {
+; Line 135
+;|***       if (MsgEMS<0) return(0);
+; Line 136
+	*** 00024c	83 3e a6 00 00 		cmp	WORD PTR _MsgEMS,0
+	*** 000251	7d 07 			jge	$I1126
+	*** 000253	2b c0 			sub	ax,ax
+	*** 000255	5e 			pop	si
+	*** 000256	8b e5 			mov	sp,bp
+	*** 000258	5d 			pop	bp
+	*** 000259	c3 			ret	
+					$I1126:
+	*** 00025a	83 3e a4 00 00 		cmp	WORD PTR _Mupdate,0
+	*** 00025f	74 77 			je	$I1128
+;|***       if (Mupdate) {
+;|***          Mupdate=0;
+; Line 138
+	*** 000261	c7 06 a4 00 00 00 	mov	WORD PTR _Mupdate,0
+;|***          if (MyMSG[0]) {
+; Line 139
+	*** 000267	80 3e 28 00 00 		cmp	BYTE PTR _MyMSG,0
+	*** 00026c	74 6a 			je	$I1128
+;|***             InSideMSGBox(MRp);
+; Line 140
+	*** 00026e	ff 36 20 00 		push	WORD PTR _MRp
+	*** 000272	e8 00 00 		call	_InSideMSGBox
+	*** 000275	83 c4 02 		add	sp,2
+;|***             // copy to msg memory here
+;|***             FP_SEG(P)=MapEmsFile( MsgEMS,0);
+; Line 142
+	*** 000278	2b c0 			sub	ax,ax
+	*** 00027a	50 			push	ax
+	*** 00027b	ff 36 a6 00 		push	WORD PTR _MsgEMS
+	*** 00027f	e8 00 00 		call	_MapEmsFile
+	*** 000282	83 c4 04 		add	sp,4
+	*** 000285	89 46 fe 		mov	WORD PTR [bp-2],ax
+;|***             FP_OFF(P)=320*8;
+; Line 143
+	*** 000288	c7 46 fc 00 0a 		mov	WORD PTR [bp-4],2560	;P
+;|***             FP_SEG(SRC)= GRPAGE0[MRp->PageNr];
+; Line 144
+	*** 00028d	8b 1e 20 00 		mov	bx,_MRp
+	*** 000291	8b 1f 			mov	bx,WORD PTR [bx]
+	*** 000293	d1 e3 			shl	bx,1
+	*** 000295	8b 87 00 00 		mov	ax,WORD PTR _GRPAGE0[bx]
+	*** 000299	89 46 f8 		mov	WORD PTR [bp-8],ax
+;|***             FP_OFF(SRC)=192*320;
+; Line 145
+	*** 00029c	c7 46 f6 00 f0 		mov	WORD PTR [bp-10],-4096	;SRC
+;|***             fmemcpy(SRC,P,320*8);
+; Line 146
+	*** 0002a1	b8 00 0a 		mov	ax,2560
+	*** 0002a4	50 			push	ax
+	*** 0002a5	ff 76 fe 		push	WORD PTR [bp-2]
+	*** 0002a8	ff 76 fc 		push	WORD PTR [bp-4]	;P
+	*** 0002ab	ff 76 f8 		push	WORD PTR [bp-8]
+	*** 0002ae	ff 76 f6 		push	WORD PTR [bp-10]	;SRC
+	*** 0002b1	e8 00 00 		call	_fmemcpy
+	*** 0002b4	83 c4 0a 		add	sp,10
+;|***             // then copy to real screen !!
+;|***             FP_SEG(SRC)= GRPAGE0[0];
+; Line 148
+	*** 0002b7	a1 00 00 		mov	ax,WORD PTR _GRPAGE0
+	*** 0002ba	89 46 f8 		mov	WORD PTR [bp-8],ax
+;|***             FP_OFF(SRC)=192*320;
+; Line 149
+	*** 0002bd	c7 46 f6 00 f0 		mov	WORD PTR [bp-10],-4096	;SRC
+;|***             fmemcpy(P,SRC,320*8);
+; Line 150
+	*** 0002c2	b8 00 0a 		mov	ax,2560
+	*** 0002c5	50 			push	ax
+	*** 0002c6	ff 76 f8 		push	WORD PTR [bp-8]
+	*** 0002c9	ff 76 f6 		push	WORD PTR [bp-10]	;SRC
+	*** 0002cc	ff 76 fe 		push	WORD PTR [bp-2]
+	*** 0002cf	ff 76 fc 		push	WORD PTR [bp-4]	;P
+	*** 0002d2	e8 00 00 		call	_fmemcpy
+	*** 0002d5	83 c4 0a 		add	sp,10
+;|***             }
+; Line 151
+;|***       }
+; Line 152
+					$I1128:
+;|*** 
+;|*** 	  if (MyMSG[0]) {
+; Line 154
+;|*** /*
+;|***          // copy the msg memory here
+;|***          FP_SEG(P)=MapEmsFile( MsgEMS,0);
+;|***          FP_OFF(P)=320*8;
+;|***          FP_SEG(SRC)= GRPAGE0[MRp->PageNr];
+;|***          FP_OFF(SRC)=192*320;
+;|***          fmemcpy(P,SRC,320*8);
+;|*** */
+;|*** 	  }
+; Line 163
+;|*** 	}
+; Line 164
+;|*** 
+;|*** 	if (msgtime) {
+; Line 166
+	*** 0002d8	83 3e a2 00 00 		cmp	WORD PTR _msgtime,0
+	*** 0002dd	75 03 			jne	$JCC733
+	*** 0002df	e9 9c 00 		jmp	$FB1148
+					$JCC733:
+;|*** 		if ((msgtime-GETTIME ())<0) {
+; Line 167
+	*** 0002e2	9a 00 00 00 00 		call	FAR PTR _GETTIME
+	*** 0002e7	39 06 a2 00 		cmp	_msgtime,ax
+	*** 0002eb	7c 03 			jl	$JCC747
+	*** 0002ed	e9 8e 00 		jmp	$FB1148
+					$JCC747:
+;|*** 
+;|*** 			lastmsg = 0;
+; Line 169
+	*** 0002f0	c7 46 f2 00 00 		mov	WORD PTR [bp-14],0	;lastmsg
+;|*** 			lastmsgnum = 0;
+; Line 170
+	*** 0002f5	c7 46 f4 00 00 		mov	WORD PTR [bp-12],0	;lastmsgnum
+;|*** 			for(cnt = 0; cnt < MAXMESSAGES; cnt ++) {
+; Line 171
+	*** 0002fa	c7 46 fa 00 00 		mov	WORD PTR [bp-6],0	;cnt
+					$FC1134:
+;|*** 				if(MsgCount[cnt] == 1) {
+; Line 172
+	*** 0002ff	8b 5e fa 		mov	bx,WORD PTR [bp-6]	;cnt
+	*** 000302	d1 e3 			shl	bx,1
+	*** 000304	83 bf 00 00 01 		cmp	WORD PTR _MsgCount[bx],1
+	*** 000309	75 06 			jne	$I1136
+;|*** 					lastmsgnum = cnt;
+; Line 173
+	*** 00030b	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;cnt
+	*** 00030e	89 46 f4 		mov	WORD PTR [bp-12],ax	;lastmsgnum
+;|*** 				}
+; Line 174
+;|*** 				if(MsgCount[cnt] > lastmsg) {
+; Line 175
+					$I1136:
+	*** 000311	8b 5e fa 		mov	bx,WORD PTR [bp-6]	;cnt
+	*** 000314	d1 e3 			shl	bx,1
+	*** 000316	8b b7 00 00 		mov	si,WORD PTR _MsgCount[bx]
+	*** 00031a	39 76 f2 		cmp	WORD PTR [bp-14],si	;lastmsg
+	*** 00031d	7d 03 			jge	$L20004
+;|*** 					lastmsg = MsgCount[cnt];
+; Line 176
+	*** 00031f	89 76 f2 		mov	WORD PTR [bp-14],si	;lastmsg
+;|*** 				}
+; Line 177
+;|*** 			}
+; Line 178
+					$L20004:
+	*** 000322	ff 46 fa 		inc	WORD PTR [bp-6]	;cnt
+	*** 000325	83 7e fa 05 		cmp	WORD PTR [bp-6],5	;cnt
+	*** 000329	7c d4 			jl	$FC1134
+;|*** 			if(lastmsg == 0) {
+; Line 179
+	*** 00032b	83 7e f2 00 		cmp	WORD PTR [bp-14],0	;lastmsg
+	*** 00032f	75 6d 			jne	$I1138
+;|*** 	    		if (outside==0) {
+; Line 180
+	*** 000331	83 7e ee 00 		cmp	WORD PTR [bp-18],0	;outside
+	*** 000335	75 36 			jne	$I1139
+;|***     				// put back cockpit mask here
+;|***     				FP_SEG(P)=MapEmsFile( MsgEMS,0);
+; Line 182
+	*** 000337	2b c0 			sub	ax,ax
+	*** 000339	50 			push	ax
+	*** 00033a	ff 36 a6 00 		push	WORD PTR _MsgEMS
+	*** 00033e	e8 00 00 		call	_MapEmsFile
+	*** 000341	83 c4 04 		add	sp,4
+	*** 000344	89 46 fe 		mov	WORD PTR [bp-2],ax
+;|***     				FP_OFF(P)=0;
+; Line 183
+	*** 000347	c7 46 fc 00 00 		mov	WORD PTR [bp-4],0	;P
+;|***     				FP_SEG(SRC)= GRPAGE0[0];
+; Line 184
+	*** 00034c	a1 00 00 		mov	ax,WORD PTR _GRPAGE0
+	*** 00034f	89 46 f8 		mov	WORD PTR [bp-8],ax
+;|*** 	    			FP_OFF(SRC)=192*320;
+; Line 185
+	*** 000352	c7 46 f6 00 f0 		mov	WORD PTR [bp-10],-4096	;SRC
+;|***     				fmemcpy(P,SRC,320*8);
+; Line 186
+	*** 000357	b8 00 0a 		mov	ax,2560
+	*** 00035a	50 			push	ax
+	*** 00035b	ff 76 f8 		push	WORD PTR [bp-8]
+	*** 00035e	ff 76 f6 		push	WORD PTR [bp-10]	;SRC
+	*** 000361	ff 76 fe 		push	WORD PTR [bp-2]
+	*** 000364	ff 76 fc 		push	WORD PTR [bp-4]	;P
+	*** 000367	e8 00 00 		call	_fmemcpy
+	*** 00036a	83 c4 0a 		add	sp,10
+;|*** 				}
+; Line 187
+;|***     			MyMSG[0]=0;
+; Line 188
+					$I1139:
+	*** 00036d	c6 06 28 00 00 		mov	BYTE PTR _MyMSG,0
+;|*** 	    		msgtime=0;
+; Line 189
+	*** 000372	c7 06 a2 00 00 00 	mov	WORD PTR _msgtime,0
+;|***     			Mupdate=1;
+; Line 190
+	*** 000378	c7 06 a4 00 01 00 	mov	WORD PTR _Mupdate,1
+;|*** 			}
+; Line 191
+;|*** 			else {
+; Line 192
+					$FB1148:
+;|***                 Sound(N_RadarSearch, 1,0);
+;|*** 				msgplace = lastmsgnum;
+;|*** 	    		strncpy(MyMSG, HudMsg[msgplace], MAXMSGLEN);
+;|***     			MyMSG[MAXMSGLEN-1]='\0';
+;|*** 				MyMSGTYP=MsgSrc[msgplace];
+;|*** 				if(landingstatus & LANDPLAYERNOW)
+;|*** 					msgtime=GETTIME() + (2*60);      // two seconds per message
+;|*** 				else if(lastmsg > 2)
+;|*** 					msgtime=GETTIME() + (2*60);      // two seconds per message
+;|*** 				else
+;|*** 					msgtime=GETTIME() + (3*60);      // three seconds per message
+;|***     			Mupdate=1;
+;|*** 				HudMsg[msgplace][0] = 0;
+;|*** 				for(cnt = 0; cnt < MAXMESSAGES; cnt ++) {
+;|*** 					if(MsgCount[cnt] > 0)
+;|*** 						MsgCount[cnt] -= 1;
+;|*** 					else
+;|*** 						MsgCount[cnt] = 0;
+;|*** 				}
+;|*** 			}
+; Line 212
+;|*** 		}
+; Line 213
+;|*** 	}
+; Line 214
+;|*** 	MsgOnScreen= (MyMSG[0])?1:0;
+; Line 215
+	*** 00037e	80 3e 28 00 01 		cmp	BYTE PTR _MyMSG,1
+	*** 000383	1b c0 			sbb	ax,ax
+	*** 000385	40 			inc	ax
+	*** 000386	a3 00 00 		mov	_MsgOnScreen,ax
+;|*** 
+;|*** 	if (MsgOnScreen) {
+; Line 217
+	*** 000389	0b c0 			or	ax,ax
+	*** 00038b	75 03 			jne	$JCC907
+	*** 00038d	e9 b2 00 		jmp	$I1151
+					$JCC907:
+;|*** 		Rp1->Length1=191;
+; Line 218
+	*** 000390	8b 1e 00 00 		mov	bx,_Rp1
+	*** 000394	c7 47 08 bf 00 		mov	WORD PTR [bx+8],191
+;|*** 	} else {
+; Line 219
+	*** 000399	5e 			pop	si
+	*** 00039a	8b e5 			mov	sp,bp
+	*** 00039c	5d 			pop	bp
+	*** 00039d	c3 			ret	
+					$I1138:
+;|*** 			else {
+; Line 192
+;|***                 Sound(N_RadarSearch, 1,0);
+; Line 193
+	*** 00039e	2b c0 			sub	ax,ax
+	*** 0003a0	50 			push	ax
+	*** 0003a1	b8 01 00 		mov	ax,1
+	*** 0003a4	50 			push	ax
+	*** 0003a5	b8 11 00 		mov	ax,17
+	*** 0003a8	50 			push	ax
+	*** 0003a9	e8 00 00 		call	_Sound
+	*** 0003ac	83 c4 06 		add	sp,6
+;|*** 				msgplace = lastmsgnum;
+; Line 194
+	*** 0003af	8b 46 f4 		mov	ax,WORD PTR [bp-12]	;lastmsgnum
+	*** 0003b2	89 46 f0 		mov	WORD PTR [bp-16],ax	;msgplace
+;|*** 	    		strncpy(MyMSG, HudMsg[msgplace], MAXMSGLEN);
+; Line 195
+	*** 0003b5	b8 3c 00 		mov	ax,60
+	*** 0003b8	50 			push	ax
+	*** 0003b9	f7 6e f0 		imul	WORD PTR [bp-16]	;msgplace
+	*** 0003bc	05 00 00 		add	ax,OFFSET DGROUP:_HudMsg
+	*** 0003bf	50 			push	ax
+	*** 0003c0	b8 28 00 		mov	ax,OFFSET DGROUP:_MyMSG
+	*** 0003c3	50 			push	ax
+	*** 0003c4	e8 00 00 		call	_strncpy
+	*** 0003c7	83 c4 06 		add	sp,6
+;|***     			MyMSG[MAXMSGLEN-1]='\0';
+; Line 196
+	*** 0003ca	c6 06 63 00 00 		mov	BYTE PTR _MyMSG+59,0
+;|*** 				MyMSGTYP=MsgSrc[msgplace];
+; Line 197
+	*** 0003cf	8b 5e f0 		mov	bx,WORD PTR [bp-16]	;msgplace
+	*** 0003d2	d1 e3 			shl	bx,1
+	*** 0003d4	8b 87 00 00 		mov	ax,WORD PTR _MsgSrc[bx]
+	*** 0003d8	a3 a0 00 		mov	_MyMSGTYP,ax
+;|*** 				if(landingstatus & LANDPLAYERNOW)
+; Line 198
+	*** 0003db	f6 06 00 00 02 		test	BYTE PTR _landingstatus,2
+	*** 0003e0	74 0a 			je	$I1142
+;|*** 					msgtime=GETTIME() + (2*60);      // two seconds per message
+; Line 199
+					$L20008:
+	*** 0003e2	9a 00 00 00 00 		call	FAR PTR _GETTIME
+	*** 0003e7	05 78 00 		add	ax,120
+	*** 0003ea	eb 0e 			jmp	SHORT $L20005
+					$I1142:
+;|*** 				else if(lastmsg > 2)
+; Line 200
+	*** 0003ec	83 7e f2 02 		cmp	WORD PTR [bp-14],2	;lastmsg
+	*** 0003f0	7f f0 			jg	$L20008
+;|*** 					msgtime=GETTIME() + (2*60);      // two seconds per message
+;|*** 				else
+;|*** 					msgtime=GETTIME() + (3*60);      // three seconds per message
+; Line 203
+	*** 0003f2	9a 00 00 00 00 		call	FAR PTR _GETTIME
+	*** 0003f7	05 b4 00 		add	ax,180
+					$L20005:
+	*** 0003fa	a3 a2 00 		mov	_msgtime,ax
+;|***     			Mupdate=1;
+; Line 204
+	*** 0003fd	c7 06 a4 00 01 00 	mov	WORD PTR _Mupdate,1
+;|*** 				HudMsg[msgplace][0] = 0;
+; Line 205
+	*** 000403	b8 3c 00 		mov	ax,60
+	*** 000406	f7 6e f0 		imul	WORD PTR [bp-16]	;msgplace
+	*** 000409	8b d8 			mov	bx,ax
+	*** 00040b	c6 87 00 00 00 		mov	BYTE PTR _HudMsg[bx],0
+;|*** 				for(cnt = 0; cnt < MAXMESSAGES; cnt ++) {
+; Line 206
+	*** 000410	c7 46 fa 00 00 		mov	WORD PTR [bp-6],0	;cnt
+	*** 000415	eb 0f 			jmp	SHORT $F1146
+	*** 000417	90 			nop	
+					$I1149:
+;|*** 					if(MsgCount[cnt] > 0)
+;|*** 						MsgCount[cnt] -= 1;
+;|*** 					else
+;|*** 						MsgCount[cnt] = 0;
+; Line 210
+	*** 000418	8b 5e fa 		mov	bx,WORD PTR [bp-6]	;cnt
+	*** 00041b	d1 e3 			shl	bx,1
+	*** 00041d	c7 87 00 00 00 00 	mov	WORD PTR _MsgCount[bx],0
+;|*** 				}
+; Line 211
+					$FC1147:
+	*** 000423	ff 46 fa 		inc	WORD PTR [bp-6]	;cnt
+					$F1146:
+	*** 000426	83 7e fa 05 		cmp	WORD PTR [bp-6],5	;cnt
+	*** 00042a	7c 03 			jl	$JCC1066
+	*** 00042c	e9 4f ff 		jmp	$FB1148
+					$JCC1066:
+;|*** 					if(MsgCount[cnt] > 0)
+; Line 207
+	*** 00042f	8b 76 fa 		mov	si,WORD PTR [bp-6]	;cnt
+	*** 000432	d1 e6 			shl	si,1
+	*** 000434	81 c6 00 00 		add	si,OFFSET DGROUP:_MsgCount
+	*** 000438	83 3c 00 		cmp	WORD PTR [si],0
+	*** 00043b	7e db 			jle	$I1149
+;|*** 						MsgCount[cnt] -= 1;
+; Line 208
+	*** 00043d	ff 0c 			dec	WORD PTR [si]
+;|*** 					else
+; Line 209
+	*** 00043f	eb e2 			jmp	SHORT $FC1147
+	*** 000441	90 			nop	
+					$I1151:
+;|*** 						MsgCount[cnt] = 0;
+;|*** 				}
+;|*** 			}
+;|*** 		}
+;|*** 	}
+;|*** 	MsgOnScreen= (MyMSG[0])?1:0;
+;|*** 
+;|*** 	if (MsgOnScreen) {
+;|*** 		Rp1->Length1=191;
+;|*** 	} else {
+; Line 219
+;|*** 		Rp1->Length1=199;
+; Line 220
+	*** 000442	8b 1e 00 00 		mov	bx,_Rp1
+	*** 000446	c7 47 08 c7 00 		mov	WORD PTR [bx+8],199
+;|*** 	}
+; Line 221
+;|*** }
+; Line 222
+	*** 00044b	5e 			pop	si
+	*** 00044c	8b e5 			mov	sp,bp
+	*** 00044e	5d 			pop	bp
+	*** 00044f	c3 			ret	
+
+_MyMessages	ENDP
+;|*** 
+;|*** MyMessage(char *s,int src)
+;|*** {
+; Line 225
+	PUBLIC	_MyMessage
+_MyMessage	PROC NEAR
+	*** 000450	55 			push	bp
+	*** 000451	8b ec 			mov	bp,sp
+	*** 000453	83 ec 0e 		sub	sp,14
+	*** 000456	56 			push	si
+;	s = 4
+;	src = 6
+;	i = -8
+;	min = -4
+;	slot = -2
+;	cnt = -6
+;	lastmsg = -12
+;	lastmsgnum = -10
+;	msgplace = -14
+;|***     int i, min, slot;
+;|*** 	int cnt, lastmsg, lastmsgnum;
+;|*** 	int msgplace;
+;|*** 
+;|***     if (ejected) return(1);
+; Line 230
+	*** 000457	83 3e 00 00 00 		cmp	WORD PTR _ejected,0
+	*** 00045c	74 08 			je	$I1163
+	*** 00045e	b8 01 00 		mov	ax,1
+	*** 000461	5e 			pop	si
+	*** 000462	8b e5 			mov	sp,bp
+	*** 000464	5d 			pop	bp
+	*** 000465	c3 			ret	
+					$I1163:
+	*** 000466	83 3e a2 00 00 		cmp	WORD PTR _msgtime,0
+	*** 00046b	74 0c 			je	$I1166
+	*** 00046d	83 7e 06 05 		cmp	WORD PTR [bp+6],5	;src
+	*** 000471	74 06 			je	$I1166
+	*** 000473	83 7e 06 06 		cmp	WORD PTR [bp+6],6	;src
+	*** 000477	75 6f 			jne	$I1164
+					$I1166:
+;|*** 
+;|*** 	if((!msgtime) || ((src == RIO_NOW_MSG) || (src == WING_MENU_MSG))) {
+;|***         Sound(N_RadarSearch, 1,0);
+; Line 233
+	*** 000479	2b c0 			sub	ax,ax
+	*** 00047b	50 			push	ax
+	*** 00047c	b8 01 00 		mov	ax,1
+	*** 00047f	50 			push	ax
+	*** 000480	b8 11 00 		mov	ax,17
+	*** 000483	50 			push	ax
+	*** 000484	e8 00 00 		call	_Sound
+	*** 000487	83 c4 06 		add	sp,6
+;|***     	strncpy(MyMSG, s, MAXMSGLEN);
+; Line 234
+	*** 00048a	b8 3c 00 		mov	ax,60
+	*** 00048d	50 			push	ax
+	*** 00048e	ff 76 04 		push	WORD PTR [bp+4]	;s
+	*** 000491	b8 28 00 		mov	ax,OFFSET DGROUP:_MyMSG
+	*** 000494	50 			push	ax
+	*** 000495	e8 00 00 		call	_strncpy
+	*** 000498	83 c4 06 		add	sp,6
+;|***     	MyMSG[MAXMSGLEN-1]='\0';
+; Line 235
+	*** 00049b	c6 06 63 00 00 		mov	BYTE PTR _MyMSG+59,0
+;|*** 		if(src == RIO_NOW_MSG) {
+; Line 236
+	*** 0004a0	83 7e 06 05 		cmp	WORD PTR [bp+6],5	;src
+	*** 0004a4	75 10 			jne	$I1167
+;|*** 			MyMSGTYP= RIO_MSG;
+; Line 237
+	*** 0004a6	c7 06 a0 00 02 00 	mov	WORD PTR _MyMSGTYP,2
+;|*** 			msgtime=GETTIME() + (2*60);      // four seconds per message
+; Line 238
+	*** 0004ac	9a 00 00 00 00 		call	FAR PTR _GETTIME
+	*** 0004b1	05 78 00 		add	ax,120
+	*** 0004b4	eb 24 			jmp	SHORT $L20009
+					$I1167:
+;|*** 		}
+;|*** 		else if(src == WING_MENU_MSG) {
+; Line 240
+	*** 0004b6	83 7e 06 06 		cmp	WORD PTR [bp+6],6	;src
+	*** 0004ba	75 10 			jne	$I1169
+;|*** 			MyMSGTYP=src;
+; Line 241
+	*** 0004bc	8b 46 06 		mov	ax,WORD PTR [bp+6]	;src
+	*** 0004bf	a3 a0 00 		mov	_MyMSGTYP,ax
+;|*** 			msgtime=GETTIME() + (5*60);      // four seconds per message
+; Line 242
+	*** 0004c2	9a 00 00 00 00 		call	FAR PTR _GETTIME
+	*** 0004c7	05 2c 01 		add	ax,300
+	*** 0004ca	eb 0e 			jmp	SHORT $L20009
+					$I1169:
+;|*** 		}
+;|*** 		else {
+; Line 244
+;|*** 			MyMSGTYP=src;
+; Line 245
+	*** 0004cc	8b 46 06 		mov	ax,WORD PTR [bp+6]	;src
+	*** 0004cf	a3 a0 00 		mov	_MyMSGTYP,ax
+;|*** 			msgtime=GETTIME() + (3*60);      // three seconds per message
+; Line 246
+	*** 0004d2	9a 00 00 00 00 		call	FAR PTR _GETTIME
+	*** 0004d7	05 b4 00 		add	ax,180
+					$L20009:
+	*** 0004da	a3 a2 00 		mov	_msgtime,ax
+;|*** 		}
+; Line 247
+;|***     	Mupdate=1;
+; Line 248
+	*** 0004dd	c7 06 a4 00 01 00 	mov	WORD PTR _Mupdate,1
+;|*** 	}
+; Line 249
+;|*** 	else {
+; Line 250
+	*** 0004e3	5e 			pop	si
+	*** 0004e4	8b e5 			mov	sp,bp
+	*** 0004e6	5d 			pop	bp
+	*** 0004e7	c3 			ret	
+					$I1164:
+;|*** 		lastmsg = 0;
+; Line 251
+	*** 0004e8	c7 46 f4 00 00 		mov	WORD PTR [bp-12],0	;lastmsg
+;|*** 		lastmsgnum = 0;
+; Line 252
+	*** 0004ed	c7 46 f6 00 00 		mov	WORD PTR [bp-10],0	;lastmsgnum
+;|*** 		for(cnt = 0; cnt < MAXMESSAGES; cnt ++) {
+; Line 253
+	*** 0004f2	c7 46 fa 00 00 		mov	WORD PTR [bp-6],0	;cnt
+					$FC1173:
+;|*** 			if(MsgCount[cnt] > lastmsg) {
+; Line 254
+	*** 0004f7	8b 5e fa 		mov	bx,WORD PTR [bp-6]	;cnt
+	*** 0004fa	d1 e3 			shl	bx,1
+	*** 0004fc	8b b7 00 00 		mov	si,WORD PTR _MsgCount[bx]
+	*** 000500	39 76 f4 		cmp	WORD PTR [bp-12],si	;lastmsg
+	*** 000503	7d 09 			jge	$L20010
+;|*** 				lastmsg = MsgCount[cnt];
+; Line 255
+	*** 000505	89 76 f4 		mov	WORD PTR [bp-12],si	;lastmsg
+;|*** 				lastmsgnum = cnt;
+; Line 256
+	*** 000508	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;cnt
+	*** 00050b	89 46 f6 		mov	WORD PTR [bp-10],ax	;lastmsgnum
+;|*** 			}
+; Line 257
+;|*** 		}
+; Line 258
+					$L20010:
+	*** 00050e	ff 46 fa 		inc	WORD PTR [bp-6]	;cnt
+	*** 000511	83 7e fa 05 		cmp	WORD PTR [bp-6],5	;cnt
+	*** 000515	7c e0 			jl	$FC1173
+;|*** 		if(lastmsg < MAXMESSAGES) {
+; Line 259
+	*** 000517	83 7e f4 05 		cmp	WORD PTR [bp-12],5	;lastmsg
+	*** 00051b	7d 45 			jge	$I1176
+;|*** 			if(lastmsg == 0)
+; Line 260
+	*** 00051d	83 7e f4 00 		cmp	WORD PTR [bp-12],0	;lastmsg
+	*** 000521	74 0c 			je	$L20013
+;|*** 				msgplace = 0;
+;|*** 			else {
+; Line 262
+;|*** 				msgplace = lastmsgnum + 1;
+; Line 263
+	*** 000523	8b 46 f6 		mov	ax,WORD PTR [bp-10]	;lastmsgnum
+	*** 000526	40 			inc	ax
+	*** 000527	89 46 f2 		mov	WORD PTR [bp-14],ax	;msgplace
+;|*** 				if(msgplace >= MAXMESSAGES)
+; Line 264
+	*** 00052a	3d 05 00 		cmp	ax,5
+	*** 00052d	7c 05 			jl	$I1179
+;|*** 					msgplace = 0;
+; Line 265
+					$L20013:
+	*** 00052f	c7 46 f2 00 00 		mov	WORD PTR [bp-14],0	;msgplace
+;|*** 			}
+; Line 266
+					$I1179:
+;|***     		strncpy(HudMsg[msgplace], s, MAXMSGLEN);
+; Line 267
+	*** 000534	b8 3c 00 		mov	ax,60
+	*** 000537	50 			push	ax
+	*** 000538	ff 76 04 		push	WORD PTR [bp+4]	;s
+	*** 00053b	f7 6e f2 		imul	WORD PTR [bp-14]	;msgplace
+	*** 00053e	05 00 00 		add	ax,OFFSET DGROUP:_HudMsg
+	*** 000541	50 			push	ax
+	*** 000542	e8 00 00 		call	_strncpy
+	*** 000545	83 c4 06 		add	sp,6
+;|*** 			MsgCount[msgplace] = lastmsg + 1;
+; Line 268
+	*** 000548	8b 76 f2 		mov	si,WORD PTR [bp-14]	;msgplace
+	*** 00054b	d1 e6 			shl	si,1
+	*** 00054d	8b 46 f4 		mov	ax,WORD PTR [bp-12]	;lastmsg
+	*** 000550	40 			inc	ax
+	*** 000551	89 84 00 00 		mov	WORD PTR _MsgCount[si],ax
+;|*** 			MsgSrc[msgplace] = src;
+; Line 269
+	*** 000555	8b 46 06 		mov	ax,WORD PTR [bp+6]	;src
+	*** 000558	89 84 00 00 		mov	WORD PTR _MsgSrc[si],ax
+;|*** 		}
+; Line 270
+;|*** 		else {
+; Line 271
+	*** 00055c	5e 			pop	si
+	*** 00055d	8b e5 			mov	sp,bp
+	*** 00055f	5d 			pop	bp
+	*** 000560	c3 			ret	
+	*** 000561	90 			nop	
+					$I1176:
+;|***         	Sound(N_RadarSearch, 1,0);
+; Line 272
+	*** 000562	2b c0 			sub	ax,ax
+	*** 000564	50 			push	ax
+	*** 000565	b8 01 00 		mov	ax,1
+	*** 000568	50 			push	ax
+	*** 000569	b8 11 00 		mov	ax,17
+	*** 00056c	50 			push	ax
+	*** 00056d	e8 00 00 		call	_Sound
+	*** 000570	83 c4 06 		add	sp,6
+;|*** 			msgplace = lastmsgnum + 1;
+; Line 273
+	*** 000573	8b 46 f6 		mov	ax,WORD PTR [bp-10]	;lastmsgnum
+	*** 000576	40 			inc	ax
+	*** 000577	89 46 f2 		mov	WORD PTR [bp-14],ax	;msgplace
+;|*** 			if(msgplace >= MAXMESSAGES)
+; Line 274
+	*** 00057a	3d 05 00 		cmp	ax,5
+	*** 00057d	7c 05 			jl	$I1181
+;|*** 				msgplace = 0;
+; Line 275
+	*** 00057f	c7 46 f2 00 00 		mov	WORD PTR [bp-14],0	;msgplace
+;|*** 	    	strncpy(MyMSG, HudMsg[msgplace], MAXMSGLEN);
+; Line 276
+					$I1181:
+	*** 000584	b8 3c 00 		mov	ax,60
+	*** 000587	50 			push	ax
+	*** 000588	f7 6e f2 		imul	WORD PTR [bp-14]	;msgplace
+	*** 00058b	05 00 00 		add	ax,OFFSET DGROUP:_HudMsg
+	*** 00058e	50 			push	ax
+	*** 00058f	b8 28 00 		mov	ax,OFFSET DGROUP:_MyMSG
+	*** 000592	50 			push	ax
+	*** 000593	e8 00 00 		call	_strncpy
+	*** 000596	83 c4 06 		add	sp,6
+;|***     		MyMSG[MAXMSGLEN-1]='\0';
+; Line 277
+	*** 000599	c6 06 63 00 00 		mov	BYTE PTR _MyMSG+59,0
+;|*** 			MyMSGTYP=MsgSrc[msgplace];
+; Line 278
+	*** 00059e	8b 5e f2 		mov	bx,WORD PTR [bp-14]	;msgplace
+	*** 0005a1	d1 e3 			shl	bx,1
+	*** 0005a3	8b 87 00 00 		mov	ax,WORD PTR _MsgSrc[bx]
+	*** 0005a7	a3 a0 00 		mov	_MyMSGTYP,ax
+;|*** 			msgtime=GETTIME() + (2*60);      // two seconds per message
+; Line 279
+	*** 0005aa	9a 00 00 00 00 		call	FAR PTR _GETTIME
+	*** 0005af	05 78 00 		add	ax,120
+	*** 0005b2	a3 a2 00 		mov	_msgtime,ax
+;|***     		Mupdate=1;
+; Line 280
+	*** 0005b5	c7 06 a4 00 01 00 	mov	WORD PTR _Mupdate,1
+;|***     		strncpy(HudMsg[msgplace], s, MAXMSGLEN);
+; Line 281
+	*** 0005bb	b8 3c 00 		mov	ax,60
+	*** 0005be	50 			push	ax
+	*** 0005bf	ff 76 04 		push	WORD PTR [bp+4]	;s
+	*** 0005c2	f7 6e f2 		imul	WORD PTR [bp-14]	;msgplace
+	*** 0005c5	05 00 00 		add	ax,OFFSET DGROUP:_HudMsg
+	*** 0005c8	50 			push	ax
+	*** 0005c9	e8 00 00 		call	_strncpy
+	*** 0005cc	83 c4 06 		add	sp,6
+;|*** 			MsgCount[msgplace] = 6;
+; Line 282
+	*** 0005cf	8b 76 f2 		mov	si,WORD PTR [bp-14]	;msgplace
+	*** 0005d2	d1 e6 			shl	si,1
+	*** 0005d4	c7 84 00 00 06 00 	mov	WORD PTR _MsgCount[si],6
+;|*** 			MsgSrc[msgplace] = src;
+; Line 283
+	*** 0005da	8b 46 06 		mov	ax,WORD PTR [bp+6]	;src
+	*** 0005dd	89 84 00 00 		mov	WORD PTR _MsgSrc[si],ax
+;|*** 			for(cnt = 0; cnt < MAXMESSAGES; cnt ++) {
+; Line 284
+	*** 0005e1	c7 46 fa 00 00 		mov	WORD PTR [bp-6],0	;cnt
+					$FC1183:
+;|*** 				MsgCount[cnt] -= 1;
+; Line 285
+	*** 0005e6	8b 5e fa 		mov	bx,WORD PTR [bp-6]	;cnt
+	*** 0005e9	d1 e3 			shl	bx,1
+	*** 0005eb	ff 8f 00 00 		dec	WORD PTR _MsgCount[bx]
+;|*** 			}
+; Line 286
+	*** 0005ef	ff 46 fa 		inc	WORD PTR [bp-6]	;cnt
+	*** 0005f2	83 7e fa 05 		cmp	WORD PTR [bp-6],5	;cnt
+	*** 0005f6	7c ee 			jl	$FC1183
+;|*** 		}
+; Line 287
+;|*** 	}
+; Line 288
+;|*** }
+; Line 289
+	*** 0005f8	5e 			pop	si
+	*** 0005f9	8b e5 			mov	sp,bp
+	*** 0005fb	5d 			pop	bp
+	*** 0005fc	c3 			ret	
+	*** 0005fd	90 			nop	
+
+_MyMessage	ENDP
+;|*** 
+;|*** MBox (RPS *Rp,int StartX, int StartY, int EndX, int EndY)
+;|*** {
+; Line 292
+	PUBLIC	_MBox
+_MBox	PROC NEAR
+	*** 0005fe	55 			push	bp
+	*** 0005ff	8b ec 			mov	bp,sp
+;	Rp = 4
+;	StartX = 6
+;	StartY = 8
+;	EndX = 10
+;	EndY = 12
+;|***     RectFill (Rp, StartX, StartY, EndX-StartX+1,EndY-StartY+1, 17);
+; Line 293
+	*** 000601	b8 11 00 		mov	ax,17
+	*** 000604	50 			push	ax
+	*** 000605	8b 46 0c 		mov	ax,WORD PTR [bp+12]	;EndY
+	*** 000608	2b 46 08 		sub	ax,WORD PTR [bp+8]	;StartY
+	*** 00060b	40 			inc	ax
+	*** 00060c	50 			push	ax
+	*** 00060d	8b 46 0a 		mov	ax,WORD PTR [bp+10]	;EndX
+	*** 000610	2b 46 06 		sub	ax,WORD PTR [bp+6]	;StartX
+	*** 000613	40 			inc	ax
+	*** 000614	50 			push	ax
+	*** 000615	ff 76 08 		push	WORD PTR [bp+8]	;StartY
+	*** 000618	ff 76 06 		push	WORD PTR [bp+6]	;StartX
+	*** 00061b	ff 76 04 		push	WORD PTR [bp+4]	;Rp
+	*** 00061e	9a 00 00 00 00 		call	FAR PTR _RectFill
+	*** 000623	83 c4 0c 		add	sp,12
+;|*** 
+;|***     DrawLine (Rp, StartX, StartY, EndX,StartY,18);
+; Line 295
+	*** 000626	b8 12 00 		mov	ax,18
+	*** 000629	50 			push	ax
+	*** 00062a	ff 76 08 		push	WORD PTR [bp+8]	;StartY
+	*** 00062d	ff 76 0a 		push	WORD PTR [bp+10]	;EndX
+	*** 000630	ff 76 08 		push	WORD PTR [bp+8]	;StartY
+	*** 000633	ff 76 06 		push	WORD PTR [bp+6]	;StartX
+	*** 000636	ff 76 04 		push	WORD PTR [bp+4]	;Rp
+	*** 000639	9a 00 00 00 00 		call	FAR PTR _DrawLine
+	*** 00063e	83 c4 0c 		add	sp,12
+;|***     DrawLine (Rp, EndX,StartY, EndX,EndY,18);
+; Line 296
+	*** 000641	b8 12 00 		mov	ax,18
+	*** 000644	50 			push	ax
+	*** 000645	ff 76 0c 		push	WORD PTR [bp+12]	;EndY
+	*** 000648	ff 76 0a 		push	WORD PTR [bp+10]	;EndX
+	*** 00064b	ff 76 08 		push	WORD PTR [bp+8]	;StartY
+	*** 00064e	ff 76 0a 		push	WORD PTR [bp+10]	;EndX
+	*** 000651	ff 76 04 		push	WORD PTR [bp+4]	;Rp
+	*** 000654	9a 00 00 00 00 		call	FAR PTR _DrawLine
+	*** 000659	83 c4 0c 		add	sp,12
+;|***     DrawLine (Rp, EndX,EndY, StartX,EndY,18);
+; Line 297
+	*** 00065c	b8 12 00 		mov	ax,18
+	*** 00065f	50 			push	ax
+	*** 000660	ff 76 0c 		push	WORD PTR [bp+12]	;EndY
+	*** 000663	ff 76 06 		push	WORD PTR [bp+6]	;StartX
+	*** 000666	ff 76 0c 		push	WORD PTR [bp+12]	;EndY
+	*** 000669	ff 76 0a 		push	WORD PTR [bp+10]	;EndX
+	*** 00066c	ff 76 04 		push	WORD PTR [bp+4]	;Rp
+	*** 00066f	9a 00 00 00 00 		call	FAR PTR _DrawLine
+	*** 000674	83 c4 0c 		add	sp,12
+;|***     DrawLine (Rp, StartX,EndY, StartX,StartY,18);
+; Line 298
+	*** 000677	b8 12 00 		mov	ax,18
+	*** 00067a	50 			push	ax
+	*** 00067b	ff 76 08 		push	WORD PTR [bp+8]	;StartY
+	*** 00067e	ff 76 06 		push	WORD PTR [bp+6]	;StartX
+	*** 000681	ff 76 0c 		push	WORD PTR [bp+12]	;EndY
+	*** 000684	ff 76 06 		push	WORD PTR [bp+6]	;StartX
+	*** 000687	ff 76 04 		push	WORD PTR [bp+4]	;Rp
+	*** 00068a	9a 00 00 00 00 		call	FAR PTR _DrawLine
+	*** 00068f	83 c4 0c 		add	sp,12
+;|*** }
+; Line 299
+	*** 000692	5d 			pop	bp
+	*** 000693	c3 			ret	
+
+_MBox	ENDP
+;|*** 
+;|*** MsgPrnt(RPS *Rp,int x, int y, char *S,int typ)
+;|*** {
+; Line 302
+	PUBLIC	_MsgPrnt
+_MsgPrnt	PROC NEAR
+	*** 000694	55 			push	bp
+	*** 000695	8b ec 			mov	bp,sp
+	*** 000697	83 ec 02 		sub	sp,2
+;	Rp = 4
+;	x = 6
+;	y = 8
+;	S = 10
+;	typ = 12
+;	msgcolor = -2
+;|*** 	int   msgcolor;
+;|*** 
+;|*** 	msgcolor=15;
+; Line 305
+	*** 00069a	c7 46 fe 0f 00 		mov	WORD PTR [bp-2],15	;msgcolor
+;|*** 
+;|*** 	Rp->DrawMode= JAM1;
+; Line 307
+	*** 00069f	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;Rp
+	*** 0006a2	c7 47 0a 00 00 		mov	WORD PTR [bx+10],0
+;|*** 	Rp->APen= msgcolor;
+; Line 308
+	*** 0006a7	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;Rp
+	*** 0006aa	8b 46 fe 		mov	ax,WORD PTR [bp-2]	;msgcolor
+	*** 0006ad	89 47 0c 		mov	WORD PTR [bx+12],ax
+;|*** 	Rp->FontNr = F_3x5B;
+; Line 309
+	*** 0006b0	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;Rp
+	*** 0006b3	c7 47 10 02 00 		mov	WORD PTR [bx+16],2
+;|*** 	RpPrint(Rp,x, y,S);
+; Line 310
+	*** 0006b8	ff 76 0a 		push	WORD PTR [bp+10]	;S
+	*** 0006bb	ff 76 08 		push	WORD PTR [bp+8]	;y
+	*** 0006be	ff 76 06 		push	WORD PTR [bp+6]	;x
+	*** 0006c1	ff 76 04 		push	WORD PTR [bp+4]	;Rp
+	*** 0006c4	9a 00 00 00 00 		call	FAR PTR _RpPrint
+	*** 0006c9	83 c4 08 		add	sp,8
+;|*** }
+; Line 311
+	*** 0006cc	8b e5 			mov	sp,bp
+	*** 0006ce	5d 			pop	bp
+	*** 0006cf	c3 			ret	
+
+_MsgPrnt	ENDP
+;|*** 
+;|*** 
+;|*** InSideMSGBox(RPS *Rp)
+;|*** {
+; Line 315
+	PUBLIC	_InSideMSGBox
+_InSideMSGBox	PROC NEAR
+	*** 0006d0	55 			push	bp
+	*** 0006d1	8b ec 			mov	bp,sp
+;	Rp = 4
+;|***    MBox (Rp,0,192,319,199);
+; Line 316
+	*** 0006d3	b8 c7 00 		mov	ax,199
+	*** 0006d6	50 			push	ax
+	*** 0006d7	b8 3f 01 		mov	ax,319
+	*** 0006da	50 			push	ax
+	*** 0006db	b8 c0 00 		mov	ax,192
+	*** 0006de	50 			push	ax
+	*** 0006df	2b c0 			sub	ax,ax
+	*** 0006e1	50 			push	ax
+	*** 0006e2	ff 76 04 		push	WORD PTR [bp+4]	;Rp
+	*** 0006e5	e8 16 ff 		call	_MBox
+	*** 0006e8	83 c4 0a 		add	sp,10
+;|***    MsgPrnt(Rp,10, 193,MyMSG,MyMSGTYP);
+; Line 317
+	*** 0006eb	ff 36 a0 00 		push	WORD PTR _MyMSGTYP
+	*** 0006ef	b8 28 00 		mov	ax,OFFSET DGROUP:_MyMSG
+	*** 0006f2	50 			push	ax
+	*** 0006f3	b8 c1 00 		mov	ax,193
+	*** 0006f6	50 			push	ax
+	*** 0006f7	b8 0a 00 		mov	ax,10
+	*** 0006fa	50 			push	ax
+	*** 0006fb	ff 76 04 		push	WORD PTR [bp+4]	;Rp
+	*** 0006fe	e8 93 ff 		call	_MsgPrnt
+	*** 000701	83 c4 0a 		add	sp,10
+;|*** }
+; Line 318
+	*** 000704	5d 			pop	bp
+	*** 000705	c3 			ret	
+
+_InSideMSGBox	ENDP
+;|*** 
+;|*** OutSideMSGBox(RPS *Rp)
+;|*** {
+; Line 321
+	PUBLIC	_OutSideMSGBox
+_OutSideMSGBox	PROC NEAR
+	*** 000706	55 			push	bp
+	*** 000707	8b ec 			mov	bp,sp
+;	Rp = 4
+;|***    MBox (Rp,0,170,319,199);
+; Line 322
+	*** 000709	b8 c7 00 		mov	ax,199
+	*** 00070c	50 			push	ax
+	*** 00070d	b8 3f 01 		mov	ax,319
+	*** 000710	50 			push	ax
+	*** 000711	b8 aa 00 		mov	ax,170
+	*** 000714	50 			push	ax
+	*** 000715	2b c0 			sub	ax,ax
+	*** 000717	50 			push	ax
+	*** 000718	ff 76 04 		push	WORD PTR [bp+4]	;Rp
+	*** 00071b	e8 e0 fe 		call	_MBox
+	*** 00071e	83 c4 0a 		add	sp,10
+;|***    MsgPrnt(Rp,10, 170+16,MyMSG,MyMSGTYP);
+; Line 323
+	*** 000721	ff 36 a0 00 		push	WORD PTR _MyMSGTYP
+	*** 000725	b8 28 00 		mov	ax,OFFSET DGROUP:_MyMSG
+	*** 000728	50 			push	ax
+	*** 000729	b8 ba 00 		mov	ax,186
+	*** 00072c	50 			push	ax
+	*** 00072d	b8 0a 00 		mov	ax,10
+	*** 000730	50 			push	ax
+	*** 000731	ff 76 04 		push	WORD PTR [bp+4]	;Rp
+	*** 000734	e8 5d ff 		call	_MsgPrnt
+	*** 000737	83 c4 0a 		add	sp,10
+;|*** }
+; Line 324
+	*** 00073a	5d 			pop	bp
+	*** 00073b	c3 			ret	
+
+_OutSideMSGBox	ENDP
+;|*** 
+;|*** extern  int     Speedy;
+;|*** extern   char Rangestr[];
+;|*** extern   char Coursestr[];
+;|*** extern   char Slopestr[];
+;|*** 
+;|*** OutSideHeading(RPS *Rp)
+;|*** {
+; Line 332
+	PUBLIC	_OutSideHeading
+_OutSideHeading	PROC NEAR
+	*** 00073c	55 			push	bp
+	*** 00073d	8b ec 			mov	bp,sp
+	*** 00073f	81 ec ac 00 		sub	sp,172
+	*** 000743	56 			push	si
+;	Rp = 4
+;	S = -80
+;	N = -172
+;	V = -82
+;|*** 	char	S[80];
+;|*** 	char	N[90];
+;|*** 	UWORD V;
+;|*** 
+;|***    S[0]=0;
+; Line 337
+	*** 000744	c6 46 b0 00 		mov	BYTE PTR [bp-80],0	;S
+;|*** 	strcpy(S,"HEADING     ALTITUDE       AIRSPEED     ");
+; Line 338
+	*** 000748	b8 a8 00 		mov	ax,OFFSET DGROUP:$SG1213
+	*** 00074b	50 			push	ax
+	*** 00074c	8d 46 b0 		lea	ax,WORD PTR [bp-80]	;S
+	*** 00074f	50 			push	ax
+	*** 000750	e8 00 00 		call	_strcpy
+	*** 000753	83 c4 04 		add	sp,4
+;|*** 	V=(UWORD)OurHead/(UWORD)182;
+; Line 339
+	*** 000756	a1 00 00 		mov	ax,_OurHead
+	*** 000759	2b d2 			sub	dx,dx
+	*** 00075b	b9 b6 00 		mov	cx,182
+	*** 00075e	f7 f1 			div	cx
+	*** 000760	89 46 ae 		mov	WORD PTR [bp-82],ax	;V
+;|*** 	itoa(V,N,10);
+; Line 340
+	*** 000763	b8 0a 00 		mov	ax,10
+	*** 000766	50 			push	ax
+	*** 000767	8d 86 54 ff 		lea	ax,WORD PTR [bp-172]	;N
+	*** 00076b	50 			push	ax
+	*** 00076c	ff 76 ae 		push	WORD PTR [bp-82]	;V
+	*** 00076f	e8 00 00 		call	_itoa
+	*** 000772	83 c4 06 		add	sp,6
+;|*** 	strcpy(&S[11-strlen(N)],N);
+; Line 341
+	*** 000775	8d 86 54 ff 		lea	ax,WORD PTR [bp-172]	;N
+	*** 000779	50 			push	ax
+	*** 00077a	8d 86 54 ff 		lea	ax,WORD PTR [bp-172]	;N
+	*** 00077e	50 			push	ax
+	*** 00077f	e8 00 00 		call	_strlen
+	*** 000782	83 c4 02 		add	sp,2
+	*** 000785	8b f0 			mov	si,ax
+	*** 000787	83 ee 0b 		sub	si,11
+	*** 00078a	f7 de 			neg	si
+	*** 00078c	8d 42 b0 		lea	ax,[bp-80][si]
+	*** 00078f	50 			push	ax
+	*** 000790	e8 00 00 		call	_strcpy
+	*** 000793	83 c4 04 		add	sp,4
+;|*** 	S[11]=' ';
+; Line 342
+	*** 000796	c6 46 bb 20 		mov	BYTE PTR [bp-69],32
+;|*** 
+;|*** 	V=(UWORD)OurAlt;
+; Line 344
+	*** 00079a	a1 00 00 		mov	ax,_OurAlt
+	*** 00079d	89 46 ae 		mov	WORD PTR [bp-82],ax	;V
+;|*** 	ltoa((unsigned long)V,N,10);
+; Line 345
+	*** 0007a0	b8 0a 00 		mov	ax,10
+	*** 0007a3	50 			push	ax
+	*** 0007a4	8d 86 54 ff 		lea	ax,WORD PTR [bp-172]	;N
+	*** 0007a8	50 			push	ax
+	*** 0007a9	2b c0 			sub	ax,ax
+	*** 0007ab	50 			push	ax
+	*** 0007ac	ff 76 ae 		push	WORD PTR [bp-82]	;V
+	*** 0007af	e8 00 00 		call	_ltoa
+	*** 0007b2	83 c4 08 		add	sp,8
+;|*** 	strcpy(&S[26-strlen(N)],N);
+; Line 346
+	*** 0007b5	8d 86 54 ff 		lea	ax,WORD PTR [bp-172]	;N
+	*** 0007b9	50 			push	ax
+	*** 0007ba	8d 86 54 ff 		lea	ax,WORD PTR [bp-172]	;N
+	*** 0007be	50 			push	ax
+	*** 0007bf	e8 00 00 		call	_strlen
+	*** 0007c2	83 c4 02 		add	sp,2
+	*** 0007c5	8b f0 			mov	si,ax
+	*** 0007c7	83 ee 1a 		sub	si,26
+	*** 0007ca	f7 de 			neg	si
+	*** 0007cc	8d 42 b0 		lea	ax,[bp-80][si]
+	*** 0007cf	50 			push	ax
+	*** 0007d0	e8 00 00 		call	_strcpy
+	*** 0007d3	83 c4 04 		add	sp,4
+;|*** 	S[26]=' ';
+; Line 347
+	*** 0007d6	c6 46 ca 20 		mov	BYTE PTR [bp-54],32
+;|*** 
+;|*** 	itoa(Knots,N,10);
+; Line 349
+	*** 0007da	b8 0a 00 		mov	ax,10
+	*** 0007dd	50 			push	ax
+	*** 0007de	8d 86 54 ff 		lea	ax,WORD PTR [bp-172]	;N
+	*** 0007e2	50 			push	ax
+	*** 0007e3	ff 36 00 00 		push	WORD PTR _Knots
+	*** 0007e7	e8 00 00 		call	_itoa
+	*** 0007ea	83 c4 06 		add	sp,6
+;|*** 	strcpy(&S[39-strlen(N)],N);
+; Line 350
+	*** 0007ed	8d 86 54 ff 		lea	ax,WORD PTR [bp-172]	;N
+	*** 0007f1	50 			push	ax
+	*** 0007f2	8d 86 54 ff 		lea	ax,WORD PTR [bp-172]	;N
+	*** 0007f6	50 			push	ax
+	*** 0007f7	e8 00 00 		call	_strlen
+	*** 0007fa	83 c4 02 		add	sp,2
+	*** 0007fd	8b f0 			mov	si,ax
+	*** 0007ff	83 ee 27 		sub	si,39
+	*** 000802	f7 de 			neg	si
+	*** 000804	8d 42 b0 		lea	ax,[bp-80][si]
+	*** 000807	50 			push	ax
+	*** 000808	e8 00 00 		call	_strcpy
+	*** 00080b	83 c4 04 		add	sp,4
+;|*** 	S[39]=0;
+; Line 351
+	*** 00080e	c6 46 d7 00 		mov	BYTE PTR [bp-41],0
+;|*** 
+;|***    if (Speedy>1)
+; Line 353
+	*** 000812	83 3e 00 00 01 		cmp	WORD PTR _Speedy,1
+	*** 000817	7e 25 			jle	$I1216
+;|***       {
+; Line 354
+;|***       itoa(Speedy,N,10);
+; Line 355
+	*** 000819	b8 0a 00 		mov	ax,10
+	*** 00081c	50 			push	ax
+	*** 00081d	8d 86 54 ff 		lea	ax,WORD PTR [bp-172]	;N
+	*** 000821	50 			push	ax
+	*** 000822	ff 36 00 00 		push	WORD PTR _Speedy
+	*** 000826	e8 00 00 		call	_itoa
+	*** 000829	83 c4 06 		add	sp,6
+;|***       strcat(N,"X ");
+; Line 356
+	*** 00082c	b8 d1 00 		mov	ax,OFFSET DGROUP:$SG1217
+	*** 00082f	50 			push	ax
+	*** 000830	8d 86 54 ff 		lea	ax,WORD PTR [bp-172]	;N
+	*** 000834	50 			push	ax
+	*** 000835	e8 00 00 		call	_strcat
+	*** 000838	83 c4 04 		add	sp,4
+;|***       }
+; Line 357
+;|***    else
+; Line 358
+	*** 00083b	eb 06 			jmp	SHORT $I1218
+	*** 00083d	90 			nop	
+					$I1216:
+;|***       N[0]=0;
+; Line 359
+	*** 00083e	c6 86 54 ff 00 		mov	BYTE PTR [bp-172],0	;N
+					$I1218:
+;|*** 
+;|***    strcat(N,S);
+; Line 361
+	*** 000843	8d 46 b0 		lea	ax,WORD PTR [bp-80]	;S
+	*** 000846	50 			push	ax
+	*** 000847	8d 86 54 ff 		lea	ax,WORD PTR [bp-172]	;N
+	*** 00084b	50 			push	ax
+	*** 00084c	e8 00 00 		call	_strcat
+	*** 00084f	83 c4 04 		add	sp,4
+;|*** 
+;|*** 
+;|*** 	Rp->DrawMode= JAM1;
+; Line 364
+	*** 000852	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;Rp
+	*** 000855	c7 47 0a 00 00 		mov	WORD PTR [bx+10],0
+;|*** 	Rp->APen= 15;
+; Line 365
+	*** 00085a	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;Rp
+	*** 00085d	c7 47 0c 0f 00 		mov	WORD PTR [bx+12],15
+;|***    Rp->FontNr = F_3x5B;
+; Line 366
+	*** 000862	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;Rp
+	*** 000865	c7 47 10 02 00 		mov	WORD PTR [bx+16],2
+;|***    RectFill (Rp, 10, 176, 300,8, 17);
+; Line 367
+	*** 00086a	b8 11 00 		mov	ax,17
+	*** 00086d	50 			push	ax
+	*** 00086e	b8 08 00 		mov	ax,8
+	*** 000871	50 			push	ax
+	*** 000872	b8 2c 01 		mov	ax,300
+	*** 000875	50 			push	ax
+	*** 000876	b8 b0 00 		mov	ax,176
+	*** 000879	50 			push	ax
+	*** 00087a	b8 0a 00 		mov	ax,10
+	*** 00087d	50 			push	ax
+	*** 00087e	ff 76 04 		push	WORD PTR [bp+4]	;Rp
+	*** 000881	9a 00 00 00 00 		call	FAR PTR _RectFill
+	*** 000886	83 c4 0c 		add	sp,12
+;|*** 	RpPrint(Rp,Rp->Width1/2-78, 170+6,N);
+; Line 368
+	*** 000889	8d 86 54 ff 		lea	ax,WORD PTR [bp-172]	;N
+	*** 00088d	50 			push	ax
+	*** 00088e	b8 b0 00 		mov	ax,176
+	*** 000891	50 			push	ax
+	*** 000892	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;Rp
+	*** 000895	8b 47 06 		mov	ax,WORD PTR [bx+6]
+	*** 000898	99 			cwd	
+	*** 000899	2b c2 			sub	ax,dx
+	*** 00089b	d1 f8 			sar	ax,1
+	*** 00089d	2d 4e 00 		sub	ax,78
+	*** 0008a0	50 			push	ax
+	*** 0008a1	53 			push	bx
+	*** 0008a2	9a 00 00 00 00 		call	FAR PTR _RpPrint
+	*** 0008a7	83 c4 08 		add	sp,8
+;|*** 
+;|*** /*
+;|*** 
+;|***    if (Rangestr[0])
+;|***       {
+;|***       RectFill (Rp, 10, 184, 300,8, 17);
+;|***    	RpPrint(Rp,20,184,Rangestr);
+;|***    	RpPrint(Rp,120,184,Coursestr);
+;|***    	RpPrint(Rp,220,184,Slopestr);
+;|***       }
+;|*** */
+;|*** 
+;|*** }
+; Line 381
+	*** 0008aa	5e 			pop	si
+	*** 0008ab	8b e5 			mov	sp,bp
+	*** 0008ad	5d 			pop	bp
+	*** 0008ae	c3 			ret	
+	*** 0008af	90 			nop	
+
+_OutSideHeading	ENDP
+_TEXT	ENDS
+END

@@ -1,0 +1,76 @@
+body {
+    color: lightgray;
+    background-color: #191B1C;
+    font: 18px/1.4 "Helvetica";
+}
+
+p {
+    text-align: justify;
+}
+
+.imgcaption {
+    border: 0px;
+    > table, td, th, thead {
+        color: lightgray;
+        background-color: #191B1C;
+        padding: 0px;
+        border: 0px;
+    }
+    > img {
+        margin: 0px;
+    }
+}
+
+.center-image-wide
+{
+    margin: 0 auto;
+    margin-top: 2%;
+    margin-bottom: 2%;
+    display: block;
+    width: 99%;
+}
+
+.center-image
+{
+    margin: 0 auto;
+    margin-top: 2%;
+    margin-bottom: 2%;
+    display: block;
+    width: 60%;
+}
+
+.center-image-narrow
+{
+    margin: 0 auto;
+    margin-top: 2%;
+    margin-bottom: 2%;
+    display: flex;
+    width: 30%;
+}
+
+.mycat-list {
+    list-style: square;
+}
+
+.mypost-list {
+    margin-left: 0;
+    list-style: none;
+}
+
+.mypost-link {
+    color: lightskyblue;
+    font-weight: 200;
+}
+
+.mypost-link:visited {
+    color: lightskyblue;
+    font-weight: 200;
+}
+
+.site-title {
+    color: lightskyblue;
+}
+
+.site-title:visited {
+    color: lightskyblue;
+}

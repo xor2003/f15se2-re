@@ -1,0 +1,55 @@
+;	Static Name Aliases
+;
+	TITLE   TEST.C
+	NAME    TEST
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+EXTRN	__acrtused:ABS
+EXTRN	_printf:NEAR
+_DATA      SEGMENT
+$SG158	DB	'Hello, World!',  0aH,  00H
+_DATA      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** #include <stdio.h>
+;|*** 
+;|*** int main() {
+; Line 3
+	PUBLIC	_main
+_main	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+;|***     printf("Hello, World!\n");
+; Line 4
+	*** 000003	b8 00 00 		mov	ax,OFFSET DGROUP:$SG158
+	*** 000006	50 			push	ax
+	*** 000007	e8 00 00 		call	_printf
+	*** 00000a	83 c4 02 		add	sp,2
+;|***     return 0;
+; Line 5
+	*** 00000d	2b c0 			sub	ax,ax
+	*** 00000f	eb 00 			jmp	SHORT $EX157
+;|*** }; Line 6
+					$EX157:
+	*** 000011	8b e5 			mov	sp,bp
+	*** 000013	5d 			pop	bp
+	*** 000014	c3 			ret	
+
+_main	ENDP
+	*** 000015	90 			nop	
+_TEXT	ENDS
+END

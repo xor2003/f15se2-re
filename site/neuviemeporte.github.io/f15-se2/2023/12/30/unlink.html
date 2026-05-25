@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>First steps in delinking | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="First steps in delinking" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<meta property="og:description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<link rel="canonical" href="/f15-se2/2023/12/30/unlink.html" />
+<meta property="og:url" content="/f15-se2/2023/12/30/unlink.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-12-30T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="First steps in delinking" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2023-12-30T00:00:00+00:00","datePublished":"2023-12-30T00:00:00+00:00","description":"(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)","headline":"First steps in delinking","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2023/12/30/unlink.html"},"url":"/f15-se2/2023/12/30/unlink.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">First steps in delinking</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2023-12-30T00:00:00+00:00" itemprop="datePublished">Dec 30, 2023
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><small>(<em>This post is part of a <a href="/category/f15-se2.html">series</a> on the subject of my hobby project, which is recreating the C source code for the 1989 game <a href="/f15-se2/2022/06/05/origins.html">F-15 Strike Eagle II</a> by reverse engineering the original binaries.</em>)</small></p>
+
+<p>As things stand today, looking around the first game executable which I’m reconstructing (<code class="language-plaintext highlighter-rouge">START.EXE</code>), it seems like there’s more than I don’t know about the game then I do know, especially when looking at the contents of the data segment. Some data is obvious (strings), some I have figured out by examining routines and figuring out what the data referenced in those routines are for, but the vast majority is a bunch of meaningless values (or no values for the uninitialized data/BSS, but we’ll get to that later). Today, I’m trying to do something about it.</p>
+
+<p>A significant chunk of the game’s code is made of the standard C library subroutines, which I have identified a long time ago using IDA’s feature of routine signatures. They begin at offset <code class="language-plaintext highlighter-rouge">0x5542</code> with the <code class="language-plaintext highlighter-rouge">start</code> routine which is the startup (aka crt0) code that serves as the entrypoint to the program and ends up calling <code class="language-plaintext highlighter-rouge">main()</code>. Other libc subroutines follow until an unnamed subroutine (not public so the name likely got stripped, but it’s still recognized as belonging to libc by IDA) ends at offset <code class="language-plaintext highlighter-rouge">0x6a5b</code>, which is also the end of the first code segment (there are two).</p>
+
+<p>Knowing about these subroutines means less work for me because I don’t need to analyze them to know what they are doing, or reimplement them. They also serve as an useful anchor for the actual game routines - if a game routine calls <code class="language-plaintext highlighter-rouge">strcpy()</code>, that means I can understand what it’s doing on a higher lever, and also infer something about the data that’s used as arguments for that function.</p>
+
+<p>But the libc functions also come with data of their own (initialized and uninitialized) that is merged with the game data to form the complete executable, with no apparent way to tell it apart. If I knew where it was, I could also ignore it while analyzing the disassembly, and also I would know what to skip when trying to reconstruct the contents of the data segment. If I ever want to get an identically reconstructed executable, I need to know where it begins and ends, so that when the final result is linked with libc again, I would not end up with duplicate data. So let’s try to figure it out.</p>
+
+<p>The inspiration for this came from reading <a href="https://boricj.net/">this blog</a> where the author uses some clever tricks to undo linking with the help of <a href="https://ghidra-sre.org/">Ghidra</a> and a <a href="https://github.com/boricj/ghidra-delinker-extension">custom extension</a>, the end result being functional object files which can be linked with custom code again to form a patched game executable. That way it might be possible to excise ancient APIs, provide modern replacements, instrumentation etc., otherwise using the game logic as is. But that approach is used with MIPS code for a PSX game, and it’s not clear whether it could be adopted to x86 code, especially in real mode. I won’t be doing anything as ambitious, but I will try to figure out where exactly the linker put the libc data.</p>
+
+<p>The plan is as follows:</p>
+
+<ol>
+  <li>Create a threadbare program with some sentinel data values but without anything from libc, inspect its layout</li>
+  <li>Add the startup code from libc, record any change in layout</li>
+  <li>Add the exact same subset of libc functions that the game uses, see what changed again</li>
+  <li>Assuming that the same subset of functions results in the same order of code and data in the executable, cross-reference the information obtained from 1-3 with the layout of the game’s data segment and try to spot the libc data</li>
+</ol>
+
+<h2 id="first-step-an-exe-with-no-libc">First step, an exe with no libc</h2>
+
+<p>I’m starting with compiling a trivial C program with no libc at all. Such a program is useless, since the C <code class="language-plaintext highlighter-rouge">main()</code> function will not work unless the startup code ran first to set things up - C might be a simple and low-level language, but it still needs minimal run-time support. Luckily, I don’t need the sample programs I’m building today to be functional, just so long as they link.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="c1">// hello.c</span>
+<span class="kt">int</span> <span class="n">_acrtused</span><span class="p">;</span> <span class="c1">// trick linker into thinking startup code is already there</span>
+
+<span class="cm">/* initialized data */</span>
+<span class="k">const</span> <span class="kt">char</span> <span class="n">foobar</span><span class="p">[]</span> <span class="o">=</span> <span class="s">"hello_c_data"</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">barfoo</span> <span class="o">=</span> <span class="mh">0xabcd</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">char</span> <span class="n">foobaz</span><span class="p">[]</span> <span class="o">=</span> <span class="s">"something_else"</span><span class="p">;</span>
+<span class="cm">/* uninitialized (BSS) data */</span>
+<span class="kt">int</span> <span class="n">x</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">y</span><span class="p">;</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>I encountered the <code class="language-plaintext highlighter-rouge">__acrtused</code> symbol (remember, the C compiler adds one underscore to all names) before, it’s a tag that the linker uses to determine that the startup code is already present. What it is doesn’t really matter as long as it’s there. So let’s build this. I’m using the <code class="language-plaintext highlighter-rouge">/NOD[EFAULT]</code> option to the linker to prevent linking with libc, which would happen by default, because the object file <code class="language-plaintext highlighter-rouge">hello.obj</code> contains an entry for a default library to link with after it’s been compiled. The remaining <code class="language-plaintext highlighter-rouge">/M /I</code> cause the linker to generate a map file and verbose output.</p>
+
+<pre>
+ninja@dell:eaglestrike$ make hello
+cl /Gs /c /Foe:\hello.obj hello.c
+link /M /I /NOD  hello.obj,d:\hello.exe,,;
+
+Microsoft (R) Overlay Linker  Version 3.65
+Copyright (C) Microsoft Corp 1983-1988.  All rights reserved.
+
+**** PASS ONE ****
+HELLO.OBJ(hello.c)
+**** LIBRARY SEARCH ****
+**** ASSIGN ADDRESSES ****
+LINK : warning L4021: no stack segment
+  1 segment "_TEXT" class "CODE" length 10H bytes
+  2 segment "_DATA" class "DATA" length 12H bytes
+  3 segment "CONST" class "CONST" length 0H bytes
+  4 segment "_BSS" class "BSS" length 0H bytes
+  5 segment "c_common" class "BSS" length 6H bytes
+**** PRINT MAP ****
+**** PASS TWO ****
+HELLO.OBJ(hello.c)
+**** WRITING EXECUTABLE ****
+ls -l build-f15-se2/hello.exe
+-rw-r--r-- 1 ninja ninja 559 Dec 23  2023 build-f15-se2/hello.exe
+</pre>
+
+<p>This executable file clocks in at 559 bytes, of which 512 is the MZ exe header. As expected, it’s pretty lean, so let’s look at it in IDA:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">seg000:</span><span class="err">0000</span> <span class="nf">seg000</span>          <span class="ow">seg</span><span class="nv">ment</span> <span class="kt">byte</span> <span class="nv">public</span> <span class="s">'CODE'</span> <span class="nv">use16</span>
+<span class="nl">seg000:</span><span class="err">0000</span>                 <span class="nf">assume</span> <span class="nb">cs</span><span class="p">:</span><span class="ow">seg</span><span class="mi">000</span>
+<span class="nl">seg000:</span><span class="err">0000</span>                 <span class="nf">assume</span> <span class="nb">es</span><span class="p">:</span><span class="nv">nothing</span><span class="p">,</span> <span class="nb">ss</span><span class="p">:</span><span class="ow">seg</span><span class="mi">000</span><span class="p">,</span> <span class="nb">ds</span><span class="p">:</span><span class="nv">nothing</span><span class="p">,</span> <span class="nb">fs</span><span class="p">:</span><span class="nv">nothing</span><span class="p">,</span> <span class="nb">gs</span><span class="p">:</span><span class="nv">nothing</span>
+<span class="nl">seg000:</span><span class="err">0000</span>
+<span class="nl">seg000:</span><span class="err">0000</span> <span class="c1">; =============== S U B R O U T I N E =======================================</span>
+<span class="nl">seg000:</span><span class="err">0000</span>                 <span class="nf">public</span> <span class="nv">start</span>
+<span class="nl">seg000:</span><span class="err">0000</span> <span class="nf">start</span>           <span class="nv">proc</span> <span class="nv">near</span>
+<span class="nl">seg000:</span><span class="err">0000</span>                 <span class="nf">mov</span>     <span class="kt">word</span> <span class="nv">ptr</span> <span class="nb">ds</span><span class="p">:</span><span class="mh">22h</span><span class="p">,</span> <span class="mi">1</span> <span class="c1">; x = 1</span>
+<span class="nl">seg000:</span><span class="err">0006</span>                 <span class="nf">mov</span>     <span class="kt">word</span> <span class="nv">ptr</span> <span class="nb">ds</span><span class="p">:</span><span class="mh">24h</span><span class="p">,</span> <span class="mi">2</span> <span class="c1">; y = 2</span>
+<span class="nl">seg000:</span><span class="err">000</span><span class="nf">C</span>                 <span class="nv">sub</span>     <span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nl">seg000:</span><span class="err">000</span><span class="nf">E</span>                 <span class="nv">retn</span>
+<span class="nl">seg000:</span><span class="err">000</span><span class="nf">E</span> <span class="nv">start</span>           <span class="nv">endp</span>
+<span class="nl">seg000:</span><span class="err">000</span><span class="nf">E</span> <span class="c1">; ---------------------------------------------------------------------------</span>
+<span class="nl">seg000:</span><span class="err">000</span><span class="nf">F</span>                 <span class="nv">nop</span>
+<span class="nl">seg000:</span><span class="err">0010</span> <span class="nf">aHello_c_data</span>   <span class="nv">db</span> <span class="s">'hello_c_data'</span><span class="p">,</span><span class="mi">0</span>   <span class="c1">; foobar</span>
+<span class="nl">seg000:</span><span class="err">001</span><span class="nf">D</span>                 <span class="nv">db</span> <span class="mi">0</span>                  <span class="c1">; alignment?</span>
+<span class="nl">seg000:</span><span class="err">001</span><span class="nf">E</span>                 <span class="nv">dw</span> <span class="mh">0ABCDh</span>             <span class="c1">; barfoo</span>
+<span class="nl">seg000:</span><span class="err">0020</span> <span class="nf">aSomething_else</span> <span class="nv">db</span> <span class="err">'</span><span class="nv">something_else</span><span class="err">'</span><span class="p">,</span><span class="mi">0</span> <span class="c1">; foobaz</span>
+<span class="nl">seg000:</span><span class="err">0020</span> <span class="nf">seg000</span>          <span class="nv">ends</span>
+<span class="nl">seg000:</span><span class="err">0020</span>
+<span class="nl">seg000:</span><span class="err">0020</span>
+<span class="nl">seg000:</span><span class="err">0020</span>                 <span class="nf">end</span> <span class="nv">start</span></code></pre></figure>
+
+<p>No major surprises there, there is no startup code, so the data segment is not set up properly. IDA was unable to find it, and it displays the executable as being all in one segment. The <code class="language-plaintext highlighter-rouge">foobar</code> string is the first data item placed by the linker at offset 0x10 (which would be DS:0 in a functional executable). Then comes the initialized <code class="language-plaintext highlighter-rouge">barfoo</code> value of <code class="language-plaintext highlighter-rouge">0xabcd</code>, preceeded by a single null byte, probably for purpose of alignment (it disappears when I make <code class="language-plaintext highlighter-rouge">foobar</code> one character shorter). Last as expected is the string <code class="language-plaintext highlighter-rouge">foobaz</code>, and the uninitialized values were placed at DS:0x22 and DS:0x24 as can be seen from the code in <code class="language-plaintext highlighter-rouge">start</code> (which is actually <code class="language-plaintext highlighter-rouge">main()</code>). Those might be confused as colliding with “something_else” at 0x20, but keep in mind that the data segment’s origin is actually 0x10 in this display, so they are well past the string.</p>
+
+<p>The only minor surprise is the alignment. I confirmed that the null byte is not part of the object file data by using the <code class="language-plaintext highlighter-rouge">dmpobj</code> utility from the OpenWatcom compiler:</p>
+
+<pre>
+ninja@dell:eaglestrike$ dmpobj build-f15-se2/hello.obj
+[...]
+LEDATA(a0) recnum:19, offset:0000011eh, len:0011h, chksum:7eh(7e)
+    Seg index:2 offset:00000000h
+    00000000 68|65 6c|6c 6f|5f 63|5f 64|61 74|61 00          &lt;hello_c_data.&gt; ✅ foobar and the null terminator
+
+LEDATA(a0) recnum:20, offset:00000132h, len:0015h, chksum:edh(ed)
+    Seg index:2 offset:0000000eh
+    0000000e cd|ab 73|6f 6d|65 74|68 69|6e 67|5f 65|6c 73|65 &lt;..something_else&gt; ✅ barfoo (no preceeding null byte) and foobaz
+    0000001e 00                                              &lt;.&gt;
+</pre>
+
+<p>A thing to note for the future is that null bytes that are not part of the original data may be apparently placed in the result by the linker.</p>
+
+<h2 id="adding-in-the-startup-code">Adding in the startup code</h2>
+
+<p>Looking good, wonder what will happen when I link in the actual libc startup code? For that I need to remove the <code class="language-plaintext highlighter-rouge">__acrtused</code> tag and either get rid of the <code class="language-plaintext highlighter-rouge">/NOD</code> option, or spell the name of the appropriate library file (<code class="language-plaintext highlighter-rouge">slibce.lib</code> for <b>s</b>mall memory model and software <b>e</b>mulated floating point) on the linker command line - I choose the latter.</p>
+
+<pre>
+ninja@dell:eaglestrike$ make hello
+cl /Gs /c /Foe:\hello.obj hello.c
+link /M /I /NOD  hello.obj,d:\hello.exe,,slibce.lib;
+ls -l build-f15-se2/hello.exe
+-rw-r--r-- 1 ninja ninja 2325 Dec 24  2023 build-f15-se2/hello.exe
+</pre>
+
+<p>That makes for a hefty increase to 2325 bytes. Let’s look inside.</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">seg000:</span><span class="err">0000</span> <span class="nf">seg000</span>          <span class="ow">seg</span><span class="nv">ment</span> <span class="kt">byte</span> <span class="nv">public</span> <span class="s">'CODE'</span> <span class="nv">use16</span>
+<span class="nl">seg000:</span><span class="err">0000</span>                 <span class="nf">assume</span> <span class="nb">cs</span><span class="p">:</span><span class="ow">seg</span><span class="mi">000</span>
+<span class="nl">seg000:</span><span class="err">0000</span>                 <span class="nf">assume</span> <span class="nb">es</span><span class="p">:</span><span class="nv">nothing</span><span class="p">,</span> <span class="nb">ss</span><span class="p">:</span><span class="nv">nothing</span><span class="p">,</span> <span class="nb">ds</span><span class="p">:</span><span class="nb">ds</span><span class="nv">eg</span><span class="p">,</span> <span class="nb">fs</span><span class="p">:</span><span class="nv">nothing</span><span class="p">,</span> <span class="nb">gs</span><span class="p">:</span><span class="nv">nothing</span>
+<span class="nl">seg000:</span><span class="err">0000</span>                 <span class="kd">db</span> <span class="mh">10h</span> <span class="nv">dup</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="nl">seg000:</span><span class="err">0010</span> <span class="c1">; =============== S U B R O U T I N E =======================================</span>
+<span class="nl">seg000:</span><span class="err">0010</span> <span class="c1">; int __cdecl main(int argc, const char **argv, const char **envp)</span>
+<span class="nl">seg000:</span><span class="err">0010</span> <span class="nf">_main</span>           <span class="nv">proc</span> <span class="nv">near</span>               <span class="c1">; CODE XREF: start+8D</span>
+<span class="nl">seg000:</span><span class="err">0010</span>                 <span class="nf">mov</span>     <span class="kt">word</span><span class="nv">_10720</span><span class="p">,</span> <span class="mi">1</span> <span class="c1">; x = 1</span>
+<span class="nl">seg000:</span><span class="err">0016</span>                 <span class="nf">mov</span>     <span class="kt">word</span><span class="nv">_10722</span><span class="p">,</span> <span class="mi">2</span> <span class="c1">; y = 2</span>
+<span class="nl">seg000:</span><span class="err">001</span><span class="nf">C</span>                 <span class="nv">sub</span>     <span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nl">seg000:</span><span class="err">001</span><span class="nf">E</span>                 <span class="nv">retn</span>
+<span class="nl">seg000:</span><span class="err">001</span><span class="nf">E</span> <span class="nv">_main</span>           <span class="nv">endp</span>
+<span class="nl">seg000:</span><span class="err">001</span><span class="nf">E</span> <span class="c1">; ---------------------------------------------------------------------------</span>
+<span class="nl">seg000:</span><span class="err">001</span><span class="nf">F</span>                 <span class="nb">al</span><span class="nv">ign</span> <span class="mi">2</span>
+<span class="nl">seg000:</span><span class="err">0020</span>                 <span class="nf">assume</span> <span class="nb">ss</span><span class="p">:</span><span class="ow">seg</span><span class="mi">002</span><span class="p">,</span> <span class="nb">ds</span><span class="p">:</span><span class="nv">nothing</span>
+<span class="nl">seg000:</span><span class="err">0020</span> <span class="c1">; [000000B2 BYTES: COLLAPSED FUNCTION start. PRESS CTRL-NUMPAD+ TO EXPAND]</span>
+<span class="nl">seg000:</span><span class="err">00</span><span class="nf">D2</span> <span class="c1">; [000000C4 BYTES: COLLAPSED FUNCTION __cinit. PRESS CTRL-NUMPAD+ TO EXPAND]</span>
+<span class="nl">seg000:</span><span class="err">0196</span> <span class="c1">; [00000017 BYTES: COLLAPSED FUNCTION _exit. PRESS CTRL-NUMPAD+ TO EXPAND]</span>
+<span class="nl">seg000:</span><span class="err">01</span><span class="nf">AD</span> <span class="c1">; [00000045 BYTES: COLLAPSED FUNCTION __exit. PRESS CTRL-NUMPAD+ TO EXPAND]</span>
+<span class="nl">seg000:</span><span class="err">01</span><span class="nf">F2</span> <span class="c1">; [0000002D BYTES: COLLAPSED FUNCTION __ctermsub. PRESS CTRL-NUMPAD+ TO EXPAND]</span>
+<span class="nl">seg000:</span><span class="err">021</span><span class="nf">F</span> <span class="c1">; [0000000F BYTES: COLLAPSED FUNCTION sub_1021F. PRESS CTRL-NUMPAD+ TO EXPAND]</span>
+<span class="nl">seg000:</span><span class="err">022</span><span class="nf">E</span> <span class="c1">; [00000013 BYTES: COLLAPSED FUNCTION sub_1022E. PRESS CTRL-NUMPAD+ TO EXPAND]</span>
+<span class="nl">seg000:</span><span class="err">0241</span>                 <span class="nf">align</span> <span class="mi">2</span>
+<span class="nl">seg000:</span><span class="err">0242</span> <span class="c1">; [00000020 BYTES: COLLAPSED FUNCTION __FF_MSGBANNER. PRESS CTRL-NUMPAD+ TO EXPAND]</span>
+<span class="nl">seg000:</span><span class="err">0262</span> <span class="c1">; ---------------------------------------------------------------------------</span>
+<span class="nl">seg000:</span><span class="err">0262</span> <span class="c1">; [00000006 BYTES: COLLAPSED CHUNK OF FUNCTION __cinit. PRESS CTRL-NUMPAD+ TO EXPAND]</span>
+<span class="nl">seg000:</span><span class="err">0268</span> <span class="c1">; [00000022 BYTES: COLLAPSED FUNCTION __nullcheck. PRESS CTRL-NUMPAD+ TO EXPAND]</span>
+<span class="nl">seg000:</span><span class="err">028</span><span class="nf">A</span> <span class="c1">; [0000018E BYTES: COLLAPSED FUNCTION __setargv. PRESS CTRL-NUMPAD+ TO EXPAND]</span>
+<span class="nl">seg000:</span><span class="err">0418</span> <span class="c1">; [0000006E BYTES: COLLAPSED FUNCTION __setenvp. PRESS CTRL-NUMPAD+ TO EXPAND]</span>
+<span class="nl">seg000:</span><span class="err">0486</span> <span class="c1">; [0000002B BYTES: COLLAPSED FUNCTION __NMSG_TEXT. PRESS CTRL-NUMPAD+ TO EXPAND]</span>
+<span class="nl">seg000:</span><span class="err">04</span><span class="nf">B1</span> <span class="c1">; [00000029 BYTES: COLLAPSED FUNCTION __NMSG_WRITE. PRESS CTRL-NUMPAD+ TO EXPAND]</span>
+<span class="nl">seg000:</span><span class="err">04</span><span class="nf">DA</span> <span class="c1">; [00000042 BYTES: COLLAPSED FUNCTION __myalloc. PRESS CTRL-NUMPAD+ TO EXPAND]</span>
+<span class="nl">seg000:</span><span class="err">051</span><span class="nf">C</span>                 <span class="nb">al</span><span class="nv">ign</span> <span class="mi">8</span>
+<span class="nl">seg000:</span><span class="err">051</span><span class="nf">C</span> <span class="ow">seg</span><span class="mi">000</span>          <span class="nv">ends</span>
+<span class="nl">dseg:</span><span class="err">0000</span> <span class="c1">; ===========================================================================</span>
+<span class="nl">dseg:</span><span class="err">0000</span> <span class="c1">; Segment type: Pure data</span>
+<span class="nl">dseg:</span><span class="err">0000</span> <span class="nf">dseg</span>            <span class="ow">seg</span><span class="nv">ment</span> <span class="nv">para</span> <span class="nv">public</span> <span class="s">'DATA'</span> <span class="nv">use16</span> <span class="c1">; the interesting part is the layout of the data segment</span>
+<span class="nl">dseg:</span><span class="err">0000</span>                 <span class="nf">assume</span> <span class="nb">cs</span><span class="p">:</span><span class="nb">ds</span><span class="nv">eg</span>
+<span class="nl">dseg:</span><span class="err">0000</span>                 <span class="kd">db</span>    <span class="mi">0</span> <span class="c1">; two null bytes</span>
+<span class="nl">dseg:</span><span class="err">0001</span>                 <span class="kd">db</span>    <span class="mi">0</span>
+<span class="nl">dseg:</span><span class="err">0002</span> <span class="nf">word_10522</span>      <span class="nv">dw</span> <span class="mi">0</span>                    <span class="c1">; DATA XREF: start+50 </span>
+<span class="nl">dseg:</span><span class="err">0004</span>                 <span class="kd">db</span> <span class="mi">0</span>
+<span class="nl">dseg:</span><span class="err">0005</span>                 <span class="kd">db</span>    <span class="mi">0</span>
+<span class="nl">dseg:</span><span class="err">0006</span>                 <span class="kd">db</span>    <span class="mi">0</span>
+<span class="nl">dseg:</span><span class="err">0007</span>                 <span class="kd">db</span>    <span class="mi">0</span>
+<span class="nl">dseg:</span><span class="err">0008</span> <span class="nf">aMsRunTimeLibra</span> <span class="nv">db</span> <span class="err">"</span><span class="nv">MS</span> <span class="nv">Run</span><span class="o">-</span><span class="nv">Time</span> <span class="nv">Library</span> <span class="o">-</span> <span class="nv">Copyright</span> <span class="p">(</span><span class="nv">c</span><span class="p">)</span> <span class="mi">1988</span><span class="p">,</span> <span class="nv">Microsoft</span> <span class="nv">Corp</span><span class="err">"</span> <span class="c1">; Microsoft libc watermark</span>
+<span class="nl">dseg:</span><span class="err">0040</span>                 <span class="kd">db</span>  <span class="mh">11h</span>
+<span class="nl">dseg:</span><span class="err">0041</span>                 <span class="kd">db</span>    <span class="mi">0</span>               <span class="c1">; --- my data starts here</span>
+<span class="nl">dseg:</span><span class="err">0042</span> <span class="nf">aHello_c_data</span>   <span class="nv">db</span> <span class="s">'hello_c_data'</span><span class="p">,</span><span class="mi">0</span>   <span class="c1">; foobar</span>
+<span class="nl">dseg:</span><span class="err">004</span><span class="nf">F</span>                 <span class="nv">db</span>    <span class="mi">0</span>               <span class="c1">; alignment</span>
+<span class="nl">dseg:</span><span class="err">0050</span>                 <span class="kd">dw</span> <span class="mh">0ABCDh</span>             <span class="c1">; barfoo</span>
+<span class="nl">dseg:</span><span class="err">0052</span> <span class="nf">aSomething_else</span> <span class="nv">db</span> <span class="err">'</span><span class="nv">something_else</span><span class="err">'</span><span class="p">,</span><span class="mi">0</span> <span class="c1">; foobaz</span>
+<span class="nl">dseg:</span><span class="err">0061</span>                 <span class="kd">db</span>    <span class="mi">0</span>               <span class="c1">; --- alignment, more data from libc follows</span>
+<span class="nl">dseg:</span><span class="err">0062</span> <span class="nf">word_10582</span>      <span class="nv">dw</span> <span class="mi">0</span>                    <span class="c1">; DATA XREF: start+4A </span>
+<span class="nl">dseg:</span><span class="err">0062</span>                                         <span class="c1">; __myalloc+8</span>
+<span class="nl">dseg:</span><span class="err">0064</span> <span class="nf">word_10584</span>      <span class="nv">dw</span> <span class="mi">0</span>                    <span class="c1">; DATA XREF: start+3E</span>
+<span class="nl">dseg:</span><span class="err">0066</span> <span class="nf">off_10586</span>       <span class="nv">dw</span> <span class="nv">offset</span> <span class="nv">__exit</span>        <span class="c1">; DATA XREF: start+9C</span>
+<span class="nl">dseg:</span><span class="err">0066</span>                                         <span class="c1">; start+AE</span>
+<span class="nl">dseg:</span><span class="err">0068</span> <span class="nf">word_10588</span>      <span class="nv">dw</span> <span class="mi">0</span>                    <span class="c1">; DATA XREF: start+39</span>
+<span class="nl">dseg:</span><span class="err">0068</span>                                         <span class="c1">; __myalloc+2</span>
+<span class="nl">dseg:</span><span class="err">006</span><span class="nf">A</span>                 <span class="nv">dw</span> <span class="ow">seg</span> <span class="nb">ds</span><span class="nv">eg</span>
+<span class="nl">dseg:</span><span class="err">006</span><span class="nf">C</span>                 <span class="nv">db</span> <span class="mh">4Ch</span> <span class="nv">dup</span><span class="p">(</span>   <span class="mi">0</span><span class="p">)</span>
+<span class="nl">dseg:</span><span class="err">006</span><span class="nf">C</span>                 <span class="nv">db</span>  <span class="mh">68h</span>
+<span class="nl">dseg:</span><span class="err">006</span><span class="nf">C</span>                 <span class="nv">db</span>    <span class="mi">0</span>
+<span class="nl">dseg:</span><span class="err">006</span><span class="nf">C</span>                 <span class="nv">db</span>  <span class="mh">3Bh</span>
+<span class="nl">dseg:</span><span class="err">006</span><span class="nf">C</span>                 <span class="nv">db</span>  <span class="mh">43h</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nl">dseg:</span><span class="err">01</span><span class="nf">CF</span> <span class="nv">aR6001NullPoint</span> <span class="nv">db</span> <span class="s">'R6001'</span><span class="p">,</span><span class="mh">0Dh</span><span class="p">,</span><span class="mh">0Ah</span>
+<span class="nl">dseg:</span><span class="err">01</span><span class="nf">CF</span>                 <span class="nv">db</span> <span class="err">'</span><span class="o">-</span> <span class="nv">null</span> <span class="nv">pointer</span> <span class="nv">assignment</span><span class="err">'</span><span class="p">,</span><span class="mh">0Dh</span><span class="p">,</span><span class="mh">0Ah</span><span class="p">,</span><span class="mi">0</span>
+<span class="nl">dseg:</span><span class="err">01</span><span class="nf">F2</span>                 <span class="nv">db</span> <span class="mh">0FFh</span>
+<span class="nl">dseg:</span><span class="err">01</span><span class="nf">F3</span>                 <span class="nv">db</span> <span class="mh">0FFh</span>
+<span class="nl">dseg:</span><span class="err">01</span><span class="nf">F4</span>                 <span class="nv">db</span> <span class="mh">0FFh</span>            <span class="c1">; 3x 0FFh, libc initialized data end marker?</span>
+<span class="nl">dseg:</span><span class="err">01</span><span class="nf">F5</span>                 <span class="nv">db</span> <span class="mh">0Bh</span> <span class="nv">dup</span> <span class="p">(</span><span class="nv">?</span><span class="p">)</span>     <span class="c1">; 11 bytes of uninitialized data, </span>
+                                             <span class="c1">; presumably from libc startup code,</span>
+                                             <span class="c1">; probably some alignment too, the next offset is too neat</span>
+<span class="nl">dseg:</span><span class="err">0200</span> <span class="nf">word_10720</span>      <span class="nv">dw</span> <span class="nv">?</span>               <span class="c1">; x</span>
+<span class="nl">dseg:</span><span class="err">0202</span> <span class="nf">word_10722</span>      <span class="nv">dw</span> <span class="nv">?</span>               <span class="c1">; y</span>
+<span class="nl">dseg:</span><span class="err">0204</span>                 <span class="nf">align</span> <span class="mh">10h</span>
+<span class="nl">dseg:</span><span class="err">0204</span> <span class="nf">dseg</span>            <span class="nv">ends</span></code></pre></figure>
+
+<p>15 routines (and a “chunk” which in IDA speak is a disconnected part of a routine) made it into the executable. The unnamed (<code class="language-plaintext highlighter-rouge">sub_...</code>) ones are also recognized as part of libc by IDA, they are referenced by the named ones, just lost their names to stripping.</p>
+
+<p>The real meat of this part of the experiment comes from the contents of the data segment. It opens with two null bytes, then a word value that’s referenced from <code class="language-plaintext highlighter-rouge">start</code>, that is the crt0 code. More null bytes follow, then the MSC library watermark which I know from the game, followed by 0x11, 0x0… and my code’s data begins. After it ends, more libc data continues. The initialized libc data ends with some error strings, and an apparent termination marker of 3 times 0xff. Following that are 11 (0xb) bytes of unitialized data before the two uninitialized variables of my own, and the data segment concludes.</p>
+
+<h2 id="adding-the-remaining-functions-from-libc">Adding the remaining functions from libc</h2>
+
+<p>Here’s where it gets even more interesting. I look over the 63 items identified as originating from libc by IDA in the game’s executable, 5 of which are chunks. Out of the remaining ones, the <code class="language-plaintext highlighter-rouge">__</code>-prefixed ones are internal routines, which were not likely referenced directly, but were pulled in as dependencies. That leaves us with a small subset of actual libc functions that the game uses. I don’t really care about their signatures, and neither does the linker, so it will suffice to declare them as whatever and attempt to call them from my <code class="language-plaintext highlighter-rouge">main()</code>.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="c1">// hello.c</span>
+
+<span class="c1">// the signatures are not important for linking, only the name matters</span>
+<span class="kt">void</span> <span class="nf">exit</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">getch</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">fclose</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">fopen</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">fread</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">fwrite</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">lseek</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">strcmp</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">getche</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">movedata</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">inp</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">putch</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">abs</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">srand</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">rand</span><span class="p">();</span>
+
+<span class="c1">// These are probably the emulated floating point operations, originating from</span>
+<span class="c1">// actual float arithmetic operations in the game code. I can't be bothered to</span>
+<span class="c1">// recreate them right now, so I'll just call them directly.</span>
+<span class="kt">void</span> <span class="nf">_aNldiv</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">_aNlmul</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">_aNlrem</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">_aNNaldiv</span><span class="p">();</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">rand</span><span class="p">();</span>
+    <span class="n">fclose</span><span class="p">();</span>
+    <span class="n">fopen</span><span class="p">();</span>
+    <span class="n">fread</span><span class="p">();</span>
+    <span class="n">fwrite</span><span class="p">();</span>
+    <span class="n">lseek</span><span class="p">();</span>
+    <span class="n">strcmp</span><span class="p">();</span>
+    <span class="n">getche</span><span class="p">();</span>
+    <span class="n">getch</span><span class="p">();</span>
+    <span class="n">movedata</span><span class="p">();</span>
+    <span class="n">inp</span><span class="p">();</span>
+    <span class="n">putch</span><span class="p">();</span>
+    <span class="n">abs</span><span class="p">();</span>
+    <span class="n">srand</span><span class="p">();</span>
+
+    <span class="n">_aNldiv</span><span class="p">();</span>
+    <span class="n">_aNlmul</span><span class="p">();</span>
+    <span class="n">_aNlrem</span><span class="p">();</span>
+    <span class="n">_aNNaldiv</span><span class="p">();</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This yields an executable 7707 bytes long. I look inside again and compare the list of routines placed in the executable by the linker, but something is wrong. Routines were pulled in which are not present in the game, like <code class="language-plaintext highlighter-rouge">itoa()</code>. I check to see where it is used in my experimental executable:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">seg000:</span><span class="err">05</span><span class="nf">BC</span> <span class="c1">; int __cdecl fclose(FILE *)</span>
+<span class="nl">seg000:</span><span class="err">05</span><span class="nf">BC</span> <span class="nv">_fclose</span>         <span class="nv">proc</span> <span class="nv">near</span>               <span class="c1">; CODE XREF: _main+3p</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nl">seg000:</span><span class="err">0653</span>                 <span class="nf">call</span>    <span class="nv">_itoa</span>
+<span class="nl">seg000:</span><span class="err">0656</span>                 <span class="nf">add</span>     <span class="nb">sp</span><span class="p">,</span> <span class="mi">6</span>
+<span class="nl">seg000:</span><span class="err">0659</span>                 <span class="nf">lea</span>     <span class="nb">ax</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_E</span><span class="p">]</span>
+<span class="nl">seg000:</span><span class="err">065</span><span class="nf">C</span>                 <span class="nv">push</span>    <span class="nb">ax</span>              <span class="c1">; char *</span>
+<span class="nl">seg000:</span><span class="err">065</span><span class="nf">D</span>                 <span class="nv">call</span>    <span class="nv">_remove</span>
+<span class="nl">seg000:</span><span class="err">0660</span>                 <span class="nf">add</span>     <span class="nb">sp</span><span class="p">,</span> <span class="mi">2</span>
+<span class="nl">seg000:</span><span class="err">0663</span>                 <span class="nf">or</span>      <span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nl">seg000:</span><span class="err">0665</span>                 <span class="nf">jz</span>      <span class="nv">short</span> <span class="nv">loc_1066A</span>
+<span class="nl">seg000:</span><span class="err">0667</span>                 <span class="nf">mov</span>     <span class="nb">di</span><span class="p">,</span> <span class="mh">0FFFFh</span>
+<span class="nl">seg000:</span><span class="err">066</span><span class="nf">A</span> <span class="nv">loc_1066A</span><span class="p">:</span>
+<span class="nl">seg000:</span><span class="err">066</span><span class="nf">A</span>                 <span class="nv">mov</span>     <span class="kt">byte</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">si</span><span class="o">+</span><span class="mi">6</span><span class="p">],</span> <span class="mi">0</span>
+<span class="nl">seg000:</span><span class="err">066</span><span class="nf">E</span>                 <span class="nv">mov</span>     <span class="nb">ax</span><span class="p">,</span> <span class="nb">di</span>
+<span class="nl">seg000:</span><span class="err">0670</span>                 <span class="nf">pop</span>     <span class="nb">si</span>
+<span class="nl">seg000:</span><span class="err">0671</span>                 <span class="nf">pop</span>     <span class="nb">di</span>
+<span class="nl">seg000:</span><span class="err">0672</span>                 <span class="nf">mov</span>     <span class="nb">sp</span><span class="p">,</span> <span class="nb">bp</span>
+<span class="nl">seg000:</span><span class="err">0674</span>                 <span class="nf">pop</span>     <span class="nb">bp</span>
+<span class="nl">seg000:</span><span class="err">0675</span>                 <span class="nf">retn</span>
+<span class="nl">seg000:</span><span class="err">0675</span> <span class="nf">_fclose</span>         <span class="nv">endp</span></code></pre></figure>
+
+<p>It’s used in <code class="language-plaintext highlighter-rouge">fclose()</code>, also a libc function, so it seems like it tagged along as a dependency. Looking at the same location within <code class="language-plaintext highlighter-rouge">fclose()</code> inside the game, it looks like it’s calling a different routine that’s not part of libc. Apparently, Microprose provided overrides of standard library functions. It’s probably a vestige of the codebase’s roots in older versions of the MSC compiler, where some of these functions might have not been available, so the devs rolled their own and forgot to remove them when switching to a newer compiler. Or maybe they figured they could do better? In the end, it seems like the following library functions were replaced:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span> <span class="nf">itoa</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">_setargv</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">_setenvp</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">strcat</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">strcpy</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">memcpy</span><span class="p">()</span> <span class="p">{}</span></code></pre></figure>
+
+<p>Trying to link this however surprisingly fails:</p>
+
+<pre>
+link /M /I /NOD  hello.obj,d:\hello.exe,,slibce.lib;
+
+Microsoft (R) Overlay Linker  Version 3.65
+Copyright (C) Microsoft Corp 1983-1988.  All rights reserved.
+
+**** PASS ONE ****
+HELLO.OBJ(hello.c)
+**** LIBRARY SEARCH ****
+C:\msc510\lib\SLIBCE.LIB(dos\crt0.asm)
+C:\msc510\lib\SLIBCE.LIB(dos\crt0dat.asm)
+C:\msc510\lib\SLIBCE.LIB(dos\crt0msg.asm)
+C:\msc510\lib\SLIBCE.LIB(crt0fp.asm)
+C:\msc510\lib\SLIBCE.LIB(chkstk.asm)
+C:\msc510\lib\SLIBCE.LIB(chksum.asm)
+C:\msc510\lib\SLIBCE.LIB(dos\stdargv.asm)
+C:\msc510\lib\SLIBCE.LIB(dos\stdargv.asm) : error L2044: __setargv : symbol multiply defined, use /NOE
+[...]
+</pre>
+
+<p>That is very strange, why is the symbol multiply defined? I would expect the linker to only pull in functions from the library which could not be resolved locally, yet it seems to be grabbing the library version while it has my replacement readily available, and the two clash? Using <code class="language-plaintext highlighter-rouge">/NOE</code> does indeed let it link successfully, but it has unwanted side effects in that the order of libc routines within the executable changes. Before overriding the libc functions and adding <code class="language-plaintext highlighter-rouge">/NOE</code>, both my <code class="language-plaintext highlighter-rouge">hello.exe</code> and the game executable have libc routines arranged in this order (of course, the offsets differ):</p>
+
+<pre>
+seg000:0056 ; [000000B2 BYTES: COLLAPSED FUNCTION start. PRESS CTRL-NUMPAD+ TO EXPAND] 🟡 the startup (entrypoint) routine
+seg000:0108 ; [000000C4 BYTES: COLLAPSED FUNCTION __cinit. PRESS CTRL-NUMPAD+ TO EXPAND] 
+seg000:01CC ; [00000017 BYTES: COLLAPSED FUNCTION _exit. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:01E3 ; [00000045 BYTES: COLLAPSED FUNCTION __exit. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:0228 ; [0000002D BYTES: COLLAPSED FUNCTION __ctermsub. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:0255 ; [0000000F BYTES: COLLAPSED FUNCTION sub_10255. PRESS CTRL-NUMPAD+ TO EXPAND] 🟡 two unnamed unknown functions recognized as part of libc by IDA
+seg000:0264 ; [00000013 BYTES: COLLAPSED FUNCTION sub_10264. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:0277                 align 2
+seg000:0278 ; [00000020 BYTES: COLLAPSED FUNCTION __FF_MSGBANNER. PRESS CTRL-NUMPAD+ TO EXPAND]
+[...]
+</pre>
+
+<p>After I do the override and add <code class="language-plaintext highlighter-rouge">/NOE</code>, it changes to the following:</p>
+
+<pre>
+seg000:0062 ; [0000016C BYTES: COLLAPSED FUNCTION start. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:01CE ; [00000027 BYTES: COLLAPSED FUNCTION _fopen. PRESS CTRL-NUMPAD+ TO EXPAND] 🔴 functions that I called get placed after `start`
+seg000:01F5                 align 2
+seg000:01F6 ; [000001E6 BYTES: COLLAPSED FUNCTION _fread. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:03DC ; [0000013C BYTES: COLLAPSED FUNCTION _fwrite. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:0518 ; [0000007A BYTES: COLLAPSED FUNCTION _lseek. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:0592 ; [0000002B BYTES: COLLAPSED FUNCTION _strcmp. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:05BD                 align 2
+seg000:05BE ; [00000004 BYTES: COLLAPSED FUNCTION _getche. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:05C2 ; [00000017 BYTES: COLLAPSED FUNCTION _getch. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:05D9                 align 2
+seg000:05DA ; [0000001E BYTES: COLLAPSED FUNCTION _movedata. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:05F8 ; [0000000D BYTES: COLLAPSED FUNCTION _inp. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:0605                 align 2
+seg000:0606 ; [0000000F BYTES: COLLAPSED FUNCTION _putch. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:0615                 align 2
+seg000:0616 ; [00000015 BYTES: COLLAPSED FUNCTION _abs. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:062B                 align 2
+seg000:062C ; [00000011 BYTES: COLLAPSED FUNCTION _srand. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:063D                 align 2
+seg000:063E ; [00000026 BYTES: COLLAPSED FUNCTION _rand. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:0664 ; [0000009C BYTES: COLLAPSED FUNCTION __aNldiv. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:0700 ; [00000034 BYTES: COLLAPSED FUNCTION __aNlmul. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:0734 ; [000000A2 BYTES: COLLAPSED FUNCTION __aNlrem. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:07D6 ; [00000022 BYTES: COLLAPSED FUNCTION unknown_libname_1. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:07F8 ; [000000C4 BYTES: COLLAPSED FUNCTION __cinit. PRESS CTRL-NUMPAD+ TO EXPAND] 🔴 this used to come right after `start`
+seg000:08BC ; [00000017 BYTES: COLLAPSED FUNCTION _exit. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:08D3 ; [00000045 BYTES: COLLAPSED FUNCTION __exit. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:0918 ; [0000002D BYTES: COLLAPSED FUNCTION __ctermsub. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:0945 ; [0000000F BYTES: COLLAPSED FUNCTION sub_10945. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:0954 ; [00000013 BYTES: COLLAPSED FUNCTION sub_10954. PRESS CTRL-NUMPAD+ TO EXPAND]
+seg000:0967                 align 2
+seg000:0968 ; [00000020 BYTES: COLLAPSED FUNCTION __FF_MSGBANNER. PRESS CTRL-NUMPAD+ TO EXPAND]
+</pre>
+
+<p>I did some experiments, and the order in which <code class="language-plaintext highlighter-rouge">_fopen</code>-<code class="language-plaintext highlighter-rouge">_fread</code>-<code class="language-plaintext highlighter-rouge">_fwrite</code>-… are placed in the executable doesn’t appear to be influenced by the order of calling or declaration in the C code. However, what I think happens here is that the order in which the linker pulls in individual object files from libc can be influenced by “some” factors, and this is what happened with <code class="language-plaintext highlighter-rouge">/NOE</code>. What this option does exactly is not documented at all in the compiler or linker documentation, nor is the associated <code class="language-plaintext highlighter-rouge">L2044</code> linker error. It took some web searching to uncover this ancient bit of wisdom hidden in an old KB article:</p>
+
+<blockquote>
+  <p>The /NOEXTDICTIONARY switch tells the linker NOT to take advantage of additional information recorded in Extended Dictionary in the library file. This additional information describes which module in the library calls any other module from the same library, saving linker number of passes through the library file to pick up all required modules.<br />
+If you have a call in your code to the library function FOO and FOO calls another function BAR from the same library, then at processing time of FOO, the linker will pull out BAR.  This process occurs because the extended dictionary has a link between FOO and BAR.<br />
+Linking without /NOE <strong>causes the following error if you want to pull FOO in from the library but you want to provide its own BAR:</strong><br />
+L2044 BAR : symbol multiply defined, use /NOE<br />
+This error resulted from the linker pulling FOO and BAR from the same library, then later it sees BAR coming from user .OBJ file.<br />
+Using /NOE in this case prevents the linker from pulling out BAR from the library, so your BAR routine is used instead.<br />
+If you have genuine symbol redefinition, then when linking with /NOE you will see the following error:<br />
+L2025 BAR : symbol defined more than once</p>
+</blockquote>
+
+<p>So what I think happened here is that before I added <code class="language-plaintext highlighter-rouge">/NOE</code>, things like <code class="language-plaintext highlighter-rouge">__cinit</code> and <code class="language-plaintext highlighter-rouge">_exit</code> were pulled in early as dependencies of <code class="language-plaintext highlighter-rouge">start</code>. Once I added it, the early processing did not happen, which is why they were pulled in later – presumably after the entire <code class="language-plaintext highlighter-rouge">hello.obj</code> object file was processed and symbols were still found missing.</p>
+
+<p>It’s kind of weird that it takes an undocumented switch to make the linker operate in a way that’s considered standard nowadays, but I guess back then it was not common to use libraries other than the ones shipping with the compiler (the docs don’t even mention how to create libraries, it’s handled by a separate tool (<code class="language-plaintext highlighter-rouge">LIB.EXE</code>) and covered in the “CodeView and Utilities” document) and linking took a long time, so it made sense to try and optimize it. In any case, I got the idea to add an explicit call to <code class="language-plaintext highlighter-rouge">exit()</code> in the source code as a way to force the compiler to pull it earlier. Surprisingly, that was actually the golden ticket which put all the functions in the exact same order as they have in the game executable. Victory!</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="c1">// hello.c</span>
+<span class="kt">void</span> <span class="nf">itoa</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">_setargv</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">_setenvp</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">strcat</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">strcpy</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">memcpy</span><span class="p">()</span> <span class="p">{}</span>
+
+<span class="kt">void</span> <span class="n">exit</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">getch</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">fclose</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">fopen</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">fread</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">fwrite</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">lseek</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">strcmp</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">getche</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">movedata</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">inp</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">putch</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">abs</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">srand</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">rand</span><span class="p">();</span>
+
+<span class="kt">void</span> <span class="n">_aNldiv</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">_aNlmul</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">_aNlrem</span><span class="p">();</span>
+<span class="kt">void</span> <span class="n">_aNNaldiv</span><span class="p">();</span>
+
+<span class="cm">/* initialized data */</span>
+<span class="k">const</span> <span class="kt">char</span> <span class="n">foobar</span><span class="p">[]</span> <span class="o">=</span> <span class="s">"hello_c_dat"</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">barfoo</span> <span class="o">=</span> <span class="mh">0xabcd</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">char</span> <span class="n">foobaz</span><span class="p">[]</span> <span class="o">=</span> <span class="s">"something_else"</span><span class="p">;</span>
+<span class="cm">/* uninitialized (BSS) data */</span>
+<span class="kt">int</span> <span class="n">x</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">y</span><span class="p">;</span>
+
+<span class="kt">int</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">rand</span><span class="p">();</span>
+    <span class="n">fclose</span><span class="p">();</span>
+    <span class="n">fopen</span><span class="p">();</span>
+    <span class="n">fread</span><span class="p">();</span>
+    <span class="n">fwrite</span><span class="p">();</span>
+    <span class="n">lseek</span><span class="p">();</span>
+    <span class="n">strcmp</span><span class="p">();</span>
+    <span class="n">getche</span><span class="p">();</span>
+    <span class="n">getch</span><span class="p">();</span>
+    <span class="n">movedata</span><span class="p">();</span>
+    <span class="n">inp</span><span class="p">();</span>
+    <span class="n">putch</span><span class="p">();</span>
+    <span class="n">abs</span><span class="p">();</span>
+    <span class="n">srand</span><span class="p">();</span>
+
+    <span class="n">_aNldiv</span><span class="p">();</span>
+    <span class="n">_aNlmul</span><span class="p">();</span>
+    <span class="n">_aNlrem</span><span class="p">();</span>
+    <span class="n">_aNNaldiv</span><span class="p">();</span>
+
+    <span class="n">exit</span><span class="p">();</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<pre>
+ninja@dell:eaglestrike$ make hello
+cl /Gs /c /Foe:\hello.obj hello.c
+link /M /I /NOD /NOE hello.obj,d:\hello.exe,,slibce.lib;
+ls -l build-f15-se2/hello.exe
+-rw-r--r-- 1 ninja ninja 6855 Dec 30  2023 build-f15-se2/hello.exe
+</pre>
+
+<p>The executable is a little short of 7kB in size now. That’s the overhead of libc on the game, about 15%. But now let’s look at the data segment.</p>
+
+<p>Within the initialized data, not much has changed. Starting from the top we have:</p>
+
+<ol>
+  <li>Some null bytes from the startup code</li>
+  <li>The Microsoft libc watermark followed by <code class="language-plaintext highlighter-rouge">0x11, 0x0</code></li>
+  <li>My data</li>
+  <li>The remaining (non-startup) libc initialized data terminating with 3x<code class="language-plaintext highlighter-rouge">0xff</code>. Not surprisingly, there’s more of it than last time.</li>
+</ol>
+
+<p>The problem lies in the layout of the BSS (uninitialized) section:</p>
+
+<pre>
+dseg:0346                 db 0FFh
+dseg:0347                 db 0FFh
+dseg:0348                 db 0FFh 🟢 libc initialized data ends here, BSS begins
+dseg:0349                 db 407h dup(   ?)       ; 😭😭😭
+dseg:0750 word_11CD0      dw ?                    ; x
+dseg:0752 word_11CD2      dw ?                    ; y
+dseg:0754                 db 20Ch dup(   ?)
+dseg:0754 dseg            ends
+</pre>
+
+<p>Compared to last time (where there were 11 bytes of BSS with my data placed last), now the BSS consists of two featureless blocks with the sentinel data laying square in the middle, at a seemingly random offset.</p>
+
+<p>I was really hoping for something simple like the 11 bytes of startup code again, followed by my data, with the libc data coming last, in a size that I could match to a block of <code class="language-plaintext highlighter-rouge">?</code>s at the game’s BSS’ end. No such luck.</p>
+
+<p>This seems like little return for a lot of work, but I’ve got some ideas to follow up with:</p>
+
+<ul>
+  <li>do more investigation into the libc code, surely it must reference the BSS data, it’s weird that IDA doesn’t have any references to it, maybe it just needs some manual tagging somewhere</li>
+  <li>try removing all the functions and readding them one by one, try to match BSS regions with libc modules</li>
+  <li>keep reversing the game, marking up all uninitialized data used by the game means what remains comes from libc - the hard way</li>
+</ul>
+
+<p>This will have to wait for the <a href="/f15-se2/2024/01/07/unlink2.html">next time</a> next time though, since this post is already too long.</p>
+
+  </div><a class="u-url" href="/f15-se2/2023/12/30/unlink.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

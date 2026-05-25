@@ -1,0 +1,375 @@
+;	Static Name Aliases
+;
+	TITLE   FLTMATH.C
+	NAME    FLTMATH
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+EXTRN	__acrtused:ABS
+EXTRN	_abs:NEAR
+EXTRN	__aNuldiv:NEAR
+EXTRN	__aNldiv:NEAR
+EXTRN	_TRGTB:BYTE
+_BSS      SEGMENT
+COMM NEAR	_ntmp:	BYTE:	 10
+_BSS      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** #include "library.h"
+;|*** #include "world.h"
+;|*** #include "sdata.h"
+;|*** #include "cockpit.h"
+;|*** #include "f15defs.h"
+;|*** 
+;|*** extern  SWORD   IntDiv();
+;|*** extern  UWORD   Iasin(),Iacos();
+;|*** 
+;|*** extern  SWORD   FM[3][3];
+;|*** extern  UWORD   OurHead;
+;|*** extern  SWORD   OurPitch, OurRoll;
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** abs (int x); /* {           // REPLACES REGULAR LIBRARY VERSION !!!!!
+;|***     if (x==0x8000) {
+;|***         return 0x7fff;
+;|***     } else if (x<0) {
+;|***         return -x;
+;|***     } else {
+;|***         return (x);
+;|***     }
+;|*** }
+;|*** */
+;|*** /*<f><s> Integer Math Routines*/
+;|*** 
+;|*** /*******************************************
+;|*** *                                          *
+;|*** *   This function performs a division      *
+;|*** *   of two signed 15 bit fractions.   A/B  *
+;|*** *                                          *
+;|*** *******************************************/
+;|*** 
+;|*** SWORD   IntDiv (A,B)
+;|*** 
+;|*** SWORD A,B;
+; Line 38
+	PUBLIC	_IntDiv
+_IntDiv	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+	*** 000003	83 ec 0c 		sub	sp,12
+	*** 000006	56 			push	si
+;|*** {
+; Line 39
+;	A = 4
+;	B = 6
+;	S1 = -2
+;	S2 = -4
+;	LA = -8
+;	LB = -12
+;|***     SBYTE   S1 = 1,S2 = 1;
+; Line 40
+	*** 000007	c6 46 fe 01 		mov	BYTE PTR [bp-2],1	;S1
+	*** 00000b	c6 46 fc 01 		mov	BYTE PTR [bp-4],1	;S2
+;|***     unsigned long LA,LB;
+;|*** 
+;|***     if (A < 0)  S1 = -1;
+; Line 43
+	*** 00000f	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;A
+	*** 000013	7d 04 			jge	$I939
+	*** 000015	c6 46 fe ff 		mov	BYTE PTR [bp-2],255	;S1
+;|*** 
+;|***     if (B < 0)  S2 = -1;
+; Line 45
+					$I939:
+	*** 000019	83 7e 06 00 		cmp	WORD PTR [bp+6],0	;B
+	*** 00001d	7d 04 			jge	$I940
+	*** 00001f	c6 46 fc ff 		mov	BYTE PTR [bp-4],255	;S2
+;|*** 
+;|***     LA = (A<0) ? -A : A;
+; Line 47
+					$I940:
+	*** 000023	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;A
+	*** 000027	7d 07 			jge	$L20000
+	*** 000029	8b 46 04 		mov	ax,WORD PTR [bp+4]	;A
+	*** 00002c	f7 d8 			neg	ax
+	*** 00002e	eb 03 			jmp	SHORT $L20001
+					$L20000:
+	*** 000030	8b 46 04 		mov	ax,WORD PTR [bp+4]	;A
+					$L20001:
+	*** 000033	99 			cwd	
+	*** 000034	89 46 f8 		mov	WORD PTR [bp-8],ax	;LA
+	*** 000037	89 56 fa 		mov	WORD PTR [bp-6],dx
+;|***     LB = (B<0) ? -B : B;
+; Line 48
+	*** 00003a	83 7e 06 00 		cmp	WORD PTR [bp+6],0	;B
+	*** 00003e	7d 08 			jge	$L20002
+	*** 000040	8b 46 06 		mov	ax,WORD PTR [bp+6]	;B
+	*** 000043	f7 d8 			neg	ax
+	*** 000045	eb 04 			jmp	SHORT $L20003
+	*** 000047	90 			nop	
+					$L20002:
+	*** 000048	8b 46 06 		mov	ax,WORD PTR [bp+6]	;B
+					$L20003:
+	*** 00004b	99 			cwd	
+	*** 00004c	89 46 f4 		mov	WORD PTR [bp-12],ax	;LB
+	*** 00004f	89 56 f6 		mov	WORD PTR [bp-10],dx
+;|*** 
+;|***     return ((((LA << 16) / LB) >> 1) * S1 * S2);
+; Line 50
+	*** 000052	52 			push	dx
+	*** 000053	50 			push	ax
+	*** 000054	8b 56 f8 		mov	dx,WORD PTR [bp-8]	;LA
+	*** 000057	2b c0 			sub	ax,ax
+	*** 000059	52 			push	dx
+	*** 00005a	50 			push	ax
+	*** 00005b	e8 00 00 		call	__aNuldiv
+	*** 00005e	d1 ea 			shr	dx,1
+	*** 000060	d1 d8 			rcr	ax,1
+	*** 000062	8b c8 			mov	cx,ax
+	*** 000064	8a 46 fc 		mov	al,BYTE PTR [bp-4]	;S2
+	*** 000067	98 			cbw	
+	*** 000068	8b d8 			mov	bx,ax
+	*** 00006a	8a 46 fe 		mov	al,BYTE PTR [bp-2]	;S1
+	*** 00006d	98 			cbw	
+	*** 00006e	8b f0 			mov	si,ax
+	*** 000070	8b c1 			mov	ax,cx
+	*** 000072	f7 e6 			mul	si
+	*** 000074	f7 e3 			mul	bx
+	*** 000076	5e 			pop	si
+	*** 000077	8b e5 			mov	sp,bp
+	*** 000079	5d 			pop	bp
+	*** 00007a	c3 			ret	
+	*** 00007b	90 			nop	
+
+_IntDiv	ENDP
+;|*** 
+;|*** 
+;|*** }
+;|*** 
+;|*** /*************************************************
+;|*** *                                                *
+;|*** *   Function returns a 16 bit Word Degree angle  *
+;|*** *   of the Arc Sin of A.                         *
+;|*** *                                                *
+;|*** *************************************************/
+;|*** 
+;|*** 
+;|*** extern int TRGTB[];
+;|*** 
+;|*** unsigned Iasin (A)
+;|*** int A;
+; Line 66
+	PUBLIC	_Iasin
+_Iasin	PROC NEAR
+	*** 00007c	55 			push	bp
+	*** 00007d	8b ec 			mov	bp,sp
+	*** 00007f	83 ec 08 		sub	sp,8
+	*** 000082	56 			push	si
+;|*** {
+; Line 67
+;	A = 4
+;	AA = -4
+;	angl = -2
+;	delta = -8
+;	i = -6
+;|***     int AA,angl,delta,i;
+;|*** 
+;|***     if (A==-0x8000) return -0x4000;
+; Line 70
+	*** 000083	81 7e 04 00 80 		cmp	WORD PTR [bp+4],-32768	;A
+	*** 000088	75 08 			jne	$I948
+	*** 00008a	b8 00 c0 		mov	ax,-16384
+	*** 00008d	5e 			pop	si
+	*** 00008e	8b e5 			mov	sp,bp
+	*** 000090	5d 			pop	bp
+	*** 000091	c3 			ret	
+					$I948:
+	*** 000092	ff 76 04 		push	WORD PTR [bp+4]	;A
+	*** 000095	e8 00 00 		call	_abs
+	*** 000098	83 c4 02 		add	sp,2
+	*** 00009b	89 46 fc 		mov	WORD PTR [bp-4],ax	;AA
+;|*** 
+;|***     AA = abs(A);
+;|***     for (i=(AA>>9)+1; i>=0; i--) {
+; Line 73
+	*** 00009e	b1 09 			mov	cl,9
+	*** 0000a0	d3 f8 			sar	ax,cl
+	*** 0000a2	40 			inc	ax
+	*** 0000a3	89 46 fa 		mov	WORD PTR [bp-6],ax	;i
+	*** 0000a6	eb 03 			jmp	SHORT $F949
+					$FC950:
+	*** 0000a8	ff 4e fa 		dec	WORD PTR [bp-6]	;i
+					$F949:
+	*** 0000ab	83 7e fa 00 		cmp	WORD PTR [bp-6],0	;i
+	*** 0000af	7c 3b 			jl	$FB951
+;|***         if (AA>=TRGTB[i]) {
+; Line 74
+	*** 0000b1	8b 76 fa 		mov	si,WORD PTR [bp-6]	;i
+	*** 0000b4	d1 e6 			shl	si,1
+	*** 0000b6	8b 46 fc 		mov	ax,WORD PTR [bp-4]	;AA
+	*** 0000b9	39 84 00 00 		cmp	WORD PTR _TRGTB[si],ax
+	*** 0000bd	7f e9 			jg	$FC950
+;|***            delta = TRGTB[i+1] - TRGTB[i];
+; Line 75
+	*** 0000bf	8b 84 02 00 		mov	ax,WORD PTR _TRGTB[si+2]
+	*** 0000c3	2b 84 00 00 		sub	ax,WORD PTR _TRGTB[si]
+	*** 0000c7	89 46 f8 		mov	WORD PTR [bp-8],ax	;delta
+;|***            angl = ((i)<<8) + (long) 256*(AA-TRGTB[i])/delta;
+; Line 76
+	*** 0000ca	99 			cwd	
+	*** 0000cb	52 			push	dx
+	*** 0000cc	50 			push	ax
+	*** 0000cd	8b 46 fc 		mov	ax,WORD PTR [bp-4]	;AA
+	*** 0000d0	2b 84 00 00 		sub	ax,WORD PTR _TRGTB[si]
+	*** 0000d4	99 			cwd	
+	*** 0000d5	8a f2 			mov	dh,dl
+	*** 0000d7	8a d4 			mov	dl,ah
+	*** 0000d9	8a e0 			mov	ah,al
+	*** 0000db	2a c0 			sub	al,al
+	*** 0000dd	52 			push	dx
+	*** 0000de	50 			push	ax
+	*** 0000df	e8 00 00 		call	__aNldiv
+	*** 0000e2	8a 6e fa 		mov	ch,BYTE PTR [bp-6]	;i
+	*** 0000e5	2a c9 			sub	cl,cl
+	*** 0000e7	03 c1 			add	ax,cx
+	*** 0000e9	89 46 fe 		mov	WORD PTR [bp-2],ax	;angl
+;|***            break;
+; Line 77
+					$FB951:
+;|***         }
+;|***     }
+;|***     if (A<0) angl = -angl;
+; Line 80
+	*** 0000ec	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;A
+	*** 0000f0	7d 08 			jge	$I953
+	*** 0000f2	8b 46 fe 		mov	ax,WORD PTR [bp-2]	;angl
+	*** 0000f5	f7 d8 			neg	ax
+	*** 0000f7	89 46 fe 		mov	WORD PTR [bp-2],ax	;angl
+;|***     return angl;
+; Line 81
+					$I953:
+	*** 0000fa	8b 46 fe 		mov	ax,WORD PTR [bp-2]	;angl
+	*** 0000fd	5e 			pop	si
+	*** 0000fe	8b e5 			mov	sp,bp
+	*** 000100	5d 			pop	bp
+	*** 000101	c3 			ret	
+
+_Iasin	ENDP
+;|*** }
+;|*** 
+;|*** /*************************************************
+;|*** *                                                *
+;|*** *   Function returns a 16 bit Word Degree angle  *
+;|*** *   of the Arc Cos of A.                         *
+;|*** *                                                *
+;|*** *************************************************/
+;|*** 
+;|*** unsigned Iacos (A)
+;|*** int A;
+; Line 92
+	PUBLIC	_Iacos
+_Iacos	PROC NEAR
+	*** 000102	55 			push	bp
+	*** 000103	8b ec 			mov	bp,sp
+;|*** {
+; Line 93
+;	A = 4
+;|***     return 0x4000 - Iasin(A);
+; Line 94
+	*** 000105	ff 76 04 		push	WORD PTR [bp+4]	;A
+	*** 000108	e8 71 ff 		call	_Iasin
+	*** 00010b	83 c4 02 		add	sp,2
+	*** 00010e	2d 00 40 		sub	ax,16384
+	*** 000111	f7 d8 			neg	ax
+	*** 000113	5d 			pop	bp
+	*** 000114	c3 			ret	
+	*** 000115	90 			nop	
+
+_Iacos	ENDP
+;|*** }
+;|*** 
+;|*** Sqrt (N)
+;|*** int N;
+; Line 98
+	PUBLIC	_Sqrt
+_Sqrt	PROC NEAR
+	*** 000116	55 			push	bp
+	*** 000117	8b ec 			mov	bp,sp
+	*** 000119	83 ec 04 		sub	sp,4
+;|*** {   int A,B;
+; Line 99
+;	B = -4
+;	N = 4
+;	A = -2
+;|*** 
+;|***     N = abs(N);
+; Line 101
+	*** 00011c	ff 76 04 		push	WORD PTR [bp+4]	;N
+	*** 00011f	e8 00 00 		call	_abs
+	*** 000122	83 c4 02 		add	sp,2
+	*** 000125	89 46 04 		mov	WORD PTR [bp+4],ax	;N
+;|***     if (N<4) return 1;
+; Line 102
+	*** 000128	3d 04 00 		cmp	ax,4
+	*** 00012b	7d 07 			jge	$I961
+	*** 00012d	b8 01 00 		mov	ax,1
+	*** 000130	8b e5 			mov	sp,bp
+	*** 000132	5d 			pop	bp
+	*** 000133	c3 			ret	
+					$I961:
+	*** 000134	8b 46 04 		mov	ax,WORD PTR [bp+4]	;N
+	*** 000137	d1 f8 			sar	ax,1
+	*** 000139	d1 f8 			sar	ax,1
+	*** 00013b	89 46 fc 		mov	WORD PTR [bp-4],ax	;B
+;|***     B = N>>2;
+;|***     do {
+; Line 104
+					$D962:
+;|***         A = N/B;
+; Line 105
+	*** 00013e	8b 46 04 		mov	ax,WORD PTR [bp+4]	;N
+	*** 000141	99 			cwd	
+	*** 000142	8b 4e fc 		mov	cx,WORD PTR [bp-4]	;B
+	*** 000145	f7 f9 			idiv	cx
+	*** 000147	89 46 fe 		mov	WORD PTR [bp-2],ax	;A
+;|***         B = (B+A)>>1;
+; Line 106
+	*** 00014a	8b c1 			mov	ax,cx
+	*** 00014c	03 46 fe 		add	ax,WORD PTR [bp-2]	;A
+	*** 00014f	d1 f8 			sar	ax,1
+	*** 000151	89 46 fc 		mov	WORD PTR [bp-4],ax	;B
+;|***     } while (abs(B-A)>1);
+; Line 107
+	*** 000154	2b 46 fe 		sub	ax,WORD PTR [bp-2]	;A
+	*** 000157	50 			push	ax
+	*** 000158	e8 00 00 		call	_abs
+	*** 00015b	83 c4 02 		add	sp,2
+	*** 00015e	3d 01 00 		cmp	ax,1
+	*** 000161	7f db 			jg	$D962
+;|***     return B;
+; Line 108
+	*** 000163	8b 46 fc 		mov	ax,WORD PTR [bp-4]	;B
+	*** 000166	8b e5 			mov	sp,bp
+	*** 000168	5d 			pop	bp
+	*** 000169	c3 			ret	
+
+_Sqrt	ENDP
+_TEXT	ENDS
+END
+;|*** }
+;|*** 

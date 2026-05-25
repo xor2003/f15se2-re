@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>The compiler has dirty tricks | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="The compiler has dirty tricks" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<meta property="og:description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<link rel="canonical" href="/f15-se2/2024/05/22/dirtytricks.html" />
+<meta property="og:url" content="/f15-se2/2024/05/22/dirtytricks.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-05-22T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="The compiler has dirty tricks" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2024-05-22T00:00:00+00:00","datePublished":"2024-05-22T00:00:00+00:00","description":"(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)","headline":"The compiler has dirty tricks","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2024/05/22/dirtytricks.html"},"url":"/f15-se2/2024/05/22/dirtytricks.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">The compiler has dirty tricks</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2024-05-22T00:00:00+00:00" itemprop="datePublished">May 22, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><small>(<em>This post is part of a <a href="/category/f15-se2.html">series</a> on the subject of my hobby project, which is recreating the C source code for the 1989 game <a href="/f15-se2/2022/06/05/origins.html">F-15 Strike Eagle II</a> by reverse engineering the original binaries.</em>)</small></p>
+
+<p>A long time ago, I used to work for a large company. As a way of making us better developers, management decided we would get training on solving algorithmic problems - those made up ones like on Leetcode. But it wasn’t enough to train us. In true corporate fashion, it turned into a big thing where we would get a test every quarter and if you wanted a promotion, you would need to solve at least some of those tests successfully, and the difficulty increased as you (hopefully) rose through the ranks. During the test, you were dropped into a limited environment with only an IDE, no Internet, extra monitors would switch off, Windows task switching didn’t work, and it was all on a time limit of course. Oh, and on higher levels you were also rated on how well your program performed in comparison to other people.</p>
+
+<p>Not having a computer science background, I was never good at this stuff, so this caused me a great amount of stress. I guess this is one of grown up life’s disappointments - you figure you leave school and there will be no more tests - nope, there will be tests from here to eternity. Looking back on the whole experience, I can appreciate it - I learned a lot of new things, even if they hardly ever came useful on the actual job (I think I needed to write a sort routine only once in my professional life). But it comes up often on job interviews, so I guess I should thank my old company for helping me find a better job? Also, I still kinda suck at it, and I won’t be inverting red-black trees anytime soon, but at least I can write a DFS, which came useful a bunch of times while making tooling for this project.</p>
+
+<p>In any case, that test had a bunch of rules that I considered incredibly stupid back then. You could pick a language; C++, Java or Python if memory serves. But for C++ you could not use STL, some standard library routines were likewise prohibited (only they didn’t tell you which). You were expected to allocate your memory statically and solve everything with arrays. Which probably made sense if you were to be graded on performance (dynamic allocations will always have more overhead). Also, if a part of the task was e.g. to implement a queue, it would hardly make sense to let people use <code class="language-plaintext highlighter-rouge">queue&lt;T&gt;</code> and call it a day, would it?</p>
+
+<p>But the thing was, that whole environment was held together with ducttape and bubble gum. Your source code was parsed before being passed to the compiler, but the parser was very primitive. If it detected a verboten keyword, routine or anything really, it would silently fail the compilation, without telling you why, and on which line the problem was. If you had written a big chunk of code, the only way to figure it out was to keep deleting lines and trying if it would compile. I cannot tell you how much time I wasted trying to spot a variable called <code class="language-plaintext highlighter-rouge">connectedNodes</code>, because the parser thought I was trying to <code class="language-plaintext highlighter-rouge">connect()</code> out of my sandbox. Yes, it didn’t even bother to check word boundaries, it just scanned the whole thing against a list of patterns, apparently.</p>
+
+<p>Ever the defiant one, I decided to play dirty:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#define foo &lt;vec
+#define bar tor&gt;
+#include foo ## bar</span></code></pre></figure>
+
+<p>Unsurprisingly, this worked and now I could use the forbidden fruit of STL containers in the test. Yay. If I were more black-hat inclined, I could probably find interesting ways to abuse the system and bring down the Matrix, but I could never be bothered. I just showed it to a bunch of colleagues and we shared a laugh. One commented giddily: “sneaky, sneaky!”.</p>
+
+<p>Well, this painfully protracted intro finally brings us to the matter at hand, which is reversing F-15. When I stumbled onto the soultion of this puzzle, that exact line came through my head. But let’s start at the beginning. I’m currently tweaking a long routine, already translated from disassembly to C, into identical opcodes when compared with the original. After a string of successes, <code class="language-plaintext highlighter-rouge">mzdiff</code> stops again on this bit of code:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm">		<span class="nf">test</span>	<span class="kt">word</span><span class="nv">_1C830</span><span class="p">,</span> <span class="mh">200h</span>
+		<span class="nf">jz</span>	<span class="nv">short</span> <span class="nv">loc_146B9</span>
+		<span class="nf">sub</span>	<span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span>
+		<span class="nf">jmp</span>	<span class="nv">short</span> <span class="nv">loc_146BC</span>
+<span class="nl">loc_146B9:</span>
+		<span class="nf">mov</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mh">708h</span>
+<span class="nl">loc_146BC:</span>
+		<span class="nf">cwd</span>    <span class="c1">; A) DX:AX = (long)((word_1C830 &amp; 0x200) ? 0 : 0x708)</span>
+		<span class="nf">mov</span>	<span class="nb">cx</span><span class="p">,</span> <span class="kt">word</span><span class="nv">_1C82C</span>
+		<span class="nf">sub</span>	<span class="nb">bx</span><span class="p">,</span> <span class="nb">bx</span>
+		<span class="nf">sub</span>	<span class="nb">cx</span><span class="p">,</span> <span class="mh">8000h</span>
+		<span class="nf">sbb</span>	<span class="nb">bx</span><span class="p">,</span> <span class="nb">bx</span>
+		<span class="nf">neg</span>	<span class="nb">cx</span>
+		<span class="nf">adc</span>	<span class="nb">bx</span><span class="p">,</span> <span class="mi">0</span>
+		<span class="nf">neg</span>	<span class="nb">bx</span> <span class="c1">; B) BX:CX = 0x8000 - (long)(word_1C82C)</span>
+		<span class="nf">mov</span>	<span class="kt">word</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_30</span><span class="p">],</span> <span class="nb">cx</span>
+		<span class="nf">mov</span>	<span class="kt">word</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_30</span><span class="o">+</span><span class="mi">2</span><span class="p">],</span>	<span class="nb">bx</span> <span class="c1">; C) var_30 = BX:CX</span>
+		<span class="nf">mov</span>	<span class="nb">cl</span><span class="p">,</span> <span class="mi">5</span>
+		<span class="nf">mov</span>	<span class="kt">word</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_34</span><span class="p">],</span> <span class="nb">ax</span>
+		<span class="nf">mov</span>	<span class="kt">word</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_34</span><span class="o">+</span><span class="mi">2</span><span class="p">],</span>	<span class="nb">dx</span> <span class="c1">; D) var_34 = DX:AX</span>
+		<span class="nf">mov</span>	<span class="nb">ax</span><span class="p">,</span> <span class="kt">word</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_30</span><span class="p">]</span>
+		<span class="nf">mov</span>	<span class="nb">dx</span><span class="p">,</span> <span class="nb">bx</span>                     <span class="c1">; E) DX:AX = var_30</span>
+<span class="nl">loc_146E3:</span>
+		<span class="nf">shl</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mi">1</span>
+		<span class="nf">rcl</span>	<span class="nb">dx</span><span class="p">,</span> <span class="mi">1</span>
+		<span class="nf">dec</span>	<span class="nb">cl</span>
+		<span class="nf">jz</span>	<span class="nv">short</span> <span class="nv">loc_146ED</span>
+		<span class="nf">jmp</span>	<span class="nv">short</span> <span class="nv">loc_146E3</span>            <span class="c1">; F) DX:AX &lt;&lt;= 5</span>
+<span class="nl">loc_146ED:</span>
+		<span class="nf">sub</span>	<span class="nb">ax</span><span class="p">,</span> <span class="kt">word</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_34</span><span class="p">]</span>
+		<span class="nf">sbb</span>	<span class="nb">dx</span><span class="p">,</span> <span class="kt">word</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_34</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span> <span class="c1">; G) DX:AX -= var_34</span>
+		<span class="nf">mov</span>	<span class="kt">word</span> <span class="nv">ptr</span> <span class="kt">dword</span><span class="nv">_1D650</span><span class="p">,</span> <span class="nb">ax</span>
+		<span class="nf">mov</span>	<span class="kt">word</span> <span class="nv">ptr</span> <span class="kt">dword</span><span class="nv">_1D650</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span>	<span class="nb">dx</span> <span class="c1">; H) dword_1D650 = AX:DX</span></code></pre></figure>
+
+<p>Is it a coincidence that it’s always 32bit (long) numbers that are giving me trouble? This time however, the actual arithmetic is not (much of) the problem. What this does essentially, is calculate two long values in <code class="language-plaintext highlighter-rouge">DX:AX</code> (A) and <code class="language-plaintext highlighter-rouge">BX:CX</code> (B), respectively, before shifting one left by 5 bits (F), calculating the final result as a subtraction of the two (G), and placing the result in another variable (H). Also, the values making up the calculation are stored and retrieved from stack variables while this is going on (C, D, E). It essentially comes to this:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span> <span class="n">someRoutine</span><span class="p">()</span>
+    <span class="c1">// ...</span>
+    <span class="kt">long</span> <span class="n">var_30</span><span class="p">,</span> <span class="n">var_34</span><span class="p">;</span>
+    <span class="c1">// ...</span>
+    <span class="n">var_34</span> <span class="o">=</span> <span class="p">(</span><span class="kt">long</span><span class="p">)((</span><span class="n">word_1C830</span> <span class="o">&amp;</span> <span class="mh">0x200</span><span class="p">)</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="mh">0x708</span><span class="p">);</span>
+    <span class="n">var_30</span> <span class="o">=</span> <span class="mh">0x8000</span> <span class="o">-</span> <span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">word_1C82C</span><span class="p">;</span>
+    <span class="n">dword_1D650</span> <span class="o">=</span> <span class="p">(</span><span class="n">var_30</span> <span class="o">&lt;&lt;</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-</span> <span class="n">var_34</span><span class="p">;</span>
+    <span class="c1">// ...</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>I have already figured out the arithmetic <a href="/f15-se2/2024/05/05/ghidra.html">in a previous post</a>, and the calculations are correct and resolving to identical instructions. However, this will not produce exactly matching instructions for the entire block. As soon as the compiler sees an assignment to <code class="language-plaintext highlighter-rouge">var_34</code>, it will emit a write of the value to the stack. In the original code, the stores are interwoven with the calculations in a weird way;</p>
+
+<ol>
+  <li>The value of var_34 is calculated but not stored</li>
+  <li>The value of var_30 is calculated and stored in the variable</li>
+  <li>The counter for the long bit shift loop is initialized (?)</li>
+  <li>The value of var_34 is stored in its variable</li>
+  <li>The value of var_30 is read back for shifting, subtraction and storage in the destination</li>
+</ol>
+
+<p>Particularly, there does not appear to be a way (in the C programming language) to force a delay of the store in 4) until after the calculation result of 2) is stored in 3). You write a statement to calculate something and where to place the result, and it’s done immediately (modern compilers may very well do crazy reoderding, but we are living in 1989 here). You cannot say <code class="language-plaintext highlighter-rouge">x = y + 5... but write to x a little later please</code>. So this looks like some quirky compiler behaviour due to needing to juggle the limited register storage to perform the requested calculation.</p>
+
+<p>Also, that the values are stored in the middle of the calculation smells of the “assignment as subexpression” idiom (<code class="language-plaintext highlighter-rouge">a = (b = c + d)</code>) that I’ve seen used heavily throughout the reconstructed code. So how about this?</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">dword_1D650</span> <span class="o">=</span> <span class="p">((</span><span class="n">var_30</span> <span class="o">=</span> <span class="mh">0x8000</span> <span class="o">-</span> <span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">word_1C82C</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">var_34</span> <span class="o">=</span> <span class="p">(</span><span class="kt">long</span><span class="p">)((</span><span class="n">word_1C830</span> <span class="o">&amp;</span> <span class="mh">0x200</span><span class="p">)</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="mh">0x708</span><span class="p">));</span></code></pre></figure>
+
+<p>I used to get nausea from code like this before, but these days it’s just another day at the reversing office. However, there are two problems (one of them made up). Notice that the <code class="language-plaintext highlighter-rouge">var_34</code> subexpression with the conditional inside comes second in the overall expression. Meanwhile, in the disassembly, it actually comes first. Until now in my experience, the order of the machine instructions was matching the natural order of operations in the expression. Here however, probably because of the conditional, the compiler actually does the <code class="language-plaintext highlighter-rouge">var_34</code> calculation first, no matter where it’s placed in the expression. So it’s not actually a problem - see, told you. 😉</p>
+
+<p>The real problem is that it will still produce the store as soon as possible:</p>
+
+<pre>
+1000:46ad/0146ad: test word [si+0x5ce0], 0x200     ~= 1000:1951/011951: test word [si+0x5d26], 0x200
+1000:46b3/0146b3: jz 0x46b9 (0x4 down)             == 1000:1957/011957: jz 0x195d (0x4 down)
+1000:46b5/0146b5: sub ax, ax                       == 1000:1959/011959: sub ax, ax
+1000:46b7/0146b7: jmp short 0x46bc (0x3 down)      == 1000:195b/01195b: jmp short 0x1960 (0x3 down)
+1000:46b9/0146b9: mov ax, 0x708                    == 1000:195d/01195d: mov ax, 0x708
+1000:46bc/0146bc: cwd                              == 1000:1960/011960: cwd
+<r>1000:46bd/0146bd: mov cx, [si+0x5cdc]              != 1000:1961/011961: mov [bp-0x32], ax</r>
+ERROR: Instruction mismatch in routine sub_14093 at 1000:46bd/0146bd: mov cx, [si+0x5cdc] != 1000:1961/011961: mov [bp-0x32], ax
+--- Context information for up to 30 additional instructions after mismatch location:
+1000:46c1/0146c1: sub bx, bx                       != 1000:1964/011964: mov [bp-0x30], dx
+1000:46c3/0146c3: sub cx, 0x8000                   != 1000:1967/011967: mov cx, [si+0x5d22]
+1000:46c7/0146c7: sbb bx, bx                       != 1000:196b/01196b: sub bx, bx
+1000:46c9/0146c9: neg cx                           != 1000:196d/01196d: sub cx, 0x8000
+1000:46cb/0146cb: adc bx, 0x0                      != 1000:1971/011971: sbb bx, bx
+1000:46ce/0146ce: neg bx                           != 1000:1973/011973: neg cx
+1000:46d0/0146d0: mov [bp-0x30], cx                != 1000:1975/011975: adc bx, 0x0
+</pre>
+
+<p>It writes <code class="language-plaintext highlighter-rouge">dx:ax</code> to var_34 as soon as it’s done calculating the value. There does not appear to be a way to have the cake and eat it too.</p>
+
+<p>I spent two days trying to rewrite the expression in as many ways as possible. For a while, I thought abusing the seldom used behaviour of the comma operator in C could be the golden ticket:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">var_34</span> <span class="o">=</span> <span class="p">(</span><span class="n">var_30</span> <span class="o">=</span> <span class="mh">0x8000</span> <span class="o">-</span> <span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">word_1C82C</span><span class="p">),</span> <span class="p">(</span><span class="kt">long</span><span class="p">)((</span><span class="n">word_1C830</span> <span class="o">&amp;</span> <span class="mh">0x200</span><span class="p">)</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="mh">0x708</span><span class="p">);</span></code></pre></figure>
+
+<p>This evaluates the expressions from left to right, and yields the value of the last expression as the result. However, in this case actually the left-to-right order is observed, and var_30 really is evaluated first (which is the way I wrote it, but hoped the compiler would reorder it). So again, no dice.</p>
+
+<p>This had me puzzled and out of ideas. Looking at the sequence of the instructions, it seemed like the compiler decided to dump <code class="language-plaintext highlighter-rouge">dx:ax</code> onto the stack because it needed them to do arithmetic in the shifting loop (It seems to prefer those for 32bit arithmetic, idk). So maybe this is not a store that the programmer wanted at all? Maybe the compiler just figured it needed a place to put the intermediate results, and decided on the stack behind my back? I remove the two impossibile stores:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">dword_1D650</span> <span class="o">=</span> <span class="p">((</span><span class="mh">0x8000</span> <span class="o">-</span> <span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">word_1C82C</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-</span> <span class="p">((</span><span class="kt">long</span><span class="p">)((</span><span class="n">word_1C830</span> <span class="o">&amp;</span> <span class="mh">0x200</span><span class="p">)</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="mh">0x708</span><span class="p">));</span></code></pre></figure>
+
+<p>Success! Even though I did not request it, the compiler stores the values by itself. My routine completely matches the original at the problematic location, and a couple hundred instructions afterwards. Scratch that off, move to the next one. Whew, that was sneaky!</p>
+
+<p>This actually solves a problem a little later on, where I was confused by a write of an 8bit value to what I originally determined to be a 32bit variable (<code class="language-plaintext highlighter-rouge">var_34</code>) based on the code section we just discussed:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">mov</span>	<span class="nb">al</span><span class="p">,</span> <span class="nv">wldReadBuf6.field_18</span><span class="p">[</span><span class="nb">bx</span><span class="p">]</span>
+<span class="nf">mov</span>	<span class="kt">byte</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_34</span><span class="p">],</span> <span class="nb">al</span>
+<span class="nf">test</span>	<span class="kt">byte</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_34</span><span class="p">],</span> <span class="mh">80h</span></code></pre></figure>
+
+<p>I tried casting the variable to a buffer of <code class="language-plaintext highlighter-rouge">uint8</code>s, but could not get it to match:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">  <span class="c1">// ...</span>
+  <span class="k">for</span> <span class="p">(</span><span class="n">var_26</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">var_26</span> <span class="o">&lt;</span> <span class="n">wldReadBuf5Size</span> <span class="o">-</span> <span class="mi">4</span><span class="p">;</span> <span class="n">var_26</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span> 
+    <span class="p">(</span><span class="n">uint8</span><span class="o">*</span><span class="p">)(</span><span class="o">&amp;</span><span class="n">var_34</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">wldReadBuf6</span><span class="p">[</span><span class="n">var_26</span><span class="p">].</span><span class="n">field_18</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span> <span class="c1">// ??? Writing a byte to a long?</span>
+    <span class="k">if</span> <span class="p">(((</span><span class="n">uint8</span><span class="p">)</span><span class="n">var_34</span> <span class="o">&amp;</span> <span class="mh">0x80</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// written value used in a condition here</span>
+      <span class="n">var_14</span> <span class="o">=</span> <span class="p">(</span><span class="n">var_20</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">4</span> <span class="o">-</span> <span class="n">difficultySaved</span><span class="p">);</span>
+      <span class="k">if</span> <span class="p">(((</span><span class="n">uint8</span><span class="p">)</span><span class="n">var_34</span> <span class="o">&amp;</span> <span class="mh">0x40</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// ...and here</span>
+        <span class="n">var_14</span> <span class="o">=</span> <span class="n">var_20</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">;</span>
+      <span class="p">}</span>
+      <span class="c1">// ...</span></code></pre></figure>
+
+<p>Now, since I know <code class="language-plaintext highlighter-rouge">var_34</code> is not actually a variable, I just went and removed the variable references and just placed the expression where it’s used:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">  <span class="c1">// ...</span>
+  <span class="k">for</span> <span class="p">(</span><span class="n">var_26</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">var_26</span> <span class="o">&lt;</span> <span class="n">wldReadBuf5Size</span> <span class="o">-</span> <span class="mi">4</span><span class="p">;</span> <span class="n">var_26</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">((</span><span class="n">wldReadBuf6</span><span class="p">[</span><span class="n">var_26</span><span class="p">].</span><span class="n">field_18</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0x80</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">var_14</span> <span class="o">=</span> <span class="p">(</span><span class="n">var_20</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">4</span> <span class="o">-</span> <span class="n">difficultySaved</span><span class="p">);</span>
+      <span class="k">if</span> <span class="p">((</span><span class="n">wldReadBuf6</span><span class="p">[</span><span class="n">var_26</span><span class="p">].</span><span class="n">field_18</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0x40</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">var_14</span> <span class="o">=</span> <span class="n">var_20</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">;</span>
+      <span class="p">}</span></code></pre></figure>
+
+<p>This matches. I’m guessing that the compiler figured out that the expression anded with <code class="language-plaintext highlighter-rouge">0x80</code> was going to be needed for anding with <code class="language-plaintext highlighter-rouge">0x40</code> later in the loop’s body, so it decided to place it on the stack, in the same location where it put the long value before. These are some pretty advanced features for a compiler this old.</p>
+
+<p>Overall, the takeaway is that stack variables might not really be stack variables when reversing code emitted by these old compilers (and even more so with the newer ones). It might just be the compiler making a little temporary storage on the side, so if a variable access looks odd or impossible, maybe just try getting rid of the variable completely and see what happens.</p>
+
+  </div><a class="u-url" href="/f15-se2/2024/05/22/dirtytricks.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

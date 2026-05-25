@@ -1,0 +1,80 @@
+--- Attempting to find a hash formula with Z3 ---
+
+[Step 1] Variables sorted by stack offset (highest to lowest address):
+  Offset: -2   Name: temp_cx
+  Offset: -4   Name: var_3E
+  Offset: -8   Name: var_18
+  Offset: -12  Name: var_28
+  Offset: -14  Name: var_38
+  Offset: -16  Name: temp_1
+  Offset: -18  Name: temp_2
+  Offset: -22  Name: temp_long_dx_ax
+  Offset: -24  Name: var_10
+  Offset: -26  Name: var_1A
+  Offset: -28  Name: var_20
+  Offset: -30  Name: var_C
+  Offset: -32  Name: var_2A
+  Offset: -34  Name: var_22
+  Offset: -36  Name: var_E
+  Offset: -38  Name: var_14
+  Offset: -40  Name: var_2C
+  Offset: -42  Name: var_32
+  Offset: -44  Name: temp_ax
+  Offset: -46  Name: var_24
+  Offset: -48  Name: var_3C
+  Offset: -50  Name: temp_bx
+  Offset: -52  Name: var_16
+  Offset: -54  Name: var_34
+
+[Step 2] Modeling the hash function as a formula with 16 unknown 16-bit constants:
+  hash(name) = (C_0*char_0) + (C_1*char_1) + ... + K
+
+[Step 3] Adding constraints to the solver:
+  - Constraint: hash('temp_cx') <= hash('var_3E')
+  - Constraint: hash('var_3E') <= hash('var_18')
+  - Constraint: hash('var_18') <= hash('var_28')
+  - Constraint: hash('var_28') <= hash('var_38')
+  - Constraint: hash('var_38') <= hash('temp_1')
+  - Constraint: hash('temp_1') <= hash('temp_2')
+  - Constraint: hash('temp_2') <= hash('temp_long_dx_ax')
+  - Constraint: hash('temp_long_dx_ax') <= hash('var_10')
+  - Constraint: hash('var_10') <= hash('var_1A')
+  - Constraint: hash('var_1A') <= hash('var_20')
+  - Constraint: hash('var_20') <= hash('var_C')
+  - Constraint: hash('var_C') <= hash('var_2A')
+  - Constraint: hash('var_2A') <= hash('var_22')
+  - Constraint: hash('var_22') <= hash('var_E')
+  - Constraint: hash('var_E') <= hash('var_14')
+  - Constraint: hash('var_14') <= hash('var_2C')
+  - Constraint: hash('var_2C') <= hash('var_32')
+  - Constraint: hash('var_32') <= hash('temp_ax')
+  - Constraint: hash('temp_ax') <= hash('var_24')
+  - Constraint: hash('var_24') <= hash('var_3C')
+  - Constraint: hash('var_3C') <= hash('temp_bx')
+  - Constraint: hash('temp_bx') <= hash('var_16')
+  - Constraint: hash('var_16') <= hash('var_34')
+
+[Step 4] Running Z3 solver to find a solution...
+
+--- Z3 Solver Results ---
+Status: SATISFIABLE ('sat')
+
+Z3 found a potential formula that fits the data for this specific function.
+This is likely a mathematical coincidence ('overfitting') and not the real algorithm.
+The discovered coefficients for the formula are:
+  C_0 = 5874
+  C_1 = 4237
+  C_2 = 23558
+  C_3 = 10478
+  C_4 = 0
+  C_5 = 0
+  C_6 = 0
+  C_7 = 0
+  C_8 = 0
+  C_9 = 0
+  C_10 = 0
+  C_11 = 0
+  C_12 = 0
+  C_13 = 0
+  C_14 = 0
+  K    = 49256

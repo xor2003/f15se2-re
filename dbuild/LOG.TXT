@@ -1,0 +1,9 @@
+
+Microsoft (R) Segmented-Executable Linker  Version 5.01.21
+Copyright (C) Microsoft Corp 1984-1988.  All rights reserved.
+
+Object Modules [.OBJ]: TEST.OBJ START1.OBJ START2.OBJ START3.OBJ START4.OBJ START_RC.OBJ 
+Run File [TEST.EXE]: D:\TEST.EXE
+List File [D:TEST.MAP]: D:\TEST.MAP
+Libraries [.LIB]: SLIBCE.LIB
+Definitions File [NUL.DEF]: 

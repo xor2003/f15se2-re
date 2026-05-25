@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Reassembling the disassembly | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Reassembling the disassembly" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<meta property="og:description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<link rel="canonical" href="/f15-se2/2023/09/25/reassembly.html" />
+<meta property="og:url" content="/f15-se2/2023/09/25/reassembly.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-09-25T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Reassembling the disassembly" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2023-09-25T00:00:00+00:00","datePublished":"2023-09-25T00:00:00+00:00","description":"(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)","headline":"Reassembling the disassembly","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2023/09/25/reassembly.html"},"url":"/f15-se2/2023/09/25/reassembly.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Reassembling the disassembly</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2023-09-25T00:00:00+00:00" itemprop="datePublished">Sep 25, 2023
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><small>(<em>This post is part of a <a href="/category/f15-se2.html">series</a> on the subject of my hobby project, which is recreating the C source code for the 1989 game <a href="/f15-se2/2022/06/05/origins.html">F-15 Strike Eagle II</a> by reverse engineering the original binaries.</em>)</small></p>
+
+<p>After the previous post where I had finally managed to <a href="/f15-se2/2023/09/02/compiler3.html">figure out the compiler flags</a> used back in 1991 to compile the game, which now let me generate 100% identical machine instructions from C code, I was in high spirits and managed to transcribe a fair amount of instructions into C. That was fun, but soon enough I was shaken out of my comfort zone by an innocent question: “have you tested your ported code with the original game?”</p>
+
+<p>Thing is, I can’t easily do that. The (let’s say “additive”) approach I’ve followed until now, where I’m analyzing the output of IDA and reconstructing the C code function by function looks something like this:</p>
+
+<p><img src="/images/process_old.png" alt="old process" class="center-image-narrow" /></p>
+
+<p>This has several downsides. For one, I don’t have a runnable version of the game until I’m done reconstructing all (or nearly all) of the functions. The other is that my recreation is not byte-for-byte identical with the original (again, at least not until I’m done rewriting the whole thing), which means I needed to make a <a href="https://github.com/neuviemeporte/mzretools">special tool</a> to compare instructions, so that I know if the reconstruction is correct or not. It’s been working pretty good so far, but having a runnable version which I can instrument with debug statements if necessary, would be a huge advantage. So far, I had not considered it because it seemed an insurmountable task, but can we actually achieve and maintain binary identity through the reconstruction? That would mean changing the approach to a “subtractive” one, where I take a function away from the perfect copy, reconstruct it in C, and put it back in:</p>
+
+<p><img src="/images/process_new.png" alt="new process" class="center-image-narrow" /></p>
+
+<p>The first step to achieve that would be to take the disassembly generated by IDA and try to reassemble it into an EXE file that is identical with the original. In theory, this should work because a dissasembly is essentially a listing of all the bytes in the file. But due to assembler syntax quirks, instruction encoding differences, segment layout, padding and alignment etc., the result is not guaranteed, which is why I have not tried to do it in earnest until now.</p>
+
+<p>Jumping into the deep end, let’s try to just assemble the file that IDA spits out for the first game executable, START.EXE. The assembly syntax that it generates appears to be compatible with MASM, although I think there is also an option to switch it into TASM’s Ideal Mode, which as I understand is Borland’s attempt to enforce a strict style of assembly code that removes some ambiguities, and was preferred by some people back in the day. For now let’s go with the default syntax and try to assemble with MASM 5.10 under DOS. I’m using a shell script which does some weird stuff to launch the assembler inside Dosbox in headless mode, then examines the output, which is handy for use in Makefiles, no manual building from DOS necessary:</p>
+
+<pre>
+ninja@dell:eaglestrike$ tools/dosbuild.sh as masm510 -i src/f15-se2/startraw.asm -o build-f15-se2/startraw.obj
+--- build running masm from masm510
+masm f15-se2\startraw.asm,e:\startraw.obj,,;
+Microsoft (R) Macro Assembler Version 5.10
+Copyright (C) Microsoft Corp 1981, 1988.  All rights reserved.
+
+f15-se2\startraw.asm(218): error A2070: Illegal combination with segment alignment
+f15-se2\startraw.asm(634): error A2070: Illegal combination with segment alignment
+f15-se2\startraw.asm(1291): error A2038: Left operand must have segment
+f15-se2\startraw.asm(1380): warning A4057: Illegal size for operand
+f15-se2\startraw.asm(1437): error A2038: Left operand must have segment
+f15-se2\startraw.asm(1451): error A2038: Left operand must have segment
+f15-se2\startraw.asm(1465): error A2038: Left operand must have segment
+f15-se2\startraw.asm(1479): error A2038: Left operand must have segment
+f15-se2\startraw.asm(1493): error A2038: Left operand must have segment
+f15-se2\startraw.asm(1503): error A2064: Near JMP/CALL to different CS
+[...]
+  46262 + 316264 Bytes symbol space free
+
+      2 Warning Errors
+    181 Severe  Errors
+</pre>
+
+<p>Whoa, that’s a lot of errors. Actually, assembling this with a period-accurate assembler might not be the best idea. For one, the raw assembly file is more than 25k lines long, and comes in at about 530KB. This might or might not fit into memory (remember, the conventional memory limit in DOS is 640K, with some always reserved by the OS, and the assembler will take some as well), and I’m not sure if MASM can take advantage of <a href="https://en.wikipedia.org/wiki/Extended_memory">extended memory</a>. Fortunately, there are modern MASM-compatible assemblers that can emit 16bit object code in the OMF format which is accepted by DOS linkers. I’ve decided to use <a href="https://github.com/Terraspace/UASM">UASM</a>. I had some problems with it, namely the latest binary release, which was 2.56 as of the time I’m writing this did not run on my WSL Ubuntu environment due to a glibc version mismatch. I managed to build it from source by checking out the 2.55 tag in the github repo, changing the <code class="language-plaintext highlighter-rouge">CC = clang-3.8</code> line in the Makefile to just <code class="language-plaintext highlighter-rouge">clang</code> because the oldest I could find in APT was version 8, and finally replacing <code class="language-plaintext highlighter-rouge">-ansi</code> with <code class="language-plaintext highlighter-rouge">-Wno-error=implicit-function-declaration</code> in <code class="language-plaintext highlighter-rouge">extra_c_flags</code>. Now, let’s try again:</p>
+
+<pre>
+ninja@dell:eaglestrike$ ../UASM/GccUnixR/uasm -0 -Zm src/f15-se2/startraw.asm
+UASM v2.55, Sep 23 2023, Masm-compatible assembler.
+Portions Copyright (c) 1992-2002 Sybase, Inc. All Rights Reserved.
+Source code is available under the Sybase Open Watcom Public License.
+
+src/f15-se2/startraw.asm(218) : Error A2169: General Failure
+</pre>
+
+<p>That does not look encouraging. However, looking at the assembly file where it fails, the offending line contains an <code class="language-plaintext highlighter-rouge">align 4</code> directive. IDA generated those (with varying amounts) in multiple places where there is a <code class="language-plaintext highlighter-rouge">nop</code> instruction or null bytes in the middle of code, and sometimes even in the middle of data. I could change every single <code class="language-plaintext highlighter-rouge">align</code> into a <code class="language-plaintext highlighter-rouge">nop</code> or <code class="language-plaintext highlighter-rouge">db 0</code> manually in IDA, but there were too many so I didn’t want to bother. I think there is an option to disable generation of <code class="language-plaintext highlighter-rouge">align</code>s, but I could not find it, so it’s time to start tweaking IDAs output.</p>
+
+<p>I could substitute all occurences of <code class="language-plaintext highlighter-rouge">align</code> in an editor easily enough, but I decided to write a script to do it. This has the advantage of being able to quickly regenerate the tweaked disassembly after IDAs database of the code is updated, and also the script can probably be reused for other game executables in the future, for more work upfront, so it’s worth it in my book. Also, the script’s original version used the assembly file generated by IDA as its input, but I later switched to the IDA listing (<code class="language-plaintext highlighter-rouge">.lst</code>) file instead, which has segment and offset information on every line, so it’s easy to locate specific locations in the code, and I’m planning to use the script to surgically cut out routines that are going to be rewritten in C.</p>
+
+<p>In order to keep this brief, here is what the script needed to do in order for the assembly to be accepted by UASM:</p>
+
+<ol>
+  <li>Replaced all ocurrences of <code class="language-plaintext highlighter-rouge">align 2</code> by a <code class="language-plaintext highlighter-rouge">nop</code>, and <code class="language-plaintext highlighter-rouge">align 4</code> by 2x<code class="language-plaintext highlighter-rouge">nop</code>.</li>
+  <li>Replace the far jump placeholders that are used as trampolines into the <a href="/f15-se2/2023/07/12/overlays.html">overlay driver functions</a>, and which IDA renders as <code class="language-plaintext highlighter-rouge">jmp far ptr 0:0</code> with literal bytes: <code class="language-plaintext highlighter-rouge">db 0EAh</code> for the far jump opcode and <code class="language-plaintext highlighter-rouge">dd 0</code> for the far jump location placeholder value.</li>
+  <li>Replace all ocurrences of the invalid <code class="language-plaintext highlighter-rouge">repne movsw</code> instruction with literal bytes as well: <code class="language-plaintext highlighter-rouge">dw 0A5F2h</code> (little endian). Technically, the <code class="language-plaintext highlighter-rouge">movsw</code> instruction only accepts the <code class="language-plaintext highlighter-rouge">rep</code> prefix and UASM will not accept <code class="language-plaintext highlighter-rouge">repne</code>, but it seems to work fine when run on an actual CPU, so the literal bytes force the erroneous instruction.</li>
+</ol>
+
+<p>At this point the generated code was successfully assembled into an <code class="language-plaintext highlighter-rouge">.OBJ</code> file and accepted by the MS C 5.1 linker, resulting in an EXE file. It is a couple kilobytes bigger than the original, so let’s look inside. I’ve generated a disassembly of the original and the reassembled executable with <code class="language-plaintext highlighter-rouge">ndisasm</code>, and used WinMerge to visually compare the listings. Initially, literally all offset values referencing data were off by a small amount, which resulted in a lot of visual clutter. That was solved by hexdumping the contents of the data segment of the original and the reconstruction, and comparing them in WinMerge again. Some data locations which had <code class="language-plaintext highlighter-rouge">align</code> directives were replaced by the script with <code class="language-plaintext highlighter-rouge">nop</code>s, but were actually null bytes. There were only a few, so I changed them manually to <code class="language-plaintext highlighter-rouge">db</code>s in IDA and reran the script (good thing I don’t have to redo it manually). That turned out much better, but there are still differences in the disassembly:</p>
+
+<p><img src="/images/winmerge_cmp.png" alt="winmerge comparison" class="center-image" /></p>
+
+<p>The encoding of some arithmetic instructions involving the <code class="language-plaintext highlighter-rouge">AX</code> register (<code class="language-plaintext highlighter-rouge">add/sub/and/cmp ax, &lt;immediate&gt;</code>) differs betweeen the original and what UASM generated. Don’t know if there’s a way to force the encoding needed with special syntax, so this was solved again by changing the instructions into literal byte seqeuces such as <code class="language-plaintext highlighter-rouge">db 3Dh, dw &lt;immediate&gt; ; cmp ax, &lt;immediate&gt;</code>. The same solution was used for a single instance of an <code class="language-plaintext highlighter-rouge">or di, 2</code>.</p>
+
+<p>At this point, all code matched perfectly, but the contents of the data segment were still off, namely there was an extra bunch of zeros in the reconstruction that was not present in the original. Looking at the specific location where the zeros start, turns out this is where the uninitialized values <code class="language-plaintext highlighter-rouge">db/dw/dd ?</code> start:</p>
+
+<p><img src="/images/data_switch.png" alt="bss start" class="center-image" /></p>
+
+<p>This is the <a href="https://en.wikipedia.org/wiki/.bss">BSS</a> section of data, uninitialized values which do not need to be placed in the executable, so in order to save space, the C runtime will just allocate space for this section and fill it with zeros when the program is run. I resized the data segment in IDA, terminating it at the location of the last initialized value, then created a new segment of class <code class="language-plaintext highlighter-rouge">BSS</code> where the uninitialized data starts:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">startData</span> <span class="ow">seg</span><span class="nv">ment</span> <span class="kt">byte</span> <span class="nv">public</span> <span class="s">'DATA'</span>
+<span class="c1">; [...]</span>
+<span class="nf">byte_1B0D3</span> <span class="nv">db</span> <span class="mi">0</span>
+    <span class="kd">db</span> <span class="mi">0</span>
+    <span class="kd">db</span> <span class="mi">0</span>
+<span class="nf">startData</span> <span class="nv">ends</span>
+<span class="nf">startBss</span> <span class="ow">seg</span><span class="nv">ment</span> <span class="kt">byte</span> <span class="nv">public</span> <span class="s">'BSS'</span>
+    <span class="kd">db</span> <span class="mh">29h</span> <span class="nv">dup</span><span class="p">(</span><span class="nv">?</span><span class="p">)</span>
+<span class="nf">byte_1B0FF</span> <span class="nv">db</span> <span class="nv">?</span>
+<span class="nf">byte_1B100</span> <span class="nv">db</span> <span class="nv">?</span>
+    <span class="kd">db</span> <span class="mh">47h</span> <span class="nv">dup</span><span class="p">(</span><span class="nv">?</span><span class="p">)</span>
+<span class="c1">; [...]    </span>
+<span class="nf">startBss</span> <span class="nv">ends</span></code></pre></figure>
+
+<p>This resulted in a lot of errors from UASM about being unable to reach values in the startBss segment, because it didn’t know which register (if any) holds a reference to it. This is normally solved by an <code class="language-plaintext highlighter-rouge">assume</code> directive, and IDA generated a lot of those all over the code. I decided to use the segment grouping feature of the assembler to put the data and bss segment into a common group, then telling it to assume the address of the group as a whole would be in the <code class="language-plaintext highlighter-rouge">DS</code> register:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">.8086</span>
+<span class="nf">.MODEL</span> <span class="nv">SMALL</span>
+<span class="nf">DGROUP</span> <span class="nv">GROUP</span> <span class="nv">startData</span><span class="p">,</span><span class="nv">startBss</span>
+<span class="nf">ASSUME</span> <span class="nb">DS</span><span class="p">:</span><span class="nv">DGROUP</span></code></pre></figure>
+
+<p>The IDA-generated <code class="language-plaintext highlighter-rouge">assume</code>s were interfering with this, so I disabled them in the options. However, for some reason IDA also changed all references to the data segment with the newly-created BSS segment everywhere, leading to multiple “symbol not defined” from UASM. I didn’t want to fiddle with IDA too much, so I just ended up making the script terminate the data segment at the specific offset that is needed, and open a BSS segment there. The script really gives me endless possibilities.</p>
+
+<p>At this point, the executable assembled and was 100% identical to the original. Yay! However, after copying the executable into the game folder, it ran up to the intro screen and froze. WTF? The executable is identical, so why doesn’t it work?</p>
+
+<p>Up till now, I’ve been comparing the contents of the <code class="language-plaintext highlighter-rouge">EXEs</code> so called load module, that is the part that gets placed in memory by the DOS loader in order to run. The executable on disk also has a header, so let’s use <code class="language-plaintext highlighter-rouge">mzhdr</code> from mzretools to take a look at both headers and compare:</p>
+
+<pre>
+ninja@dell:eaglestrike$ ../mzretools/debug/mzhdr ida/start.exe
+--- ida/start.exe MZ header (28 bytes)
+        [0x0] signature = 0x5a4d ('MZ')
+        [0x2] last_page_size = 0x146 (326 bytes)
+        [0x4] pages_in_file = 90 (46080 bytes)
+        [0x6] num_relocs = 148
+        [0x8] header_paragraphs = 39 (624 bytes)
+        [0xa] min_extra_paragraphs = 1078 (17248 bytes)
+        [0xc] max_extra_paragraphs = 65535
+        [0xe] ss:sp = e66:800
+        [0x12] checksum = 0x0
+        [0x16] cs:ip = 0:5542
+        [0x18] reloc_table_offset = 0x1c
+        [0x1a] overlay_number = 0
+--- relocations:
+        [0]: 9:0, linear: 0x90, file offset: 0x300, file value = 0x6b5
+        [1]: a:6, linear: 0xa6, file offset: 0x316, file value = 0x6b5
+        [2]: a:f, linear: 0xaf, file offset: 0x31f, file value = 0x6b5
+        [3]: e:6, linear: 0xe6, file offset: 0x356, file value = 0x6b5
+        [4]: f:b, linear: 0xfb, file offset: 0x36b, file value = 0x6b5
+        [5]: 10:f, linear: 0x10f, file offset: 0x37f, file value = 0x6b5
+        [6]: 11:8, linear: 0x118, file offset: 0x388, file value = 0x6b5
+        [...]
+        [123]: 2e2:9, linear: 0x2e29, file offset: 0x3099, file value = 0x6b5
+        [124]: 2fb:e, linear: 0x2fbe, file offset: 0x322e, file value = 0x0
+        [125]: 2fe:f, linear: 0x2fef, file offset: 0x325f, file value = 0x6b5
+        [...]        
+</pre>
+
+<p>In addition to the fixed-size initial fields, which were identical, the header also contains the relocation table, which is a list of locations in the executable which reference the segment value that the program is loaded into. Since that value is dependend on the amount of free memory, and can be different any time the executable is run, the DOS EXE loader needs to patch all of these with the actual correct value before running the program. For each relocation, the tool shows its address within the load module, the equivalent linear address, and what offset that corresponds to in the executable file (which would be the linear address plus the length of the MZ header), as well as the value that that location currently has (when patched, the actual load segment would be added to that value). The <code class="language-plaintext highlighter-rouge">0x6b5</code> value represents the data segment, but the executables differ by a single relocation entry numbered 124, referencing <code class="language-plaintext highlighter-rouge">0x0</code>, aka the code segment. The tool sorts the table entries by the linear address, so it’s easy to see the differences when looking at the headers’ dumps alongside each other in WinMerge.</p>
+
+<p>Looking at location <code class="language-plaintext highlighter-rouge">0x2fbe</code> in IDA, I find this code:</p>
+
+<p><img src="/images/timer_before.png" alt="timer isr before" class="center-image" /></p>
+
+<p>The two leading instructions don’t seem to make much sense, but the <code class="language-plaintext highlighter-rouge">sti</code> fits perfectly in a interrupt handling routine. I undefined the 2 nonsense instructions and noticed that the bytes that make them actually spell the offset of the <code class="language-plaintext highlighter-rouge">sti</code> instruction below. Turns out the handler actually begins on the <code class="language-plaintext highlighter-rouge">sti</code>, and the 4 bytes before are just the far address to that handler:</p>
+
+<p><img src="/images/timer_after.png" alt="timer isr after" class="center-image" /></p>
+
+<p>Fixing that last bit makes all the relocations in the MZ header of the reconstruction match the original, and finally the reconstructed exe file runs perfectly inside the game. It’s still not perfect because the MZ header is padded with zeros to 1024 bytes in the reconstruction, while the original clocks in at 624 bytes, but I figured it’s of no consequence right now, and can always be addressed later if it keeps bothering me. In any case, achieving this is a significant step forward, but I still need to check whether the binary identity <a href="/f15-se2/2023/10/06/linking.html">will hold once I start linking in C code</a>.</p>
+
+<p>An another problem is that now my executable comes with the MS C runtime library baked in, and I will need to do more investigation to <a href="/f15-se2/2023/12/30/unlink.html">figure out where it starts and ends</a> inside the disassembly so I can remove its code and particularly the data, before I can link the code with the C library again. But both of these will be handled and written up another time.</p>
+
+  </div><a class="u-url" href="/f15-se2/2023/09/25/reassembly.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

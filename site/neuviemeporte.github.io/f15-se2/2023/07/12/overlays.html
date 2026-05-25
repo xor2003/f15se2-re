@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Usage of overlays in F15 SE2 | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Usage of overlays in F15 SE2" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<meta property="og:description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<link rel="canonical" href="/f15-se2/2023/07/12/overlays.html" />
+<meta property="og:url" content="/f15-se2/2023/07/12/overlays.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-07-12T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Usage of overlays in F15 SE2" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2023-07-12T00:00:00+00:00","datePublished":"2023-07-12T00:00:00+00:00","description":"(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)","headline":"Usage of overlays in F15 SE2","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2023/07/12/overlays.html"},"url":"/f15-se2/2023/07/12/overlays.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Usage of overlays in F15 SE2</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2023-07-12T00:00:00+00:00" itemprop="datePublished">Jul 12, 2023
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><small>(<em>This post is part of a <a href="/category/f15-se2.html">series</a> on the subject of my hobby project, which is recreating the C source code for the 1989 game <a href="/f15-se2/2022/06/05/origins.html">F-15 Strike Eagle II</a> by reverse engineering the original binaries.</em>)</small></p>
+
+<p>In the <a href="/f15-se2/2022/12/08/firstlook.html">initial post</a> about the game, I briefly touched on the subject of overlay usage, which I want to cover in more detail now. The game uses overlay executables to reduce code duplication between the executables which make up the game, and also reduce the executable size by moving the shared code into the overlays. Interestingly, compilers of the time, including MS C 5.10 which the game originally <a href="/f15-se2/2023/05/17/compiler.html">seems to have been written in</a>, support overlays natively, and the MS C linker is even advertised as an “overlay linker” in the compiler’s documentation. However, the approach used by the compiler seems to be using an interrupt (0x3f for MS C by default), and for some reason (probably performance?), Microprose appears to have rolled their own solution.</p>
+
+<p>When launched, the game allocates a 320-paragraph (5KiB) buffer (which I call COMM in my code), and places its segment at address 0:4F0, which is the IACA, or Inter Application Communication Area. This is a rarely used, 16-byte sized area of the IBM PC low memory, and the game uses it to store the address of the shared buffer, as well as for some flags to exchange information between the executables that make up the game.</p>
+
+<p>The layout of the buffer is not fully known yet, but I have discovered some things. Among others, the filename of the selected graphics driver overlay is put at offset 0x0, and the sound driver overlay is at 0xd. After the game is launched, F15.COM will execute SU.EXE (SetUp) which displays a menu for the user to select the drivers (unless special commandline switches are used which preselect the drivers and bypass the menu). SU will place the filenames of the drivers in COMM and return to F15.COM, which will load the drivers (sound, video and the MISC.EXE driver) into memory using the DOS function <a href="https://fd.lod.bz/rbil/interrup/dos_kernel/214b.html">21.4b03</a>. This <a href="https://retrocomputing.stackexchange.com/questions/25736/how-can-i-properly-execute-and-clean-up-after-a-dos-mz-executable-loaded-into-me">along with 21.4b01</a> is an interesting call which will load an executable into preallocated memory, but won’t execute it. Good thing too, as the overlay exes are not meant to be executed, they are more like dynamically-loaded libraries containing a set of functions to be executed when necessary. Still, the game needs to know where these functions reside, and to that end the load modules of those executables contain a header of the following form:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="c1">// Microprose overlay header format</span>
+<span class="k">struct</span> <span class="nc">OvlHeader</span> <span class="p">{</span>
+    <span class="kt">uint8_t</span> <span class="n">description</span><span class="p">[</span><span class="mh">0x18</span><span class="p">];</span> <span class="c1">// 00h-17h: description</span>
+    <span class="kt">uint16_t</span> <span class="n">header_paragraphs</span><span class="p">;</span> <span class="c1">// 18h-19h: total number of header paragraphs, after relocation becomes segment pointer into code</span>
+    <span class="kt">uint16_t</span> <span class="n">base_segment</span><span class="p">;</span> <span class="c1">// 1ah-1bh: base load segment of overlay (relocated)</span>
+    <span class="kt">uint16_t</span> <span class="n">first_slot</span><span class="p">;</span> <span class="c1">// 1ch-1dh: slot index (id) of first jump entry </span>
+    <span class="kt">uint16_t</span> <span class="n">size1</span><span class="p">;</span> <span class="c1">// 1eh-1fh: size1</span>
+    <span class="kt">uint16_t</span> <span class="n">size2</span><span class="p">;</span> <span class="c1">// 20h-21h: size2</span>
+    <span class="kt">uint16_t</span> <span class="n">jump_count</span><span class="p">;</span> <span class="c1">// 22h-23h: number of jump addresses </span>
+    <span class="c1">// 24h-...: array of jump offsets</span>
+    <span class="c1">// Extra description or padding data follows</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>I have written a simple tool to parse and display this information, here’s an example:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ninja@dell:eaglestrike$ tools/ovltool bin/451.03/mgraphic.exe
+[0x0] description: 'MGRAPHIC.EXE09-19-88'
+[0x18] header_paragraphs = 1d0 / 0x1d00 bytes
+[0x1a] base_segment = 0x0
+[0x1c] first_slot = 0x0
+[0x1e] size1 = 0x1d0d
+[0x20] size2 = 0xa5a
+        total size = 0x2767
+[0x22] jump_count = 84
+--- jump offsets:
+[0x24]: slot 0x0, offset 0x25e
+[0x26]: slot 0x1, offset 0x461
+[0x28]: slot 0x2, offset 0x3dc
+[...]
+</code></pre></div></div>
+
+<p>This is the driver for the MCGA graphics, and it contains 84 callable functions, whose offsets are placed in an array of jump “slots” directly following the header. The size of the header (in paragraphs) is stored in the header and relocated at driver load time, so if this driver were loaded at segment 0x1000, the header length field would contain 0x11d0, which conveniently will be a pointer to the segment where the header ends and the actual code begins, so the jump offsets into the functions are actually using this segment as the base.</p>
+
+<p>I don’t know why the size of the overlay seems to be split in two in the header, in the case of some it looks like size1 is the header size but this time in bytes, while size2 is the size of the actual code, but for others it seems to be zero instead. Go figure.</p>
+
+<p>The slot numbers are hardcoded, and the ranges are preassigned to the driver types. Here is a similar output for the EGA graphics driver:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ninja@dell:eaglestrike$ tools/ovltool bin/451.03/egraphic.exe
+[0x0] description: 'EGRAPHIC.EXE07-27-88'
+[0x18] header_paragraphs = 215 / 0x2150 bytes
+[0x1a] base_segment = 0x0
+[0x1c] first_slot = 0x0
+[0x1e] size1 = 0x2155
+[0x20] size2 = 0x1ab9
+        total size = 0x3c0e
+[0x22] jump_count = 84
+--- jump offsets:
+[0x24]: slot 0x0, offset 0xd0
+[0x26]: slot 0x1, offset 0x627
+[0x28]: slot 0x2, offset 0x4de
+[...]
+</code></pre></div></div>
+
+<p>Again, 84 functions. Depending on their order (slot number) within the jump offset table, these functions perform a specific high level operation, like initialize the hardware, or display some pixels (I don’t yet possess a full map on which number does what), so the game may just say “call function 12”, and that will do the Right Thing, both for MCGA and EGA. Sometimes, the Right Thing might be to not do anything, which is the case for the NSOUND (no sound) driver, whose all slots redirect to the same jump offset, which presumably does nothing (I didn’t bother to check).</p>
+
+<p>It looks like the following slot numbers are used by the drivers:</p>
+<ul>
+  <li>0x0 - 0x53: graphics, 84 functions</li>
+  <li>0x5a - 0x5f: misc.exe driver, 6 functions</li>
+  <li>0x64 - 0x6d: sound, 10 functions</li>
+</ul>
+
+<p>The misc driver is always loaded, and contains a couple functions related to handling keyboard and joystick input. It’s tiny, not sure why they bothered.</p>
+
+<p>After F15.COM loads these overlays, it will place their load segments in the COMM structure at the following offsets:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#define COMM_GFXOVL_ADDR_OFFSET 0x1a
+#define COMM_SNDOVL_ADDR_OFFSET 0x1c
+#define COMM_MISCOVL_ADDR_OFFSET 0x1e</span></code></pre></figure>
+
+<p>From there, the remaining parts of the game (START, EGAME and END) will populate a statically-allocated array which initially just contains the far jump (0xEA) opcode followed by four null bytes, repeated the required number of times to cover the number of slots necessary. At runtime, the null bytes will be patched with the code segment of the overlay and an offset into a specific overlay function based on the overlay header and jump slot table. Later, when the game needs to invoke a driver function, it will do a <a href="/f15-se2/2023/03/23/farcalls.html">far call into a data segment location</a> corresponding to the function number (remember, each entry in the array is 5 bytes: the far jump opcode + the four byte far jump location), which in turn will do a far jump into the overlay function code, and the function always returns with <code class="language-plaintext highlighter-rouge">retf</code> to where it was called from. Simple, but effective.</p>
+
+<p>I have code for loading and setting up the overlays already reimplented in C, and it works, but the individual driver functions will need to be analyzed and understood for the source code reconstruction. They look like they have been hand-crafted in assembly - makes sense since they are low-level functions that need to perform efficiently, which makes me wonder how much of a penalty they are paying for doing a far call + far jump + far return every time a driver call is needed. In the final recreation, I probably will get rid of the overlays, since I’m planning to only support MCGA and no sound, and size is not a concern, so I think I’ll just link in the driver code statically. For now, discovering and recreating this has been necessary to understand how the game works, and also for performing automated code comparison with mzretools/mzdiff - I need the code to match in regard to the emitted far calls to be able to compare the recreation to the original on an opcode-for-opcode basis.</p>
+
+<p>Interestingly, although <a href="https://en.wikipedia.org/wiki/Civilization_(video_game)">Civilization</a> uses an almost identical setup menu and also contains multiple exes that look like sound and graphic drivers based on their name, the overlay header format of those seems to be different, and could not be parsed by my tool. Seems likey they were updating the scheme as they went along (Civ 1 came out 1991, so after F15-II).</p>
+
+  </div><a class="u-url" href="/f15-se2/2023/07/12/overlays.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

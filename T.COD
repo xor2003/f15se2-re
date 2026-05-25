@@ -1,0 +1,39 @@
+;	Static Name Aliases
+;
+	TITLE   t.c
+	NAME    t
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+EXTRN	__acrtused:ABS
+EXTRN	__chkstk:NEAR
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** int add(int a, int b)
+;|*** {return a+b;}
+; Line 2
+	PUBLIC	_add
+_add	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+	*** 000003	33 c0 			xor	ax,ax
+	*** 000005	e8 00 00 		call	__chkstk
+;	a = 4
+;	b = 6
+	*** 000008	8b 46 04 		mov	ax,WORD PTR [bp+4]	;a
+	*** 00000b	03 46 06 		add	ax,WORD PTR [bp+6]	;b
+	*** 00000e	5d 			pop	bp
+	*** 00000f	c3 			ret	
+
+_add	ENDP
+_TEXT	ENDS
+END

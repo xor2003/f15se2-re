@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Ghidra to the rescue | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Ghidra to the rescue" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<meta property="og:description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<link rel="canonical" href="/f15-se2/2024/05/05/ghidra.html" />
+<meta property="og:url" content="/f15-se2/2024/05/05/ghidra.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-05-05T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Ghidra to the rescue" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2024-05-05T00:00:00+00:00","datePublished":"2024-05-05T00:00:00+00:00","description":"(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)","headline":"Ghidra to the rescue","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2024/05/05/ghidra.html"},"url":"/f15-se2/2024/05/05/ghidra.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Ghidra to the rescue</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2024-05-05T00:00:00+00:00" itemprop="datePublished">May 5, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><small>(<em>This post is part of a <a href="/category/f15-se2.html">series</a> on the subject of my hobby project, which is recreating the C source code for the 1989 game <a href="/f15-se2/2022/06/05/origins.html">F-15 Strike Eagle II</a> by reverse engineering the original binaries.</em>)</small></p>
+
+<p>I have to admit I’ve been stuck with the project for about 3 months. I’m still reconstructing the source code for the first executable, and I’ve run into a rather long game routine at offset <code class="language-plaintext highlighter-rouge">0x4093</code>, which has more than 2800 instructions. Worse still, it does not make any sense, at least not at a cursory glance. From live debugging the game, I know that it runs when the ingame briefing screen displays the caption “decoding mission…”, so it appears to be the randomized mission generator. But all it does is read a bunch of nonsense-looking numerical data (some of which comes from reading the <code class="language-plaintext highlighter-rouge">.wld</code> (“world”) binary files, the internal layout of which is still a mystery to me) from one place, call <code class="language-plaintext highlighter-rouge">rand()</code> a lot, then write a bunch of nonsense-looking numerical values back all over the place. No string processing to tell me what these numbers are, no graphical routines called to display stuff that I could watch for context, just a black box crunching numbers.</p>
+
+<p>There’s more bad news. The control flow for this routine is completely bonkers, and consists of multiple nested loops, inside of which are conditions, inside of which are loops… etc., with what looks like an occasional goto thrown in the mix. Reconstructing the flow actually broke my brain to the point where I lost all enthusiasm for the project. It was just a grind, with obfuscated code coming out of the process that barely looking better then the assembly that comes in.</p>
+
+<p>Back when I was talking to the ex-Microprose employee, they told me they had to modify the mission generation code at some point for F117 (the next game on this engine), and it was a convoluted mess, including many <code class="language-plaintext highlighter-rouge">goto</code>s. I’m inclined to think that this the routine. It would be interesting to find an equivalent in F117’s code and compare the two, and I’m planning on writing a tool specifically for identifying similar routines in MZ executables using edit distance at some point, but for now I need to reconstruct this routine’s source code.</p>
+
+<p>I’ve been aware of the existence of <a href="https://ghidra-sre.org/">Ghidra</a> for a while now, and I’ve even tried opening the game’s executables with it, but the result was not encouraging. Ghidra can decompile assembly code into C, but it is not really meant for reversing 16bit code – as I understand it was developed at NSA, mainly for taking apart malware samples. Modern stuff, not old stuff. The code it outputs for 16bit binaries is largely nonsense, especially around memory access – it just doesn’t seem to understand segmented addressing, but then again, who does? 😋 However, it can recover the control flow pretty well. So what if I could fix the code where Ghidra makes a mess of things, while relying on it to sort out the convoluted control flow mess for me?</p>
+
+<p>That’s what I ended up doing, I just copy-pasted the Ghidra-generated code for the whole routine into my editor and started tweaking it line by line by looking into IDA at the same time. Occassionally, I needed to do some experimenting in a sample DOS .exe application on the side to figure stuff out, but I was making progress (slowly).</p>
+
+<p>One minor problem with Ghidra output (as far as the control flow is concerned, not considering any operations inside control structures) is that it tends to reverse the order of <code class="language-plaintext highlighter-rouge">if-else</code> blocks sometimes compared to what MSC generates. So for example this code compiled with MSC:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">if</span> <span class="p">(</span><span class="n">a</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// do stuff</span>
+<span class="p">}</span>
+<span class="k">else</span> <span class="p">{</span>
+  <span class="c1">// do other stuff</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>…would get turned into the following assembly:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">cmp</span> <span class="nv">a</span><span class="p">,</span> <span class="mi">0</span>
+<span class="nf">jnz</span> <span class="nv">otherStuff</span>
+<span class="c1">; do stuff</span>
+<span class="nl">otherStuff:</span>
+<span class="c1">; do other stuff</span></code></pre></figure>
+
+<p>In other words, an inverse conditional jump instruction (<code class="language-plaintext highlighter-rouge">jnz</code> - Jump if Not Zero) is used in comparison to the C condition (<code class="language-plaintext highlighter-rouge">a == 0</code>). This however preserves the logical ordering of blocks from C, so it’s easier to follow. Ghidra will often output this back from the assembly:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">if</span> <span class="p">(</span><span class="n">a</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// do other stuff</span>
+<span class="p">}</span>
+<span class="k">else</span> <span class="p">{</span>
+  <span class="c1">// do stuff</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This can get confusing if the conditional blocks contain many operations, potentially inside other nested blocks, one needs to check carefully if the order of the blocks matches the disassembly annd invert the condition and the order if necessary.</p>
+
+<p>When I’m writing this, the C file with this routine still does not build due to unresolved data references (more on that later), but I’ve finished rewriting the source code (coming in at around 370 lines, including comments), and the control flow looks consistent. I still need to fix the data layout problem, but it feels like I’m past my slump. Below is a sample of the code I wrote on top of Ghidra’s mess, so the reader has an idea of what we are dealing with here:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">  <span class="c1">// [...]</span>
+  <span class="k">do</span> <span class="p">{</span>
+    <span class="n">var_2</span> <span class="o">=</span> <span class="n">var_2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="mi">999</span> <span class="o">&lt;</span> <span class="n">var_2</span><span class="p">)</span> <span class="k">goto</span> <span class="n">counterMore1k</span><span class="p">;</span>
+    <span class="c1">// 40b5</span>
+    <span class="k">do</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">missionPick</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// 40c6</span>
+        <span class="n">var_1A</span> <span class="o">=</span> <span class="n">randMul</span><span class="p">(</span><span class="n">word_19324</span><span class="p">[</span><span class="n">missionPick</span> <span class="o">*</span> <span class="mi">2</span><span class="p">]);</span>
+        <span class="c1">// 40e9</span>
+        <span class="n">word_1CDE0</span> <span class="o">=</span> <span class="n">sub_14BB4</span><span class="p">(</span><span class="n">off_19304</span><span class="p">[</span><span class="n">missionPick</span> <span class="o">*</span> <span class="mi">2</span><span class="p">][</span><span class="n">var_1A</span> <span class="o">*</span> <span class="mi">2</span><span class="p">],</span> 
+            <span class="n">off_19314</span><span class="p">[</span><span class="n">missionPick</span> <span class="o">*</span> <span class="mi">2</span><span class="p">][</span><span class="n">var_1A</span> <span class="o">*</span> <span class="mi">2</span><span class="p">],</span> <span class="mi">1</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="c1">// 40f4</span>
+      <span class="k">else</span> <span class="p">{</span>
+        <span class="k">do</span> <span class="p">{</span>
+          <span class="k">do</span> <span class="p">{</span>
+            <span class="c1">// 40f8</span>
+            <span class="n">var_1A</span> <span class="o">=</span> <span class="n">randMul</span><span class="p">(</span><span class="mh">0xe0</span><span class="p">)</span> <span class="o">*</span> <span class="mh">0x80</span> <span class="o">+</span> <span class="mh">0x840</span><span class="p">;</span>
+            <span class="c1">// 410c</span>
+            <span class="n">var_24</span> <span class="o">=</span> <span class="n">randMul</span><span class="p">(</span><span class="mh">0xe0</span><span class="p">)</span> <span class="o">*</span> <span class="mh">0x80</span> <span class="o">+</span> <span class="mh">0x840</span><span class="p">;</span>
+          <span class="c1">// 412d</span>
+          <span class="p">}</span> <span class="k">while</span> <span class="p">((</span><span class="n">wldReadBuf10</span><span class="p">[</span><span class="n">var_1A</span> <span class="o">&gt;&gt;</span> <span class="mh">0xb</span> <span class="o">+</span> <span class="p">(</span><span class="n">var_24</span> <span class="o">&gt;&gt;</span> <span class="mh">0xb</span><span class="p">)</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">);</span>
+          <span class="c1">// 413e</span>
+        <span class="p">}</span> <span class="k">while</span> <span class="p">((</span><span class="n">word_1CDE0</span> <span class="o">=</span> <span class="n">sub_14BB4</span><span class="p">(</span><span class="n">var_1A</span><span class="p">,</span><span class="n">var_24</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="c1">// 414c</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">missionPick</span> <span class="o">==</span> <span class="mi">7</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// 4172</span>
+        <span class="n">word_1CDF2</span> <span class="o">=</span> <span class="n">sub_14BB4</span><span class="p">(</span><span class="n">off_19304</span><span class="p">[</span><span class="n">missionPick</span> <span class="o">*</span> <span class="mi">2</span><span class="p">][</span><span class="n">var_1A</span> <span class="o">*</span> <span class="mi">2</span><span class="p">],</span> 
+            <span class="n">off_19314</span><span class="p">[</span><span class="n">missionPick</span> <span class="o">*</span> <span class="mi">2</span><span class="p">][</span><span class="n">var_1A</span> <span class="o">*</span> <span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mh">0x28</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="c1">// 417e</span>
+      <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">missionPick</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">var_1A</span> <span class="o">=</span> <span class="n">var_1A</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">randMul</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        <span class="c1">// 41a9</span>
+        <span class="n">word_1CDF2</span> <span class="o">=</span> <span class="n">sub_14BB4</span><span class="p">(</span><span class="n">word_192EC</span><span class="p">[</span><span class="n">var_1A</span> <span class="o">*</span> <span class="mi">2</span><span class="p">],</span> <span class="n">word_192F4</span><span class="p">[</span><span class="n">var_1A</span> <span class="o">*</span> <span class="mi">2</span><span class="p">],</span> <span class="mi">2</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="c1">// 41b5</span>
+      <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">missionPick</span> <span class="o">==</span> <span class="mi">6</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">var_1A</span> <span class="o">=</span> <span class="n">randMul</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="o">+</span> <span class="n">var_1A</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&amp;</span> <span class="mi">7</span><span class="p">;</span>
+        <span class="c1">// 41e0</span>
+        <span class="n">word_1CDF2</span> <span class="o">=</span> <span class="n">sub_14BB4</span><span class="p">(</span><span class="n">word_19294</span><span class="p">[</span><span class="n">var_1A</span> <span class="o">*</span> <span class="mi">2</span><span class="p">],</span> <span class="n">word_192A4</span><span class="p">[</span><span class="n">var_1A</span> <span class="o">*</span> <span class="mi">2</span><span class="p">],</span> <span class="mi">2</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="c1">// 41eb</span>
+      <span class="k">else</span> <span class="p">{</span>
+        <span class="k">do</span> <span class="p">{</span>
+          <span class="k">do</span> <span class="p">{</span>
+            <span class="c1">// 41ef</span>
+            <span class="n">var_1A</span> <span class="o">=</span> <span class="n">randMul</span><span class="p">(</span><span class="mh">0xe0</span><span class="p">)</span> <span class="o">*</span> <span class="mh">0x80</span> <span class="o">+</span> <span class="mh">0x840</span><span class="p">;</span>
+            <span class="c1">// 4203</span>
+            <span class="n">var_24</span> <span class="o">=</span> <span class="n">randMul</span><span class="p">(</span><span class="mh">0xe0</span><span class="p">)</span> <span class="o">*</span> <span class="mh">0x80</span> <span class="o">+</span> <span class="mh">0x840</span><span class="p">;</span>
+          <span class="c1">// 4224</span>
+          <span class="p">}</span> <span class="k">while</span> <span class="p">((</span><span class="n">wldReadBuf10</span><span class="p">[(</span><span class="n">var_1A</span> <span class="o">&gt;&gt;</span> <span class="mh">0xb</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">var_24</span> <span class="o">&gt;&gt;</span> <span class="mh">0xb</span><span class="p">)</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">);</span>
+          <span class="c1">// 4235</span>
+          <span class="n">word_1CDF2</span> <span class="o">=</span> <span class="n">sub_14BB4</span><span class="p">(</span><span class="n">var_1A</span><span class="p">,</span> <span class="n">var_24</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+        <span class="p">}</span> <span class="k">while</span> <span class="p">((</span><span class="n">word_1CDF2</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">||</span> <span class="p">((</span><span class="n">missionPick</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">wldReadBuf4</span><span class="p">[</span><span class="mi">3</span> <span class="o">+</span> <span class="n">word_1CDF2</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))));</span>
+      <span class="p">}</span>
+    <span class="c1">// 4257</span>
+    <span class="p">}</span> <span class="k">while</span> <span class="p">((</span><span class="n">word_1CDE0</span> <span class="o">==</span> <span class="n">word_1CDF2</span><span class="p">)</span> <span class="o">||</span> <span class="p">(</span><span class="n">sub_14C94</span><span class="p">(</span><span class="n">word_1CDE0</span><span class="p">,</span> <span class="n">word_1CDF2</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">6</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">200</span><span class="p">);</span>
+  <span class="c1">// 427a</span>
+  <span class="p">}</span> <span class="k">while</span> <span class="p">((</span><span class="n">gameData</span><span class="o">-&gt;</span><span class="n">theater</span> <span class="o">!=</span> <span class="n">THEATER_DS</span><span class="p">)</span> 
+      <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">wldReadBuf4</span><span class="p">[</span><span class="n">word_1CDE0</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">]</span> <span class="o">==</span> <span class="n">wldReadBuf4</span><span class="p">[</span><span class="mi">7</span> <span class="o">+</span> <span class="n">word_1CDF2</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">]));</span>
+  <span class="c1">// 42a0</span>
+  <span class="k">for</span> <span class="p">(</span><span class="n">var_2A</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">var_2A</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">;</span> <span class="n">var_2A</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// 42b8</span>
+    <span class="n">var_20</span><span class="p">[</span><span class="n">var_2A</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x7fff</span><span class="p">;</span>
+    <span class="c1">// 42bd</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">var_26</span> <span class="o">=</span> <span class="n">wldReadBuf3</span><span class="p">;</span> <span class="n">var_26</span> <span class="o">&lt;</span> <span class="n">readItemSize</span><span class="p">;</span> <span class="n">var_26</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+      <span class="c1">// 42d3</span>
+      <span class="k">if</span> <span class="p">((((</span><span class="n">wldReadBuf4</span><span class="p">[</span><span class="mi">4</span> <span class="o">+</span><span class="n">var_26</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0x500</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">((</span><span class="n">wldReadBuf4</span><span class="p">[</span><span class="mi">4</span> <span class="o">+</span><span class="n">var_26</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0x201</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">))</span> 
+          <span class="o">&amp;&amp;</span> <span class="p">((</span><span class="n">wldReadBuf4</span><span class="p">[</span><span class="mi">4</span> <span class="o">+</span><span class="n">var_26</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0x800</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))</span> <span class="p">{</span>
+        <span class="c1">// 4332</span>
+        <span class="c1">// placed in var_1C in IDA, but this looks like an array, sort out stack layout later</span>
+        <span class="n">var_20</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_15472</span><span class="p">((</span><span class="n">wldReadBuf4</span><span class="p">[</span><span class="mi">4</span> <span class="o">+</span><span class="n">var_26</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0x100</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="n">randMul</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> <span class="o">*</span> <span class="mh">0x40</span> <span class="o">+</span> <span class="mh">0xc80</span><span class="p">)</span> 
+            <span class="o">+</span> <span class="n">sub_14C94</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="o">&amp;</span><span class="n">word_1CDDE</span> <span class="o">+</span><span class="mi">1</span> <span class="o">+</span><span class="n">var_2A</span> <span class="o">*</span> <span class="mh">0x12</span><span class="p">),</span><span class="n">var_26</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mh">0x7fff</span><span class="p">));</span>
+        <span class="c1">// 433b</span>
+        <span class="k">if</span> <span class="p">((</span><span class="n">var_20</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mh">0x7000</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">randMul</span><span class="p">(</span><span class="mh">0x500</span><span class="p">)</span> <span class="o">+</span> <span class="n">var_20</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">var_20</span><span class="p">[</span><span class="n">var_2A</span><span class="p">]))</span> <span class="p">{</span>
+          <span class="c1">// 4357</span>
+          <span class="o">*</span><span class="p">(</span><span class="o">&amp;</span><span class="n">word_1CDDE</span> <span class="o">+</span><span class="mi">2</span> <span class="o">+</span><span class="n">var_2A</span> <span class="o">*</span> <span class="mh">0x12</span><span class="p">)</span> <span class="o">=</span> <span class="n">var_26</span><span class="p">;</span>
+          <span class="n">var_20</span><span class="p">[</span><span class="n">var_2A</span><span class="p">]</span> <span class="o">=</span> <span class="n">var_20</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+  <span class="c1">// [...]</span></code></pre></figure>
+
+<p>Beautiful, innit? 😉</p>
+
+<p>Here I wanted to discuss some of the more interesting bits of assembly encountered in this routine, and the C code they end up resolving into, with examples of the “interesting” decompiled code generated by Ghidra. I’m not criticizing the tool; it’s my problem that I’m not using it what it was meant for, and without it I would probably still be stuck, but I wanted to provide an account of what can be expected from it when used in this way.</p>
+
+<h2 id="32bit-arithmetic-anyone">32bit arithmetic, anyone?</h2>
+
+<p>One day, I come upon this wonderful code:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">startCode1:</span><span class="err">468</span><span class="nf">C</span>			<span class="nv">mov</span>	<span class="nb">si</span><span class="p">,</span> <span class="kt">word</span><span class="nv">_1CDE2</span>
+<span class="nl">startCode1:</span><span class="err">4690</span>			<span class="nf">mov</span>	<span class="nb">cl</span><span class="p">,</span> <span class="mi">4</span>
+<span class="nl">startCode1:</span><span class="err">4692</span>			<span class="nf">shl</span>	<span class="nb">si</span><span class="p">,</span> <span class="nb">cl</span>
+<span class="nl">startCode1:</span><span class="err">4694</span>			<span class="nf">mov</span>	<span class="nb">ax</span><span class="p">,</span> <span class="kt">word</span><span class="nv">_1C82A</span><span class="p">[</span><span class="nb">si</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">4698</span>			<span class="nf">sub</span>	<span class="nb">dx</span><span class="p">,</span> <span class="nb">dx</span>
+<span class="nl">startCode1:</span><span class="err">469</span><span class="nf">A</span>			<span class="nv">mov</span>	<span class="nb">cl</span><span class="p">,</span> <span class="mi">5</span>
+<span class="nl">startCode1:</span><span class="err">469</span><span class="nf">C</span>	<span class="nv">loop_1469C</span><span class="p">:</span>
+<span class="nl">startCode1:</span><span class="err">469</span><span class="nf">C</span>			<span class="nv">shl</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mi">1</span>
+<span class="nl">startCode1:</span><span class="err">469</span><span class="nf">E</span>			<span class="nv">rcl</span>	<span class="nb">dx</span><span class="p">,</span> <span class="mi">1</span>
+<span class="nl">startCode1:</span><span class="err">46</span><span class="nf">A0</span>			<span class="nv">dec</span>	<span class="nb">cl</span>
+<span class="nl">startCode1:</span><span class="err">46</span><span class="nf">A2</span>			<span class="nv">jz</span>	<span class="nv">short</span> <span class="nv">loc_146A6</span>
+<span class="nl">startCode1:</span><span class="err">46</span><span class="nf">A4</span>			<span class="nv">jmp</span>	<span class="nv">short</span> <span class="nv">loop_1469C</span>
+<span class="nl">startCode1:</span><span class="err">46</span><span class="nf">A6</span>	<span class="nv">loc_146A6</span><span class="p">:</span>
+<span class="nl">startCode1:</span><span class="err">46</span><span class="nf">A6</span>			<span class="nv">mov</span>	<span class="kt">word</span> <span class="nv">ptr</span> <span class="kt">dword</span><span class="nv">_1D5D0</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nl">startCode1:</span><span class="err">46</span><span class="nf">A9</span>			<span class="nv">mov</span>	<span class="kt">word</span> <span class="nv">ptr</span> <span class="kt">dword</span><span class="nv">_1D5D0</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span>	<span class="nb">dx</span></code></pre></figure>
+
+<p>Looking over to the C side, what Ghidra generated was this:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="n">iVar12</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="p">)</span><span class="mh">0x6292</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">;</span>
+    <span class="n">iVar7</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="p">)(</span><span class="n">iVar12</span> <span class="o">+</span> <span class="mh">0x5cda</span><span class="p">);</span>
+    <span class="n">uVar10</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">cVar8</span> <span class="o">=</span> <span class="sc">'\x05'</span><span class="p">;</span>
+    <span class="k">do</span> <span class="p">{</span>
+    <span class="n">bVar13</span> <span class="o">=</span> <span class="n">iVar7</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">iVar7</span> <span class="o">=</span> <span class="n">iVar7</span> <span class="o">*</span>  <span class="mi">2</span><span class="p">;</span>
+    <span class="n">uVar10</span> <span class="o">=</span> <span class="n">uVar10</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span> <span class="o">|</span> <span class="p">(</span><span class="n">uint</span><span class="p">)</span><span class="n">bVar13</span><span class="p">;</span>
+    <span class="n">cVar8</span> <span class="o">=</span> <span class="n">cVar8</span> <span class="o">+</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span> <span class="k">while</span> <span class="p">(</span><span class="n">cVar8</span> <span class="o">!=</span> <span class="sc">'\0'</span><span class="p">);</span>
+    <span class="o">*</span><span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="p">)</span><span class="mh">0x6a80</span> <span class="o">=</span> <span class="n">iVar7</span><span class="p">;</span>
+    <span class="o">*</span><span class="p">(</span><span class="n">uint</span> <span class="o">*</span><span class="p">)</span><span class="mh">0x6a82</span> <span class="o">=</span> <span class="n">uVar10</span><span class="p">;</span></code></pre></figure>
+
+<p>Wait, what?</p>
+
+<p>Part of the problem here is that Ghidra can’t make much sense of 16-bit data references, so there are a lot of casts of raw addresses into pointers that are dereferenced inline, like the <code class="language-plaintext highlighter-rouge">*(int *)0x6292</code>. Then, it decides to create a bunch of temporary intermediary variables like <code class="language-plaintext highlighter-rouge">iVar12</code> to hold parts of the expressions it’s trying to evaluate, but from prior experience I know that introducing extra variables will result in writing the intermediate values to memory, so the temporary variables need to go, and the code needs to be folded into a minimal number of lines if I’m expecting it to literally match.</p>
+
+<p>I also know from experience that when the compiler is using registers <code class="language-plaintext highlighter-rouge">ax</code> and <code class="language-plaintext highlighter-rouge">dx</code> together, it’s usually trying to do arithmetic on 32bit (<code class="language-plaintext highlighter-rouge">long</code>) numbers, which don’t fit into the 16-bit registers of the 8086 CPU. But what’s with the shifting the registers by one bit in a loop? Well, it can’t shift the entire thing by the desired 5 bits in one go, because it needs to process the two halves of the long number separately. That’s why it shifts <code class="language-plaintext highlighter-rouge">ax</code> left by one bit with <code class="language-plaintext highlighter-rouge">shl</code>, but this can cause the leftmost bit to be shifted out into the carry flag, so <code class="language-plaintext highlighter-rouge">rcl</code> (rotate through carry) is used to finalize the shift into <code class="language-plaintext highlighter-rouge">dx</code>. I quickly whip up a one line concept on the side, build it with MSC and disassemble, repeating until I get perfectly matching instructions. What it ends up resolving to is really simple:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">dword_1D5D0</span> <span class="o">=</span> <span class="p">(</span><span class="kt">long</span><span class="p">)(</span><span class="n">word_1C82A</span><span class="p">[</span><span class="n">word_1CDE2</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">])</span> <span class="o">&lt;&lt;</span> <span class="mi">5</span><span class="p">;</span></code></pre></figure>
+
+<p>Bottom line is, if you’re trying to work out 32bit arithmetic in 16bit code using a tool which does not understand 16bit code, then there’s something wrong with you. 🤪</p>
+
+<h2 id="using-example-values-to-figure-out-opaque-arithmetic-operation-sequences">Using example values to figure out opaque arithmetic operation sequences</h2>
+
+<p>Another day, another bit of interesting assembly:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">startCode1:</span><span class="err">47</span><span class="nf">D0</span>            <span class="nv">mov</span>    <span class="nb">ax</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_20</span><span class="p">]</span> <span class="c1">; ax = 9123 (-28381)</span>
+<span class="nl">startCode1:</span><span class="err">47</span><span class="nf">D3</span>            <span class="nv">cwd</span>                    <span class="c1">; dx = ffff (-1)</span>
+<span class="nl">startCode1:</span><span class="err">47</span><span class="nf">D4</span>            <span class="nv">xor</span>    <span class="nb">ax</span><span class="p">,</span> <span class="nb">dx</span>          <span class="c1">; ax = 6edc (28380)</span>
+<span class="nl">startCode1:</span><span class="err">47</span><span class="nf">D6</span>            <span class="nv">sub</span>    <span class="nb">ax</span><span class="p">,</span> <span class="nb">dx</span>          <span class="c1">; ax = 6edd (28381)</span>
+<span class="nl">startCode1:</span><span class="err">47</span><span class="nf">D8</span>            <span class="nv">mov</span>    <span class="nb">cx</span><span class="p">,</span> <span class="mi">2</span>
+<span class="nl">startCode1:</span><span class="err">47</span><span class="kd">DB</span>            <span class="nv">sar</span>    <span class="nb">ax</span><span class="p">,</span> <span class="nb">cl</span>          <span class="c1">; ax = 1bb7 (7095)</span>
+<span class="nl">startCode1:</span><span class="err">47</span><span class="kd">DD</span>            <span class="nv">xor</span>    <span class="nb">ax</span><span class="p">,</span> <span class="nb">dx</span>          <span class="c1">; ax = e448 (-7096)</span>
+<span class="nl">startCode1:</span><span class="err">47</span><span class="nf">DF</span>            <span class="nv">sub</span>    <span class="nb">ax</span><span class="p">,</span> <span class="nb">dx</span>          <span class="c1">; ax = e449 (-7095)</span>
+<span class="nl">startCode1:</span><span class="err">47</span><span class="nf">E1</span>            <span class="nv">mov</span>    <span class="nb">cx</span><span class="p">,</span> <span class="mi">4</span>
+<span class="nl">startCode1:</span><span class="err">47</span><span class="nf">E4</span>            <span class="nv">sub</span>    <span class="nb">cx</span><span class="p">,</span> <span class="nb">di</span><span class="nv">fficultySaved</span> <span class="c1">; cx = 3</span>
+<span class="nl">startCode1:</span><span class="err">47</span><span class="nf">E8</span>            <span class="nv">imul</span>    <span class="nb">cx</span>              <span class="c1">; ax = acdb (-21285)</span>
+<span class="nl">startCode1:</span><span class="err">47</span><span class="nf">EA</span>            <span class="nv">mov</span>    <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_14</span><span class="p">],</span> <span class="nb">ax</span></code></pre></figure>
+
+<p>Ghidra is no help as expected:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">uVar10</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">var_20</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mh">0xf</span><span class="p">;</span>
+<span class="n">local_16</span> <span class="o">=</span> <span class="p">(((</span><span class="kt">int</span><span class="p">)((</span><span class="n">var_20</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">^</span> <span class="n">uVar10</span><span class="p">)</span> <span class="o">-</span> <span class="n">uVar10</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">2</span> <span class="o">^</span> <span class="n">uVar10</span><span class="p">)</span> <span class="o">-</span> <span class="n">uVar10</span><span class="p">)</span> <span class="o">*</span> <span class="c1">// 😭😭😭</span>
+            <span class="p">(</span><span class="mi">4</span> <span class="o">-</span> <span class="n">difficultySaved</span><span class="p">);</span></code></pre></figure>
+
+<p>It’s using <code class="language-plaintext highlighter-rouge">cwd</code> (convert word to double) to extend a 16-bit value in register <code class="language-plaintext highlighter-rouge">ax</code> to 32 bits through <code class="language-plaintext highlighter-rouge">dx</code>. So, is it 32 bit arithmetic again? Maybe, but why doesn’t it use <code class="language-plaintext highlighter-rouge">dx</code> at the end, just writes the <code class="language-plaintext highlighter-rouge">ax</code> part into a local value? Here, I’ve decided to annotate the assembly with register values for a particular starting value (here, a negative number like <code class="language-plaintext highlighter-rouge">0x9123</code> was more interesting to see what was happening). You can see that <code class="language-plaintext highlighter-rouge">xor+sub</code> is used to obtain the absolute value of <code class="language-plaintext highlighter-rouge">ax</code>, while <code class="language-plaintext highlighter-rouge">dx</code> just holds the sign bit, as it were. Then <code class="language-plaintext highlighter-rouge">sar</code> is used to perform division by 4 on the positive value, and another <code class="language-plaintext highlighter-rouge">xor+sub</code> restores the original signedness using the sign value stored in <code class="language-plaintext highlighter-rouge">dx</code>. Finally, the result is multiplied by another value in an unremarkable way. This is just an equivalent of:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span> <span class="n">difficultySaved</span><span class="p">;</span>
+<span class="kt">void</span> <span class="nf">foobar</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kt">int</span> <span class="n">var_20</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">var_14</span><span class="p">;</span>
+    <span class="n">var_14</span> <span class="o">=</span> <span class="p">(</span><span class="n">var_20</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">4</span> <span class="o">-</span> <span class="n">difficultySaved</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>In other words, <code class="language-plaintext highlighter-rouge">ax:dx</code> and <code class="language-plaintext highlighter-rouge">cwd</code> usually means a 32bit number manipulation (number or pointer) – unless it doesn’t. 😈 In this case, the compiler seems to have figured out that it could do division by a power of two using <code class="language-plaintext highlighter-rouge">sar</code> more efficiently than through <code class="language-plaintext highlighter-rouge">idiv</code>, but it needed to force the number to positive and store the sign bit for undoing the conversion before writing back the result.</p>
+
+<h2 id="32bit-arithmetic-out-of-left-field">32bit arithmetic out of left field</h2>
+
+<p>You know the drill by now:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">startCode1:</span><span class="err">46</span><span class="nf">B9</span>			<span class="nv">mov</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mh">708h</span>
+<span class="nl">startCode1:</span><span class="err">46</span><span class="nf">BC</span>			<span class="nv">cwd</span>
+<span class="nl">startCode1:</span><span class="err">46</span><span class="nf">BD</span>			<span class="nv">mov</span>	<span class="nb">cx</span><span class="p">,</span> <span class="kt">word</span> <span class="nv">ptr</span> <span class="kt">word</span><span class="nv">_1C82C</span><span class="p">[</span><span class="nb">si</span><span class="p">]</span> <span class="c1">; cx = 42c0 (17088)</span>
+<span class="nl">startCode1:</span><span class="err">46</span><span class="nf">C1</span>			<span class="nv">sub</span>	<span class="nb">bx</span><span class="p">,</span> <span class="nb">bx</span>                      <span class="c1">; bx = 0</span>
+<span class="nl">startCode1:</span><span class="err">46</span><span class="nf">C3</span>			<span class="nv">sub</span>	<span class="nb">cx</span><span class="p">,</span> <span class="mh">8000h</span>                   <span class="c1">; cx = c2c0 (49856), carry = 1</span>
+<span class="nl">startCode1:</span><span class="err">46</span><span class="nf">C7</span>			<span class="nv">sbb</span>	<span class="nb">bx</span><span class="p">,</span> <span class="nb">bx</span>                      <span class="c1">; bx = ffff </span>
+<span class="nl">startCode1:</span><span class="err">46</span><span class="nf">C9</span>			<span class="nv">neg</span>	<span class="nb">cx</span>                          <span class="c1">; cx = 3d40 (15680)</span>
+<span class="nl">startCode1:</span><span class="err">46</span><span class="nf">CB</span>			<span class="nv">adc</span>	<span class="nb">bx</span><span class="p">,</span> <span class="mi">0</span>                       <span class="c1">; bx = 0</span>
+<span class="nl">startCode1:</span><span class="err">46</span><span class="nf">CE</span>			<span class="nv">neg</span>	<span class="nb">bx</span>                          <span class="c1">; bx = 0</span>
+<span class="nl">startCode1:</span><span class="err">46</span><span class="nf">D0</span>			<span class="nv">mov</span>	<span class="kt">word</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_30</span><span class="p">],</span> <span class="nb">cx</span>    <span class="c1">; 3d40</span>
+<span class="nl">startCode1:</span><span class="err">46</span><span class="nf">D3</span>			<span class="nv">mov</span>	<span class="kt">word</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_30</span><span class="o">+</span><span class="mi">2</span><span class="p">],</span>	<span class="nb">bx</span>  <span class="c1">; 0</span></code></pre></figure>
+
+<p>I won’t even bother looking at Ghidra’s ideas on this. A red herring is present in the form of the <code class="language-plaintext highlighter-rouge">sbb+neg</code> pattern which I found used to perform <a href="/f15-se2/2023/11/08/imatching2.html">branchless <code class="language-plaintext highlighter-rouge">NULL</code> checks</a> before, but that is not what this is.</p>
+
+<p>Tracing register values through an example execution is also helpful here. This was actually part of a longer calculation, but the <code class="language-plaintext highlighter-rouge">cwd</code> on a constant value is a hint that we’re dealing with long numbers again. But it’s using <code class="language-plaintext highlighter-rouge">bx:cx</code> to hold the halves this time, because <code class="language-plaintext highlighter-rouge">ax</code> is occupied already and will be used in a later part of the expression.</p>
+
+<p>The input is obviously the word value <code class="language-plaintext highlighter-rouge">0x4c20</code> in <code class="language-plaintext highlighter-rouge">cx</code>, and the result is the long number <code class="language-plaintext highlighter-rouge">0x00003d40</code> in <code class="language-plaintext highlighter-rouge">bx:cx</code> placed in <code class="language-plaintext highlighter-rouge">var_30</code> at the end. Looking at the instructions, the literal <code class="language-plaintext highlighter-rouge">0x8000</code> is used in a <code class="language-plaintext highlighter-rouge">sub</code> instruction, so that value is also part of the calculation. Incidentally, <code class="language-plaintext highlighter-rouge">0x8000 - 0x4c20 = 0x3d40</code>, so I can risk a guess without even trying to untangle the <code class="language-plaintext highlighter-rouge">sbb-neg-adc</code> mumbo-jumbo:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span> <span class="n">word_1C82C</span><span class="p">;</span>
+<span class="kt">void</span> <span class="nf">foobar</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kt">long</span> <span class="n">var_30</span><span class="p">;</span>
+    <span class="n">var_30</span> <span class="o">=</span> <span class="mh">0x8000</span> <span class="o">-</span> <span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">word_1C82C</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Surprisingly enough, it actually matches the assembly. Woohoo! Now it’s easier to look at the actual instructions to make sense of what the compiler did there. It’s zeroing out <code class="language-plaintext highlighter-rouge">bx</code> for the older word of the double number, and putting the input in <code class="language-plaintext highlighter-rouge">cx</code>. Instead of putting <code class="language-plaintext highlighter-rouge">0x8000</code> in a register and subtracting <code class="language-plaintext highlighter-rouge">cx</code> from it, it does the opposite which I guess is related to the fact that it doesn’t have too many registers to spare. The negative carry of the result is placed in <code class="language-plaintext highlighter-rouge">bx</code>, which means it becomes -1 when the result was negative (meaning the original expression of <code class="language-plaintext highlighter-rouge">cx - 0x8000</code> is positive). Then <code class="language-plaintext highlighter-rouge">cx</code> is negated to obtain the younger part of the result, the carry is added back to <code class="language-plaintext highlighter-rouge">bx</code>, making it zero out, and lo and behold we have the desired value of <code class="language-plaintext highlighter-rouge">0x00003d40</code> in <code class="language-plaintext highlighter-rouge">bx:cx</code></p>
+
+<p>The takeaway is that long arithmetic can jump out of the bushes and kick you in the butt using a different set of registers than what you’re used to, and that known idioms like <code class="language-plaintext highlighter-rouge">sbb+neg</code> can be misleading.</p>
+
+<h1 id="manipulating-register-halves-for-fun-and-profit">Manipulating register halves for fun and profit</h1>
+
+<p>This had me puzzled:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">startCode1:</span><span class="err">4784</span>			<span class="nf">mov</span>	<span class="nb">ax</span><span class="p">,</span> <span class="kt">word</span><span class="nv">_182BE</span>
+<span class="nl">startCode1:</span><span class="err">4787</span>			<span class="nf">mov</span>	<span class="nb">cl</span><span class="p">,</span> <span class="mh">0Ah</span>
+<span class="nl">startCode1:</span><span class="err">4789</span>			<span class="nf">shr</span>	<span class="nb">ax</span><span class="p">,</span> <span class="nb">cl</span>
+<span class="nl">startCode1:</span><span class="err">478</span><span class="nf">B</span>			<span class="nv">shl</span>	<span class="nb">ax</span><span class="p">,</span> <span class="nb">cl</span>
+<span class="nl">startCode1:</span><span class="err">478</span><span class="nf">D</span>			<span class="nv">add</span>	<span class="nb">ah</span><span class="p">,</span> <span class="mi">2</span>
+<span class="nl">startCode1:</span><span class="err">4790</span>			<span class="nf">mov</span>	<span class="kt">word</span><span class="nv">_182BE</span><span class="p">,</span> <span class="nb">ax</span></code></pre></figure>
+
+<p>8bit register halves like <code class="language-plaintext highlighter-rouge">ah</code> are rarely used unless explicit 8bit value manipulation is requested, and it’s especially strange in the middle of what appears to be regular 16bit calculation. Oddly enough, it appears to be a shortcut to adding a constant number whose lower byte is zero, and is matched by the code below:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">word_182BE</span><span class="p">;</span>
+<span class="kt">int</span> <span class="nf">func2</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">word_182BE</span> <span class="o">=</span> <span class="p">((</span><span class="n">word_182BE</span> <span class="o">&gt;&gt;</span> <span class="mh">0xa</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mh">0xa</span><span class="p">)</span> <span class="o">+</span> <span class="mh">0x200</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<h1 id="this-will-be-the-last-arithmetic-puzzle-i-promise">This will be the last arithmetic puzzle, I promise</h1>
+
+<p>Some fun code from the very end of this large routine:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">startCode1:</span><span class="err">4</span><span class="nf">B9D</span>			<span class="nv">mov</span>	<span class="nb">ax</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_8</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">BA0</span>			<span class="nv">add</span>	<span class="nb">ax</span><span class="p">,</span> <span class="kt">word</span><span class="nv">_1DD38</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">BA4</span>			<span class="nv">cwd</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">BA5</span>			<span class="nv">mov</span>	<span class="nb">cx</span><span class="p">,</span> <span class="mh">96h</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">BA8</span>			<span class="nv">idiv</span>	<span class="nb">cx</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">BAA</span>			<span class="nv">sub</span>	<span class="kt">word</span><span class="nv">_1DD38</span><span class="p">,</span> <span class="nb">dx</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">BAE</span>			<span class="nv">pop</span>	<span class="nb">si</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">BAF</span>			<span class="nv">pop</span>	<span class="nb">di</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">BB0</span>			<span class="nv">mov</span>	<span class="nb">sp</span><span class="p">,</span> <span class="nb">bp</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">BB2</span>			<span class="nv">pop</span>	<span class="nb">bp</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">BB3</span>			<span class="nv">retn</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">BB3</span>	<span class="nv">sub_14093</span>	<span class="nv">endp</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">BB3</span></code></pre></figure>
+
+<p>The <code class="language-plaintext highlighter-rouge">cwd</code> might be a cast of the accumulator into long again, then again it might not. The end result of this operation is to decrease the value of <code class="language-plaintext highlighter-rouge">word_1DD38</code> by the amount of <code class="language-plaintext highlighter-rouge">dx</code>, but why bother putting stuff in <code class="language-plaintext highlighter-rouge">ax</code> and perform calculations that you’re not going to use?</p>
+
+<p>This confused me because I was unaware how the <code class="language-plaintext highlighter-rouge">idiv</code> instruction operates. I thought it just divided the accumulator by the argument, but this is only true in the case where the argument is byte-sized. When the argument is word-sized, it actually divides the long value in <code class="language-plaintext highlighter-rouge">dx:ax</code> by the argument. Also, in such case in addition to the division result in <code class="language-plaintext highlighter-rouge">ax</code>, it puts the remainder (modulus) in <code class="language-plaintext highlighter-rouge">dx</code> (<code class="language-plaintext highlighter-rouge">al</code> and <code class="language-plaintext highlighter-rouge">ah</code> are used for the byte-sized variant). So in the end the last statement of the routine is:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">word_1DD38</span> <span class="o">-=</span> <span class="p">(</span><span class="n">var_8</span> <span class="o">+</span> <span class="n">word_1DD38</span><span class="p">)</span> <span class="o">%</span> <span class="mh">0x96</span><span class="p">;</span></code></pre></figure>
+
+<h1 id="jump-table-usage-to-implement-a-switch">Jump table usage to implement a switch</h1>
+
+<p>This part of the code actually gave my tooling trouble in the past, because offset values are placed directly into the code segment, and I had to implement guard rails to make sure I was not interpreting what is essentially data inside the code segment as machine instructions.</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="c1">; ... value to switch on is calculated and placed into ax</span>
+<span class="nl">startCode1:</span><span class="err">49</span><span class="nf">E9</span>			<span class="nv">jmp</span>	<span class="nv">short</span> <span class="nv">switch_14A0D</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">A0D</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">A0D</span>	<span class="nv">switch_14A0D</span><span class="p">:</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">A0D</span>			<span class="nv">cmp</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mi">8</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">A10</span>			<span class="nv">ja</span>	<span class="nv">short</span> <span class="nv">case246_14A2C</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">A12</span>			<span class="nv">add</span>	<span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">A14</span>			<span class="nv">xchg</span>	<span class="nb">ax</span><span class="p">,</span> <span class="nb">bx</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">A15</span>			<span class="nv">jmp</span>	<span class="nb">cs</span><span class="p">:</span><span class="nv">off_14A1A</span><span class="p">[</span><span class="nb">bx</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">A1A</span>	<span class="nv">off_14A1A</span>	<span class="nv">dw</span> <span class="nv">offset</span> <span class="nv">case013_149EB</span>	
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">A1C</span>			<span class="nv">dw</span> <span class="nv">offset</span> <span class="nv">case013_149EB</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">A1E</span>			<span class="nv">dw</span> <span class="nv">offset</span> <span class="nv">case246_14A2C</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">A20</span>			<span class="nv">dw</span> <span class="nv">offset</span> <span class="nv">case013_149EB</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">A22</span>			<span class="nv">dw</span> <span class="nv">offset</span> <span class="nv">case246_14A2C</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">A24</span>			<span class="nv">dw</span> <span class="nv">offset</span> <span class="nv">case578_149FB</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">A26</span>			<span class="nv">dw</span> <span class="nv">offset</span> <span class="nv">case246_14A2C</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">A28</span>			<span class="nv">dw</span> <span class="nv">offset</span> <span class="nv">case578_149FB</span>
+<span class="nl">startCode1:</span><span class="err">4</span><span class="nf">A2A</span>			<span class="nv">dw</span> <span class="nv">offset</span> <span class="nv">case578_149FB</span></code></pre></figure>
+
+<p>As expected, a jump table like this is used to implement a switch statement. It’s doing a <code class="language-plaintext highlighter-rouge">cmp</code> to make sure the value is within the bounds of the jump table, then doubles the value with <code class="language-plaintext highlighter-rouge">add</code> to account for the fact that entries in the jump table are 2 bytes long (16bit offsets), finally places the offset into <code class="language-plaintext highlighter-rouge">bx</code> and does a jump into a location from the jump table. Here, a minor twist lies in the fact that one of the cases is empty, and the switch just jumps to the same bit of code for the values of 2/4/6 as when the value is out of bounds. Might also been written as a fall-through into the default case, but right now I have it like this:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="c1">// 4a0d</span>
+    <span class="k">switch</span><span class="p">((</span><span class="n">gameData</span><span class="o">-&gt;</span><span class="n">flag4</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">randMul</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="n">difficultySaved</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="k">case</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="k">case</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="c1">// 49eb</span>
+        <span class="n">var_18</span> <span class="o">=</span> <span class="n">word_18930</span><span class="p">[</span><span class="n">var_18</span> <span class="o">*</span> <span class="mi">4</span><span class="p">];</span>
+        <span class="k">break</span><span class="p">;</span>
+    <span class="k">case</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="k">case</span> <span class="mi">4</span><span class="p">:</span>
+    <span class="k">case</span> <span class="mi">6</span><span class="p">:</span>
+        <span class="k">break</span><span class="p">;</span>
+    <span class="k">case</span> <span class="mi">5</span><span class="p">:</span>
+    <span class="k">case</span> <span class="mi">7</span><span class="p">:</span>
+    <span class="k">case</span> <span class="mi">8</span><span class="p">:</span>
+        <span class="c1">// 49fb</span>
+        <span class="n">var_18</span> <span class="o">=</span> <span class="n">word_1892E</span><span class="p">[</span><span class="n">var_18</span> <span class="o">*</span> <span class="mi">4</span><span class="p">];</span>
+        <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span> <span class="c1">// 4a2c</span>
+    <span class="c1">// 4a36</span>
+    <span class="n">word_1C82E</span><span class="p">[</span><span class="n">var_26</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">]</span> <span class="o">=</span> <span class="n">var_18</span><span class="p">;</span></code></pre></figure>
+
+<p>It’s just an interesting example of how MSC implements a switch statement, for future reference.</p>
+
+<h2 id="reconstructing-the-data-segment-layout">Reconstructing the data segment layout</h2>
+
+<p>A major challenge in a project like this is figuring out how the data was organized into variables in the original code, because the way I see it now is just as a bunch of binary values in linear sequence, without much of a hint where any boundaries between consecutive values originally were.</p>
+
+<p>Of course, IDA traces references to data from the code and assigns autogenerated names to locations which were referenced. Sometimes, in combination with careful analysis, this allows me to figure out the purpose of a chunk of data and where it likely begins and ends:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">startData:</span><span class="err">076</span><span class="nf">E</span> <span class="nv">timerCounter</span>    <span class="nv">db</span> <span class="mi">0</span>
+<span class="nl">startData:</span><span class="err">076</span><span class="nf">F</span> <span class="nv">timerCounter2</span>   <span class="nv">db</span> <span class="mi">0</span>
+<span class="nl">startData:</span><span class="err">0770</span> <span class="nf">timerCounter3</span>   <span class="nv">db</span> <span class="mi">0</span>
+<span class="nl">startData:</span><span class="err">0771</span> <span class="nf">timerCounter4</span>   <span class="nv">db</span> <span class="mi">0</span></code></pre></figure>
+
+<p>Most often however, I have no idea what these values originally were:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">startData:</span><span class="err">29</span><span class="nf">FE</span> <span class="kt">word</span><span class="nv">_1954E</span>      <span class="nv">dw</span> <span class="mh">297Eh</span>		       <span class="c1">; DATA XREF: __getstream+Ar</span>
+<span class="nl">startData:</span><span class="err">29</span><span class="nf">FE</span>					       <span class="c1">; _flushall:loc_16828r</span>
+<span class="nl">startData:</span><span class="err">2</span><span class="nf">A00</span> <span class="kt">word</span><span class="nv">_19550</span>      <span class="nv">dw</span> <span class="mi">0</span>		       <span class="c1">; DATA XREF: __flsbuf+90w</span>
+<span class="nl">startData:</span><span class="err">2</span><span class="nf">A00</span>					       <span class="c1">; __openfile+B8w</span>
+<span class="nl">startData:</span><span class="err">2</span><span class="nf">A02</span> <span class="kt">word</span><span class="nv">_19552</span>      <span class="nv">dw</span> <span class="mi">0</span>		       <span class="c1">; DATA XREF: _malloc+1Fw</span>
+<span class="nl">startData:</span><span class="err">2</span><span class="nf">A04</span> <span class="kt">word</span><span class="nv">_19554</span>      <span class="nv">dw</span> <span class="mi">0</span>		       <span class="c1">; DATA XREF: _malloc+22w</span>
+<span class="nl">startData:</span><span class="err">2</span><span class="nf">A06</span>		       <span class="nv">db</span>    <span class="mi">0</span>
+<span class="nl">startData:</span><span class="err">2</span><span class="nf">A07</span>		       <span class="nv">db</span>    <span class="mi">0</span>
+<span class="nl">startData:</span><span class="err">2</span><span class="nf">A08</span> <span class="kt">word</span><span class="nv">_19558</span>      <span class="nv">dw</span> <span class="mi">0</span>		       <span class="c1">; DATA XREF: _malloc+32w</span></code></pre></figure>
+
+<p>The named <code class="language-plaintext highlighter-rouge">word_/byte_</code> locations are referenced in the code, but that does not mean these correspond to consecutive variables:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mh">0x297e</span><span class="p">;</span> <span class="c1">// word_1954E</span>
+<span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>      <span class="c1">// word_19550</span>
+<span class="kt">int</span> <span class="n">z</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>      <span class="c1">// word_19552</span>
+<span class="kt">int</span> <span class="n">q</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>      <span class="c1">// word_19554</span>
+<span class="kt">int</span> <span class="n">r</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>      <span class="c1">// unreferenced</span>
+<span class="kt">int</span> <span class="n">v</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>      <span class="c1">// word_19558</span></code></pre></figure>
+
+<p>This could just as well have been an array, and the references come from directly accessing indices within:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span> <span class="n">x</span><span class="p">[</span><span class="mi">123</span><span class="p">];</span>
+<span class="n">x</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span></code></pre></figure>
+
+<p>…or even a struct:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">Foo</span> <span class="p">{</span>
+    <span class="kt">int</span> <span class="n">x</span><span class="p">;</span>      <span class="c1">// word_1954E</span>
+    <span class="kt">int</span> <span class="n">y</span><span class="p">;</span>      <span class="c1">// word_19550</span>
+    <span class="kt">int</span> <span class="n">z</span><span class="p">;</span>      <span class="c1">// word_19552</span>
+    <span class="kt">int</span> <span class="n">q</span><span class="p">;</span>      <span class="c1">// word_19554</span>
+    <span class="kt">int</span> <span class="n">r</span><span class="p">;</span>      <span class="c1">// unreferenced</span>
+    <span class="kt">int</span> <span class="n">v</span><span class="p">;</span>      <span class="c1">// word_19558    </span>
+<span class="p">}</span> <span class="n">f</span> <span class="o">=</span> <span class="p">{</span> <span class="mh">0x297e</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span> <span class="p">};</span>
+<span class="n">f</span><span class="p">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">f</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">f</span><span class="p">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">f</span><span class="p">.</span><span class="n">z</span> <span class="o">+</span> <span class="n">f</span><span class="p">.</span><span class="n">r</span><span class="p">;</span></code></pre></figure>
+
+<p>So, to a concrete example. A particular static buffer area that is read into from the <code class="language-plaintext highlighter-rouge">.wld</code> parsing routine is looking in IDA as following:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>startData:64BC wldReadBuf6     dw ?
+startData:64BE word_1D00E      dw ?
+startData:64C0 word_1D010      dw ?
+startData:64C2                 db 10h dup(?)
+startData:64D2 word_1D022      dw ?
+startData:64D4 word_1D024      dw ?
+startData:64D6                 db    ?
+startData:64D7                 db    ?
+startData:64D8 word_1D028      dw ?
+startData:64DA                 db    ?
+startData:64DB                 db    ?
+startData:64DC                 db    ?
+[...about 700 bytes ]
+</code></pre></div></div>
+
+<p>I don’t know what exactly this buffer contains, but that is fine at this point. The problem is that the location <code class="language-plaintext highlighter-rouge">0x64bc</code>, aka <code class="language-plaintext highlighter-rouge">wldReadBuf6</code> is referenced with an index in the game code:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">startCode1:</span><span class="err">48</span><span class="nf">E5</span>                 <span class="nv">mov</span>     <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_14</span><span class="p">],</span> <span class="nb">ax</span>
+<span class="nl">startCode1:</span><span class="err">48</span><span class="nf">E8</span>                 <span class="nv">mov</span>     <span class="nb">ax</span><span class="p">,</span> <span class="mh">24h</span> <span class="c1">; '$'</span>
+<span class="nl">startCode1:</span><span class="err">48</span><span class="nf">EB</span>                 <span class="nv">imul</span>    <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_26</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">48</span><span class="nf">EE</span>                 <span class="nv">mov</span>     <span class="nb">bx</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nl">startCode1:</span><span class="err">48</span><span class="nf">F0</span>                 <span class="nv">mov</span>     <span class="nb">ax</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_C</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">48</span><span class="nf">F3</span>                 <span class="nv">mov</span>     <span class="nv">wldReadBuf6</span><span class="p">[</span><span class="nb">bx</span><span class="p">],</span> <span class="nb">ax</span> <span class="c1">; 😲</span></code></pre></figure>
+
+<p>That would definitely make it read into the subsequent values marked by IDA as referenced elsewhere (<code class="language-plaintext highlighter-rouge">word_1D00E</code> etc.). That in itself might not be surprising. Perhaps <code class="language-plaintext highlighter-rouge">wldReadBuf6</code> was an array of ints, and the latter references come from indexing into it with constant indices?</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span> <span class="n">wldReadBuf6</span><span class="p">[</span><span class="mi">700</span><span class="p">];</span>
+<span class="kt">void</span> <span class="nf">someFunc</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">wldReadBuf6</span><span class="p">);</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">wldReadBuf6</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">...</span> <span class="c1">// accessing the data inside through a variable index</span>
+  <span class="p">}</span>
+  <span class="n">wldReadBuf</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">wldReadBuf</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="p">...</span> <span class="c1">// accessing the same data through constant indices causing the baked-in references like word_1D00E</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>So I check where and how <code class="language-plaintext highlighter-rouge">word_1D00E</code> and friends are used in the code with IDA’s cross-reference:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">startCode1:</span><span class="err">4854</span>                 <span class="nf">mov</span>     <span class="nb">ax</span><span class="p">,</span> <span class="mh">24h</span> <span class="c1">; '$'</span>
+<span class="nl">startCode1:</span><span class="err">4857</span>                 <span class="nf">imul</span>    <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_26</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">485</span><span class="nf">A</span>                 <span class="nv">mov</span>     <span class="nb">di</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">4869</span>                 <span class="nf">sub</span>     <span class="nb">ax</span><span class="p">,</span> <span class="kt">word</span><span class="nv">_1D00E</span><span class="p">[</span><span class="nb">di</span><span class="p">]</span></code></pre></figure>
+
+<p>Turns out the subsequent words are also used as bases for an index all over the code. So what, a bunch of overlapping arrays? Dynamically-calculated pointers to specific locations in the one primary array? Not likely, I would see offsets to them stored somewhere. Maybe a more complicated calculation for the index, e.g.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">wldReadBuf</span><span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">var_26</span> <span class="o">*</span> <span class="mh">0x24</span><span class="p">];</span>  <span class="c1">// would be equivalent to word_1D00E[var_26 * 0x24]</span>
+<span class="n">wldReadBuf</span><span class="p">[</span><span class="mi">2</span> <span class="o">+</span> <span class="n">var_26</span> <span class="o">*</span> <span class="mh">0x24</span><span class="p">];</span>  <span class="c1">// word_1D010[var_26 * 0x24]</span>
+<span class="n">wldReadBuf</span><span class="p">[</span><span class="mi">11</span> <span class="o">+</span> <span class="n">var_26</span> <span class="o">*</span> <span class="mh">0x24</span><span class="p">];</span> <span class="c1">// word_1D022[var_26 * 0x24]</span></code></pre></figure>
+
+<p>I was scratching my head for a while, when I realized that the addition could be moved to the end of the index:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">wldReadBuf</span><span class="p">[(</span><span class="n">var_26</span> <span class="o">*</span> <span class="mh">0x24</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>  <span class="c1">// word_1D00E[var_26 * 0x24]</span>
+<span class="n">wldReadBuf</span><span class="p">[(</span><span class="n">var_26</span> <span class="o">*</span> <span class="mh">0x24</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">];</span>  <span class="c1">// word_1D010[var_26 * 0x24]</span>
+<span class="n">wldReadBuf</span><span class="p">[(</span><span class="n">var_26</span> <span class="o">*</span> <span class="mh">0x24</span><span class="p">)</span> <span class="o">+</span> <span class="mi">11</span><span class="p">];</span> <span class="c1">// word_1D022[var_26 * 0x24]</span></code></pre></figure>
+
+<p>It’s not using these word locations as a base for the index, it’s indexing into same-sized “slots” from the beginning of the buffer, and then reaching into offsets within those slots. It’s an array of structures! The location is the same, but I had the layout backwards. The constant <code class="language-plaintext highlighter-rouge">0x24</code> factor in the multiplication is the size of the structure, and the added offsets are the structure members.</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="err">00000000</span> <span class="nf">Buf6Item</span>        <span class="nv">struc</span> <span class="c1">; (sizeof=0x24, mappedto_9)</span>
+<span class="err">00000000</span> <span class="nf">field_0</span>         <span class="nv">dw</span> <span class="nv">?</span>
+<span class="err">00000002</span> <span class="nf">field_2</span>         <span class="nv">dw</span> <span class="nv">?</span>
+<span class="err">00000004</span> <span class="nf">field_4</span>         <span class="nv">db</span> <span class="mi">18</span> <span class="nv">dup</span><span class="p">(</span><span class="nv">?</span><span class="p">)</span>
+<span class="err">00000016</span> <span class="nf">field_16</span>        <span class="nv">dw</span> <span class="nv">?</span>
+<span class="err">00000018</span> <span class="nf">field_18</span>        <span class="nv">db</span> <span class="mi">4</span> <span class="nv">dup</span><span class="p">(</span><span class="nv">?</span><span class="p">)</span>
+<span class="err">0000001</span><span class="nf">C</span> <span class="nv">field_1C</span>        <span class="nv">db</span> <span class="mi">8</span> <span class="nv">dup</span><span class="p">(</span><span class="nv">?</span><span class="p">)</span>
+<span class="err">00000024</span> <span class="nf">Buf6Item</span>        <span class="nv">ends</span></code></pre></figure>
+
+<p>Essentially, the layout of the words at the beginning of the buffer marked off as references by IDA maps 1:1 into the structure layout. That makes the code make sense now</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">startData:</span><span class="err">64</span><span class="nf">BC</span> <span class="c1">; struct Buf6Item wldReadBuf6[20]</span>
+<span class="nl">startData:</span><span class="err">64</span><span class="nf">BC</span> <span class="nv">wldReadBuf6</span>     <span class="nv">Buf6Item</span> <span class="mh">14h</span> <span class="nv">dup</span><span class="p">(</span><span class="o">&lt;</span><span class="nv">?</span><span class="o">&gt;</span><span class="p">)</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">484</span><span class="nf">C</span>                 <span class="nv">mov</span>     <span class="nb">si</span><span class="p">,</span> <span class="kt">word</span><span class="nv">_1CDE2</span>
+<span class="nl">startCode1:</span><span class="err">4850</span>                 <span class="nf">mov</span>     <span class="nb">cl</span><span class="p">,</span> <span class="mi">4</span>
+<span class="nl">startCode1:</span><span class="err">4852</span>                 <span class="nf">shl</span>     <span class="nb">si</span><span class="p">,</span> <span class="nb">cl</span>
+<span class="nl">startCode1:</span><span class="err">4854</span>                 <span class="nf">mov</span>     <span class="nb">ax</span><span class="p">,</span> <span class="nb">SI</span><span class="nv">ZEOF_BUF6ITEM</span> <span class="c1">; 0x24</span>
+<span class="nl">startCode1:</span><span class="err">4857</span>                 <span class="nf">imul</span>    <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_26</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">485</span><span class="nf">A</span>                 <span class="nv">mov</span>     <span class="nb">di</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nl">startCode1:</span><span class="err">485</span><span class="nf">C</span>                 <span class="nv">mov</span>     <span class="nb">ax</span><span class="p">,</span> <span class="kt">word</span> <span class="nv">ptr</span> <span class="nv">wldReadBuf6.field_4</span><span class="p">[</span><span class="nb">di</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">4860</span>                 <span class="nf">sub</span>     <span class="nb">ax</span><span class="p">,</span> <span class="kt">word</span> <span class="nv">ptr</span> <span class="nv">wldReadBuf4.field_4</span><span class="p">[</span><span class="nb">si</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">4864</span>                 <span class="nf">push</span>    <span class="nb">ax</span>
+<span class="nl">startCode1:</span><span class="err">4865</span>                 <span class="nf">mov</span>     <span class="nb">ax</span><span class="p">,</span> <span class="nv">wldReadBuf4.field_2</span><span class="p">[</span><span class="nb">si</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">4869</span>                 <span class="nf">sub</span>     <span class="nb">ax</span><span class="p">,</span> <span class="nv">wldReadBuf6.field_2</span><span class="p">[</span><span class="nb">di</span><span class="p">]</span></code></pre></figure>
+
+<p>I also made my Python script which parses IDA listings to auto-generate header files for C compatible with structure data. It doesn’t spit out structure layouts for C automatically (yet), but at least I don’t have to manually rewrite the headers every time I mix things up in IDA. As I mentioned in the introduction, the routine still does not compile due to not all data references being resolved on the C side, but I’m confident I can work it out in a couple days. Then it will just be a matter of running <code class="language-plaintext highlighter-rouge">mzdiff</code> on the end result, and likely a couple of iterations to iron out the remaining discrepancies. But at least it feels doable, which I couldn’t say before I opted to use Ghidra for recovering the control flow. I think I might try to use it more in the future, even despite its limitations.</p>
+
+  </div><a class="u-url" href="/f15-se2/2024/05/05/ghidra.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

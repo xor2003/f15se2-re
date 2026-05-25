@@ -1,0 +1,669 @@
+;	Static Name Aliases
+;
+	TITLE   FLTMATH_.C
+	NAME    FLTMATH_
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+EXTRN	__acrtused:ABS
+EXTRN	__aNuldiv:NEAR
+EXTRN	__aNldiv:NEAR
+EXTRN	_MatMul:NEAR
+EXTRN	_memcpy:NEAR
+EXTRN	_Icos:NEAR
+EXTRN	_abs:NEAR
+EXTRN	_TRGTB:BYTE
+EXTRN	_FM:BYTE
+EXTRN	_OurHead:WORD
+EXTRN	_OurPitch:WORD
+EXTRN	_OurRoll:WORD
+_BSS      SEGMENT
+COMM NEAR	_ntmp:	BYTE:	 10
+_BSS      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** #include "library.h"
+;|*** #include "world.h"
+;|*** #include "sdata.h"
+;|*** #include "cockpit.h"
+;|*** #include "f15defs.h"
+;|*** 
+;|*** extern  SWORD   IntDiv();
+;|*** extern  UWORD   Iasin(),Iacos();
+;|*** 
+;|*** extern  SWORD   FM[3][3];
+;|*** extern  UWORD   OurHead;
+;|*** extern  SWORD   OurPitch, OurRoll;
+;|*** 
+;|*** /************************************
+;|*** *                                   *
+;|*** *   Multiply matrix A by matrix B   *
+;|*** *   Store results back into flight  *
+;|*** *   matrix FM.                      *
+;|*** *                                   *
+;|*** ************************************/
+;|*** 
+;|*** MatrixMul (A,B)      /* Multiply Matrix A by B-> store into FM */
+;|*** 
+;|*** SWORD   A[3][3],B[3][3];
+; Line 24
+	PUBLIC	_MatrixMul
+_MatrixMul	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+	*** 000003	83 ec 12 		sub	sp,18
+;|*** 
+;|*** {
+; Line 26
+;	A = 4
+;	B = 6
+;	TM = -18
+;|***     SWORD TM[3][3];
+;|*** 
+;|***     MatMul (A,B, TM);   /* Gotta use temp array 'cuz MatMul stores as it goes */
+; Line 29
+	*** 000006	8d 46 ee 		lea	ax,WORD PTR [bp-18]	;TM
+	*** 000009	50 			push	ax
+	*** 00000a	ff 76 06 		push	WORD PTR [bp+6]	;B
+	*** 00000d	ff 76 04 		push	WORD PTR [bp+4]	;A
+	*** 000010	e8 00 00 		call	_MatMul
+	*** 000013	83 c4 06 		add	sp,6
+;|*** 
+;|***     memcpy (FM, TM, sizeof (FM));
+; Line 31
+	*** 000016	b8 12 00 		mov	ax,18
+	*** 000019	50 			push	ax
+	*** 00001a	8d 46 ee 		lea	ax,WORD PTR [bp-18]	;TM
+	*** 00001d	50 			push	ax
+	*** 00001e	b8 00 00 		mov	ax,OFFSET _FM
+	*** 000021	50 			push	ax
+	*** 000022	e8 00 00 		call	_memcpy
+	*** 000025	83 c4 06 		add	sp,6
+;|*** 
+;|*** }
+; Line 33
+	*** 000028	8b e5 			mov	sp,bp
+	*** 00002a	5d 			pop	bp
+	*** 00002b	c3 			ret	
+
+_MatrixMul	ENDP
+;|*** 
+;|*** /*<f>*/
+;|*** /**********************************************************
+;|*** *                                                         *
+;|*** *   This function will take the 9 elements of the flight  *
+;|*** *   matrix(FM) and decompose them into a Heading, Pitch,  *
+;|*** *   and Roll.                                             *
+;|*** *                                                         *
+;|*** **********************************************************/
+;|*** 
+;|*** Decompose() {
+; Line 44
+	PUBLIC	_Decompose
+_Decompose	PROC NEAR
+	*** 00002c	55 			push	bp
+	*** 00002d	8b ec 			mov	bp,sp
+	*** 00002f	83 ec 02 		sub	sp,2
+;	CosPitch = -2
+;|*** 
+;|***     SWORD  CosPitch;
+;|*** 
+;|***     OurPitch = Iasin(-FM[1][2]);  /* Now have Pitch  */
+; Line 48
+	*** 000032	a1 0a 00 		mov	ax,WORD PTR _FM+10
+	*** 000035	f7 d8 			neg	ax
+	*** 000037	50 			push	ax
+	*** 000038	e8 00 00 		call	_Iasin
+	*** 00003b	83 c4 02 		add	sp,2
+	*** 00003e	a3 00 00 		mov	_OurPitch,ax
+;|***     CosPitch = Icos(OurPitch);
+; Line 49
+	*** 000041	50 			push	ax
+	*** 000042	e8 00 00 		call	_Icos
+	*** 000045	83 c4 02 		add	sp,2
+	*** 000048	89 46 fe 		mov	WORD PTR [bp-2],ax	;CosPitch
+;|*** 
+;|***     if (CosPitch != 0) {  /* When Pitch is 90 deg., we have a special case */
+; Line 51
+	*** 00004b	0b c0 			or	ax,ax
+	*** 00004d	75 03 			jne	$JCC77
+	*** 00004f	e9 16 01 		jmp	$I941
+					$JCC77:
+;|*** 
+;|***         if (abs(FM[0][2])<(int)(23169)) {
+; Line 53
+	*** 000052	ff 36 04 00 		push	WORD PTR _FM+4
+	*** 000056	e8 00 00 		call	_abs
+	*** 000059	83 c4 02 		add	sp,2
+	*** 00005c	3d 81 5a 		cmp	ax,23169
+	*** 00005f	7d 1b 			jge	$I943
+;|***             OurHead = Iasin(abs(IntDiv(FM[0][2],CosPitch)));
+; Line 54
+	*** 000061	ff 76 fe 		push	WORD PTR [bp-2]	;CosPitch
+	*** 000064	ff 36 04 00 		push	WORD PTR _FM+4
+	*** 000068	e8 00 00 		call	_IntDiv
+	*** 00006b	83 c4 04 		add	sp,4
+	*** 00006e	50 			push	ax
+	*** 00006f	e8 00 00 		call	_abs
+	*** 000072	83 c4 02 		add	sp,2
+	*** 000075	50 			push	ax
+	*** 000076	e8 00 00 		call	_Iasin
+	*** 000079	eb 19 			jmp	SHORT $L20006
+	*** 00007b	90 			nop	
+					$I943:
+;|***         }else{
+; Line 55
+;|***             OurHead = Iacos(abs(IntDiv(FM[2][2],CosPitch)));
+; Line 56
+	*** 00007c	ff 76 fe 		push	WORD PTR [bp-2]	;CosPitch
+	*** 00007f	ff 36 10 00 		push	WORD PTR _FM+16
+	*** 000083	e8 00 00 		call	_IntDiv
+	*** 000086	83 c4 04 		add	sp,4
+	*** 000089	50 			push	ax
+	*** 00008a	e8 00 00 		call	_abs
+	*** 00008d	83 c4 02 		add	sp,2
+	*** 000090	50 			push	ax
+	*** 000091	e8 00 00 		call	_Iacos
+					$L20006:
+	*** 000094	83 c4 02 		add	sp,2
+	*** 000097	a3 00 00 		mov	_OurHead,ax
+;|***         }
+; Line 57
+;|*** 
+;|***       /*  Set for correct quadrant  */
+;|***         if (FM[0][2]<=0 && FM[2][2]<0) OurHead += 32768;
+; Line 60
+	*** 00009a	83 3e 04 00 00 		cmp	WORD PTR _FM+4,0
+	*** 00009f	7f 0c 			jg	$I945
+	*** 0000a1	83 3e 10 00 00 		cmp	WORD PTR _FM+16,0
+	*** 0000a6	7d 05 			jge	$I945
+	*** 0000a8	80 06 01 00 80 		add	BYTE PTR _OurHead+1,128
+;|***         if (FM[0][2]>0 && FM[2][2]<0) OurHead = 16384L + (16384L - OurHead);
+; Line 61
+					$I945:
+	*** 0000ad	83 3e 04 00 00 		cmp	WORD PTR _FM+4,0
+	*** 0000b2	7e 11 			jle	$I946
+	*** 0000b4	83 3e 10 00 00 		cmp	WORD PTR _FM+16,0
+	*** 0000b9	7d 0a 			jge	$I946
+	*** 0000bb	b8 00 80 		mov	ax,-32768
+	*** 0000be	2b 06 00 00 		sub	ax,_OurHead
+	*** 0000c2	a3 00 00 		mov	_OurHead,ax
+;|***         if (FM[0][2]<0 && FM[2][2]>0) OurHead = 49152L + (16384L - OurHead);
+; Line 62
+					$I946:
+	*** 0000c5	83 3e 04 00 00 		cmp	WORD PTR _FM+4,0
+	*** 0000ca	7d 0f 			jge	$I947
+	*** 0000cc	83 3e 10 00 00 		cmp	WORD PTR _FM+16,0
+	*** 0000d1	7e 08 			jle	$I947
+	*** 0000d3	a1 00 00 		mov	ax,_OurHead
+	*** 0000d6	f7 d8 			neg	ax
+	*** 0000d8	a3 00 00 		mov	_OurHead,ax
+;|*** 
+;|***         if (abs(FM[1][0])<(int)(23169)) {
+; Line 64
+					$I947:
+	*** 0000db	ff 36 06 00 		push	WORD PTR _FM+6
+	*** 0000df	e8 00 00 		call	_abs
+	*** 0000e2	83 c4 02 		add	sp,2
+	*** 0000e5	3d 81 5a 		cmp	ax,23169
+	*** 0000e8	7d 1a 			jge	$I948
+;|***             OurRoll = Iasin(abs(IntDiv(FM[1][0],CosPitch)));
+; Line 65
+	*** 0000ea	ff 76 fe 		push	WORD PTR [bp-2]	;CosPitch
+	*** 0000ed	ff 36 06 00 		push	WORD PTR _FM+6
+	*** 0000f1	e8 00 00 		call	_IntDiv
+	*** 0000f4	83 c4 04 		add	sp,4
+	*** 0000f7	50 			push	ax
+	*** 0000f8	e8 00 00 		call	_abs
+	*** 0000fb	83 c4 02 		add	sp,2
+	*** 0000fe	50 			push	ax
+	*** 0000ff	e8 00 00 		call	_Iasin
+	*** 000102	eb 18 			jmp	SHORT $L20007
+					$I948:
+;|***         } else{
+; Line 66
+;|***             OurRoll = Iacos(abs(IntDiv(FM[1][1],CosPitch)));
+; Line 67
+	*** 000104	ff 76 fe 		push	WORD PTR [bp-2]	;CosPitch
+	*** 000107	ff 36 08 00 		push	WORD PTR _FM+8
+	*** 00010b	e8 00 00 		call	_IntDiv
+	*** 00010e	83 c4 04 		add	sp,4
+	*** 000111	50 			push	ax
+	*** 000112	e8 00 00 		call	_abs
+	*** 000115	83 c4 02 		add	sp,2
+	*** 000118	50 			push	ax
+	*** 000119	e8 00 00 		call	_Iacos
+					$L20007:
+	*** 00011c	83 c4 02 		add	sp,2
+	*** 00011f	a3 00 00 		mov	_OurRoll,ax
+;|***         }
+; Line 68
+;|*** 
+;|***       /*  Set for correct quadrant  */
+;|***         if (FM[1][0]<=0 && FM[1][1]<0) OurRoll += 32768;
+; Line 71
+	*** 000122	83 3e 06 00 00 		cmp	WORD PTR _FM+6,0
+	*** 000127	7f 0c 			jg	$I950
+	*** 000129	83 3e 08 00 00 		cmp	WORD PTR _FM+8,0
+	*** 00012e	7d 05 			jge	$I950
+	*** 000130	80 06 01 00 80 		add	BYTE PTR _OurRoll+1,128
+;|***         if (FM[1][0]>0  && FM[1][1]<0) OurRoll  = 16384L + (16384L - OurRoll);
+; Line 72
+					$I950:
+	*** 000135	83 3e 06 00 00 		cmp	WORD PTR _FM+6,0
+	*** 00013a	7e 11 			jle	$I951
+	*** 00013c	83 3e 08 00 00 		cmp	WORD PTR _FM+8,0
+	*** 000141	7d 0a 			jge	$I951
+	*** 000143	b8 00 80 		mov	ax,-32768
+	*** 000146	2b 06 00 00 		sub	ax,_OurRoll
+	*** 00014a	a3 00 00 		mov	_OurRoll,ax
+;|***         if (FM[1][0]<0  && FM[1][1]>0) OurRoll  = 49152L + (16384L - OurRoll);
+; Line 73
+					$I951:
+	*** 00014d	83 3e 06 00 00 		cmp	WORD PTR _FM+6,0
+	*** 000152	7d 68 			jge	$I956
+	*** 000154	83 3e 08 00 00 		cmp	WORD PTR _FM+8,0
+	*** 000159	7e 61 			jle	$I956
+	*** 00015b	2b c0 			sub	ax,ax
+	*** 00015d	2b 06 00 00 		sub	ax,_OurRoll
+	*** 000161	a3 00 00 		mov	_OurRoll,ax
+;|*** 
+;|***     } else {  /* Do this if our Pitch is 90 degrees */
+; Line 75
+	*** 000164	8b e5 			mov	sp,bp
+	*** 000166	5d 			pop	bp
+	*** 000167	c3 			ret	
+					$I941:
+;|***         OurRoll = 0;
+; Line 76
+	*** 000168	c7 06 00 00 00 00 	mov	WORD PTR _OurRoll,0
+;|***         OurHead = Iasin(FM[0][1]);
+; Line 77
+	*** 00016e	ff 36 02 00 		push	WORD PTR _FM+2
+	*** 000172	e8 00 00 		call	_Iasin
+	*** 000175	83 c4 02 		add	sp,2
+	*** 000178	a3 00 00 		mov	_OurHead,ax
+;|*** 
+;|***       /*  Set for correct quadrant  */
+;|***         if (FM[1][0]<=0 && FM[1][1]<0) OurHead += 32768;
+; Line 80
+	*** 00017b	83 3e 06 00 00 		cmp	WORD PTR _FM+6,0
+	*** 000180	7f 0c 			jg	$I954
+	*** 000182	83 3e 08 00 00 		cmp	WORD PTR _FM+8,0
+	*** 000187	7d 05 			jge	$I954
+	*** 000189	80 06 01 00 80 		add	BYTE PTR _OurHead+1,128
+;|***         if (FM[1][0]>0 && FM[1][1]<0) OurHead = 16384L + (16384L - OurHead);
+; Line 81
+					$I954:
+	*** 00018e	83 3e 06 00 00 		cmp	WORD PTR _FM+6,0
+	*** 000193	7e 11 			jle	$I955
+	*** 000195	83 3e 08 00 00 		cmp	WORD PTR _FM+8,0
+	*** 00019a	7d 0a 			jge	$I955
+	*** 00019c	b8 00 80 		mov	ax,-32768
+	*** 00019f	2b 06 00 00 		sub	ax,_OurHead
+	*** 0001a3	a3 00 00 		mov	_OurHead,ax
+;|***         if (FM[1][0]<0 && FM[1][1]>0) OurHead = 49152l + (16384L - OurHead);
+; Line 82
+					$I955:
+	*** 0001a6	83 3e 06 00 00 		cmp	WORD PTR _FM+6,0
+	*** 0001ab	7d 0f 			jge	$I956
+	*** 0001ad	83 3e 08 00 00 		cmp	WORD PTR _FM+8,0
+	*** 0001b2	7e 08 			jle	$I956
+	*** 0001b4	a1 00 00 		mov	ax,_OurHead
+	*** 0001b7	f7 d8 			neg	ax
+	*** 0001b9	a3 00 00 		mov	_OurHead,ax
+;|***     }
+; Line 83
+					$I956:
+;|*** 
+;|*** }
+; Line 85
+	*** 0001bc	8b e5 			mov	sp,bp
+	*** 0001be	5d 			pop	bp
+	*** 0001bf	c3 			ret	
+
+_Decompose	ENDP
+;|*** 
+;|*** 
+;|*** abs (int x); /* {           // REPLACES REGULAR LIBRARY VERSION !!!!!
+;|***     if (x==0x8000) {
+;|***         return 0x7fff;
+;|***     } else if (x<0) {
+;|***         return -x;
+;|***     } else {
+;|***         return (x);
+;|***     }
+;|*** }
+;|*** */
+;|*** /*<f><s> Integer Math Routines*/
+;|*** 
+;|*** /*******************************************
+;|*** *                                          *
+;|*** *   This function performs a division      *
+;|*** *   of two signed 15 bit fractions.   A/B  *
+;|*** *                                          *
+;|*** *******************************************/
+;|*** 
+;|*** SWORD   IntDiv (A,B)
+;|*** 
+;|*** SWORD A,B;
+; Line 109
+	PUBLIC	_IntDiv
+_IntDiv	PROC NEAR
+	*** 0001c0	55 			push	bp
+	*** 0001c1	8b ec 			mov	bp,sp
+	*** 0001c3	83 ec 0c 		sub	sp,12
+	*** 0001c6	56 			push	si
+;|*** {
+; Line 110
+;	S1 = -2
+;	S2 = -4
+;	LA = -8
+;	LB = -12
+;	A = 4
+;	B = 6
+;|***     SBYTE   S1 = 1,S2 = 1;
+; Line 111
+	*** 0001c7	c6 46 fe 01 		mov	BYTE PTR [bp-2],1	;S1
+	*** 0001cb	c6 46 fc 01 		mov	BYTE PTR [bp-4],1	;S2
+;|***     unsigned long LA,LB;
+;|*** 
+;|***     if (A < 0)  S1 = -1;
+; Line 114
+	*** 0001cf	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;A
+	*** 0001d3	7d 04 			jge	$I965
+	*** 0001d5	c6 46 fe ff 		mov	BYTE PTR [bp-2],255	;S1
+;|*** 
+;|***     if (B < 0)  S2 = -1;
+; Line 116
+					$I965:
+	*** 0001d9	83 7e 06 00 		cmp	WORD PTR [bp+6],0	;B
+	*** 0001dd	7d 04 			jge	$I966
+	*** 0001df	c6 46 fc ff 		mov	BYTE PTR [bp-4],255	;S2
+;|*** 
+;|***     LA = (A<0) ? -A : A;
+; Line 118
+					$I966:
+	*** 0001e3	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;A
+	*** 0001e7	7d 07 			jge	$L20000
+	*** 0001e9	8b 46 04 		mov	ax,WORD PTR [bp+4]	;A
+	*** 0001ec	f7 d8 			neg	ax
+	*** 0001ee	eb 03 			jmp	SHORT $L20001
+					$L20000:
+	*** 0001f0	8b 46 04 		mov	ax,WORD PTR [bp+4]	;A
+					$L20001:
+	*** 0001f3	99 			cwd	
+	*** 0001f4	89 46 f8 		mov	WORD PTR [bp-8],ax	;LA
+	*** 0001f7	89 56 fa 		mov	WORD PTR [bp-6],dx
+;|***     LB = (B<0) ? -B : B;
+; Line 119
+	*** 0001fa	83 7e 06 00 		cmp	WORD PTR [bp+6],0	;B
+	*** 0001fe	7d 08 			jge	$L20002
+	*** 000200	8b 46 06 		mov	ax,WORD PTR [bp+6]	;B
+	*** 000203	f7 d8 			neg	ax
+	*** 000205	eb 04 			jmp	SHORT $L20003
+	*** 000207	90 			nop	
+					$L20002:
+	*** 000208	8b 46 06 		mov	ax,WORD PTR [bp+6]	;B
+					$L20003:
+	*** 00020b	99 			cwd	
+	*** 00020c	89 46 f4 		mov	WORD PTR [bp-12],ax	;LB
+	*** 00020f	89 56 f6 		mov	WORD PTR [bp-10],dx
+;|*** 
+;|***     return ((((LA << 16) / LB) >> 1) * S1 * S2);
+; Line 121
+	*** 000212	52 			push	dx
+	*** 000213	50 			push	ax
+	*** 000214	8b 56 f8 		mov	dx,WORD PTR [bp-8]	;LA
+	*** 000217	2b c0 			sub	ax,ax
+	*** 000219	52 			push	dx
+	*** 00021a	50 			push	ax
+	*** 00021b	e8 00 00 		call	__aNuldiv
+	*** 00021e	d1 ea 			shr	dx,1
+	*** 000220	d1 d8 			rcr	ax,1
+	*** 000222	8b c8 			mov	cx,ax
+	*** 000224	8a 46 fc 		mov	al,BYTE PTR [bp-4]	;S2
+	*** 000227	98 			cbw	
+	*** 000228	8b d8 			mov	bx,ax
+	*** 00022a	8a 46 fe 		mov	al,BYTE PTR [bp-2]	;S1
+	*** 00022d	98 			cbw	
+	*** 00022e	8b f0 			mov	si,ax
+	*** 000230	8b c1 			mov	ax,cx
+	*** 000232	f7 e6 			mul	si
+	*** 000234	f7 e3 			mul	bx
+	*** 000236	5e 			pop	si
+	*** 000237	8b e5 			mov	sp,bp
+	*** 000239	5d 			pop	bp
+	*** 00023a	c3 			ret	
+	*** 00023b	90 			nop	
+
+_IntDiv	ENDP
+;|*** 
+;|*** 
+;|*** }
+;|*** 
+;|*** /*************************************************
+;|*** *                                                *
+;|*** *   Function returns a 16 bit Word Degree angle  *
+;|*** *   of the Arc Sin of A.                         *
+;|*** *                                                *
+;|*** *************************************************/
+;|*** 
+;|*** 
+;|*** extern int TRGTB[];
+;|*** 
+;|*** unsigned Iasin (A)
+;|*** int A;
+; Line 137
+	PUBLIC	_Iasin
+_Iasin	PROC NEAR
+	*** 00023c	55 			push	bp
+	*** 00023d	8b ec 			mov	bp,sp
+	*** 00023f	83 ec 08 		sub	sp,8
+	*** 000242	56 			push	si
+;|*** {
+; Line 138
+;	A = 4
+;	AA = -4
+;	angl = -2
+;	delta = -8
+;	i = -6
+;|***     int AA,angl,delta,i;
+;|*** 
+;|***     if (A==-0x8000) return -0x4000;
+; Line 141
+	*** 000243	81 7e 04 00 80 		cmp	WORD PTR [bp+4],-32768	;A
+	*** 000248	75 08 			jne	$I974
+	*** 00024a	b8 00 c0 		mov	ax,-16384
+	*** 00024d	5e 			pop	si
+	*** 00024e	8b e5 			mov	sp,bp
+	*** 000250	5d 			pop	bp
+	*** 000251	c3 			ret	
+					$I974:
+	*** 000252	ff 76 04 		push	WORD PTR [bp+4]	;A
+	*** 000255	e8 00 00 		call	_abs
+	*** 000258	83 c4 02 		add	sp,2
+	*** 00025b	89 46 fc 		mov	WORD PTR [bp-4],ax	;AA
+;|*** 
+;|***     AA = abs(A);
+;|***     for (i=(AA>>9)+1; i>=0; i--) {
+; Line 144
+	*** 00025e	b1 09 			mov	cl,9
+	*** 000260	d3 f8 			sar	ax,cl
+	*** 000262	40 			inc	ax
+	*** 000263	89 46 fa 		mov	WORD PTR [bp-6],ax	;i
+	*** 000266	eb 03 			jmp	SHORT $F975
+					$FC976:
+	*** 000268	ff 4e fa 		dec	WORD PTR [bp-6]	;i
+					$F975:
+	*** 00026b	83 7e fa 00 		cmp	WORD PTR [bp-6],0	;i
+	*** 00026f	7c 3b 			jl	$FB977
+;|***         if (AA>=TRGTB[i]) {
+; Line 145
+	*** 000271	8b 76 fa 		mov	si,WORD PTR [bp-6]	;i
+	*** 000274	d1 e6 			shl	si,1
+	*** 000276	8b 46 fc 		mov	ax,WORD PTR [bp-4]	;AA
+	*** 000279	39 84 00 00 		cmp	WORD PTR _TRGTB[si],ax
+	*** 00027d	7f e9 			jg	$FC976
+;|***            delta = TRGTB[i+1] - TRGTB[i];
+; Line 146
+	*** 00027f	8b 84 02 00 		mov	ax,WORD PTR _TRGTB[si+2]
+	*** 000283	2b 84 00 00 		sub	ax,WORD PTR _TRGTB[si]
+	*** 000287	89 46 f8 		mov	WORD PTR [bp-8],ax	;delta
+;|***            angl = ((i)<<8) + (long) 256*(AA-TRGTB[i])/delta;
+; Line 147
+	*** 00028a	99 			cwd	
+	*** 00028b	52 			push	dx
+	*** 00028c	50 			push	ax
+	*** 00028d	8b 46 fc 		mov	ax,WORD PTR [bp-4]	;AA
+	*** 000290	2b 84 00 00 		sub	ax,WORD PTR _TRGTB[si]
+	*** 000294	99 			cwd	
+	*** 000295	8a f2 			mov	dh,dl
+	*** 000297	8a d4 			mov	dl,ah
+	*** 000299	8a e0 			mov	ah,al
+	*** 00029b	2a c0 			sub	al,al
+	*** 00029d	52 			push	dx
+	*** 00029e	50 			push	ax
+	*** 00029f	e8 00 00 		call	__aNldiv
+	*** 0002a2	8a 6e fa 		mov	ch,BYTE PTR [bp-6]	;i
+	*** 0002a5	2a c9 			sub	cl,cl
+	*** 0002a7	03 c1 			add	ax,cx
+	*** 0002a9	89 46 fe 		mov	WORD PTR [bp-2],ax	;angl
+;|***            break;
+; Line 148
+					$FB977:
+;|***         }
+;|***     }
+;|***     if (A<0) angl = -angl;
+; Line 151
+	*** 0002ac	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;A
+	*** 0002b0	7d 08 			jge	$I979
+	*** 0002b2	8b 46 fe 		mov	ax,WORD PTR [bp-2]	;angl
+	*** 0002b5	f7 d8 			neg	ax
+	*** 0002b7	89 46 fe 		mov	WORD PTR [bp-2],ax	;angl
+;|***     return angl;
+; Line 152
+					$I979:
+	*** 0002ba	8b 46 fe 		mov	ax,WORD PTR [bp-2]	;angl
+	*** 0002bd	5e 			pop	si
+	*** 0002be	8b e5 			mov	sp,bp
+	*** 0002c0	5d 			pop	bp
+	*** 0002c1	c3 			ret	
+
+_Iasin	ENDP
+;|*** }
+;|*** 
+;|*** /*************************************************
+;|*** *                                                *
+;|*** *   Function returns a 16 bit Word Degree angle  *
+;|*** *   of the Arc Cos of A.                         *
+;|*** *                                                *
+;|*** *************************************************/
+;|*** 
+;|*** unsigned Iacos (A)
+;|*** int A;
+; Line 163
+	PUBLIC	_Iacos
+_Iacos	PROC NEAR
+	*** 0002c2	55 			push	bp
+	*** 0002c3	8b ec 			mov	bp,sp
+;|*** {
+; Line 164
+;	A = 4
+;|***     return 0x4000 - Iasin(A);
+; Line 165
+	*** 0002c5	ff 76 04 		push	WORD PTR [bp+4]	;A
+	*** 0002c8	e8 71 ff 		call	_Iasin
+	*** 0002cb	83 c4 02 		add	sp,2
+	*** 0002ce	2d 00 40 		sub	ax,16384
+	*** 0002d1	f7 d8 			neg	ax
+	*** 0002d3	5d 			pop	bp
+	*** 0002d4	c3 			ret	
+	*** 0002d5	90 			nop	
+
+_Iacos	ENDP
+;|*** }
+;|*** 
+;|*** Sqrt (N)
+;|*** int N;
+; Line 169
+	PUBLIC	_Sqrt
+_Sqrt	PROC NEAR
+	*** 0002d6	55 			push	bp
+	*** 0002d7	8b ec 			mov	bp,sp
+	*** 0002d9	83 ec 04 		sub	sp,4
+;|*** {   int A,B;
+; Line 170
+;	N = 4
+;	A = -2
+;	B = -4
+;|*** 
+;|***     N = abs(N);
+; Line 172
+	*** 0002dc	ff 76 04 		push	WORD PTR [bp+4]	;N
+	*** 0002df	e8 00 00 		call	_abs
+	*** 0002e2	83 c4 02 		add	sp,2
+	*** 0002e5	89 46 04 		mov	WORD PTR [bp+4],ax	;N
+;|***     if (N<4) return 1;
+; Line 173
+	*** 0002e8	3d 04 00 		cmp	ax,4
+	*** 0002eb	7d 07 			jge	$I987
+	*** 0002ed	b8 01 00 		mov	ax,1
+	*** 0002f0	8b e5 			mov	sp,bp
+	*** 0002f2	5d 			pop	bp
+	*** 0002f3	c3 			ret	
+					$I987:
+	*** 0002f4	8b 46 04 		mov	ax,WORD PTR [bp+4]	;N
+	*** 0002f7	d1 f8 			sar	ax,1
+	*** 0002f9	d1 f8 			sar	ax,1
+	*** 0002fb	89 46 fc 		mov	WORD PTR [bp-4],ax	;B
+;|***     B = N>>2;
+;|***     do {
+; Line 175
+					$D988:
+;|***         A = N/B;
+; Line 176
+	*** 0002fe	8b 46 04 		mov	ax,WORD PTR [bp+4]	;N
+	*** 000301	99 			cwd	
+	*** 000302	8b 4e fc 		mov	cx,WORD PTR [bp-4]	;B
+	*** 000305	f7 f9 			idiv	cx
+	*** 000307	89 46 fe 		mov	WORD PTR [bp-2],ax	;A
+;|***         B = (B+A)>>1;
+; Line 177
+	*** 00030a	8b c1 			mov	ax,cx
+	*** 00030c	03 46 fe 		add	ax,WORD PTR [bp-2]	;A
+	*** 00030f	d1 f8 			sar	ax,1
+	*** 000311	89 46 fc 		mov	WORD PTR [bp-4],ax	;B
+;|***     } while (abs(B-A)>1);
+; Line 178
+	*** 000314	2b 46 fe 		sub	ax,WORD PTR [bp-2]	;A
+	*** 000317	50 			push	ax
+	*** 000318	e8 00 00 		call	_abs
+	*** 00031b	83 c4 02 		add	sp,2
+	*** 00031e	3d 01 00 		cmp	ax,1
+	*** 000321	7f db 			jg	$D988
+;|***     return B;
+; Line 179
+	*** 000323	8b 46 fc 		mov	ax,WORD PTR [bp-4]	;B
+	*** 000326	8b e5 			mov	sp,bp
+	*** 000328	5d 			pop	bp
+	*** 000329	c3 			ret	
+
+_Sqrt	ENDP
+_TEXT	ENDS
+END
+;|*** }
+;|*** 

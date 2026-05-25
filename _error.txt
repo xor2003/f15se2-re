@@ -1,0 +1,168 @@
+mzretools/tools/dosbuild.sh cc msc510 -i src/egame0.c -o build/egame0.obj -f "/Fc /Gs /Zi /Id:\f15-se2 /Id:\f15-se2\src /Zp1"
+cl /Fc /Gs /Zi /Id:\f15-se2 /Id:\f15-se2\src /Zp1 /c /Foe:\egame0.obj egame0.c
+egame0.c
+mzretools/tools/dosbuild.sh cc msc510 -i src/egame1.c -o build/egame1.obj -f "/Fc /Gs /Zi /Id:\f15-se2 /Id:\f15-se2\src /Zp1"
+cl /Fc /Gs /Zi /Id:\f15-se2 /Id:\f15-se2\src /Zp1 /c /Foe:\egame1.obj egame1.c
+egame1.c
+egame1.c(23) : warning C4047: 'argument' : different levels of indirection
+egame1.c(23) : warning C4024: 'strcpy' : different types : parameter 2
+egame1.c(52) : error C2100: illegal indirection
+egame1.c(53) : error C2100: illegal indirection
+egame1.c(92) : error C2109: subscript on non-array
+egame1.c(98) : error C2109: subscript on non-array
+egame1.c(189) : warning C4047: '=' : different levels of indirection
+egame1.c(194) : warning C4047: 'argument' : different levels of indirection
+egame1.c(194) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(198) : warning C4047: 'argument' : different levels of indirection
+egame1.c(198) : warning C4024: 'fclose' : different types : parameter 1
+egame1.c(202) : warning C4047: 'argument' : different levels of indirection
+egame1.c(202) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(203) : warning C4047: 'argument' : different levels of indirection
+egame1.c(203) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(204) : warning C4047: 'argument' : different levels of indirection
+egame1.c(204) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(208) : warning C4047: 'argument' : different levels of indirection
+egame1.c(208) : warning C4024: 'fclose' : different types : parameter 1
+egame1.c(218) : warning C4047: 'argument' : different levels of indirection
+egame1.c(218) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(221) : warning C4046: '&' on function/array, ignored
+egame1.c(221) : warning C4047: 'argument' : different levels of indirection
+egame1.c(221) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(223) : warning C4047: 'argument' : different levels of indirection
+egame1.c(223) : warning C4024: 'fread' : different types : parameter 3
+egame1.c(223) : warning C4047: 'argument' : different levels of indirection
+egame1.c(223) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(224) : warning C4047: 'argument' : different levels of indirection
+egame1.c(224) : warning C4024: 'fread' : different types : parameter 3
+egame1.c(224) : warning C4047: 'argument' : different levels of indirection
+egame1.c(224) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(225) : warning C4047: 'argument' : different levels of indirection
+egame1.c(225) : warning C4024: 'fread' : different types : parameter 3
+egame1.c(225) : warning C4047: 'argument' : different levels of indirection
+egame1.c(225) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(227) : warning C4047: 'argument' : different levels of indirection
+egame1.c(227) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(228) : warning C4047: 'argument' : different levels of indirection
+egame1.c(228) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(229) : warning C4046: '&' on function/array, ignored
+egame1.c(229) : warning C4047: 'argument' : different levels of indirection
+egame1.c(229) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(230) : warning C4047: 'argument' : different levels of indirection
+egame1.c(230) : warning C4024: 'fread' : different types : parameter 3
+egame1.c(230) : warning C4047: 'argument' : different levels of indirection
+egame1.c(230) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(232) : warning C4046: '&' on function/array, ignored
+egame1.c(232) : warning C4047: 'argument' : different levels of indirection
+egame1.c(232) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(233) : warning C4047: 'argument' : different levels of indirection
+egame1.c(233) : warning C4024: 'fread' : different types : parameter 3
+egame1.c(233) : warning C4047: 'argument' : different levels of indirection
+egame1.c(233) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(235) : warning C4047: 'argument' : different levels of indirection
+egame1.c(235) : warning C4024: 'fclose' : different types : parameter 1
+egame1.c(236) : warning C4047: '=' : different levels of indirection
+egame1.c(247) : error C2109: subscript on non-array
+egame1.c(248) : warning C4047: '=' : different levels of indirection
+egame1.c(249) : warning C4047: 'argument' : different levels of indirection
+egame1.c(249) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(250) : warning C4047: 'argument' : different levels of indirection
+egame1.c(250) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(251) : warning C4022: 'fread' : pointer mismatch : parameter 1
+egame1.c(251) : warning C4047: 'argument' : different levels of indirection
+egame1.c(251) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(253) : warning C4047: 'argument' : different levels of indirection
+egame1.c(253) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(254) : error C2109: subscript on non-array
+egame1.c(258) : error C2109: subscript on non-array
+egame1.c(258) : error C2109: subscript on non-array
+egame1.c(261) : warning C4047: 'argument' : different levels of indirection
+egame1.c(261) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(265) : warning C4047: 'argument' : different levels of indirection
+egame1.c(265) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(274) : warning C4047: 'argument' : different levels of indirection
+egame1.c(274) : warning C4024: 'fclose' : different types : parameter 1
+egame1.c(288) : warning C4047: '=' : different levels of indirection
+egame1.c(293) : warning C4047: 'argument' : different levels of indirection
+egame1.c(293) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(296) : warning C4047: 'argument' : different levels of indirection
+egame1.c(296) : warning C4024: 'fclose' : different types : parameter 1
+egame1.c(299) : warning C4047: 'argument' : different levels of indirection
+egame1.c(299) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(307) : warning C4022: 'fread' : pointer mismatch : parameter 1
+egame1.c(307) : warning C4047: 'argument' : different levels of indirection
+egame1.c(307) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(313) : error C2109: subscript on non-array
+egame1.c(315) : error C2109: subscript on non-array
+egame1.c(320) : warning C4047: 'argument' : different levels of indirection
+egame1.c(320) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(321) : warning C4047: 'argument' : different levels of indirection
+egame1.c(321) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(322) : warning C4047: 'argument' : different levels of indirection
+egame1.c(322) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(323) : warning C4047: 'argument' : different levels of indirection
+egame1.c(323) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(324) : error C2109: subscript on non-array
+egame1.c(332) : warning C4047: 'argument' : different levels of indirection
+egame1.c(332) : warning C4024: 'fclose' : different types : parameter 1
+egame1.c(340) : warning C4047: '=' : different levels of indirection
+egame1.c(348) : warning C4047: 'argument' : different levels of indirection
+egame1.c(348) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(352) : warning C4047: 'argument' : different levels of indirection
+egame1.c(352) : warning C4024: 'fclose' : different types : parameter 1
+egame1.c(356) : warning C4047: 'argument' : different levels of indirection
+egame1.c(356) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(357) : warning C4047: 'argument' : different levels of indirection
+egame1.c(357) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(358) : warning C4047: 'argument' : different levels of indirection
+egame1.c(358) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(359) : warning C4047: 'argument' : different levels of indirection
+egame1.c(359) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(360) : warning C4047: 'argument' : different levels of indirection
+egame1.c(360) : warning C4024: 'fread' : different types : parameter 4
+egame1.c(362) : warning C4047: 'argument' : different levels of indirection
+egame1.c(362) : warning C4024: 'fclose' : different types : parameter 1
+egame1.c(593) : error C2100: illegal indirection
+egame1.c(595) : error C2100: illegal indirection
+egame1.c(607) : error C2100: illegal indirection
+egame1.c(638) : error C2106: '=' : left operand must be lvalue
+egame1.c(639) : error C2106: '=' : left operand must be lvalue
+egame1.c(657) : warning C4047: '=' : different levels of indirection
+egame1.c(658) : error C2106: '=' : left operand must be lvalue
+egame1.c(662) : error C2106: '=' : left operand must be lvalue
+egame1.c(674) : error C2106: '=' : left operand must be lvalue
+egame1.c(747) : error C2036: left of '.field_C' must have a struct/union type
+mzretools/tools/dosbuild.sh cc msc510 -i src/egame2.c -o build/egame2.obj -f "/Gs /Id:\f15-se2"
+cl /Gs /Id:\f15-se2 /c /Foe:\egame2.obj egame2.c
+egame2.c
+egame2.c(42) : warning C4047: '=' : different levels of indirection
+egame2.c(49) : warning C4046: '&' on function/array, ignored
+egame2.c(49) : warning C4047: 'argument' : different levels of indirection
+egame2.c(49) : warning C4024: 'fread' : different types : parameter 4
+egame2.c(50) : warning C4047: 'argument' : different levels of indirection
+egame2.c(50) : warning C4024: 'fread' : different types : parameter 4
+egame2.c(51) : warning C4047: 'argument' : different levels of indirection
+egame2.c(51) : warning C4024: 'fread' : different types : parameter 4
+egame2.c(52) : warning C4047: 'argument' : different levels of indirection
+egame2.c(52) : warning C4024: 'fread' : different types : parameter 4
+egame2.c(59) : warning C4047: 'argument' : different levels of indirection
+egame2.c(59) : warning C4024: 'fread' : different types : parameter 4
+egame2.c(65) : warning C4047: 'argument' : different levels of indirection
+egame2.c(65) : warning C4024: 'fclose' : different types : parameter 1
+mzretools/tools/dosbuild.sh cc msc510 -i src/egame3.c -o build/egame3.obj -f "/Od /Id:\f15-se2"
+cl /Od /Id:\f15-se2 /c /Foe:\egame3.obj egame3.c
+egame3.c
+mzretools/tools/dosbuild.sh cc msc510 -i src/egame4.c -o build/egame4.obj -f "/Fc /Gs /Zi /Id:\f15-se2 /Id:\f15-se2\src /Zp1"
+cl /Fc /Gs /Zi /Id:\f15-se2 /Id:\f15-se2\src /Zp1 /c /Foe:\egame4.obj egame4.c
+egame4.c
+mzretools/tools/dosbuild.sh cc msc510 -i src/egame5.c -o build/egame5.obj -f "/Fc /Gs /Zi /Id:\f15-se2 /Id:\f15-se2\src /Zp1"
+cl /Fc /Gs /Zi /Id:\f15-se2 /Id:\f15-se2\src /Zp1 /c /Foe:\egame5.obj egame5.c
+egame5.c
+egame5.c(35) : warning C4060: conversion of long address to short address
+mzretools/tools/dosbuild.sh cc msc510 -i src/egame6.c -o build/egame6.obj -f "/Fc /Gs /Zi /Id:\f15-se2 /Id:\f15-se2\src /Zp1"
+cl /Fc /Gs /Zi /Id:\f15-se2 /Id:\f15-se2\src /Zp1 /c /Foe:\egame6.obj egame6.c
+egame6.c
+mzretools/tools/dosbuild.sh cc msc510 -i src/egame7.c -o build/egame7.obj -f "/Fc /Gs /Zi /Id:\f15-se2 /Id:\f15-se2\src /Zp1"
+cl /Fc /Gs /Zi /Id:\f15-se2 /Id:\f15-se2\src /Zp1 /c /Foe:\egame7.obj egame7.c
+egame7.c
+UASM/GccUnixR/uasm -q -0 -Zm -Fobuild/egame_rc.obj src/egame_rc.asm
+[31m[0m[31m[0m[31m[0m[31m[0m[31m[0m[31m[0m

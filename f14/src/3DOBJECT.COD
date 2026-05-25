@@ -1,0 +1,403 @@
+;	Static Name Aliases
+;
+;	$S1024_Dx	EQU	Dx
+;	$S1025_Dy	EQU	Dy
+;	$S1026_Dz	EQU	Dz
+	TITLE   3DOBJECT.C
+	NAME    3DOBJECT
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+PUBLIC  _Dist2Obj
+PUBLIC  _Class
+PUBLIC  _VX
+PUBLIC  _VY
+PUBLIC  _VZ
+PUBLIC  _SinHead
+PUBLIC  _CosHead
+PUBLIC  _SinPitch
+PUBLIC  _CosPitch
+PUBLIC  _SinRoll
+PUBLIC  _CosRoll
+PUBLIC  _V
+PUBLIC  _O
+PUBLIC  _C
+PUBLIC  _Object
+PUBLIC  _OX
+PUBLIC  _OY
+PUBLIC  _OZ
+PUBLIC  _SecondMatrix
+EXTRN	__acrtused:ABS
+EXTRN	_SetOvrlyRp:NEAR
+EXTRN	_MakeRotationMatrix:FAR
+EXTRN	_MakeMatHPR:FAR
+EXTRN	_NSetViewMat:NEAR
+_BSS      SEGMENT
+COMM NEAR	_HCent:	BYTE:	 2
+COMM NEAR	_VCent:	BYTE:	 2
+COMM NEAR	_AnimVals:	BYTE:	 64
+COMM NEAR	_HitMe:	BYTE:	 2
+COMM NEAR	_CRASHED:	BYTE:	 2
+EXTRN	_GXLO:WORD
+EXTRN	_GYLO:WORD
+EXTRN	_GXHI:WORD
+EXTRN	_GYHI:WORD
+EXTRN	_GXMID:WORD
+EXTRN	_GYMID:WORD
+EXTRN	_NGXLO:WORD
+EXTRN	_NGYLO:WORD
+EXTRN	_NGXHI:WORD
+EXTRN	_NGYHI:WORD
+EXTRN	_NGXMID:WORD
+EXTRN	_NGYMID:WORD
+EXTRN	_GRPAGE:WORD
+EXTRN	_GRPAGE0:BYTE
+EXTRN	_NPDEST:DWORD
+COMM NEAR	_ntmp:	BYTE:	 10
+EXTRN	_View:WORD
+COMM NEAR	_XEB:	BYTE:	 4
+COMM NEAR	_YEB:	BYTE:	 4
+COMM NEAR	_ZEB:	BYTE:	 4
+_BSS      ENDS
+_DATA      SEGMENT
+_Object	DW	00H
+_OX	DW	00H
+_OY	DW	00H
+_OZ	DW	00H
+_SecondMatrix	DW	00H
+$S1024_Dx	DW	00H
+$S1025_Dy	DW	00H
+$S1026_Dz	DW	00H
+_Dist2Obj	DW	00H
+_Class	DW	00H
+_VX	DW	00H
+_VY	DW	00H
+_VZ	DW	00H
+_SinHead	DW	00H
+_CosHead	DW	00H
+_SinPitch	DW	00H
+_CosPitch	DW	00H
+_SinRoll	DW	00H
+_CosRoll	DW	00H
+_V	DW	00H
+ 	DB	16 DUP(0)
+
+_O	DW	00H
+ 	DB	16 DUP(0)
+
+_C	DW	00H
+ 	DB	16 DUP(0)
+
+_DATA      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** /*----------*/
+;|*** /*
+;|*** /*  File:   3DObject.C
+;|*** /*
+;|*** /*  Auth:   Andy Hollis  11/25/87 <<<<< Amazing !!!
+;|*** /*
+;|*** /*  Edit:   Hacked yet again for F15 III, AWH - 8/92
+;|*** /*          AND YET AGAIN FOR F-14, MJM 4/93
+;|*** /*
+;|*** /*  Routines to draw a 3D object. - NOT!!
+;|*** /*
+;|*** /*----------*/
+;|*** 
+;|*** #include "library.h"
+;|*** // #include "3d5.h"
+;|*** #include "world.h"
+;|*** #include "sdata.h"
+;|*** #include "cockpit.h"
+;|*** #include "F15Defs.h"
+;|*** #include <dos.h>
+;|*** 
+;|*** 
+;|*** /*** EXTERNAL PROCEDURES ***/
+;|*** 
+;|***     extern  void    far    MakeRotationMatrix ();
+;|*** 
+;|*** //    extern  void    far    SetViewMat();
+;|***     extern  void    far    MakeMatHPR();
+;|*** 
+;|*** 
+;|*** /*** GLOBAL 3D SYSTEM VARIABLES ***/
+;|*** 
+;|***     /* Don't move these guys or the file unpacker won't work right !! */
+;|***     /* Also, StackObject requires this */
+;|*** 
+;|***             UWORD   Object = 0;
+;|***             long    XEB, YEB, ZEB;
+;|*** 
+;|***             int     OX=0, OY=0, OZ=0;           /* relative object location */
+;|*** 
+;|***             int     SecondMatrix=0;
+;|***     static  int     Dx=0, Dy=0, Dz=0;
+;|***             int     Dist2Obj=0, Class=0;
+;|*** 
+;|***             int     VX=0, VY=0, VZ=0;           /* Viewer location */
+;|***             int     HCent, VCent;               /* screen center */
+;|*** 
+;|***             int     SinHead=0, CosHead=0;
+;|***             int     SinPitch=0, CosPitch=0;
+;|***             int     SinRoll=0, CosRoll=0;
+;|*** 
+;|***             int     V [3][3]={0};               /* Viewer matrix */
+;|***             int     O [3][3]={0};               /* Object Matrix */
+;|***             int     C [3][3]={0};               /* Concatenation of V & O */
+;|*** 
+;|*** /***************** Stuff for Scott's 3D ************************/
+;|*** 
+;|*** SWORD AnimVals [32];
+;|*** SWORD HitMe;
+;|*** UWORD CRASHED;
+;|*** 
+;|*** extern int GXLO, GYLO, GXHI, GYHI, GXMID, GYMID, LightX, LightY, LightZ;
+;|*** extern int NGXLO, NGYLO, NGXHI, NGYHI, NGXMID, NGYMID;
+;|*** extern SWORD GRPAGE;
+;|*** extern SWORD GRPAGE0[];
+;|*** extern SWORD FTicks;
+;|*** extern int   Panning;
+;|*** extern int   GrndAnimVals[];
+;|*** extern int   PlaneAnimVals[];
+;|*** extern int	 CarrierAnimVals[];
+;|*** extern char  far *NPDEST;
+;|*** extern UWORD *PalPtr3D;
+;|*** 
+;|*** 
+;|*** //***************************************************************************
+;|*** 
+;|*** //***************************************************************************
+;|*** SetDrawWindow (struct RastPort *Rp)
+;|*** {
+; Line 79
+	PUBLIC	_SetDrawWindow
+_SetDrawWindow	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+	*** 000003	83 ec 04 		sub	sp,4
+;	Rp = 4
+;	LWidth = -4
+;	LHeight = -2
+;|*** 	int LWidth, LHeight;
+;|*** 
+;|*** 	/* Andy's 3D vars */
+;|***     HCent = (Rp->Width1 +1) >>1;
+; Line 83
+	*** 000006	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;Rp
+	*** 000009	8b 47 06 		mov	ax,WORD PTR [bx+6]
+	*** 00000c	40 			inc	ax
+	*** 00000d	d1 f8 			sar	ax,1
+	*** 00000f	a3 00 00 		mov	WORD PTR _HCent,ax
+;|***     VCent = (Rp->Length1+1) >>1;
+; Line 84
+	*** 000012	8b 47 08 		mov	ax,WORD PTR [bx+8]
+	*** 000015	40 			inc	ax
+	*** 000016	d1 f8 			sar	ax,1
+	*** 000018	a3 00 00 		mov	WORD PTR _VCent,ax
+;|*** 
+;|***     if (Rp->YBgn == 0) {
+; Line 86
+	*** 00001b	83 7f 04 00 		cmp	WORD PTR [bx+4],0
+	*** 00001f	75 0d 			jne	$I1076
+;|*** //        HCent += Panning;
+;|***         if (!(View&VFULL)) {     /* Change of horizon point */
+; Line 88
+	*** 000021	f6 06 00 00 40 		test	BYTE PTR _View,64
+	*** 000026	75 06 			jne	$I1076
+;|***             VCent = 56;
+; Line 89
+	*** 000028	c7 06 00 00 38 00 	mov	WORD PTR _VCent,56
+;|*** //            if (View==DOWN) VCent -= LOOKDOWNDY;
+;|***         }
+; Line 91
+;|***     }
+; Line 92
+					$I1076:
+;|*** 
+;|***     SetOvrlyRp (Rp);
+; Line 94
+	*** 00002e	ff 76 04 		push	WORD PTR [bp+4]	;Rp
+	*** 000031	e8 00 00 		call	_SetOvrlyRp
+	*** 000034	83 c4 02 		add	sp,2
+;|*** 
+;|*** 	/* Set up Scott's 3D vars */
+;|***     GXLO = Rp->XBgn;
+; Line 97
+	*** 000037	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;Rp
+	*** 00003a	8b 47 02 		mov	ax,WORD PTR [bx+2]
+	*** 00003d	a3 00 00 		mov	_GXLO,ax
+;|***     GYLO = Rp->YBgn;
+; Line 98
+	*** 000040	8b 47 04 		mov	ax,WORD PTR [bx+4]
+	*** 000043	a3 00 00 		mov	_GYLO,ax
+;|***     GXHI = Rp->XBgn + Rp->Width1;
+; Line 99
+	*** 000046	8b 47 02 		mov	ax,WORD PTR [bx+2]
+	*** 000049	03 47 06 		add	ax,WORD PTR [bx+6]
+	*** 00004c	a3 00 00 		mov	_GXHI,ax
+;|***     GYHI = Rp->YBgn + Rp->Length1;
+; Line 100
+	*** 00004f	8b 47 04 		mov	ax,WORD PTR [bx+4]
+	*** 000052	03 47 08 		add	ax,WORD PTR [bx+8]
+	*** 000055	a3 00 00 		mov	_GYHI,ax
+;|***     GXMID = HCent + Rp->XBgn;
+; Line 101
+	*** 000058	8b 47 02 		mov	ax,WORD PTR [bx+2]
+	*** 00005b	03 06 00 00 		add	ax,WORD PTR _HCent
+	*** 00005f	a3 00 00 		mov	_GXMID,ax
+;|***     GYMID = VCent + Rp->YBgn;
+; Line 102
+	*** 000062	8b 47 04 		mov	ax,WORD PTR [bx+4]
+	*** 000065	03 06 00 00 		add	ax,WORD PTR _VCent
+	*** 000069	a3 00 00 		mov	_GYMID,ax
+;|*** 	GRPAGE=GRPAGE0[Rp->PageNr];
+; Line 103
+	*** 00006c	8b 1f 			mov	bx,WORD PTR [bx]
+	*** 00006e	d1 e3 			shl	bx,1
+	*** 000070	8b 87 00 00 		mov	ax,WORD PTR _GRPAGE0[bx]
+	*** 000074	a3 00 00 		mov	_GRPAGE,ax
+;|*** 	NGXLO = GXLO;
+; Line 104
+	*** 000077	a1 00 00 		mov	ax,_GXLO
+	*** 00007a	a3 00 00 		mov	_NGXLO,ax
+;|*** 	NGXHI = GXHI;
+; Line 105
+	*** 00007d	a1 00 00 		mov	ax,_GXHI
+	*** 000080	a3 00 00 		mov	_NGXHI,ax
+;|*** 	NGYLO = GYLO;
+; Line 106
+	*** 000083	a1 00 00 		mov	ax,_GYLO
+	*** 000086	a3 00 00 		mov	_NGYLO,ax
+;|*** 	NGYHI = GYHI;
+; Line 107
+	*** 000089	a1 00 00 		mov	ax,_GYHI
+	*** 00008c	a3 00 00 		mov	_NGYHI,ax
+;|*** 	NGXMID = GXMID;
+; Line 108
+	*** 00008f	a1 00 00 		mov	ax,_GXMID
+	*** 000092	a3 00 00 		mov	_NGXMID,ax
+;|*** 	NGYMID = GYMID;
+; Line 109
+	*** 000095	a1 00 00 		mov	ax,_GYMID
+	*** 000098	a3 00 00 		mov	_NGYMID,ax
+;|*** 
+;|*** 	FP_SEG(NPDEST)=GRPAGE;
+; Line 111
+	*** 00009b	a1 00 00 		mov	ax,_GRPAGE
+	*** 00009e	a3 02 00 		mov	WORD PTR _NPDEST+2,ax
+;|*** 	FP_OFF(NPDEST)=0;
+; Line 112
+	*** 0000a1	c7 06 00 00 00 00 	mov	WORD PTR _NPDEST,0
+;|*** }
+; Line 113
+	*** 0000a7	8b e5 			mov	sp,bp
+	*** 0000a9	5d 			pop	bp
+	*** 0000aa	c3 			ret	
+	*** 0000ab	90 			nop	
+
+_SetDrawWindow	ENDP
+;|*** 
+;|*** //***************************************************************************
+;|*** SetViewRot(int LHead, int LPitch, int LRoll, int Zoom)
+;|*** {
+; Line 117
+	PUBLIC	_SetViewRot
+_SetViewRot	PROC NEAR
+	*** 0000ac	55 			push	bp
+	*** 0000ad	8b ec 			mov	bp,sp
+;	LHead = 4
+;	LPitch = 6
+;	LRoll = 8
+;	Zoom = 10
+;|***     MakeRotationMatrix (V, -LHead, -LPitch, -LRoll);
+; Line 118
+	*** 0000af	8b 46 08 		mov	ax,WORD PTR [bp+8]	;LRoll
+	*** 0000b2	f7 d8 			neg	ax
+	*** 0000b4	50 			push	ax
+	*** 0000b5	8b 46 06 		mov	ax,WORD PTR [bp+6]	;LPitch
+	*** 0000b8	f7 d8 			neg	ax
+	*** 0000ba	50 			push	ax
+	*** 0000bb	8b 46 04 		mov	ax,WORD PTR [bp+4]	;LHead
+	*** 0000be	f7 d8 			neg	ax
+	*** 0000c0	50 			push	ax
+	*** 0000c1	b8 26 00 		mov	ax,OFFSET DGROUP:_V
+	*** 0000c4	50 			push	ax
+	*** 0000c5	9a 00 00 00 00 		call	FAR PTR _MakeRotationMatrix
+	*** 0000ca	83 c4 08 		add	sp,8
+;|***     MakeMatHPR (-LHead,-LPitch,LRoll, O);
+; Line 119
+	*** 0000cd	b8 38 00 		mov	ax,OFFSET DGROUP:_O
+	*** 0000d0	50 			push	ax
+	*** 0000d1	ff 76 08 		push	WORD PTR [bp+8]	;LRoll
+	*** 0000d4	8b 46 06 		mov	ax,WORD PTR [bp+6]	;LPitch
+	*** 0000d7	f7 d8 			neg	ax
+	*** 0000d9	50 			push	ax
+	*** 0000da	8b 46 04 		mov	ax,WORD PTR [bp+4]	;LHead
+	*** 0000dd	f7 d8 			neg	ax
+	*** 0000df	50 			push	ax
+	*** 0000e0	9a 00 00 00 00 		call	FAR PTR _MakeMatHPR
+	*** 0000e5	83 c4 08 		add	sp,8
+;|*** //	SetViewMat (O, Zoom);
+;|***     NSetViewMat (O, Zoom);
+; Line 121
+	*** 0000e8	ff 76 0a 		push	WORD PTR [bp+10]	;Zoom
+	*** 0000eb	b8 38 00 		mov	ax,OFFSET DGROUP:_O
+	*** 0000ee	50 			push	ax
+	*** 0000ef	e8 00 00 		call	_NSetViewMat
+	*** 0000f2	83 c4 04 		add	sp,4
+;|*** }
+; Line 122
+	*** 0000f5	5d 			pop	bp
+	*** 0000f6	c3 			ret	
+	*** 0000f7	90 			nop	
+
+_SetViewRot	ENDP
+;|*** 
+;|*** 
+;|*** //***************************************************************************
+;|*** SetViewPos (int X, int Y, int Z)
+;|*** {
+; Line 127
+	PUBLIC	_SetViewPos
+_SetViewPos	PROC NEAR
+	*** 0000f8	55 			push	bp
+	*** 0000f9	8b ec 			mov	bp,sp
+;	X = 4
+;	Y = 6
+;	Z = 8
+;|***     VX = X;          /* Viewer coords, also */
+; Line 128
+	*** 0000fb	8b 46 04 		mov	ax,WORD PTR [bp+4]	;X
+	*** 0000fe	a3 14 00 		mov	_VX,ax
+;|***     VY = Y;
+; Line 129
+	*** 000101	8b 46 06 		mov	ax,WORD PTR [bp+6]	;Y
+	*** 000104	a3 16 00 		mov	_VY,ax
+;|***     VZ = Z;
+; Line 130
+	*** 000107	8b 46 08 		mov	ax,WORD PTR [bp+8]	;Z
+	*** 00010a	a3 18 00 		mov	_VZ,ax
+;|*** }
+; Line 131
+	*** 00010d	5d 			pop	bp
+	*** 00010e	c3 			ret	
+	*** 00010f	90 			nop	
+
+_SetViewPos	ENDP
+_TEXT	ENDS
+END
+;|*** 

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Mixed-language linking misadventures | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Mixed-language linking misadventures" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<meta property="og:description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<link rel="canonical" href="/f15-se2/2023/10/06/linking.html" />
+<meta property="og:url" content="/f15-se2/2023/10/06/linking.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-10-06T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Mixed-language linking misadventures" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2023-10-06T00:00:00+00:00","datePublished":"2023-10-06T00:00:00+00:00","description":"(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)","headline":"Mixed-language linking misadventures","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2023/10/06/linking.html"},"url":"/f15-se2/2023/10/06/linking.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Mixed-language linking misadventures</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2023-10-06T00:00:00+00:00" itemprop="datePublished">Oct 6, 2023
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><small>(<em>This post is part of a <a href="/category/f15-se2.html">series</a> on the subject of my hobby project, which is recreating the C source code for the 1989 game <a href="/f15-se2/2022/06/05/origins.html">F-15 Strike Eagle II</a> by reverse engineering the original binaries.</em>)</small></p>
+
+<p>If this project has taught me anything, it’s that after each <a href="/f15-se2/2023/09/25/reassembly.html">success</a>, there inevitably comes a defeat. So let’s get into the story of the next logical step I tried to take: remove a function from the IDA-generated disassembly, rewrite it in C, compile and link with the rest of the game which remains in assembly form. This in hope of still being able to obtain a 100% identical binary, which will run inside the game.</p>
+
+<p>In the previous post, I mentioned I had made a Python script to translate the IDA-generated listing (<code class="language-plaintext highlighter-rouge">.lst</code>) file into assembly code, tweaking it along the way so it comes out perfect when assembled with UASM. I didn’t want to make an another one for the reconstruction variant (and then more for the other game executables), so I spent some time making it a little more universal. Essentially what I ended up doing was making the behaviour dependent on the contents of some variables, and those variables are placed (as straight Python code) in separate configuration files that are sucked up using <code class="language-plaintext highlighter-rouge">exec()</code> at runtime. Crude, but effective. It has its drawbacks in that one configuration can’t reuse another (<code class="language-plaintext highlighter-rouge">exec()</code>s can’t be nested), so there is some duplication between the configuration files, but it will do for now. I added functionality to the script to be able to extract specific ranges of instructions from the listing and either put them in separate files to be assembled and linked, or blow them out to space, because they will be rewritten in C. Kind of like cutting out pieces of a jigsaw puzzle:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">extract</span> <span class="o">=</span> <span class="p">[</span> 
+    <span class="c1"># extract the 16-byte DOSSEG padding from the beginning of the code segment
+</span>    <span class="n">Extract</span><span class="p">(</span><span class="n">cs1</span><span class="p">,</span> <span class="n">Block</span><span class="p">(</span><span class="mh">0x0</span><span class="p">,</span> <span class="mh">0x0</span><span class="p">),</span> <span class="s">'byte_10000'</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="s">'start_pad.asm'</span><span class="p">),</span>
+    <span class="c1"># extract the main() routine
+</span>    <span class="n">Extract</span><span class="p">(</span><span class="n">cs1</span><span class="p">,</span> <span class="n">Block</span><span class="p">(</span><span class="mh">0x10</span><span class="p">,</span> <span class="mh">0x482</span><span class="p">),</span> <span class="s">'main'</span><span class="p">,</span> <span class="s">'main'</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+<span class="p">]</span></code></pre></figure>
+
+<p>Back from my original efforts, where I was rewriting the code and comparing the non-identical binaries with <a href="https://github.com/neuviemeporte/mzretools">mzdiff</a>, I already had the C code of <code class="language-plaintext highlighter-rouge">main()</code> (which comes first in the game’s binary) that compiles to the exact code I need. Now it was just a matter of compiling and linking it - or so I thought. Because I wasn’t planning to do it originally, the variable and function names in the C code did not exactly match those from the assembly, so now I had to double check and correct everything, write a new C header file for the function and data declarations that reside in the assembly code, and that the C code needs to see in order to compile and link later. I also needed to tweak the Python script to add <code class="language-plaintext highlighter-rouge">PUBLIC</code> declarations for symbols (code and data) that need to be made reachable from the outside. Also there is the small quirk that DOS C compilers add an underscore (<code class="language-plaintext highlighter-rouge">_</code>) character to all symbols, so I had to make the script add the underscores in as well, otherwise C would not see it:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">publics</span> <span class="o">=</span> <span class="p">[</span> 
+    <span class="s">'copyJoystickData'</span><span class="p">,</span> <span class="s">'initGraphics'</span><span class="p">,</span> <span class="s">'pilotSelect'</span><span class="p">,</span> <span class="s">'clearKeybuf'</span><span class="p">,</span> <span class="s">'installCBreakHandler'</span><span class="p">,</span> <span class="s">'loadOverlay'</span><span class="p">,</span> <span class="s">'allocBuffer'</span><span class="p">,</span> <span class="s">'openShowPic'</span><span class="p">,</span> <span class="s">'sub_10E0A'</span><span class="p">,</span> <span class="s">'restoreCbreakHandler'</span><span class="p">,</span>
+    <span class="s">'sub_10D3A'</span><span class="p">,</span> <span class="s">'setTimerIrqHandler'</span><span class="p">,</span> <span class="s">'showPic640'</span><span class="p">,</span> <span class="s">'sub_14042'</span><span class="p">,</span> <span class="s">'setupOverlaySlots'</span><span class="p">,</span> <span class="s">'waitMdaCgaStatus'</span><span class="p">,</span> <span class="s">'missionSelect'</span><span class="p">,</span> <span class="s">'loadPic'</span><span class="p">,</span> <span class="s">'sub_10DCA'</span><span class="p">,</span> <span class="s">'sub_10CDB'</span><span class="p">,</span> <span class="s">'sub_12BBA'</span><span class="p">,</span>
+    <span class="s">'setupPIT'</span><span class="p">,</span> <span class="s">'sub_14F76'</span><span class="p">,</span>
+    <span class="s">'rand'</span><span class="p">,</span> <span class="s">'srand'</span><span class="p">,</span> <span class="s">'getch'</span><span class="p">,</span> <span class="s">'exit'</span><span class="p">,</span>
+    <span class="s">'hercFlag'</span><span class="p">,</span> <span class="s">'timerCounter'</span><span class="p">,</span> <span class="s">'unknown_1'</span><span class="p">,</span> <span class="s">'commAddr'</span><span class="p">,</span> <span class="s">'aF15_spr'</span><span class="p">,</span> <span class="s">'noJoy80'</span><span class="p">,</span> <span class="s">'aTitle640_pic'</span><span class="p">,</span> <span class="s">'bufAddr'</span><span class="p">,</span> <span class="s">'word_16BF8'</span><span class="p">,</span> <span class="s">'needSplash'</span><span class="p">,</span> <span class="s">'aAdv_pic'</span><span class="p">,</span> <span class="s">'aLabs_pic'</span><span class="p">,</span> <span class="s">'aF15_spr_0'</span><span class="p">,</span>
+    <span class="s">'iacaSuFlag0Ptr'</span><span class="p">,</span> <span class="s">'exitCode'</span><span class="p">,</span> <span class="s">'joyDone'</span><span class="p">,</span> <span class="s">'commBufferPtr'</span><span class="p">,</span> <span class="s">'aEgraphic_exe'</span><span class="p">,</span> <span class="s">'aTitle16_pic'</span><span class="p">,</span>
+    <span class="s">'gfx_jump_0_alloc'</span><span class="p">,</span>
+    <span class="s">'gfx_jump_05'</span><span class="p">,</span>
+    <span class="c1"># [...]
+</span><span class="p">]</span>
+<span class="c1"># [...]
+</span><span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">publics</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">p</span><span class="p">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">'_'</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="sa">f</span><span class="s">"_</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s">"</span>
+    <span class="n">asmfile</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s">'PUBLIC </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="se">\n</span><span class="s">'</span><span class="p">)</span></code></pre></figure>
+
+<p>Once it was compiling, and I had fixed (most) of the unresolved externals (symbols), I noticed it fails to link due to error <code class="language-plaintext highlighter-rouge">L2002</code>, aka fixup overflow:</p>
+
+<pre>
+ninja@dell:eaglestrike$ make start
+tools/lst2asm.py lst/start.lst src/f15-se2/start0.asm start_conf.py
+--- build running link from msc510
+link /M /NOD start1.obj start0.obj,d:\start.exe,,;
+Microsoft (R) Overlay Linker  Version 3.65
+Copyright (C) Microsoft Corp 1983-1988.  All rights reserved.
+START1.OBJ(f15-se2\start1.c) : error L2002: fixup overflow at 034A in segment _TEXT
+ pos: A49 Record type: 4AAC
+ target external '_rand'
+START1.OBJ(f15-se2\start1.c) : error L2002: fixup overflow at 02C7 in segment _TEXT
+ pos: A8D Record type: 4AAC
+ target external '_copyJoystickData'
+LINK : error L2029: Unresolved externals:
+_initGraphics in file(s):
+ START1.OBJ(f15-se2\start1.c)
+_check_keybuf in file(s):
+ START1.OBJ(f15-se2\start1.c)
+_pilotSelect in file(s):
+ START1.OBJ(f15-se2\start1.c)
+[...]
+</pre>
+
+<p>The object file <code class="language-plaintext highlighter-rouge">start1.obj</code> is the result of compiling the <code class="language-plaintext highlighter-rouge">start1.c</code> file containing <code class="language-plaintext highlighter-rouge">main()</code>, and <code class="language-plaintext highlighter-rouge">start0.obj</code> is the result of assembling <code class="language-plaintext highlighter-rouge">start0.asm</code>, which (for now) contains everything else. In any case, this means the linker is trying to find <code class="language-plaintext highlighter-rouge">rand()</code> and <code class="language-plaintext highlighter-rouge">copyJoystickData()</code> inside a segment called <code class="language-plaintext highlighter-rouge">_TEXT</code>, and can’t find it. This is because <code class="language-plaintext highlighter-rouge">_TEXT</code> is the default name of the code segment in the Microsoft convention, and the name of the code segment in my assembly file is <code class="language-plaintext highlighter-rouge">STARTCODE1</code> (there is also <code class="language-plaintext highlighter-rouge">STARTCODE2</code>). I tried changing the name of the code segment in the assembly, but UASM didn’t like it:</p>
+
+<pre>
+ninja@dell:eaglestrike$ make start
+../UASM/GccUnixR/uasm -0 -Zm -Fobuild-f15-se2/start0.obj src/f15-se2/start0.asm
+UASM v2.55, Sep 23 2023, Masm-compatible assembler.
+Portions Copyright (c) 1992-2002 Sybase, Inc. All Rights Reserved.
+Source code is available under the Sybase Open Watcom Public License.
+src/f15-se2/start0.asm(62) : Error A2078: Segment definition changed: _TEXT, alignment
+start0.asm: 18648 lines, 1 passes, 14444 ms, 0 warnings, 1 errors
+make: *** [Makefile:175: build-f15-se2/start0.obj] Error 1
+</pre>
+
+<p>This will cause more headache later on, but for now I worked around the problem by changing the default name of the code segment from the C side, using the compiler’s <code class="language-plaintext highlighter-rouge">/NT</code> commandline option:</p>
+
+<pre>
+ninja@dell:eaglestrike$ make start
+--- build running cl from msc510
+cl /Gs /Zi /Id:\f15-se2 /NT startCode1 /DMSC_VER=5 /c /Foe:\start1.obj f15-se2\start1.c
+</pre>
+
+<p>The fixup overflow errors disappeared, but linker still won’t have it:</p>
+
+<pre>
+link /M /NOD start1.obj start0.obj,d:\start.exe,,;
+Microsoft (R) Overlay Linker  Version 3.65
+Copyright (C) Microsoft Corp 1983-1988.  All rights reserved.
+LINK : error L2029: Unresolved externals:
+__acrtused in file(s):
+ START1.OBJ(f15-se2\start1.c)
+</pre>
+
+<p>The symbol <code class="language-plaintext highlighter-rouge">__acrtused</code> is not used (no pun intended) anywhere in the code. Some googling and the name of the symbol itself leads to the conclusion that it comes from the C RunTime, that is the bit of code that executes before <code class="language-plaintext highlighter-rouge">main()</code>, also called startup code or <code class="language-plaintext highlighter-rouge">C0/CRT0.ASM</code>, from the name of the source file which contains it, and which Microsoft kindly provides in source form with the compiler:</p>
+
+<pre>
+ninja@dell:msc510$ find . -name crt0.asm
+./source/startup/dos/crt0.asm
+ninja@dell:msc510$ grep __acrtused source/startup/dos/crt0.asm
+public  __acrtused              ; trick to force in startup
+        __acrtused = 9876h      ; funny value not easily matched in SYMDEB
+</pre>
+
+<p>The presence of this symbol tells the linker that the startup code is already present, so it does not need to link it in. I was expecting to find the value <code class="language-plaintext highlighter-rouge">9876h</code> (or <code class="language-plaintext highlighter-rouge">7698</code> due to the little-endian nature of x86) somewhere in the data segment, but to my surprise it was not there. As can be seen above, the value is an assembly-time constant (aka equate), that will not be placed in the final executable, but also constitutes a symbol for the linker to see. You live and you learn, I guess.</p>
+
+<p>After adding the public definition for the missing symbol, the executable finally linked! But it’s not even close to being identical to the original. For one, I’m missing 16 null bytes at the beginning of the code segment. The MASM programmer’s guide is helpful in explaining where these come from:</p>
+
+<blockquote>
+  <p>Using the DOSSEG directive (or the /DOSSEG linker option) has two side effects. The linker generates symbols called _ end and _edata. You should not use these names in programs that contain the DOSSEG directive. Also, the linker increases the offset of the first byte of the code segment by 16 bytes in small and compact models. This is to give proper alignment to executable files created with Microsoft compilers.</p>
+</blockquote>
+
+<p><code class="language-plaintext highlighter-rouge">DOSSEG</code> is the name of the Microsoft convention for ordering and naming segments inside an executable. The MASM manual explains what it does exactly:</p>
+
+<blockquote>
+  <p>Under the DOS segment-order convention (DOSSEG), segments have the following order:</p>
+  <ol>
+    <li>All segment names having the class name ‘CODE’</li>
+    <li>Any segments that do not have class name ‘CODE’ and are not part of the group DGROUP</li>
+    <li>Segments that are part of DGROUP, in the following order:<br />
+a. Any segments of class BEGDATA (this class name is reserved for Microsoft use)<br />
+b. Any segments not of class BEGDATA, BSS, or STACK<br />
+c. Segments of class BSS<br />
+d. Segments of class STACK</li>
+  </ol>
+</blockquote>
+
+<p>MASM lets you define segments using the following so called “full” syntax:</p>
+
+<pre>
+[segmentName] segment [alignment] [combine] [use] '[class]'
+[...]
+[segmentName] ends
+</pre>
+
+<p>The segment name is obvious, the alignment tells the assembler to make the start of the segment contents align to a <code class="language-plaintext highlighter-rouge">BYTE</code>, <code class="language-plaintext highlighter-rouge">WORD</code>, <code class="language-plaintext highlighter-rouge">DWORD</code> or <code class="language-plaintext highlighter-rouge">PARA</code> (paragraph, i.e. 16 bytes) boundary, the combine value tells it how merging (if any) with other segments should be handled - values other than <code class="language-plaintext highlighter-rouge">PUBLIC</code> (which tells it to just glue segments together if they have the same name) are rarely used. The “use” value tells it whether this is 16bit or 32bit code, and can be left out in our case, and last the class (<code class="language-plaintext highlighter-rouge">CODE</code>/<code class="language-plaintext highlighter-rouge">DATA</code>/<code class="language-plaintext highlighter-rouge">BSS</code>) tells the linker/debugger the purpose of a segment, and comes with its own magical effects.</p>
+
+<p>Alternatively, you can tell the assembler that standard segment names and ordering are to be used, then the following “simplified” syntax can be used:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">DOSSEG</span> <span class="c1">; use standard DOS segment ordering convention</span>
+<span class="nf">.CODE</span> <span class="c1">; _TEXT segment starts here with default settings</span>
+<span class="c1">; ... instructions</span>
+<span class="nf">.DATA</span> <span class="c1">; _TEXT ends, _DATA segment starts here</span>
+<span class="c1">; ...initialized variables</span>
+<span class="nf">.DATA?</span> <span class="c1">; _BSS segment starts here</span>
+<span class="c1">; ... unitialized variables</span>
+<span class="nf">.STACK</span> <span class="mh">100h</span> <span class="c1">; _BSS ends, _STACK segment starts here with the specified size</span>
+<span class="nf">END</span></code></pre></figure>
+
+<p>I’m not using the standard segment names, and IDA generated the “full” segment definitions, which leads to several problems, including breaking compatibility with code generated by the C compiler (which I’m sidestepping by providing the custom code segment name to the compiler for now), so I tweaked the script to replace full segments with simplified ones, add <code class="language-plaintext highlighter-rouge">DOSSEG</code> in the preamble, and magically, the required null bytes appeared in the executable. Technically, <code class="language-plaintext highlighter-rouge">DOSSEG</code> does not require simplified segments, and there is also the <code class="language-plaintext highlighter-rouge">/DOSSEG</code> linker option that I could have used instead, but surprisingly this alone does not work in that the null bytes are not present. The simplified segments must bring in some additional magic, which I’m not sure what it is. So I pivoted to using simple segments and the <code class="language-plaintext highlighter-rouge">DOSSEG</code> directive in the assembly code, for a while.</p>
+
+<p>After linking the new version of the executable, things are still off. The layout of the data segment is different, but I’m going to deal with that later. For now I can see that there is an extra <code class="language-plaintext highlighter-rouge">nop</code> instruction in the executable right where the C code ends and the assembly begins. Who put it there? Turns out my code segment (now named <code class="language-plaintext highlighter-rouge">_TEXT</code>) from the simplified <code class="language-plaintext highlighter-rouge">.CODE</code> directive is aligned to a word boundary, so surely the <code class="language-plaintext highlighter-rouge">nop</code> comes from the linker trying to align the segment. I ditch the simplified segments (again), they don’t give me enough control. I switch to the full definitions and decide to make the initial null bytes myself. I tell the script to extract them to a separate asm file which will now come first on the linker commandline:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">startCode1</span> <span class="ow">seg</span><span class="nv">ment</span> <span class="kt">byte</span> <span class="nv">public</span> <span class="s">'CODE'</span>
+<span class="nf">byte_10000</span> <span class="nv">db</span> <span class="mh">10h</span> <span class="nv">dup</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="nf">startCode1</span> <span class="nv">ends</span>
+<span class="nf">end</span></code></pre></figure>
+
+<p>After linking, I get my hard-earned null bytes, but the <code class="language-plaintext highlighter-rouge">nop</code> is still there. I decide to take a look inside the .obj file for the main part of the game (the one from the assembly code). I’m using <a href="https://www.agner.org/optimize/">objconv</a> to look inside the object file obtained from assembling the code with UASM:</p>
+
+<pre>
+# objconv -fasm build/start0.obj
+[...]
+DGROUP  GROUP _DATA, STARTDATA, STARTBSS
+
+_TEXT   SEGMENT WORD PUBLIC USE16 'CODE'                ; section number 1
+ASSUME  CS:_TEXT
+_TEXT   ENDS
+
+_DATA   SEGMENT WORD PUBLIC USE16 'DATA'                ; section number 2
+_DATA   ENDS
+
+STARTCODE1 SEGMENT BYTE PUBLIC USE16 'CODE'             ; section number 3
+ASSUME  CS:STARTCODE1
+</pre>
+
+<p>UASM puts default segment definitions that I did not want in the object file. Worse still, these (empty) <code class="language-plaintext highlighter-rouge">_TEXT</code> and <code class="language-plaintext highlighter-rouge">_DATA</code> segments are again to be <code class="language-plaintext highlighter-rouge">WORD</code> aligned, which I’m guessing is the cause of my <code class="language-plaintext highlighter-rouge">nop</code> problem. Let’s tell UASM the name of the real code segment with the <code class="language-plaintext highlighter-rouge">-nt</code> option:</p>
+
+<pre>
+../UASM/GccUnixR/uasm -q -0 -Zm -nt=startCode1 -Fobuild-f15-se2/start0.obj reasm/start0.asm
+reasm/start0.asm(60) : Error A2078: Segment definition changed: startCode1, alignment
+make: *** [Makefile:181: build-f15-se2/start0.obj] Error 1
+</pre>
+
+<p>Apparently, there is some default alignment on the segment that UASM is expecting, and my segment’s <code class="language-plaintext highlighter-rouge">BYTE</code> is not that. No worries, there is a <code class="language-plaintext highlighter-rouge">-Sp</code> option to define segment alignment:</p>
+
+<pre>
+../UASM/GccUnixR/uasm -q -0 -Zm -Sp1 -nt=startCode1 -Fobuild-f15-se2/start0.obj reasm/start0.asm
+reasm/start0.asm(60) : Error A2078: Segment definition changed: startCode1, alignment
+make: *** [Makefile:181: build-f15-se2/start0.obj] Error 1
+</pre>
+
+<p>WTF? Looks like a bug in UASM, so I dive in into its code. It’s not very pretty and does not even build on Linux out of the box, but I got that sorted and started looking inside. Long story short, it emits default segment names from the code that handles the <code class="language-plaintext highlighter-rouge">.MODEL small</code> directive that I’m using. DOS applications can be built in several standard “models” depending on the expected size of the code and data (and particularly, whether far or near pointers are used to reach them), in this particular case it expects to have a single code segment (which is not true), and that the data and stack segment registers have the same value, which is also not the case, so I ditch the <code class="language-plaintext highlighter-rouge">.MODEL</code> directive, the default segments disappear, but UASM still does not let me align my code segment on a <code class="language-plaintext highlighter-rouge">BYTE</code> boundary. I ended up fixing the problem in its code, which was caused by the value of the <code class="language-plaintext highlighter-rouge">-Sp</code> option in the global <code class="language-plaintext highlighter-rouge">Options.seg_align</code> structure not being handled in the <code class="language-plaintext highlighter-rouge">SetSimSeg()</code> function for 16bit code. I reassemble the code, relink it, <code class="language-plaintext highlighter-rouge">nop</code> is still there.</p>
+
+<p>Time to look from the other side, that is the object obtained from the C compiler. Unfortunately, <code class="language-plaintext highlighter-rouge">objconv</code> does not like it:</p>
+
+<pre>
+ninja@dell:eaglestrike$ objconv -fasm build-f15-se2/start1.obj
+Input file: build-f15-se2/start1.obj, output file: build-f15-se2/start1.asm
+Error 2313: OMF file has compression of repeated relocation target (thread). This is not supported in objconv
+Error 2313: OMF file has compression of repeated relocation target (thread). This is not supported in objconv
+Error 2313: OMF file has compression of repeated relocation target (thread). This is not supported in objconv
+Error 2312: FIXUPP record does not refer to data recordConverting from OMF16 to Disassembly16
+</pre>
+
+<p>Object files in the OMF format contain so-called <code class="language-plaintext highlighter-rouge">LIDATA</code> records which indicate regions of repeating data, but apparently objconv does not support them. Luckily I can still open the file directly in IDA:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">STARTCODE1:</span><span class="err">0495</span> <span class="c1">; #line 243</span>
+<span class="nl">STARTCODE1:</span><span class="err">0495</span>                 <span class="nf">pop</span>     <span class="nb">si</span>
+<span class="nl">STARTCODE1:</span><span class="err">0496</span>                 <span class="nf">mov</span>     <span class="nb">sp</span><span class="p">,</span> <span class="nb">bp</span>
+<span class="nl">STARTCODE1:</span><span class="err">0498</span>                 <span class="nf">pop</span>     <span class="nb">bp</span>
+<span class="nl">STARTCODE1:</span><span class="err">0499</span>                 <span class="nf">retn</span>
+<span class="nl">STARTCODE1:</span><span class="err">0499</span> <span class="c1">; ---------------------------------------------------------------------------</span>
+<span class="nl">STARTCODE1:</span><span class="err">049</span><span class="nf">A</span>                 <span class="nv">nop</span> <span class="c1">; 🤬🤬🤬</span>
+<span class="nl">STARTCODE1:</span><span class="err">049</span><span class="nf">A</span> <span class="nv">STARTCODE1</span>      <span class="nv">ends</span></code></pre></figure>
+
+<p>It looks like I wasted time fixing UASM bugs. It was the MSC compiler which put the <code class="language-plaintext highlighter-rouge">nop</code> at the end of the translation unit, presumably for alignment purposes. There is no option to elide it. Without making an OMF dissector to parse the object file, remove the offending instruction and write the result back to disk, there is no way for me to produce an identical executable from linking C code with assembly code.</p>
+
+<p>I’m really reaping the rewards of my own laziness. I did not want to do too much work in IDA, I was hoping to move the code out of it ASAP, build it outside and investigate and document it through debugging and instrumentation in running form - I’m not very good at reading static code. This means that many offsets to data (and possibly a few to code) remain in a hard-baked numeric form, not referring to a label, whose offset could be recalculated during linking. So if the layout of the data changes even by a byte, the whole thing stops working. I would need to go over the code in IDA and fix all instances where numerical values are used in the code:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nf">mov</span> <span class="nb">ax</span><span class="p">,</span> <span class="mh">1234h</span> <span class="c1">; is this numerical value something coming from the game logic,</span>
+              <span class="c1">; or is it an offset to data? No way to know other than read </span>
+              <span class="c1">; how it's used in the code later, then potentially rewrite it to:</span>
+<span class="nf">mov</span> <span class="nb">ax</span><span class="p">,</span> <span class="nv">offset</span> <span class="nv">some_var</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span></code></pre></figure>
+
+<p>Going forward, I can see the following ways of handling this bind that I’m currently in:</p>
+
+<ol>
+  <li>Write the aforementioned OMF dissector, rip the <code class="language-plaintext highlighter-rouge">nop</code> out by force, hope that no other assembler and linker quirks prevent me from obtaining a 100% identical executable. Other than the work that it would take, and the uncertainity whether identity is achievable, this option has the downside that I probably can’t really modify the source code to add instrumentation (debugging is still possible), because that will cause the size to change and probably all offsets along with it, so it will stop working.</li>
+  <li>Go over the code in IDA and fix all the offsets. That could mean that the code would become modifiable, and I could ignore the <code class="language-plaintext highlighter-rouge">nop</code> - it would still work with it inside, and it would resolve itself once I have finished rewriting all C code in that particular module. That is probably the best option, but it also happens to be a lot of work without a guarantee of success.</li>
+  <li>Go back to my previous approach of additively reconstructing C code in a non-runnable executable, using <code class="language-plaintext highlighter-rouge">mzdiff</code> for comparison as I go along. I would also slowly be resolving data references that way, because I need to read through the code and figure out what it does. If I ever want to go back to trying linking with the rest of the game to produce a runnable executable, having functions already transcribed definitely does not hurt.</li>
+</ol>
+
+<p>I’m pretty burned out on the whole idea of rubbing C and assembly together and hoping for miracles to happen, so I’m going for the quasi-instant gratification of #3… for now. I really want to do some code reconstruction instead of trying to force buggy assemblers and unpredictable compilers into cooperating. I’ll write up the next part when something interesting happens.</p>
+
+
+  </div><a class="u-url" href="/f15-se2/2023/10/06/linking.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

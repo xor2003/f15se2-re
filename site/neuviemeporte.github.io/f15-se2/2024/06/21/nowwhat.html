@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Now what? | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Now what?" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<meta property="og:description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<link rel="canonical" href="/f15-se2/2024/06/21/nowwhat.html" />
+<meta property="og:url" content="/f15-se2/2024/06/21/nowwhat.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-06-21T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Now what?" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2024-06-21T00:00:00+00:00","datePublished":"2024-06-21T00:00:00+00:00","description":"(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)","headline":"Now what?","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2024/06/21/nowwhat.html"},"url":"/f15-se2/2024/06/21/nowwhat.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Now what?</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2024-06-21T00:00:00+00:00" itemprop="datePublished">Jun 21, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><small>(<em>This post is part of a <a href="/category/f15-se2.html">series</a> on the subject of my hobby project, which is recreating the C source code for the 1989 game <a href="/f15-se2/2022/06/05/origins.html">F-15 Strike Eagle II</a> by reverse engineering the original binaries.</em>)</small></p>
+
+<p>Recently, I’ve been on a roll, completing one routine after another. Then suddenly, after fixing the last problem in a medium-sized routine I was working on, I was presented this output from <code class="language-plaintext highlighter-rouge">make verify</code>, the Makefile target which builds the reconstructed executable and runs <code class="language-plaintext highlighter-rouge">mzdiff</code> to compare it to the original:</p>
+
+<pre>
+[...]
+1000:3b87/013b87: pop bp                           == 1000:27a9/0127a9: pop bp
+1000:3b88/013b88: ret                              == 1000:27aa/0127aa: ret
+Reached end of routine block @ 1000:3b88/013b88
+Completed comparison of routine sub_13A61, no more reachable blocks
+<g>Comparison result: match</g>
+Load module of executable is 45270/0xb0d6 bytes
+--- Routine map stats (static):
+Routine map of 250 routines covers 27498/0x6b6a bytes (60% of the load module)
+Reachable code totals 23944/0x5d88 bytes (87% of the mapped area)
+Unreachable code totals 3710/0xe7e bytes (13% of the mapped area)
+Excluded 182 routines take 12035/0x2f03 bytes (43% of the mapped area)
+Reachable area of excluded routines is 8535/0x2157 bytes (35% of the reachable area)
+--- Comparison run stats (dynamic):
+Seen 138 routines, visited 68 and compared 15409/0x3c31 bytes of opcodes inside (64% of the reachable area)
+Ignored (seen but excluded) 70 routines totaling 3268/0xcc4 bytes (13% of the reachable area)
+Practical coverage (visited &amp; compared + ignored) is 18677/0x48f5 (<g>78%</g> of the reachable area)
+Theoretical(*) coverage (visited &amp; compared + reachable excluded area) is 23944/0x5d88 (<g>100%</g> of the reachable area)
+(*) Any routines called only by ignored routines have not been seen and will lower the practical score,
+    but theoretically if we stepped into ignored routines, we would have seen and ignored any that were excluded.
+</pre>
+
+<p>So… that’s it? We’re done (with the first executable of 3)? Well, the answer is not that simple. TL;DR: not really.</p>
+
+<p>But it’s a milestone nonetheless, and to celebrate, I’ve decided to <a href="https://github.com/neuviemeporte/f15se2-re">release the code</a> that I have written up till now. So, enjoy.</p>
+
+<p>Now the thing I wish to address is the completion metrics, and what they actually mean. I have a bunch of those on my tooling, so let’s discuss them starting from the top, in order to try and estimate the amount of work left.</p>
+
+<h1 id="completion-according-to-lst2chpy">Completion according to lst2ch.py</h1>
+
+<p>When I make a change in the IDA database, I have it export the listing (<code class="language-plaintext highlighter-rouge">.lst</code>) file, which triggers a recreation of the autogenerated C header file using the Python script <code class="language-plaintext highlighter-rouge">lst2ch.py</code>. That script walks over the listing and gathers a bunch of information, which it prints out before terminating:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ninja@RYZEN:f15se2-re$ make verify
+mzretools/tools/lst2ch.py lst/start.lst src conf/start_rc.json --noc
+Found matching include file: lst/start.inc, parsing
+Writing C header file: src/start.h
+Found routines: total: 249, ignored: 53, remaining: 196, ported: 68, unported: 128
+Accumulated routines' size: remaining: 21638/0x5486/100%, ported: 15424/0x3c40/71.28%, unported: 6214/0x1846/28.72%
+Found 986 variables, size = 31504/0x7b10
+[...]
+</code></pre></div></div>
+
+<p>Because this tool walks the IDA listing, it has (at least initially) a more completionist view of all the routines than <code class="language-plaintext highlighter-rouge">mzdiff</code>, which relies on a routine map created by <code class="language-plaintext highlighter-rouge">mzmap</code>, but the latter is meant to be manually adjusted as the reconstruction progresses, until eventually becoming equivalent. Here, the script can see 249 routines in the listing. The ignored ones are pretty much the libc routines which were marked by IDA based on signature comparison, but the tool counts routines as ignored based on the fact that their names in the listing begin with an underscore or equal ‘start’ (the CRT0 stuff). Yeah, not perfect, but this is only supposed to be a rough estimate.</p>
+
+<p>Next, it takes the remaining routines (all of them minus the ignored ones), sums up their extents from the <code class="language-plaintext highlighter-rouge">proc</code> keyword up to the <code class="language-plaintext highlighter-rouge">endp</code>, and that is our baseline 100% completion. Chunks, i.e. detached bits of code that belong to a routine but lay outside its primary extents are not covered, so again, this is not perfect but doesn’t need to be. Then it goes over the list of items in the extract list, which are address ranges marked for snipping out of the listing in the JSON configuration file, presumably because they are/will be replaced with C code, and that counts as the “ported” amount. The remainder is obvious, these are the routines which have not been ported yet, for whatever reason (more on that in a minute).</p>
+
+<p>Makes sense so far? The percentages are only rough because it depends where your baseline is, and this tool sets that at the cutoff level of the ignored routines, with the disctinction being kinda flaky especially around chunks. In any case, I seem to have about 70% of the relevant code reconstructed into C at this point, now let’s try to come up with some more exact numbers.</p>
+
+<h1 id="completion-according-to-mzdiff">Completion according to mzdiff</h1>
+
+<p>Next, the game executable gets built from the reconstructed source + the assembly containing everything not reconstructed yet which is autogenerated from the complete listing by <code class="language-plaintext highlighter-rouge">lst2asm.py</code>, and it gets compared to the original with <code class="language-plaintext highlighter-rouge">mzdiff</code> to form the output I opened this post with, so let me pull up the stats from that again for quick reference:</p>
+
+<pre>
+--- Routine map stats (static):
+Routine map of 250 routines covers 27498/0x6b6a bytes (60% of the load module)
+Reachable code totals 23944/0x5d88 bytes (87% of the mapped area)
+Unreachable code totals 3710/0xe7e bytes (13% of the mapped area)
+Excluded 182 routines take 12035/0x2f03 bytes (43% of the mapped area)
+Reachable area of excluded routines is 8535/0x2157 bytes (35% of the reachable area)
+--- Comparison run stats (dynamic):
+Seen 138 routines, visited 68 and compared 15409/0x3c31 bytes of opcodes inside (64% of the reachable area)
+Ignored (seen but excluded) 70 routines totaling 3268/0xcc4 bytes (13% of the reachable area)
+Practical coverage (visited &amp; compared + ignored) is 18677/0x48f5 (<g>78%</g> of the reachable area)
+Theoretical(*) coverage (visited &amp; compared + reachable excluded area) is 23944/0x5d88 (<g>100%</g> of the reachable area)
+(*) Any routines called only by ignored routines have not been seen and will lower the practical score,
+    but theoretically if we stepped into ignored routines, we would have seen and ignored any that were excluded.
+</pre>
+
+<p>The comparison tool does not base its operation on the IDA listing, but the map file that originally came from <code class="language-plaintext highlighter-rouge">mzmap</code>, and was tweaked manually thereafter to correspond to the layout seen by IDA.
+Also, <code class="language-plaintext highlighter-rouge">mzdiff</code> starts off from an entrypoint in both executables, and walks the opcodes in both in lockstep, comparing them and storing calls and jumps in a BFS search queue. Because it does not know the layout of the reconstructed binary (the mapfile describes the original), it does not know where an equivalent reconstructed routine resides for comparison - it has to scrape that info from watching call and jump destinations (<em>update 2025: not true anymore, see <a href="/f15-se2/2024/12/31/newtooling.html">here</a> for info on improvements</em>). This means that it cannot compare what it cannot reach, and it cannot reach what cannot be determined from static analysis alone. So far, I haven’t encountered a case where it failed to reach a relevant routine, but it does say that reachable code was only 87% of the area covered by the map - all the rest will need to be carefully investigated to figure out if it’s really unreachable, or just the tool can’t figure out how to get there - and develop capabilities to instruct it in that regard. But for what it’s worth, IDA also couldn’t find any xrefs to those routines (I checked), so might be the executable just contains a bunch of leftover garbage – or historical gems, depending on one’s perspective.</p>
+
+<p>It also counts more routines than before (182) as excluded - in addition to the libc routines, the mapfile instructs the tool to ignore additional routines. In general, the mapfile syntax supports the following annotations on mapfile routine specifications:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">ignore</code>: a block of code which should not be visited during comparison with <code class="language-plaintext highlighter-rouge">mzdiff</code>. Direct use is typically reserved for data in the code segment, or dummy routines which do not do anything.</li>
+  <li><code class="language-plaintext highlighter-rouge">external</code>: a routine from an external library which we do not need to reverse or reconstruct, e.g. libc. This implies <code class="language-plaintext highlighter-rouge">ignore</code>.</li>
+  <li><code class="language-plaintext highlighter-rouge">detached</code>: a routine that appears unreachable. This also implies <code class="language-plaintext highlighter-rouge">ignore</code>.</li>
+  <li><code class="language-plaintext highlighter-rouge">complete</code>: this routine has been completely reconstructed into identical C code, but will be visited for comparison anyway to make sure nothing was broken. The annotation is just for keeping track of completed work.</li>
+  <li><code class="language-plaintext highlighter-rouge">assembly</code>: a routine which appears to have been written in assembly, so it will never be possible to reconstruct with C. This implies <code class="language-plaintext highlighter-rouge">ignore</code> by default, but can be disabled as needed.</li>
+</ul>
+
+<p>A routine with no annotations is considered unfinished work and will be visited for comparison. The <code class="language-plaintext highlighter-rouge">assembly</code> routines will be ignored while work is carried out on the C reconstruction, then once the reconstruction stage is finished like now for <code class="language-plaintext highlighter-rouge">start.exe</code>, they will be un-ignored with a commandline argument, so I can work on making them runnable. Finally, once I start porting them into C, the ignore will need to cover them up again.</p>
+
+<p>That all ignoring business means the tool only performed the comparison on 64% of the reachable area, which as you remember is in turn only 87% of the greater mapped area (which in turn is 60% of the load module, or the EXE file image). The good news is that the tool seems to have accounted for 100% of the reachable area, either directly through the comparison, or because they were excluded for whatever reason (libc, unreachable, or ignored assembly routine).</p>
+
+<p>OK, this is giving me a headache. Just how much stuff is there actually left to do?</p>
+
+<h1 id="completion-according-to-mzmap">Completion according to mzmap</h1>
+
+<p>If you have two sets of statistics which don’t make your view of a problem any clearer, surely the answer is to implement a third set of statistics in another tool, isn’t it? I wish I was joking.</p>
+
+<p>The problem was that mzdiff is really not designed to gather and present this information – its goal is to compare instructions. Also, until a few days ago, I did not have the routine annotations <code class="language-plaintext highlighter-rouge">external</code>/<code class="language-plaintext highlighter-rouge">detached</code>/<code class="language-plaintext highlighter-rouge">assembly</code> implemented, so all the <code class="language-plaintext highlighter-rouge">ignore</code>d routines were all thrown into one bag, making it difficult to see which ignored routines were part of libc and really didn’t need to get touched, which ones were part of the game but seemed unreachable so there didn’t seem to be a point reconstructing them, and which were not included in the comparison because of being written in assembly, but would need porting work at some point.</p>
+
+<p>So, in addition to implementing the additional annotations and fixing some bugs, I ended up extending <code class="language-plaintext highlighter-rouge">mzmap</code> to also print out the contents of the mapfile in detail and went over the IDA listing to update the contents of the mapfile: figure out what routines were missing from the map, which ones could be considered <code class="language-plaintext highlighter-rouge">detached</code>, that sort of thing. The result is as follows:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ninja@RYZEN:f15se2-re$ mzmap map/start.map --brief
+Showing only only uncompleted routines and unclaimed blocks in code segments
+--- Routine map containing 250 routines
+Size 45270/0xb0d6
+Code1 CODE 0000
+Code2 CODE 06a5
+Data1 DATA 06b5
+Stack1 STACK 0e66
+--- Summary:
+Code size: 27316/0x6ab4 (60% of load module)
+  Completed: 15463/0x3c67 (68 routines, 56% of code) - 1:1 rewritten to high level language
+  Uncompleted: 0/0x0 (0 routines, 0% of code) - routines not yet rewritten which can be
+  Assembly: 2842/0xb1a (40 routines, 10% of code) - impossible to rewrite 1:1
+  Ignored: 8978/0x2312 (99 routines, 32% of code) - excluded from comparison
+    External: 5288/0x14a8 (56 routines, 58% of ignored) - e.g. libc library code
+    Other: 3690/0xe6a (43 routines, 41% of ignored) - code ignored for other reasons
+      Reachable: 249/0xf9 (9 routines, 6% of other) - code which has callers
+      Unreachable: 3441/0xd71 (34 routines, 93% of other) - code which appears unreachable
+  Unclaimed: 33/0x21 (33 blocks, 0% of code) - holes between routines not covered by map
+  Unaccounted: 0/0x0 (0 routines) - consistency check, should be zero
+Data size: 17954/0x4622 (39% of load module)
+  Routines in data segment: 215/0xd7, 43 routines
+</code></pre></div></div>
+
+<p>I’m telling it to be <code class="language-plaintext highlighter-rouge">--brief</code> to hide the non-problematic items in the map, the idea here is to only show areas which are uncompleted or unclaimed (refer to the explanations in the output). Based on this, my stats are not so rosy; I only have 56% of the code rewritten into C, but remember this is in relation to the entire code segment size, which contains libc and some apparently unreachable code. The important bit at this stage is the “Assembly” stat, which tells me I have about 2.8kB of code in 40 assembly routines to worry about. Unless some of the unreachable code (of which there also seems to be about 3kB) turns out to be actually reachable - but I’ll worry about it if and when.</p>
+
+<p>Seeing as transcribing 15kB of C code apparently took me 2 years could be interpreted that I need 4,5 months for the assembly, but this is really comparing apples to oranges because for better or worse, with the assembly I don’t need to do any guesswork, and a big part of those 2 years was spent learning about how the compiler operates, hunting for the right build flags and developing the tooling.</p>
+
+<h1 id="so-now-what">So, now what?</h1>
+
+<p>With the C reconstruction work done for <code class="language-plaintext highlighter-rouge">start.exe</code>, the work now switches gears into assembly tweaking and porting. The first order of business is to get the game runnable. I need to go over the 40 routines, replace any hardcoded offsets with data symbol references, build the executable and make it work inside the game. Actually, let’s flip ignoring the <code class="language-plaintext highlighter-rouge">assembly</code> routines off for a quick test in <code class="language-plaintext highlighter-rouge">mzdiff</code>:</p>
+
+<pre>
+ninja@RYZEN:f15se2-re$ make verify
+mzretools/debug/mzdiff bin/start.exe:0x10 build/start.exe:[558bec83ec1c56c706] --verbose --loose --ctx 30 --map map/start.map <o>--asm</o>
+[...]
+--- Now @1000:2bba/012bba, routine 1000:2bba-1000:2c58/00009f: clearRect [near] [assembly], block 012bba-012c58/00009f, target @1000:3ec0/013ec0
+<r>1000:2bba/012bba: push bp                          != 1000:3ec0/013ec0: ret</r>
+ERROR: Instruction mismatch in routine clearRect at 1000:2bba/012bba: push bp != 1000:3ec0/013ec0: ret
+--- Context information for up to 30 additional instructions after mismatch location:
+1000:2bbb/012bbb: mov bp, sp                       != 1000:3ec1/013ec1: ret
+1000:2bbd/012bbd: push di                          != 1000:3ec2/013ec2: ret
+[...]
+Load module of executable is 45270/0xb0d6 bytes
+--- Routine map stats (static):
+Routine map of 250 routines covers 27498/0x6b6a bytes (60% of the load module)
+Reachable code totals 23944/0x5d88 bytes (87% of the mapped area)
+Unreachable code totals 3710/0xe7e bytes (13% of the mapped area)
+Excluded 142 routines take 9193/0x23e9 bytes (33% of the mapped area)
+Reachable area of excluded routines is 5724/0x165c bytes (23% of the reachable area)
+--- Comparison run stats (dynamic):
+Seen 42 routines, visited 24 and compared 4252/0x109c bytes of opcodes inside (17% of the reachable area)
+Ignored (seen but excluded) 18 routines totaling 153/0x99 bytes (0% of the reachable area)
+Practical coverage (visited &amp; compared + ignored) is 4405/0x1135 (<g>18%</g> of the reachable area)
+Theoretical(*) coverage (visited &amp; compared + reachable excluded area) is 9976/0x26f8 (<g>41%</g> of the reachable area)
+Missed (not seen and not excluded) 84 routines totaling 13878/0x3636 bytes (<r>50%</r> of the covered area)
+(*) Any routines called only by ignored routines have not been seen and will lower the practical score,
+    but theoretically if we stepped into ignored routines, we would have seen and ignored any that were excluded.
+</pre>
+
+<p>As expected, the comparison failed on the first assembly routine (<code class="language-plaintext highlighter-rouge">clearRect</code>) that it entered because my tooling replaces all routines remaining in the assembly with <code class="language-plaintext highlighter-rouge">ret</code> stubs. Also, the statistics took a dive because we stopped at around 4kB into the comparison. But once the assembly routines are done (and it should be an easier task than guessing the C code to emit identical assembly), then we will jump back to 100% coverage again.</p>
+
+<p>At that point I will have code for a binary that’s “free” - I will be able to add to it, and it should be tolerant of changes in internal layout. Then, all these assembly routines that can, will be rewritten into C to make the game more easily portable outside MS-DOS in the future. Doing so will make them completely divergent and non-comparable, so I will need to figure out some way to make sure they operate correctly, potentially with unit testing. Only then will I be free to move on to <code class="language-plaintext highlighter-rouge">EGAME.EXE</code> and do the whole thing all over again. And that doesn’t even cover the fact that the source code is still obscure and will need research to fully document all the routines and data which for now have placeholder names, since I have no idea what they are doing, even though I might have transcribed some of them into C.</p>
+
+<p>But then again, I am happy to have all my ducks in a row with the mapfile aligned, the stats confirming I haven’t missed any relevant routines, and the current goal of the ~3kB of assembly routines clear in sight.</p>
+
+  </div><a class="u-url" href="/f15-se2/2024/06/21/nowwhat.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

@@ -1,0 +1,53 @@
+Step-by-Step Workflow Execution:
+1. Function Selection
+
+Selected setupOverlaySlots from egame_rc.asm based on:
+
+_setupOverlaySlots proc near
+
+
+2. Initial Decompilation Attempt
+
+Created logical C implementation in egame5.c:
+
+void setupOverlaySlots() {
+    /* ... DOS memory allocation ... */
+}
+
+3. Build System Update
+
+Modified Makefile to include new source:
+
+EGAME_SRC := ... egame5.c egame6.c egame7.c
+
+make it
+
+4. Assembly Comparison
+
+Compare .asm/.lst function with function inside .COD file (produced by compiler containing C+assembly)
+Discovered mismatch with original:
+
+mov ovlInsaneFlag, 0
+jmp short loc_106A0
+
+5. Correction Cycle
+
+Rewrote function to match exactly:
+
+void setupOverlaySlots(unsigned int segment) {
+        /* ... precise C/assembly match ... */
+}
+
+6. Compare using tools
+
+execute:
+
+make verify-egame
+
+Need to add steps to json configuration to filter out this function, when converting original .lst to .asm and also mangle required assembly names with "_" sign and make them public.
+if function not binary equal - go to step 4.
+
+
+Key Tool Insights from Recent Work:
+read_file is Crucial
+Essential for comparing C implementations against original assembly:

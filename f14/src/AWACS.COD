@@ -1,0 +1,256 @@
+;	Static Name Aliases
+;
+;	$S1180_JstarTimer	EQU	JstarTimer
+;	$S1181_JstarX	EQU	JstarX
+	TITLE   AWACS.C
+	NAME    AWACS
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+PUBLIC  _LastCall
+EXTRN	__acrtused:ABS
+EXTRN	_LocationPicture:NEAR
+EXTRN	_Dist2D:NEAR
+EXTRN	_ARCTAN:NEAR
+EXTRN	_Px:WORD
+EXTRN	_Py:WORD
+EXTRN	_NPLANES:WORD
+EXTRN	_ps:BYTE
+_BSS      SEGMENT
+COMM NEAR	_ntmp:	BYTE:	 10
+EXTRN	_Diff:WORD
+EXTRN	_Gtime:WORD
+_BSS      ENDS
+_DATA      SEGMENT
+_LastCall	DW	0ff10H
+_DATA      ENDS
+_BSS      SEGMENT
+$S1180_JstarTimer	DW 01H DUP (?)
+$S1181_JstarX	DW 01H DUP (?)
+_BSS      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** #include "library.h"
+;|*** #include "world.h"
+;|*** #include "sdata.h"
+;|*** #include "f15defs.h"
+;|*** #include "string.h"
+;|*** #include "speech.h"
+;|*** #include "setup.h"
+;|*** #include "planeai.h"
+;|*** 
+;|*** extern  COORD   Px, Py;
+;|*** extern  int     OurHead;
+;|*** extern  int     QTimer;
+;|*** extern  int     whichourcarr;
+;|*** 
+;|*** static  int     JstarTimer;
+;|*** static  int     JstarX;
+;|*** 		int     LastCall = -4*60;
+;|*** 
+;|*** extern struct PlaneData far *GetPlanePtr(int PlaneNo);
+;|*** extern struct _wayPoint_ aiwaypoints[];
+;|*** extern struct _path_ aipaths[];
+;|*** extern int     orgPlayernum;
+;|*** 
+;|*** 
+;|*** //***************************************************************************
+;|*** AwacsPicture()
+;|*** {
+; Line 27
+	PUBLIC	_AwacsPicture
+_AwacsPicture	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+	*** 000003	83 ec 34 		sub	sp,52
+;	psi = -42
+;	Mini = -46
+;	i = -28
+;	dx = -40
+;	dy = -44
+;	dist = -14
+;	angl = -12
+;	MinDist = -26
+;	MinAngl = -22
+;	eyex = -30
+;	eyey = -38
+;	eyedist = -24
+;	bogeyi = -52
+;	cnt = -16
+;	ptemp = -20
+;	carrx = -2
+;	carry = -6
+;	carrangle = -50
+;	carrrelangle = -10
+;	carrdist = -36
+;	do_id = -48
+;	is_target = -8
+;	waynum = -4
+;	bogey_org_num = -34
+;	whatsrc = -32
+;|***     struct  Planes  *psi, *Mini;
+;|***     int i, dx, dy, dist, angl, MinDist, MinAngl, eyex, eyey, eyedist, bogeyi;
+;|*** 	int cnt;
+;|*** 	struct PlaneData far *ptemp;
+;|*** 	int carrx, carry, carrangle, carrrelangle;
+;|*** 	UWORD carrdist;
+;|*** 	int do_id = 0;
+; Line 34
+	*** 000006	c7 46 d0 00 00 		mov	WORD PTR [bp-48],0	;do_id
+;|*** 	int is_target = 0;
+; Line 35
+	*** 00000b	c7 46 f8 00 00 		mov	WORD PTR [bp-8],0	;is_target
+;|*** 	int waynum, bogey_org_num;
+;|*** 	int whatsrc;
+;|*** 
+;|***     MinDist = 11250;             // 250 nm range for AWACS
+; Line 39
+	*** 000010	c7 46 e6 f2 2b 		mov	WORD PTR [bp-26],11250	;MinDist
+;|***     if (Gtime-LastCall<(Diff+1)*60) {
+; Line 40
+	*** 000015	b8 3c 00 		mov	ax,60
+	*** 000018	f7 2e 00 00 		imul	WORD PTR _Diff
+	*** 00001c	05 3c 00 		add	ax,60
+	*** 00001f	8b 0e 00 00 		mov	cx,_Gtime
+	*** 000023	2b 0e 00 00 		sub	cx,_LastCall
+	*** 000027	3b c1 			cmp	ax,cx
+	*** 000029	7e 11 			jle	$I1215
+;|*** 		LocationPicture (AWACSSRC, ENEMYSRC, 0, MinDist, 0, 1);
+; Line 41
+	*** 00002b	b8 01 00 		mov	ax,1
+	*** 00002e	50 			push	ax
+	*** 00002f	2b c0 			sub	ax,ax
+	*** 000031	50 			push	ax
+	*** 000032	b8 f2 2b 		mov	ax,11250
+	*** 000035	50 			push	ax
+	*** 000036	2b c0 			sub	ax,ax
+	*** 000038	50 			push	ax
+	*** 000039	e9 9c 00 		jmp	$L20000
+					$I1215:
+;|***     } else {
+; Line 42
+;|***         LastCall = Gtime;
+; Line 43
+	*** 00003c	a1 00 00 		mov	ax,_Gtime
+	*** 00003f	a3 00 00 		mov	_LastCall,ax
+;|*** 
+;|*** 		bogeyi = -999;
+; Line 45
+	*** 000042	c7 46 cc 19 fc 		mov	WORD PTR [bp-52],-999	;bogeyi
+;|***         for (i=0, psi=ps; i<NPLANES; i++, psi++) {
+; Line 46
+	*** 000047	c7 46 e4 00 00 		mov	WORD PTR [bp-28],0	;i
+	*** 00004c	c7 46 d6 00 00 		mov	WORD PTR [bp-42],OFFSET _ps	;psi
+	*** 000051	eb 71 			jmp	SHORT $F1218
+	*** 000053	90 			nop	
+					$FC1219:
+;|***             if (psi->status&ACTIVE && psi->speed && !(psi->status&(CRASH+FRIENDLY))) {
+; Line 47
+	*** 000054	8b 5e d6 		mov	bx,WORD PTR [bp-42]	;psi
+	*** 000057	f6 47 18 02 		test	BYTE PTR [bx+24],2
+	*** 00005b	74 60 			je	$I1224
+	*** 00005d	83 7f 1a 00 		cmp	WORD PTR [bx+26],0
+	*** 000061	74 5a 			je	$I1224
+	*** 000063	f7 47 18 20 04 		test	WORD PTR [bx+24],1056
+	*** 000068	75 53 			jne	$I1224
+;|***                 dx = psi->x-Px;
+; Line 48
+	*** 00006a	8b 47 02 		mov	ax,WORD PTR [bx+2]
+	*** 00006d	2b 06 00 00 		sub	ax,_Px
+	*** 000071	89 46 d8 		mov	WORD PTR [bp-40],ax	;dx
+;|***                 dy = psi->y-Py;
+; Line 49
+	*** 000074	8b 47 04 		mov	ax,WORD PTR [bx+4]
+	*** 000077	2b 06 00 00 		sub	ax,_Py
+	*** 00007b	89 46 d4 		mov	WORD PTR [bp-44],ax	;dy
+;|*** 
+;|***                 dist = Dist2D (dx, dy);
+; Line 51
+	*** 00007e	50 			push	ax
+	*** 00007f	ff 76 d8 		push	WORD PTR [bp-40]	;dx
+	*** 000082	e8 00 00 		call	_Dist2D
+	*** 000085	83 c4 04 		add	sp,4
+	*** 000088	89 46 f2 		mov	WORD PTR [bp-14],ax	;dist
+;|***                 angl = angle (dx, -dy);
+; Line 52
+	*** 00008b	8b 46 d4 		mov	ax,WORD PTR [bp-44]	;dy
+	*** 00008e	f7 d8 			neg	ax
+	*** 000090	50 			push	ax
+	*** 000091	ff 76 d8 		push	WORD PTR [bp-40]	;dx
+	*** 000094	e8 00 00 		call	_ARCTAN
+	*** 000097	83 c4 04 		add	sp,4
+	*** 00009a	89 46 f4 		mov	WORD PTR [bp-12],ax	;angl
+;|*** 
+;|***                 if (dist < MinDist) {
+; Line 54
+	*** 00009d	8b 46 e6 		mov	ax,WORD PTR [bp-26]	;MinDist
+	*** 0000a0	39 46 f2 		cmp	WORD PTR [bp-14],ax	;dist
+	*** 0000a3	7d 18 			jge	$I1224
+;|*** 					bogeyi = i;
+; Line 55
+	*** 0000a5	8b 46 e4 		mov	ax,WORD PTR [bp-28]	;i
+	*** 0000a8	89 46 cc 		mov	WORD PTR [bp-52],ax	;bogeyi
+;|***                     MinDist = dist;
+; Line 56
+	*** 0000ab	8b 46 f2 		mov	ax,WORD PTR [bp-14]	;dist
+	*** 0000ae	89 46 e6 		mov	WORD PTR [bp-26],ax	;MinDist
+;|***                     Mini    = psi;
+; Line 57
+	*** 0000b1	8b 46 d6 		mov	ax,WORD PTR [bp-42]	;psi
+	*** 0000b4	89 46 d2 		mov	WORD PTR [bp-46],ax	;Mini
+;|***                     MinAngl = angl;
+; Line 58
+	*** 0000b7	8b 46 f4 		mov	ax,WORD PTR [bp-12]	;angl
+	*** 0000ba	89 46 ea 		mov	WORD PTR [bp-22],ax	;MinAngl
+;|***                 }
+; Line 59
+;|***             }
+; Line 60
+					$I1224:
+;|***         }
+; Line 61
+	*** 0000bd	ff 46 e4 		inc	WORD PTR [bp-28]	;i
+	*** 0000c0	83 46 d6 28 		add	WORD PTR [bp-42],40	;psi
+					$F1218:
+	*** 0000c4	a1 00 00 		mov	ax,_NPLANES
+	*** 0000c7	39 46 e4 		cmp	WORD PTR [bp-28],ax	;i
+	*** 0000ca	7c 88 			jl	$FC1219
+;|*** 		LocationPicture (AWACSSRC, ENEMYSRC, MinAngl, MinDist, bogeyi, 0);
+; Line 62
+	*** 0000cc	2b c0 			sub	ax,ax
+	*** 0000ce	50 			push	ax
+	*** 0000cf	ff 76 cc 		push	WORD PTR [bp-52]	;bogeyi
+	*** 0000d2	ff 76 e6 		push	WORD PTR [bp-26]	;MinDist
+	*** 0000d5	ff 76 ea 		push	WORD PTR [bp-22]	;MinAngl
+					$L20000:
+	*** 0000d8	2b c0 			sub	ax,ax
+	*** 0000da	50 			push	ax
+	*** 0000db	50 			push	ax
+	*** 0000dc	e8 00 00 		call	_LocationPicture
+	*** 0000df	83 c4 0c 		add	sp,12
+;|***     }
+; Line 63
+;|*** 	return(0);
+; Line 64
+	*** 0000e2	2b c0 			sub	ax,ax
+	*** 0000e4	8b e5 			mov	sp,bp
+	*** 0000e6	5d 			pop	bp
+	*** 0000e7	c3 			ret	
+
+_AwacsPicture	ENDP
+_TEXT	ENDS
+END
+;|*** }

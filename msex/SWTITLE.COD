@@ -1,0 +1,556 @@
+;	Static Name Aliases
+;
+	TITLE   SWTITLE.C
+	NAME    SWTITLE
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+EXTRN	__acrtused:ABS
+EXTRN	_get_type:NEAR
+EXTRN	_set_type:NEAR
+EXTRN	_sound:NEAR
+EXTRN	_swsound:NEAR
+EXTRN	_swcolour:NEAR
+EXTRN	_swposcur:NEAR
+EXTRN	_puts:NEAR
+EXTRN	_setvdisp:NEAR
+EXTRN	_swground:NEAR
+EXTRN	_swputsym:NEAR
+EXTRN	_soundadj:NEAR
+EXTRN	_savemode:WORD
+EXTRN	_hires:WORD
+EXTRN	_titleflg:WORD
+EXTRN	_tickmode:WORD
+EXTRN	_counttick:WORD
+EXTRN	_movetick:WORD
+EXTRN	_displx:WORD
+EXTRN	_dispinit:WORD
+EXTRN	_ground:BYTE
+EXTRN	_swplnsym:BYTE
+EXTRN	_swtrgsym:BYTE
+EXTRN	_swoxsym:BYTE
+EXTRN	_swhitsym:BYTE
+EXTRN	_swwinsym:BYTE
+_DATA      SEGMENT
+$SG287	DB	'S O P W I T H',  00H
+$SG288	DB	'(Distribution Version)',  00H
+$SG289	DB	'(c) Copyright 1984, 1985, 1987',  00H
+$SG290	DB	'BMB ',  00H
+$SG291	DB	'Compuscience Canada Ltd.',  00H
+$SG292	DB	'(c) Copyright 1984-2000 David L. Clark',  00H
+_DATA      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** /*
+;|*** 
+;|***                         Copyright (C) 1984-2000 David L. Clark.
+;|*** 
+;|***                         All rights reserved except as specified in the
+;|***                         file license.txt.  Distribution of this file
+;|***                         without the license.txt file accompanying is
+;|***                         prohibited.
+;|*** 
+;|*** */
+;|*** 
+;|*** #define NULL     ((void *)0)
+;|*** #define FALSE    0
+;|*** #define TRUE     1
+;|*** #define NO       0
+;|*** #define YES      1
+;|*** #define FOREVER  for (;;)
+;|*** 
+;|*** int index(char *str,int c);
+;|*** int inportb(unsigned port);
+;|*** void movblock(unsigned int srcoff,unsigned int srcseg,
+;|***               unsigned int destoff,unsigned int destseg,
+;|***               unsigned int count);
+; Line 23
+;|*** /*
+;|***         swtitle  -      SW perform animation on the title screen
+;|*** 
+;|***                         Copyright (C) 1984-2000 David L. Clark.
+;|*** 
+;|***                         All rights reserved except as specified in the
+;|***                         file license.txt.  Distribution of this file
+;|***                         without the license.txt file accompanying is
+;|***                         prohibited.
+;|*** 
+;|***                         Author: Dave Clark
+;|*** 
+;|***         Modification History:
+;|***                         84-02-02        Development
+;|***                         87-03-10        Microsoft compiler.
+;|***                         87-03-11        Title reformatting.
+;|***                         87-04-01        Version 7.F15
+;|***                         96-12-27        New network version.
+;|***                         99-01-24        1999 copyright.
+;|***                         2000-10-29      Copyright update.
+;|*** */
+;|*** #include        "sw.h"
+;|*** 
+;|*** 
+;|*** extern  int             savemode;               /* Saved PC video mode    */
+;|*** extern  BOOL            hires;                  /* High res debug flag    */
+;|*** extern  BOOL            titleflg;               /* Title flag             */
+;|*** extern  int             tickmode;               /* Tick action to be done */
+;|*** extern  int             counttick, countmove;   /* Performance counters   */
+;|*** extern  int             movetick;               /* Move synchronization   */
+;|*** extern  int     displx, disprx;         /* Display left and right bounds  */
+;|*** extern  BOOL    dispinit;               /* Initalized display flag.       */
+;|*** extern  GRNDTYPE ground[];              /* Ground height by pixel         */
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** swtitln()
+;|*** {
+; Line 39
+	PUBLIC	_swtitln
+_swtitln	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+	*** 000003	83 ec 7a 		sub	sp,122
+	*** 000006	57 			push	di
+	*** 000007	56 			push	si
+;	ob = -118
+;	register si = i
+;	register di = h
+;|*** OBJECTS         ob;
+;|*** extern   char   swplnsym[][ANGLES][SYMBYTES];
+;|*** extern   char   swtrgsym[][TARGBYTES];
+;|*** extern   char   swoxsym[][OXBYTES];
+;|*** extern   char   swhitsym[][SYMBYTES];
+;|*** extern   char   swwinsym[][WINBYTES];
+;|*** register int     i, h;
+;|*** 
+;|***         savemode = get_type();
+; Line 48
+	*** 000008	e8 00 00 		call	_get_type
+	*** 00000b	a3 00 00 		mov	_savemode,ax
+;|***         set_type ( ( hires ) ? 6 : 4 );
+; Line 49
+	*** 00000e	83 3e 00 00 00 		cmp	WORD PTR _hires,0
+	*** 000013	74 05 			je	$L20000
+	*** 000015	b8 06 00 		mov	ax,6
+	*** 000018	eb 03 			jmp	SHORT $L20001
+					$L20000:
+	*** 00001a	b8 04 00 		mov	ax,4
+					$L20001:
+	*** 00001d	50 			push	ax
+	*** 00001e	e8 00 00 		call	_set_type
+	*** 000021	83 c4 02 		add	sp,2
+;|*** 
+;|***         if ( titleflg )
+; Line 51
+	*** 000024	83 3e 00 00 00 		cmp	WORD PTR _titleflg,0
+	*** 000029	74 03 			je	$I281
+;|***                 return;
+; Line 52
+	*** 00002b	e9 bf 01 		jmp	$FB298
+;|*** 
+;|***         tickmode = 1;
+; Line 54
+					$I281:
+	*** 00002e	c7 06 00 00 01 00 	mov	WORD PTR _tickmode,1
+;|*** 
+;|***         sound( S_TITLE, 0, NULL );
+; Line 56
+	*** 000034	2b c0 			sub	ax,ax
+	*** 000036	50 			push	ax
+	*** 000037	50 			push	ax
+	*** 000038	b8 05 00 		mov	ax,5
+	*** 00003b	50 			push	ax
+	*** 00003c	e8 00 00 		call	_sound
+	*** 00003f	83 c4 06 		add	sp,6
+;|***         swsound();
+; Line 57
+	*** 000042	e8 00 00 		call	_swsound
+;|*** 
+;|*** /*---------------- Original BMB Version---------------
+;|*** 
+;|***         swcolour( 3 );
+;|***         swposcur( 13, 6 );
+;|***         puts( "S O P W I T H" );
+;|*** 
+;|***         swcolour( 1 );
+;|***         swposcur( 12, 8 );
+;|***         puts( "(Version 7.F15)" );
+;|*** 
+;|***         swcolour( 3 );
+;|***         swposcur( 5, 11 );
+;|***         puts( "(c) Copyright 1984, 1985, 1987" );
+;|*** 
+;|***         swcolour( 1 );
+;|***         swposcur( 6, 12 );
+;|***         puts( "BMB " );
+;|***         swcolour( 3 );
+;|***         puts( "Compuscience Canada Ltd." );
+;|*** 
+;|*** ------------------ Original BMB Version---------------*/
+;|*** 
+;|*** /*---------------- New Network Version ---------------*/
+;|*** 
+;|***         swcolour( 3 );
+; Line 83
+	*** 000045	b8 03 00 		mov	ax,3
+	*** 000048	50 			push	ax
+	*** 000049	e8 00 00 		call	_swcolour
+	*** 00004c	83 c4 02 		add	sp,2
+;|***         swposcur( 13, 4 );
+; Line 84
+	*** 00004f	b8 04 00 		mov	ax,4
+	*** 000052	50 			push	ax
+	*** 000053	b8 0d 00 		mov	ax,13
+	*** 000056	50 			push	ax
+	*** 000057	e8 00 00 		call	_swposcur
+	*** 00005a	83 c4 04 		add	sp,4
+;|***         puts( "S O P W I T H" );
+; Line 85
+	*** 00005d	b8 00 00 		mov	ax,OFFSET DGROUP:$SG287
+	*** 000060	50 			push	ax
+	*** 000061	e8 00 00 		call	_puts
+	*** 000064	83 c4 02 		add	sp,2
+;|*** 
+;|***         swcolour( 1 );
+; Line 87
+	*** 000067	b8 01 00 		mov	ax,1
+	*** 00006a	50 			push	ax
+	*** 00006b	e8 00 00 		call	_swcolour
+	*** 00006e	83 c4 02 		add	sp,2
+;|***         swposcur( 9, 6 );
+; Line 88
+	*** 000071	b8 06 00 		mov	ax,6
+	*** 000074	50 			push	ax
+	*** 000075	b8 09 00 		mov	ax,9
+	*** 000078	50 			push	ax
+	*** 000079	e8 00 00 		call	_swposcur
+	*** 00007c	83 c4 04 		add	sp,4
+;|***         puts( "(Distribution Version)" );
+; Line 89
+	*** 00007f	b8 0e 00 		mov	ax,OFFSET DGROUP:$SG288
+	*** 000082	50 			push	ax
+	*** 000083	e8 00 00 		call	_puts
+	*** 000086	83 c4 02 		add	sp,2
+;|*** 
+;|***         swcolour( 3 );
+; Line 91
+	*** 000089	b8 03 00 		mov	ax,3
+	*** 00008c	50 			push	ax
+	*** 00008d	e8 00 00 		call	_swcolour
+	*** 000090	83 c4 02 		add	sp,2
+;|***         swposcur( 5, 9 );
+; Line 92
+	*** 000093	b8 09 00 		mov	ax,9
+	*** 000096	50 			push	ax
+	*** 000097	b8 05 00 		mov	ax,5
+	*** 00009a	50 			push	ax
+	*** 00009b	e8 00 00 		call	_swposcur
+	*** 00009e	83 c4 04 		add	sp,4
+;|***         puts( "(c) Copyright 1984, 1985, 1987" );
+; Line 93
+	*** 0000a1	b8 25 00 		mov	ax,OFFSET DGROUP:$SG289
+	*** 0000a4	50 			push	ax
+	*** 0000a5	e8 00 00 		call	_puts
+	*** 0000a8	83 c4 02 		add	sp,2
+;|*** 
+;|***         swcolour( 1 );
+; Line 95
+	*** 0000ab	b8 01 00 		mov	ax,1
+	*** 0000ae	50 			push	ax
+	*** 0000af	e8 00 00 		call	_swcolour
+	*** 0000b2	83 c4 02 		add	sp,2
+;|***         swposcur( 6, 10 );
+; Line 96
+	*** 0000b5	b8 0a 00 		mov	ax,10
+	*** 0000b8	50 			push	ax
+	*** 0000b9	b8 06 00 		mov	ax,6
+	*** 0000bc	50 			push	ax
+	*** 0000bd	e8 00 00 		call	_swposcur
+	*** 0000c0	83 c4 04 		add	sp,4
+;|***         puts( "BMB " );
+; Line 97
+	*** 0000c3	b8 44 00 		mov	ax,OFFSET DGROUP:$SG290
+	*** 0000c6	50 			push	ax
+	*** 0000c7	e8 00 00 		call	_puts
+	*** 0000ca	83 c4 02 		add	sp,2
+;|***         swcolour( 3 );
+; Line 98
+	*** 0000cd	b8 03 00 		mov	ax,3
+	*** 0000d0	50 			push	ax
+	*** 0000d1	e8 00 00 		call	_swcolour
+	*** 0000d4	83 c4 02 		add	sp,2
+;|***         puts( "Compuscience Canada Ltd." );
+; Line 99
+	*** 0000d7	b8 49 00 		mov	ax,OFFSET DGROUP:$SG291
+	*** 0000da	50 			push	ax
+	*** 0000db	e8 00 00 		call	_puts
+	*** 0000de	83 c4 02 		add	sp,2
+;|*** 
+;|***         swcolour( 3 );
+; Line 101
+	*** 0000e1	b8 03 00 		mov	ax,3
+	*** 0000e4	50 			push	ax
+	*** 0000e5	e8 00 00 		call	_swcolour
+	*** 0000e8	83 c4 02 		add	sp,2
+;|***         swposcur( 1, 12 );
+; Line 102
+	*** 0000eb	b8 0c 00 		mov	ax,12
+	*** 0000ee	50 			push	ax
+	*** 0000ef	b8 01 00 		mov	ax,1
+	*** 0000f2	50 			push	ax
+	*** 0000f3	e8 00 00 		call	_swposcur
+	*** 0000f6	83 c4 04 		add	sp,4
+;|***         puts( "(c) Copyright 1984-2000 David L. Clark" );
+; Line 103
+	*** 0000f9	b8 62 00 		mov	ax,OFFSET DGROUP:$SG292
+	*** 0000fc	50 			push	ax
+	*** 0000fd	e8 00 00 		call	_puts
+	*** 000100	83 c4 02 		add	sp,2
+;|*** 
+;|*** /*---------------- New Network Version-----------------*/
+;|*** 
+;|***         setvdisp();
+; Line 107
+	*** 000103	e8 00 00 		call	_setvdisp
+;|*** 
+;|***         displx = 700;
+; Line 109
+	*** 000106	c7 06 00 00 bc 02 	mov	WORD PTR _displx,700
+;|***         dispinit = TRUE;
+; Line 110
+	*** 00010c	c7 06 00 00 01 00 	mov	WORD PTR _dispinit,1
+;|***         swground();
+; Line 111
+	*** 000112	e8 00 00 		call	_swground
+;|*** 
+;|***         ob.ob_type = PLANE;
+; Line 113
+	*** 000115	c7 46 ea 01 00 		mov	WORD PTR [bp-22],1
+;|***         ob.ob_symhgt = ob.ob_symwdt = 16;
+; Line 114
+	*** 00011a	b8 10 00 		mov	ax,16
+	*** 00011d	89 46 ae 		mov	WORD PTR [bp-82],ax
+	*** 000120	89 46 ac 		mov	WORD PTR [bp-84],ax
+;|***         ob.ob_clr = 1;
+; Line 115
+	*** 000123	c7 46 b4 01 00 		mov	WORD PTR [bp-76],1
+;|***         ob.ob_newsym = swplnsym[0][0];
+; Line 116
+	*** 000128	c7 46 d8 00 00 		mov	WORD PTR [bp-40],OFFSET _swplnsym
+;|***         swputsym( 260, 180, &ob );
+; Line 117
+	*** 00012d	8d 46 8a 		lea	ax,WORD PTR [bp-118]	;ob
+	*** 000130	50 			push	ax
+	*** 000131	b8 b4 00 		mov	ax,180
+	*** 000134	50 			push	ax
+	*** 000135	b8 04 01 		mov	ax,260
+	*** 000138	50 			push	ax
+	*** 000139	e8 00 00 		call	_swputsym
+	*** 00013c	83 c4 06 		add	sp,6
+;|*** 
+;|***         ob.ob_newsym = swwinsym[3];
+; Line 119
+	*** 00013f	c7 46 d8 c0 00 		mov	WORD PTR [bp-40],OFFSET _swwinsym+192
+;|***         swputsym( 50, 180, &ob );
+; Line 120
+	*** 000144	8d 46 8a 		lea	ax,WORD PTR [bp-118]	;ob
+	*** 000147	50 			push	ax
+	*** 000148	b8 b4 00 		mov	ax,180
+	*** 00014b	50 			push	ax
+	*** 00014c	b8 32 00 		mov	ax,50
+	*** 00014f	50 			push	ax
+	*** 000150	e8 00 00 		call	_swputsym
+	*** 000153	83 c4 06 		add	sp,6
+;|*** 
+;|***         ob.ob_type = OX;
+; Line 122
+	*** 000156	c7 46 ea 09 00 		mov	WORD PTR [bp-22],9
+;|***         ob.ob_newsym = swoxsym[0];
+; Line 123
+	*** 00015b	c7 46 d8 00 00 		mov	WORD PTR [bp-40],OFFSET _swoxsym
+;|***         swputsym( 100, ground[800] + 16, &ob );
+; Line 124
+	*** 000160	8d 46 8a 		lea	ax,WORD PTR [bp-118]	;ob
+	*** 000163	50 			push	ax
+	*** 000164	a0 20 03 		mov	al,BYTE PTR _ground+800
+	*** 000167	2a e4 			sub	ah,ah
+	*** 000169	05 10 00 		add	ax,16
+	*** 00016c	50 			push	ax
+	*** 00016d	b8 64 00 		mov	ax,100
+	*** 000170	50 			push	ax
+	*** 000171	e8 00 00 		call	_swputsym
+	*** 000174	83 c4 06 		add	sp,6
+;|*** 
+;|***         ob.ob_type = TARGET;
+; Line 126
+	*** 000177	c7 46 ea 04 00 		mov	WORD PTR [bp-22],4
+;|***         ob.ob_clr = 2;
+; Line 127
+	*** 00017c	c7 46 b4 02 00 		mov	WORD PTR [bp-76],2
+;|***         ob.ob_newsym = swtrgsym[3];
+; Line 128
+	*** 000181	c7 46 d8 c0 00 		mov	WORD PTR [bp-40],OFFSET _swtrgsym+192
+;|***         swputsym( 234, ground[934] + 16, &ob );
+; Line 129
+	*** 000186	8d 46 8a 		lea	ax,WORD PTR [bp-118]	;ob
+	*** 000189	50 			push	ax
+	*** 00018a	a0 a6 03 		mov	al,BYTE PTR _ground+934
+	*** 00018d	2a e4 			sub	ah,ah
+	*** 00018f	05 10 00 		add	ax,16
+	*** 000192	50 			push	ax
+	*** 000193	b8 ea 00 		mov	ax,234
+	*** 000196	50 			push	ax
+	*** 000197	e8 00 00 		call	_swputsym
+	*** 00019a	83 c4 06 		add	sp,6
+;|*** 
+;|***         ob.ob_type = PLANE;
+; Line 131
+	*** 00019d	c7 46 ea 01 00 		mov	WORD PTR [bp-22],1
+;|***         ob.ob_newsym = swhitsym[0];
+; Line 132
+	*** 0001a2	c7 46 d8 00 00 		mov	WORD PTR [bp-40],OFFSET _swhitsym
+;|***         swputsym( 20, 160, &ob );
+; Line 133
+	*** 0001a7	8d 46 8a 		lea	ax,WORD PTR [bp-118]	;ob
+	*** 0001aa	50 			push	ax
+	*** 0001ab	b8 a0 00 		mov	ax,160
+	*** 0001ae	50 			push	ax
+	*** 0001af	b8 14 00 		mov	ax,20
+	*** 0001b2	50 			push	ax
+	*** 0001b3	e8 00 00 		call	_swputsym
+	*** 0001b6	83 c4 06 		add	sp,6
+;|*** 
+;|***         ob.ob_type = SMOKE;
+; Line 135
+	*** 0001b9	c7 46 ea 06 00 		mov	WORD PTR [bp-22],6
+;|***         ob.ob_symhgt = ob.ob_symwdt = 1;
+; Line 136
+	*** 0001be	b8 01 00 		mov	ax,1
+	*** 0001c1	89 46 ae 		mov	WORD PTR [bp-82],ax
+	*** 0001c4	89 46 ac 		mov	WORD PTR [bp-84],ax
+;|***         ob.ob_newsym = (char *)0x82;
+; Line 137
+	*** 0001c7	c7 46 d8 82 00 		mov	WORD PTR [bp-40],130
+;|***         h = 150;
+; Line 138
+	*** 0001cc	bf 96 00 		mov	di,150
+;|***         for ( i = 9; i; --i )
+; Line 139
+	*** 0001cf	be 09 00 		mov	si,9
+	*** 0001d2	eb 01 			jmp	SHORT $F296
+					$FC297:
+	*** 0001d4	4e 			dec	si
+					$F296:
+	*** 0001d5	0b f6 			or	si,si
+	*** 0001d7	74 14 			je	$FB298
+;|***                 swputsym( 30, h += 5, &ob );
+; Line 140
+	*** 0001d9	8d 46 8a 		lea	ax,WORD PTR [bp-118]	;ob
+	*** 0001dc	50 			push	ax
+	*** 0001dd	83 c7 05 		add	di,5
+	*** 0001e0	57 			push	di
+	*** 0001e1	b8 1e 00 		mov	ax,30
+	*** 0001e4	50 			push	ax
+	*** 0001e5	e8 00 00 		call	_swputsym
+	*** 0001e8	83 c4 06 		add	sp,6
+	*** 0001eb	eb e7 			jmp	SHORT $FC297
+					$FB298:
+;|*** }
+; Line 141
+	*** 0001ed	5e 			pop	si
+	*** 0001ee	5f 			pop	di
+	*** 0001ef	8b e5 			mov	sp,bp
+	*** 0001f1	5d 			pop	bp
+	*** 0001f2	c3 			ret	
+
+_swtitln	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** swtitlf()
+;|*** {
+; Line 147
+	PUBLIC	_swtitlf
+_swtitlf	PROC NEAR
+	*** 0001f3	55 			push	bp
+	*** 0001f4	8b ec 			mov	bp,sp
+;|*** 
+;|***         if ( titleflg )
+; Line 149
+	*** 0001f6	83 3e 00 00 00 		cmp	WORD PTR _titleflg,0
+	*** 0001fb	74 02 			je	$I301
+;|***                 return;
+; Line 150
+	*** 0001fd	eb 14 			jmp	SHORT $EX300
+;|*** 
+;|***         sound( 0, 0, NULL );
+; Line 152
+					$I301:
+	*** 0001ff	2b c0 			sub	ax,ax
+	*** 000201	50 			push	ax
+	*** 000202	50 			push	ax
+	*** 000203	50 			push	ax
+	*** 000204	e8 00 00 		call	_sound
+	*** 000207	83 c4 06 		add	sp,6
+;|***         swsound();
+; Line 153
+	*** 00020a	e8 00 00 		call	_swsound
+;|***         tickmode = 0;
+; Line 154
+	*** 00020d	c7 06 00 00 00 00 	mov	WORD PTR _tickmode,0
+;|*** }
+; Line 155
+					$EX300:
+	*** 000213	8b e5 			mov	sp,bp
+	*** 000215	5d 			pop	bp
+	*** 000216	c3 			ret	
+
+_swtitlf	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** swtickc()
+;|*** {
+; Line 160
+	PUBLIC	_swtickc
+_swtickc	PROC NEAR
+	*** 000217	55 			push	bp
+	*** 000218	8b ec 			mov	bp,sp
+;|*** 
+;|***         ++counttick;
+; Line 162
+	*** 00021a	ff 06 00 00 		inc	WORD PTR _counttick
+;|***         /*--- DLC 96/12/27
+;|***         ++movetick;
+;|***         ----------------*/
+;|***         movetick+=10;
+; Line 166
+	*** 00021e	83 06 00 00 0a 		add	WORD PTR _movetick,10
+;|*** #ifdef  IBMPC
+;|***         soundadj();
+; Line 168
+	*** 000223	e8 00 00 		call	_soundadj
+;|*** #endif
+;|*** }
+; Line 170
+	*** 000226	8b e5 			mov	sp,bp
+	*** 000228	5d 			pop	bp
+	*** 000229	c3 			ret	
+
+_swtickc	ENDP
+_TEXT	ENDS
+END

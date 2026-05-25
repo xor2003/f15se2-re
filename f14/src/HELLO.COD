@@ -1,0 +1,86 @@
+;	Static Name Aliases
+;
+	TITLE   HELLO.C
+	NAME    HELLO
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+EXTRN	__acrtused:ABS
+_BSS      SEGMENT
+COMM NEAR	_a:	BYTE:	 8192
+_BSS      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** int a[64][64];
+;|*** 
+;|*** int main() {
+; Line 3
+	PUBLIC	_main
+_main	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+	*** 000003	83 ec 04 		sub	sp,4
+	*** 000006	56 			push	si
+;	x = -2
+;	y = -4
+;|***     int x = 5, y = 6;
+; Line 4
+	*** 000007	c7 46 fe 05 00 		mov	WORD PTR [bp-2],5	;x
+	*** 00000c	c7 46 fc 06 00 		mov	WORD PTR [bp-4],6	;y
+;|***     for (x = 0; x < 63; x++)
+; Line 5
+	*** 000011	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;x
+	*** 000016	eb 21 			jmp	SHORT $F105
+					$FC109:
+	*** 000018	ff 46 fc 		inc	WORD PTR [bp-4]	;y
+					$F108:
+	*** 00001b	83 7e fc 3f 		cmp	WORD PTR [bp-4],63	;y
+	*** 00001f	7d 15 			jge	$FC106
+;|***         for (y = 0; y < 63; y++)
+;|***             a[x][y] = 123;
+; Line 7
+	*** 000021	8b 76 fe 		mov	si,WORD PTR [bp-2]	;x
+	*** 000024	b1 07 			mov	cl,7
+	*** 000026	d3 e6 			shl	si,cl
+	*** 000028	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;y
+	*** 00002b	d1 e3 			shl	bx,1
+	*** 00002d	c7 80 00 00 7b 00 	mov	WORD PTR _a[bx][si],123
+	*** 000033	eb e3 			jmp	SHORT $FC109
+	*** 000035	90 			nop	
+					$FC106:
+	*** 000036	ff 46 fe 		inc	WORD PTR [bp-2]	;x
+					$F105:
+	*** 000039	83 7e fe 3f 		cmp	WORD PTR [bp-2],63	;x
+	*** 00003d	7d 07 			jge	$FB107
+;|***         for (y = 0; y < 63; y++)
+; Line 6
+	*** 00003f	c7 46 fc 00 00 		mov	WORD PTR [bp-4],0	;y
+	*** 000044	eb d5 			jmp	SHORT $F108
+					$FB107:
+;|***             a[x][y] = 123;
+;|***     return 0;
+; Line 8
+	*** 000046	2b c0 			sub	ax,ax
+	*** 000048	5e 			pop	si
+	*** 000049	8b e5 			mov	sp,bp
+	*** 00004b	5d 			pop	bp
+	*** 00004c	c3 			ret	
+	*** 00004d	90 			nop	
+
+_main	ENDP
+_TEXT	ENDS
+END
+;|*** }

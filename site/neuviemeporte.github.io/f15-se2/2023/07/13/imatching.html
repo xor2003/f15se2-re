@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Trying to think like a compiler | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Trying to think like a compiler" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<meta property="og:description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<link rel="canonical" href="/f15-se2/2023/07/13/imatching.html" />
+<meta property="og:url" content="/f15-se2/2023/07/13/imatching.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-07-13T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Trying to think like a compiler" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2023-07-13T00:00:00+00:00","datePublished":"2023-07-13T00:00:00+00:00","description":"(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)","headline":"Trying to think like a compiler","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2023/07/13/imatching.html"},"url":"/f15-se2/2023/07/13/imatching.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Trying to think like a compiler</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2023-07-13T00:00:00+00:00" itemprop="datePublished">Jul 13, 2023
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><small>(<em>This post is part of a <a href="/category/f15-se2.html">series</a> on the subject of my hobby project, which is recreating the C source code for the 1989 game <a href="/f15-se2/2022/06/05/origins.html">F-15 Strike Eagle II</a> by reverse engineering the original binaries.</em>)</small></p>
+
+<p>What I’m doing right now is going through the dissassembly of the game executables, rewriting the code into C, and trying to obtain identical instructions when compiling back into executable form, using mzdiff to do the comparison. Despite some problems with being unable to get some parts to match <a href="/f15-se2/2023/05/17/compiler.html">no matter what I do</a> (probably because I still haven’t nailed the right compiler + options combination), I have been making some progress with transcribing the code while using some more advanced options I implemented in mzdiff to ignore these differences. I would like to get rid of them completely, but I’ve been burned out on that front, so instead I decided to move forward and make some actual progress on the recreation.</p>
+
+<p>While working on the START executable’s <code class="language-plaintext highlighter-rouge">main()</code> function, I came across this sequence of instructions in the disassembly:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="err">000002</span><span class="nf">F0</span>  <span class="nv">C41EF277</span>          <span class="nv">les</span> <span class="nb">bx</span><span class="p">,[</span><span class="mh">0x77f2</span><span class="p">]</span> <span class="c1">; load far pointer to a structure into ES:BX</span>
+<span class="err">000002</span><span class="nf">F4</span>  <span class="mi">26837</span><span class="nv">F7201</span>        <span class="nv">cmp</span> <span class="kt">word</span> <span class="p">[</span><span class="nb">es</span><span class="p">:</span><span class="nb">bx</span><span class="o">+</span><span class="mh">0x72</span><span class="p">],</span><span class="kt">byte</span> <span class="o">+</span><span class="mh">0x1</span> <span class="c1">; compare the value at offset 0x72 in the structure to 1</span>
+<span class="err">000002</span><span class="nf">F9</span>  <span class="mi">7513</span>              <span class="nv">jnz</span> <span class="mh">0x30e</span> <span class="c1">; if not equal jump to the ELSE part of the expression</span>
+<span class="err">000002</span><span class="nf">FB</span>  <span class="mi">8</span><span class="nv">BC3</span>              <span class="nv">mov</span> <span class="nb">ax</span><span class="p">,</span><span class="nb">bx</span> <span class="c1">; conditional code, move the far pointer from ES:BX into DX:AX</span>
+<span class="err">000002</span><span class="nf">FD</span>  <span class="mi">8</span><span class="nv">CC2</span>              <span class="nv">mov</span> <span class="nb">dx</span><span class="p">,</span><span class="nb">es</span>
+<span class="err">000002</span><span class="nf">FF</span>  <span class="mi">054800</span>            <span class="nv">add</span> <span class="nb">ax</span><span class="p">,</span><span class="mh">0x48</span> <span class="c1">; add an offset to the offset part</span>
+<span class="err">00000302</span>  <span class="err">52</span>                <span class="nf">push</span> <span class="nb">dx</span> <span class="c1">; push the segment and offset  onto the stack to be used as function arguments</span>
+<span class="err">00000303</span>  <span class="err">50</span>                <span class="nf">push</span> <span class="nb">ax</span>
+<span class="err">00000304</span>  <span class="err">9</span><span class="nf">ADF00A506</span>        <span class="nv">call</span> <span class="mh">0x6a5</span><span class="p">:</span><span class="mh">0xdf</span> <span class="c1">; call a function with the arguments</span>
+<span class="err">00000309</span>  <span class="err">83</span><span class="nf">C404</span>            <span class="nv">add</span> <span class="nb">sp</span><span class="p">,</span><span class="kt">byte</span> <span class="o">+</span><span class="mh">0x4</span> <span class="c1">; pop the arguments off the stack</span>
+<span class="err">0000030</span><span class="nf">C</span>  <span class="nv">EB08</span>              <span class="nv">jmp</span> <span class="nv">short</span> <span class="mh">0x316</span> <span class="c1">; jump over the ELSE part</span></code></pre></figure>
+
+<p>Rewritten into C, it might look something like this:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">union</span> <span class="n">FarAddress</span> <span class="p">{</span>
+    <span class="k">struct</span> <span class="p">{</span> <span class="n">uint16</span> <span class="n">off</span><span class="p">,</span> <span class="n">seg</span><span class="p">;</span> <span class="p">}</span> <span class="n">data</span><span class="p">;</span>
+    <span class="n">uint8</span> <span class="n">far</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="cp">#define FARPTR_CAST_OFFSET(type, addr, offset) (type far*)(addr.ptr + offset)
+#define COMM_SETUP_USEJOY_OFFSET 0x72
+</span>
+<span class="c1">// far function declaration, accepts two word-sized arguments</span>
+<span class="kt">int</span> <span class="n">far</span> <span class="n">cdecl</span> <span class="n">copyJoystickData</span><span class="p">(</span><span class="n">uint16</span> <span class="n">offset</span><span class="p">,</span> <span class="n">uint16</span> <span class="n">segment</span><span class="p">);</span> 
+
+<span class="k">static</span> <span class="k">union</span> <span class="n">FarAddress</span> <span class="n">commAddr</span><span class="p">;</span>
+
+<span class="kt">int</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+
+    <span class="cm">/* ... */</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">*</span><span class="n">FARPTR_CAST_OFFSET</span><span class="p">(</span><span class="n">uint16</span><span class="p">,</span> <span class="n">commAddr</span><span class="p">,</span> <span class="n">COMM_SETUP_USEJOY_OFFSET</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// mind that the arguments are pushed in the reverse order that they are specified in the code</span>
+        <span class="n">copyJoystickData</span><span class="p">(</span><span class="n">commAddr</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">off</span> <span class="o">+</span> <span class="n">COMM_SETUP_JOYDATA_OFFSET</span><span class="p">,</span> <span class="n">commAddr</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">seg</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span> <span class="cm">/* ... */</span> <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This however generates the following code which does not exactly match:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="err">000002</span><span class="nf">E3</span>  <span class="nv">C41ECA05</span>          <span class="nv">les</span> <span class="nb">bx</span><span class="p">,[</span><span class="mh">0x5ca</span><span class="p">]</span>
+<span class="err">000002</span><span class="nf">E7</span>  <span class="mi">26837</span><span class="nv">F7201</span>        <span class="nv">cmp</span> <span class="kt">word</span> <span class="p">[</span><span class="nb">es</span><span class="p">:</span><span class="nb">bx</span><span class="o">+</span><span class="mh">0x72</span><span class="p">],</span><span class="kt">byte</span> <span class="o">+</span><span class="mh">0x1</span>
+<span class="err">000002</span><span class="nf">EC</span>  <span class="mi">7511</span>              <span class="nv">jnz</span> <span class="mh">0x2ff</span>
+<span class="err">000002</span><span class="nf">EE</span>  <span class="mi">06</span>                <span class="nv">push</span> <span class="nb">es</span> <span class="c1">; push the segment part directly from ES</span>
+<span class="err">000002</span><span class="nf">EF</span>  <span class="mi">8</span><span class="nv">BC3</span>              <span class="nv">mov</span> <span class="nb">ax</span><span class="p">,</span><span class="nb">bx</span>
+<span class="err">000002</span><span class="nf">F1</span>  <span class="mi">054800</span>            <span class="nv">add</span> <span class="nb">ax</span><span class="p">,</span><span class="mh">0x48</span> <span class="c1">; add the offset through AX and push thence</span>
+<span class="err">000002</span><span class="nf">F4</span>  <span class="mi">50</span>                <span class="nv">push</span> <span class="nb">ax</span>
+<span class="err">000002</span><span class="nf">F5</span>  <span class="mi">9</span><span class="nv">ABA02C101</span>        <span class="nv">call</span> <span class="mh">0x1c1</span><span class="p">:</span><span class="mh">0x2ba</span>
+<span class="err">000002</span><span class="nf">FA</span>  <span class="mi">83</span><span class="nv">C404</span>            <span class="nv">add</span> <span class="nb">sp</span><span class="p">,</span><span class="kt">byte</span> <span class="o">+</span><span class="mh">0x4</span>
+<span class="err">000002</span><span class="nf">FD</span>  <span class="nv">EB08</span>              <span class="nv">jmp</span> <span class="nv">short</span> <span class="mh">0x307</span></code></pre></figure>
+
+<p>It makes sense to reuse the segment value that is already in ES to push it as an argument, so why did the compiler use DX as a temporary location for it in the original game executable? It took me a couple days to figure out. The function does not accept two arguments, as in the segment and offset, separately. It accepts a single far pointer argument, and two arithmetic-capable registers, namely DX:AX are used as a placeholder for the entire 32bit value to be manipulated arithmetically as a whole. This is just a matter of correcting the declaration and the place it’s called to match:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span> <span class="n">far</span> <span class="n">cdecl</span> <span class="nf">copyJoystickData</span><span class="p">(</span><span class="n">uint8</span> <span class="n">far</span> <span class="o">*</span><span class="n">ptr</span><span class="p">);</span>
+
+<span class="cm">/* ... */</span>
+    <span class="p">{</span>
+        <span class="n">copyJoystickData</span><span class="p">(</span><span class="n">commAddr</span><span class="p">.</span><span class="n">ptr</span> <span class="o">+</span> <span class="n">COMM_SETUP_JOYDATA_OFFSET</span><span class="p">);</span>
+    <span class="p">}</span> </code></pre></figure>
+
+<p>Now the code matches up. However, some time later I come across this surprise:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="err">00000365</span>  <span class="nf">C41E0446</span>          <span class="nv">les</span> <span class="nb">bx</span><span class="p">,[</span><span class="mh">0x4604</span><span class="p">]</span> <span class="c1">; load far pointer to a buffer into ES:BX</span>
+<span class="err">00000369</span>  <span class="err">8</span><span class="nf">B46F4</span>            <span class="nv">mov</span> <span class="nb">ax</span><span class="p">,[</span><span class="nb">bp</span><span class="o">-</span><span class="mh">0xc</span><span class="p">]</span> <span class="c1">; load stack variable value into AX</span>
+<span class="err">0000036</span><span class="nf">C</span>  <span class="mi">2639473</span><span class="nv">E</span>          <span class="nv">cmp</span> <span class="p">[</span><span class="nb">es</span><span class="p">:</span><span class="nb">bx</span><span class="o">+</span><span class="mh">0x3e</span><span class="p">],</span><span class="nb">ax</span> <span class="c1">; compare the value at offset 0x3e in the buffer with the stack variable</span>
+<span class="err">00000370</span>  <span class="err">7519</span>              <span class="nf">jnz</span> <span class="mh">0x38b</span> <span class="c1">; if not equal, jump to conditional code</span>
+<span class="err">00000372</span>  <span class="err">268</span><span class="nf">B4738</span>          <span class="nv">mov</span> <span class="nb">ax</span><span class="p">,[</span><span class="nb">es</span><span class="p">:</span><span class="nb">bx</span><span class="o">+</span><span class="mh">0x38</span><span class="p">]</span> <span class="c1">; otherwise (OR), check value at offset 0x38 in the buffer</span>
+<span class="err">00000376</span>  <span class="err">3946</span><span class="nf">FA</span>            <span class="nv">cmp</span> <span class="p">[</span><span class="nb">bp</span><span class="o">-</span><span class="mh">0x6</span><span class="p">],</span><span class="nb">ax</span> <span class="c1">; compare directly with a different stack variable</span>
+<span class="err">00000379</span>  <span class="err">7510</span>              <span class="nf">jnz</span> <span class="mh">0x38b</span> <span class="c1">; if not equal, jump to conditional code</span>
+<span class="nf">...</span></code></pre></figure>
+
+<p>This is part of a longer conditional expression, but again, rewritten into C, it comes to:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">static</span> <span class="k">union</span> <span class="n">FarAddress</span> <span class="n">commBufferPtr</span><span class="p">;</span>
+
+<span class="cp">#define COMM_BUFFER_START_FFFF1_OFFSET 0x3e
+#define COMM_BUFFER_START_FFFF2_OFFSET 0x38
+</span>
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">argv</span><span class="p">[])</span> 
+<span class="p">{</span>
+    <span class="n">uint16</span> <span class="n">var_C</span><span class="p">;</span>
+    <span class="n">uint16</span> <span class="n">var_6</span><span class="p">;</span>
+
+    <span class="cm">/* ... */</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">*</span><span class="n">FARPTR_CAST_OFFSET</span><span class="p">(</span><span class="n">uint16</span><span class="p">,</span> <span class="n">commBufferPtr</span><span class="p">,</span> <span class="n">COMM_BUFFER_START_FFFF1_OFFSET</span><span class="p">)</span> <span class="o">!=</span> <span class="n">var_C</span> <span class="o">||</span>
+        <span class="o">*</span><span class="n">FARPTR_CAST_OFFSET</span><span class="p">(</span><span class="n">uint16</span><span class="p">,</span> <span class="n">commBufferPtr</span><span class="p">,</span> <span class="n">COMM_BUFFER_START_FFFF2_OFFSET</span><span class="p">)</span> <span class="o">!=</span> <span class="n">var_6</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// conditional code</span>
+    <span class="p">}</span></code></pre></figure>
+
+<p>The problem I encountered was that the compiler generates code like this:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="err">00000358</span>  <span class="nf">C41ED405</span>          <span class="nv">les</span> <span class="nb">bx</span><span class="p">,[</span><span class="mh">0x5d4</span><span class="p">]</span>
+<span class="err">0000035</span><span class="nf">C</span>  <span class="mi">8</span><span class="nv">B46F4</span>            <span class="nv">mov</span> <span class="nb">ax</span><span class="p">,[</span><span class="nb">bp</span><span class="o">-</span><span class="mh">0xc</span><span class="p">]</span>
+<span class="err">0000035</span><span class="nf">F</span>  <span class="mi">2639473</span><span class="nv">E</span>          <span class="nv">cmp</span> <span class="p">[</span><span class="nb">es</span><span class="p">:</span><span class="nb">bx</span><span class="o">+</span><span class="mh">0x3e</span><span class="p">],</span><span class="nb">ax</span>
+<span class="err">00000363</span>  <span class="err">7517</span>              <span class="nf">jnz</span> <span class="mh">0x37c</span> <span class="c1">; so far so good</span>
+<span class="err">00000365</span>  <span class="err">8</span><span class="nf">B46F2</span>            <span class="nv">mov</span> <span class="nb">ax</span><span class="p">,[</span><span class="nb">bp</span><span class="o">-</span><span class="mh">0xe</span><span class="p">]</span> <span class="c1">; no good, stack value goes to ax instead of the far value</span>
+<span class="err">00000368</span>  <span class="err">26394738</span>          <span class="nf">cmp</span> <span class="p">[</span><span class="nb">es</span><span class="p">:</span><span class="nb">bx</span><span class="o">+</span><span class="mh">0x38</span><span class="p">],</span><span class="nb">ax</span> <span class="c1">; and gets compared with the far value directly</span>
+<span class="err">0000036</span><span class="nf">C</span>  <span class="mi">750</span><span class="nv">E</span>              <span class="nv">jnz</span> <span class="mh">0x37c</span></code></pre></figure>
+
+<p>Why would the compiler put the value of <code class="language-plaintext highlighter-rouge">var_C</code> in AX the first time and compare with a far location, then reverse the order and put the far value in AX and compare with the stack location of <code class="language-plaintext highlighter-rouge">var_6</code>? The first thing that came to mind was to reverse the order of comparison in the condition for the second part of the <code class="language-plaintext highlighter-rouge">||</code>:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="k">if</span> <span class="p">(</span><span class="o">*</span><span class="n">FARPTR_CAST_OFFSET</span><span class="p">(</span><span class="n">uint16</span><span class="p">,</span> <span class="n">commBufferPtr</span><span class="p">,</span> <span class="n">COMM_BUFFER_START_FFFF1_OFFSET</span><span class="p">)</span> <span class="o">!=</span> <span class="n">var_C</span> <span class="o">||</span>
+        <span class="n">var_6</span> <span class="o">!=</span> <span class="o">*</span><span class="n">FARPTR_CAST_OFFSET</span><span class="p">(</span><span class="n">uint16</span><span class="p">,</span> <span class="n">commBufferPtr</span><span class="p">,</span> <span class="n">COMM_BUFFER_START_FFFF2_OFFSET</span><span class="p">))</span></code></pre></figure>
+
+<p>This does not make a difference. I am not entirely sure how I came up with it, but I was thinking that <code class="language-plaintext highlighter-rouge">CMP</code> is essentially a <code class="language-plaintext highlighter-rouge">SUB</code>, i.e. a subtraction, so it might matter for the flags what signedness the values are and in what order they appear in the subtraction. Surprisingly, all it took for the code to match was to flip the declaration of <code class="language-plaintext highlighter-rouge">var_6</code> to signed:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="n">uint16</span> <span class="n">var_C</span><span class="p">;</span>
+    <span class="n">int16</span> <span class="n">var_6</span><span class="p">;</span></code></pre></figure>
+
+<p>Again, this makes the code match up nicely.</p>
+
+<p>I’m happy to have figured these minor pitfalls out, and I’m sure it will become useful elsewhere as I’m gathering a body of knowledge and building up the capability to recognize the compiler’s patterns within my wetware. 😉</p>
+
+
+  </div><a class="u-url" href="/f15-se2/2023/07/13/imatching.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

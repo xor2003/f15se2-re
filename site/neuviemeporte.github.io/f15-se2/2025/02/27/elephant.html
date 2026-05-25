@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>The F14-sized elephant in the room | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="The F14-sized elephant in the room" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<meta property="og:description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<link rel="canonical" href="/f15-se2/2025/02/27/elephant.html" />
+<meta property="og:url" content="/f15-se2/2025/02/27/elephant.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2025-02-27T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="The F14-sized elephant in the room" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2025-02-27T00:00:00+00:00","datePublished":"2025-02-27T00:00:00+00:00","description":"(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)","headline":"The F14-sized elephant in the room","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2025/02/27/elephant.html"},"url":"/f15-se2/2025/02/27/elephant.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">The F14-sized elephant in the room</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2025-02-27T00:00:00+00:00" itemprop="datePublished">Feb 27, 2025
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><small>(<em>This post is part of a <a href="/category/f15-se2.html">series</a> on the subject of my hobby project, which is recreating the C source code for the 1989 game <a href="/f15-se2/2022/06/05/origins.html">F-15 Strike Eagle II</a> by reverse engineering the original binaries.</em>)</small></p>
+
+<p>Yeah, I know, I kind of suggested (if not exactly promised) in the last post that I would let go of fiddling with the tooling and get back into reconstrucing the source code for the game. But let’s stop kidding ourselves; there’s an elephant in the room that we need to talk about.</p>
+
+<p><img src="/images/elephant.webp" alt="" class="center-image-narrow" /></p>
+
+<p>The pre-release source code for Microprose’s 1994 Fleet Defender got <a href="https://archive.org/details/f-14-src">leaked</a> apparently as far back as the 90s, being passed around on BBSes. I felt kind of silly when I heard about it a few years into my F15SE2 project because I was completely unaware of it. Could it be that I had (most) of the source code available from the very beginning and just didn’t know? That would be pretty embarassing. At least I did not go into the main flight game engine in <code class="language-plaintext highlighter-rouge">EGAME.EXE</code> yet, and if I could match the leaked source code to the game binary routines, it could shave <strong>years</strong> off my reversing efforts.</p>
+
+<p>As far as I understand it, based on superficial similarities and information from ex-Microprose employees that were kind enough to talk to me, the late-80s-to-early-90s Microprose MS-DOS flight sim codebase was evolving and being shared between projects as new games were being developed. The origins of this codebase are somewhat murky, but Sid Meier gives some hints in his <a href="https://www.goodreads.com/book/show/50489373-sid-meier-s-memoir">book</a>:</p>
+
+<blockquote>
+  <p>(…) just a few months after <em>Red Storm Rising</em> hit shelves, I took the opportunity to return to the flight simulator genre with a game called <em>F-19 Stealth Fighter</em>. It was a half upgrade, half sequel to an existing game called <em>Project Stealth Fighter</em>, with the major distinction being that this version would be developed on the IBM personal computer. A few older games had been directly ported up to the new system, but they didn’t take advantage of the new technology; they just looked like C64 games running on a bigger machine. (…) I was intrigued by the chance to explore this topic with an entirely new code base (…)</p>
+</blockquote>
+
+<p>That makes it sound like <em>F-19</em> was largely developed from scratch even though it’s possible they picked some bits from their earlier DOS titles. The timeline of this codebase would therefore go something like this:</p>
+
+<ol>
+  <li>F-19 Stealth Fighter (1988)</li>
+  <li>F-15 Strike Eagle 2 (original 1989, expansion 1991)</li>
+  <li>F-117A Nighthawk Stealth Fighter 2.0 (1991)</li>
+  <li>F-15 Strike Eagle III (1992)</li>
+  <li>Fleet Defender (1994)</li>
+</ol>
+
+<p>There have been a bunch of MPS games released in between these dates, including some flight simulators. So, does that mean that parts of that common code are in <em>Knights of the Sky</em> (1990), <em>Gunship 2000</em> (1991), <em>B-17 Flying Fortress</em> (1992) or even <em>M1 Tank Platoon</em> (1989)? I don’t know, probably yes. I’m pretty sure parts of the video display code, sprite and overlay handling are shared even with non-sims like <em>Civilization</em> (1991). I especially don’t know what happened to the code between <em>F-117</em> and <em>F-15 III</em> because they look radically different and I’m not sure if there was an intermediate step, or did <em>F-15 III</em> just take the <em>F-117</em> code and improved on it heavily. It’s also a big unknown how the ports were handled; <em>F-19</em> was on both the Amiga and Atari ST, <em>F-15 II</em> was additionally ported to the Sega Genesis, <em>F-117</em> was likewise on the Amiga, and it was only with <em>F-15 III</em> that MPS started targeting DOS exclusively with this codebase. I wonder if any of the code written for the PC ended up in any of the ports. There were C compilers available for the Amiga like Aztec C and Lattice C, but I think the emitted code would be too inefficient for the needs of game development, and I expect that the whole thing was rewritten in assembly for any ports MPS might have done, but I could be wrong.</p>
+
+<p>Bottom line, there’s at least 3 product generations between <em>F-15 II</em> and <em>Fleet Defender</em>. That makes it unlikely for them to be largely identical, but surely some routines for flight dynamics and/or 3D projection could have remained (mostly) unchanged? The possibility that the answers to F15SE2’s most difficult riddles might lay in the Fleet Defender code repository is something that I could not resist, so I downloaded it and started looking around.</p>
+
+<p>There are of course ethical/legal questions involved. The source code was not officially released and is therefore for all intents and purposes, stolen. I thought long and hard about whether or not I should look at it at all, because I don’t want to compromise my project, but I finally decided that the opportunity was too great to miss. However, I decided I would under no circumstances lift any part of the code from the leaked repository into my own project. My usage of the leaked code will be limited to studying and potentially applying the conclusions to my project – if there are any to apply. The leak was of a pre-release version and the source code is incomplete (more on that below), so any harm to the sales of <em>Fleet Defender</em> would be negligible, and it’s more that 30 years in the past. These days, the leaked source code is an artifact of historical research. I think of it something like one of the works of ancient art in Berlin’s <a href="https://en.wikipedia.org/wiki/Neues_Museum">Neues Museum</a>. Next to many of these items you will find notes euphemistically saying “Acquired in 1935” or “Found in Greece in 1918”, which means they were picked up for peanuts or just straight up stolen from other countries and brought over to Germany back when hardly anybody cared about those treasures, or realized they could become valuable. Their return is a contentious matter that’s still under discussion. There’s also an argument to be made that if the Germans hadn’t taken and preserved the items, they would probably have been lost to neglect or chopped up to make road gravel. But does that mean that we can’t or shouldn’t admire them in the meantime? No, that would be an even greater waste, so I’m not going to pretend like this gem of early 3D gaming technology doesn’t exist, either.</p>
+
+<p>With that out of the way, let’s see what we can learn from that source code. There are 79 C files, 27 header files and 17 ASM files, and the whole source repository weighs in around 4MB. The sources are about half of that, with the rest being what looks like various campaign scenario files, damage tables and aircraft stats, both in readable formats and compiled into binary equivalents, with some of the compiler tooling included in the repository. Those might be useful for modding and/or creating new missions. Several files contain C code while having odd extensions like <code class="language-plaintext highlighter-rouge">.bk1/.ori/.mik</code> – these seem backup/work copies of equivalent <code class="language-plaintext highlighter-rouge">.c</code> files for tweaking.</p>
+
+<h2 id="a-look-at-the-code">A look at the code</h2>
+
+<p>Here are some interesting takeouts from the <em>Fleet Defender</em> source code:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cm">/*----------*/</span>
+<span class="cm">/*
+/*  File:   3DObject.C
+/*
+/*  Auth:   Andy Hollis  11/25/87 &lt;&lt;&lt;&lt;&lt; Amazing !!!
+/*
+/*  Edit:   Hacked yet again for F15 III, AWH - 8/92
+/*          AND YET AGAIN FOR F-14, MJM 4/93
+/*
+/*  Routines to draw a 3D object. - NOT!!
+/*
+/*----------*/</span></code></pre></figure>
+
+<p>Most of the files in the repository are dated 1990-1994, with the oldest ones (containing trig function value tables) from 1989, but this appears to be the oldest date mentioned in the codebase, and the comment seems to indicate the Fleet Defender dev seemed appropriately impressed. The comment appears to confirm that the F-19 codebase has been reused in multiple projects over its lifetime, and parts of it made it into <em>F-15 III</em> and <em>Fleet Defender</em>. The references to “F-15 (III)” are the most numerous in the codebase, with a few stray ocurrences of “F-19/Stealth Fighter”, but surprisingly nothing about “F-117”. The file itself contains just 5 short routines seemingly related to 3D views (or not?).</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="c1">//***************************************************************************</span>
+<span class="c1">//*</span>
+<span class="c1">//*    AWG9.C</span>
+<span class="c1">//*</span>
+<span class="c1">//*    Author: Mike McDonald (adapted from Bill Beckers F15-III:APG-70)</span>
+<span class="c1">//*</span>
+<span class="c1">//*    Fleet Defender: F-14 Tomcat</span>
+<span class="c1">//*    Microprose Software, Inc.</span>
+<span class="c1">//*    180 Lakefront Drive</span>
+<span class="c1">//*    Hunt Valley, Maryland  21030</span>
+<span class="c1">//*</span>
+<span class="c1">//***************************************************************************</span></code></pre></figure>
+
+<p>Again, it looks like the <em>F-15 III</em> radar (<a href="https://en.wikipedia.org/wiki/AN/APG-63_radar_family">APG-70</a>) code was tweaked and reused for <a href="https://en.wikipedia.org/wiki/AN/AWG-9">AWG-9</a> radar in Fleet Defender. I don’t expect to find this in <em>F-15 II</em> though, whose radar is extremely simplistic and arcade-like.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="c1">//***************************************************************************</span>
+<span class="c1">// FILE: GMAIN.C</span>
+<span class="c1">//</span>
+<span class="c1">// Fleet Defender - F14 Tomcat</span>
+<span class="c1">// Project Manager: Scott Spanburg</span>
+<span class="c1">// Revised by: Mike McDonald</span>
+<span class="c1">//</span>
+<span class="c1">// Adapted from F-15 Strike Eagle code by Sid Mieyer, Andy Hollis</span>
+<span class="c1">//</span>
+<span class="c1">//***************************************************************************</span>
+<span class="c1">// [...]</span>
+
+<span class="kt">char</span>    <span class="o">*</span><span class="n">F14CNUM</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s">"F14R"</span> <span class="p">};</span>
+<span class="kt">char</span>    <span class="o">*</span><span class="n">F14SNAME</span><span class="p">[</span><span class="mi">30</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s">"Quality Assurance"</span> <span class="p">};</span>
+<span class="kt">char</span>    <span class="o">*</span><span class="n">F14SPER</span><span class="p">[</span><span class="mi">30</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="s">"Vaughn Thomas"</span> <span class="p">};</span>
+<span class="kt">char</span>    <span class="o">*</span><span class="n">F14VNUM</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>  <span class="o">=</span> <span class="p">{</span> <span class="s">"1.18"</span> <span class="p">};</span>
+<span class="c1">// [...]</span>
+
+<span class="n">main</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="n">envp</span><span class="p">)</span>
+<span class="kt">int</span>     <span class="n">argc</span><span class="p">;</span>
+<span class="kt">char</span>    <span class="o">**</span><span class="n">argv</span><span class="p">;</span>
+<span class="kt">char</span>    <span class="o">**</span><span class="n">envp</span><span class="p">;</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">z</span><span class="p">;</span>
+    <span class="n">save_video_state</span><span class="p">();</span>
+    <span class="n">InitOverlay</span><span class="p">(</span><span class="n">LoadOverlay</span><span class="p">(</span><span class="s">"Mgraphic.exe"</span><span class="p">,</span><span class="s">"Fonts.F15"</span><span class="p">));</span>
+    <span class="n">TurnOnGraphicsMode</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="n">mclear_screen</span><span class="p">();</span>
+    <span class="n">mprintf</span><span class="p">(</span><span class="s">"****  DEBUGGING INFORMATION IS ON!!! - NOT FOR QA ****"</span><span class="p">);</span>
+    <span class="n">InitOptions</span><span class="p">();</span>
+    <span class="n">LoadSoundConfig</span><span class="p">();</span>
+    <span class="n">InitSound</span><span class="p">();</span>
+    <span class="n">InitGraphicPages</span><span class="p">();</span>
+    <span class="n">InitGraph</span><span class="p">(</span><span class="sc">'M'</span><span class="p">);</span>
+<span class="c1">// [...]</span>
+<span class="p">}</span>
+
+<span class="c1">// [...]</span>
+<span class="n">MainGameLoop</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">SetJoysticks</span><span class="p">(</span><span class="n">StickType</span><span class="p">);</span>
+    <span class="n">KBInit</span><span class="p">();</span>
+    <span class="k">do</span> <span class="p">{</span>
+        <span class="n">UpdateTime1</span><span class="p">();</span>
+        <span class="n">UpdateTime2</span><span class="p">();</span>
+        <span class="n">TakeInputs</span><span class="p">();</span>
+        <span class="n">LocalCmds</span><span class="p">();</span>
+        <span class="k">if</span> <span class="p">((</span><span class="o">--</span><span class="n">DisplayFrame</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">GenDsp</span><span class="p">();</span>
+            <span class="n">DoCockpitDisplays</span><span class="p">();</span>
+            <span class="n">Messages</span><span class="p">();</span>
+        <span class="p">}</span>
+        <span class="n">ProcessInputs</span><span class="p">();</span>
+        <span class="n">FLIGHT</span><span class="p">();</span>
+        <span class="n">Stealth</span><span class="p">();</span>
+        <span class="n">DoPlayerOnTheCat</span><span class="p">();</span>  <span class="c1">// keeps plane in sink with boat</span>
+        <span class="n">AWG9</span><span class="p">();</span>
+        <span class="n">TEWS_SYS</span><span class="p">();</span>
+        <span class="n">UpdatePalette</span><span class="p">();</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">DisplayFrame</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">Flip</span><span class="p">();</span>
+            <span class="n">DisplayFrame</span><span class="o">=</span><span class="n">Speedy</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span> <span class="k">while</span> <span class="p">(</span><span class="o">!</span><span class="n">BEND</span><span class="p">);</span>
+        <span class="n">Release3DMemory</span><span class="p">();</span>
+    <span class="n">MouseHIDE</span><span class="p">();</span>
+    <span class="n">ClearPage</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span>
+    <span class="n">ClearPage</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span>
+    <span class="n">SndShutdown</span><span class="p">();</span>
+    <span class="n">UnInitSpeech</span><span class="p">();</span>
+    <span class="n">DumpLogFile</span><span class="p">();</span>
+    <span class="n">GetRidOfKeyJoy</span><span class="p">();</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This contains the main function of the game and the main game loop itself. What’s interesting is that it was apparently adapted from <em>F-15</em>, and the fact that Sid is mentioned (who did not work on <em>F-15 III</em>) makes me think this was all the way from <em>F-15 II</em>. It’s not that big a deal because the function is rather simple, just calls into other functions and would be modified for <em>Fleet Defender</em> anyway, but it’s nevertheless cool to look at, and the routine names, structure definitions and other references might be useful. It’s iteresting to see it init and load the <code class="language-plaintext highlighter-rouge">mgraphic.exe</code> video overlay driver, and I also remember setting the <code class="language-plaintext highlighter-rouge">M</code> mode value for VGA graphics in my code. The source code contains the name of Vaughn Thomas who was a tester at MPS during that time, but I don’t think that means he was the source of the leak - some developer probably created this build for Vaughn, gave the binaries to him for testing, and the source code was pilfered sometime at that point.</p>
+
+<p>You can also see the ancient origins of the codebase in the fact that many routines are written in the pre-ANSI K&amp;R style of C, with no return type (which defaulted to <code class="language-plaintext highlighter-rouge">int</code>), and local variables defined before the opening brace.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cm">/************************************************************************
+*                                                                       *
+*       Project: Stealth Fighter(TM)                                    *
+*                                                                       *
+*&lt;t&gt;    Flight Equations                                                *
+*                                                                       *
+*       Author: Jim Synoski                                             *
+*       Written: Jan 1988                                               *
+*       Last Editted: Jan 22,1988                                       *
+*                                                                       *
+*       Copyright (C) 1988 by MicroProse Software, All Rights Reserved. *
+*                                                                       *
+************************************************************************/</span></code></pre></figure>
+
+<p>This comment is present in <code class="language-plaintext highlighter-rouge">flight2.c</code> and in <code class="language-plaintext highlighter-rouge">views.c</code>, although the latter with a later date of 1993. Both are caculation-dense routines seemingly for calculating flight dynamics and 3D view processing, and the fact that it seems they originated from <em>F-19</em> makes me hope I can find traces of this code in <em>F-15 II</em> which would be super helpful.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cm">/*  File:   Planes.c                              */</span>
+<span class="cm">/*  Author: Sid Meier                             */</span>
+<span class="cm">/*                                                */</span>
+<span class="cm">/*  Game logic for Stealth: enemy planes          */</span>
+<span class="c1">// [...]</span>
+<span class="c1">// The Strategy:</span>
+<span class="c1">// Planes have three overall plans:</span>
+<span class="c1">//      o PATROL means to fly amongst nearby enemy entries in the Rdrs list,</span>
+<span class="c1">//        quitting when "time" runs out.  When this occurs, the nearest enemy</span>
+<span class="c1">//        base is chosen as destination and the plane flys home or just</span>
+<span class="c1">//        disappears.  When near the base, landing is initiated.  When landed,</span>
+<span class="c1">//        the plane is deactivated.  PATROL is the default plane type.</span>
+<span class="c1">//      o LOITER is similar to PATROL, except that the target is an enemy</span>
+<span class="c1">//        base and never changes.  This gives infinite touch-n-go's.</span>
+<span class="c1">// Overriding factors include:</span>
+<span class="c1">//      o If he "pings" you, he comes after you until he loses you.</span>
+<span class="c1">//      o If "detected" planes will go after your last known position</span>
+<span class="c1">// Slots in the planes array are as follows:</span>
+<span class="c1">//      o Last four are for CloseBase touch-n-gos</span>
+
+<span class="c1">// [...]</span>
+<span class="cm">/*  File:   Radars.c                              */</span>
+<span class="cm">/*  Author: Sid Meier                             */</span>
+<span class="cm">/*                                                */</span>
+<span class="cm">/*  Game logic for Stealth: enemy radars          */</span>
+<span class="cm">/*                                                */</span>
+<span class="c1">// [...]</span>
+<span class="c1">// Radar detection check</span>
+<span class="n">detect</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="c1">// [...]</span>
+        <span class="c1">// SAM WILL BE FIRED IF:</span>
+        <span class="c1">// 1) MISSILE IS ASSOCIATED WITH RADAR INSTALLATION</span>
+        <span class="c1">// 2) NOT OUT OF MISSILES</span>
+        <span class="c1">// 3) RADAR ALERT LEVEL IS HIGH ENOUGH</span>
+        <span class="c1">// 4) PLAYER IS NOT CLOSE TO FRIENDLY BASE</span>
+        <span class="c1">// 5) PLAYER IS WITHIN MISSILE ENVELOPE</span>
+<span class="c1">// [...]</span>
+<span class="p">}</span>
+<span class="c1">// [...]</span>
+<span class="c1">// General radar detection algorithm for ground radars and planes</span>
+<span class="n">Rsignal</span><span class="p">(</span><span class="n">COORD</span> <span class="n">x</span><span class="p">,</span><span class="n">COORD</span> <span class="n">y</span><span class="p">,</span><span class="kt">int</span> <span class="n">z</span><span class="p">,</span> <span class="kt">int</span> <span class="n">type</span><span class="p">,</span><span class="kt">int</span> <span class="o">*</span><span class="n">ang</span><span class="p">,</span><span class="kt">int</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span><span class="kt">int</span> <span class="n">isfriend</span><span class="p">,</span><span class="kt">int</span> <span class="o">*</span><span class="n">targetnum</span><span class="p">)</span></code></pre></figure>
+
+<p>Likewise, these two files credited to Sid and seemingly originating from <em>F-19</em> seem like they might carry over to <em>F-15 II</em>. <code class="language-plaintext highlighter-rouge">planes.c</code> is over 6000 lines long! The radar handling logic looks to cover both SAMs and air-to-air, and I think it could be more useful than the advanced AWG-9 stuff.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">stealth</span><span class="p">.</span><span class="n">c</span><span class="o">:</span><span class="mi">495</span><span class="o">:</span>    <span class="k">if</span> <span class="p">(</span><span class="n">FTicks</span><span class="o">&lt;</span><span class="mi">4</span><span class="p">)</span> <span class="p">{</span>                 <span class="cm">/* Don't exceed 15 FPS */</span>
+<span class="n">stealth</span><span class="p">.</span><span class="n">c</span><span class="o">:</span><span class="mi">499</span><span class="o">:</span>        <span class="n">TickDelay</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>              <span class="cm">/* Don't run any slower than 3 FPS */</span></code></pre></figure>
+
+<p>I’m not sure if this means that the entire game is capped at 15 FPS, or is it just the stealth handling code running at that speed. Probably it’s the latter, but as I remember it, <em>Fleet Defender</em> isn’t very smooth even on fast machines.</p>
+
+<p>Finally, some fun finds:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="c1">// THIS IS NOT MINE!!! I DID NOT DO THIS!!! I PLEDGE TO RIP THE HEART</span>
+<span class="c1">// FROM THE INDIVIDUAL WHO DID!  THIS IS JUST A WORSE VERSION OF GOTO!</span>
+<span class="c1">// I WILL CHANGE THIS AT SOME LATER DATE - DON'T MESS WITH IT, DON'T CHANGE</span>
+<span class="c1">// IT!  THIS MEANS YOU!!! Thanks for your support - MJM</span>
+<span class="k">static</span> <span class="kt">jmp_buf</span> <span class="n">resetmark</span><span class="p">;</span>
+
+<span class="c1">// [...]</span>
+
+<span class="c1">// THIS SUCKS!!! THIS WAS NOT MY IDEA - I REALIZE THAT THIS TAKES UP TO MUCH</span>
+<span class="c1">// SPACE, BUT BLAM MIKE R.</span>
+<span class="n">animtype</span> <span class="n">RioHead</span><span class="p">[</span><span class="mi">15</span><span class="p">]</span> <span class="o">=</span>
+<span class="p">{</span> <span class="c1">//... </span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The former comment applies to a global symbol used to execute <code class="language-plaintext highlighter-rouge">longjmp()</code> in <code class="language-plaintext highlighter-rouge">awg9.c</code>, the latter to some statically initialized arrays in <code class="language-plaintext highlighter-rouge">riohead.c</code>. Looks like developer frustration is a given on pretty much any software project. 😉</p>
+
+<h2 id="great-now-what">Great, now what?</h2>
+
+<p>Now, how do we go about figuring out if any of this code is actually present in <em>F15 II</em>, and if so, where? Fortunately, I <a href="/f15-se2/2025/01/29/newtooling2.html">recently developed</a> some tooling for extracting routine signatures from binaries and locating them in other binaries, which I orignally used to see if any work I did for <em>F-15 II</em>’s <code class="language-plaintext highlighter-rouge">START.EXE</code> would carry over to <code class="language-plaintext highlighter-rouge">EGAME.EXE</code>. This time, I will use it to search for bits of <code class="language-plaintext highlighter-rouge">F14.EXE</code> in <code class="language-plaintext highlighter-rouge">EGAME.EXE</code>. I am a bit lucky here. Despite <em>Fleet Defender</em>’s relatively late release date of 1994, the game does not appear to use protected mode, or much 32-bit code either (except for a few minor sections in assembly files, still in real mode). It’s kind of surprising given that by that was the year <em>Doom II</em> came out, but for better or worse, <em>Fleet Defender</em> seems to run 16bit real mode code. If it had been rewritten to use protected mode, the code would likely be mostly useless to me.</p>
+
+<p>The first thing I need to do then is build the code. There is a DOS-era makefile included in the source tree, but I ended up making my own to have a bit more control over the build process and integrate well with my tooling for wrapping MS C. Incidentally, <em>Fleet Defender</em> seems to have been compiled by MSC 7.0, but I need to build it with MSC 5.1 to have the code matching <em>F-15 II</em> as closely as possible. For that, I had to do a couple tweaks to the code, mostly with large, statically initalized arrays defined within functions that MSC 5.1 did not like, but it was a simple matter of moving them up to global scope. I also had to exclude some C files which used inline assembly which is not supported in MSC 5.1, but there were only a few and they contained a minuscule amount of code.</p>
+
+<p>Unfortunately, my tooling cannot (yet) parse object files in the OMF format, only EXEs, so I also need to link it into an executable. Here we come to an unfortunate realization: the code is incomplete. Most of the missing functions are declared in the header <code class="language-plaintext highlighter-rouge">library.h</code>:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cm">/*
+╔═══════════════════════════════════════════════════════════════════════╗
+║********************   MPS Labs Graphic Library   *********************║
+╟───────────────────────────────────────────────────────────────────────╢
+║  File:  Library.h                                                     ║
+║                                                                       ║
+║  Auth:  David McKibbin                                                ║
+║                                                                       ║
+║  Edit:  dtm   July 20, 1992         1:18 pm                           ║
+║                                                                       ║
+║  Note:  HEADER definitions for MPSLIB?.LIB                            ║
+║                                                                       ║
+╟───────────────────────────────────────────────────────────────────────╢
+║   Copyright (c) 1991 by MicroProse Software, All Rights Reserved.     ║
+╚═══════════════════════════════════════════════════════════════════════╝
+*/</span>
+<span class="c1">// [...]</span>
+<span class="cm">/***************    USER/RESIDENT "C" prototypes    ***************/</span>
+<span class="k">extern</span>    <span class="kt">int</span>         <span class="nf">OpenFile</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">file</span><span class="p">,</span> <span class="kt">int</span> <span class="n">attrib</span><span class="p">);</span>    <span class="cm">/* fileio.c */</span>
+<span class="k">extern</span>    <span class="kt">void</span>         <span class="nf">CloseFile</span> <span class="p">(</span><span class="kt">int</span> <span class="n">fh</span><span class="p">);</span>
+<span class="k">extern</span>    <span class="kt">int</span>         <span class="nf">CreateFile</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">file</span><span class="p">);</span>
+<span class="c1">// [...]</span>
+<span class="cm">/***************    USER/RESIDENT "ASM" prototypes    ***************/</span>
+<span class="k">extern</span>    <span class="kt">void</span>    <span class="n">far</span>  <span class="nf">InitSGF</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">palette</span><span class="p">);</span>        <span class="cm">/* lzwio.asm */</span>
+<span class="k">extern</span>    <span class="kt">void</span>    <span class="n">far</span>  <span class="nf">InitSDF</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+<span class="k">extern</span>    <span class="kt">void</span>    <span class="n">far</span>  <span class="nf">ReadSDF</span> <span class="p">(</span><span class="kt">char</span> <span class="n">far</span> <span class="o">*</span><span class="n">buffer</span><span class="p">,</span> <span class="kt">int</span> <span class="n">count</span><span class="p">);</span>
+<span class="c1">// [...]</span>
+<span class="cm">/***************    Graphic Library prototypes    ***************/</span>
+<span class="k">extern</span>    <span class="kt">void</span>    <span class="n">far</span>  <span class="nf">AddLine</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">RowBuff</span><span class="p">,</span> <span class="kt">int</span> <span class="n">page</span><span class="p">,</span> <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="kt">int</span> <span class="n">y</span><span class="p">,</span> <span class="kt">int</span> <span class="n">count</span><span class="p">);</span>
+<span class="k">extern</span>    <span class="n">UWORD</span>    <span class="n">far</span>  <span class="nf">AllocGraphicPage</span> <span class="p">(</span><span class="kt">int</span> <span class="n">page</span><span class="p">);</span>
+<span class="k">extern</span>    <span class="n">UWORD</span>    <span class="n">far</span>  <span class="nf">AvailSysMem</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+<span class="c1">// [...]</span>
+<span class="cm">/***************    MISC Library prototypes    ***************/</span>
+<span class="k">extern</span>    <span class="kt">int</span>    <span class="n">far</span>  <span class="nf">IsKey</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+<span class="k">extern</span>    <span class="kt">int</span>    <span class="n">far</span>  <span class="nf">GetKey</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+<span class="k">extern</span>    <span class="kt">int</span>    <span class="n">far</span>  <span class="nf">EchoGetKey</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+<span class="c1">// [...]</span>
+<span class="cm">/***************    SOUND Library prototypes    ***************/</span>
+<span class="k">extern</span>    <span class="kt">int</span>    <span class="n">far</span>  <span class="nf">SndSysSetup</span><span class="p">();</span>
+<span class="k">extern</span>    <span class="kt">int</span>    <span class="n">far</span>  <span class="nf">SndSounds</span><span class="p">();</span>
+<span class="k">extern</span>    <span class="kt">void</span>    <span class="n">far</span>  <span class="nf">SndShutdown</span><span class="p">();</span></code></pre></figure>
+
+<p>This looks quite familiar. I am pretty convinced that the “user/resident” declarations correspond to a bunch of common utility routines that I found while reconstructing F15SE2’s <code class="language-plaintext highlighter-rouge">START.EXE</code>, while the “Graphic/MISC/SOUND” prototypes are functions from the runtime-loaded <a href="/f15-se2/2023/07/12/overlays.html">overlay drivers</a>, calls to which I can see all over the place in F15SE2. This library header file is a boon in itself, as I still haven’t figured out the arguments and/or the purpose of many of those functions. Establishing the relationship between the declarations and the routines in the code will not be straightforward, since the header file seems to have the graphics routines (which are the most numerous and important) listed in alphabetical order, but I’m sure I can figure it out eventually.</p>
+
+<p>It actually makes sense for the library code to be missing; it was probably part of a different source tree, shared between multiple game projects at MPS, and one that the <em>Fleet Defender</em> devs did not need to mess with (most of the time?). For my needs, I just stubbed all of them out and moved on. This still left me with a bunch of unresolved symbols for some routines and data from the linker. I don’t know what these are and what happened to them, but they are also missing from the source code, so it’s stub time again:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="c1">// data</span>
+<span class="kt">char</span> <span class="n">far</span> <span class="o">*</span><span class="n">TILECOLORS</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">Fencer</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">ag_msg</span><span class="p">;</span>
+<span class="kt">char</span> <span class="n">far</span> <span class="o">*</span><span class="n">GREYBUF</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">MenuSpr1</span><span class="p">;</span>
+<span class="kt">int</span> <span class="o">*</span><span class="n">MenuSpr2</span><span class="p">,</span> <span class="o">*</span><span class="n">MenuSpr3</span><span class="p">;</span>
+<span class="kt">int</span> <span class="o">*</span><span class="n">GroundObjectScale</span><span class="p">;</span>
+<span class="kt">char</span> <span class="n">far</span> <span class="o">*</span><span class="n">GROUPCOLORS</span><span class="p">;</span>
+<span class="kt">char</span> <span class="o">**</span><span class="n">TRANSGREYPTRS</span><span class="p">;</span>
+<span class="kt">char</span> <span class="o">**</span><span class="n">GroundObjectNames</span><span class="p">;</span>
+<span class="kt">long</span> <span class="n">DESIGNATED_X</span><span class="p">;</span>
+<span class="kt">long</span> <span class="n">DESIGNATED_Y</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">SNDDETAIL</span><span class="p">;</span>
+<span class="kt">char</span> <span class="n">far</span> <span class="o">*</span><span class="n">STAMPCOLORS</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">ACQ_PX</span><span class="p">,</span> <span class="n">ACQ_PY</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">MSGDETAIL</span><span class="p">;</span>
+<span class="kt">char</span> <span class="n">far</span> <span class="o">***</span><span class="n">GROUPBUF</span><span class="p">;</span>
+<span class="k">volatile</span> <span class="kt">int</span> <span class="n">MouseX</span><span class="p">;</span>
+<span class="k">volatile</span> <span class="kt">int</span> <span class="n">MouseY</span><span class="p">;</span>
+<span class="k">volatile</span> <span class="kt">int</span> <span class="n">Button</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">ag_msg_cnt</span><span class="p">;</span>
+<span class="kt">char</span> <span class="n">far</span> <span class="o">***</span><span class="n">STAMPBUF</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">MISSILETRAIL</span><span class="p">;</span>
+<span class="kt">char</span> <span class="o">**</span><span class="n">HRM_RANGES</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">WORLDDETAIL</span><span class="p">;</span>
+<span class="kt">char</span> <span class="n">far</span> <span class="o">***</span><span class="n">TILEBUF</span><span class="p">;</span>
+<span class="n">UWORD</span> <span class="n">far</span> <span class="o">*</span><span class="n">CrtMask</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">InFriendly</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">_acrtused</span><span class="p">;</span> <span class="c1">// workaround for unresolved symbol when linking without libc</span>
+
+<span class="c1">// routines</span>
+<span class="kt">long</span> <span class="nf">labs</span><span class="p">(</span><span class="kt">long</span> <span class="n">X</span><span class="p">)</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">FlyGroupLine</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">FlyTileLine</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">FlyGroupine</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">FlyStampLine</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">FlyLine</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">LockAG</span> <span class="p">()</span> <span class="p">{}</span>
+<span class="kt">char</span><span class="o">*</span> <span class="n">strupr</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">s</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span> <span class="p">}</span>
+<span class="kt">int</span> <span class="n">isprint</span><span class="p">(</span><span class="kt">char</span> <span class="n">c</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="mi">0</span><span class="p">;</span> <span class="p">}</span>
+<span class="kt">void</span> <span class="n">SetJoysticks</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="p">)</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">ag_err_msgs</span> <span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">ChangeWeather</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">clip_rotmap</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">char</span> <span class="o">*</span><span class="n">WorldName</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span> <span class="p">}</span>
+<span class="kt">void</span> <span class="n">OverlaySequencePoints</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">S2MapLine</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">_fmemcpy</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">rotate_pt</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">SMapLine</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">_fstrcat</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">_fstrcpy</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">GetRidOfKeyJoy</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">Draw3dGroundObject</span><span class="p">(</span><span class="kt">int</span> <span class="n">NUM</span><span class="p">,</span> <span class="kt">int</span> <span class="n">X</span><span class="p">,</span> <span class="kt">int</span> <span class="n">Y</span><span class="p">,</span> <span class="kt">int</span> <span class="n">Z</span><span class="p">,</span> <span class="kt">int</span> <span class="n">BlowUpFlags</span><span class="p">)</span> <span class="p">{}</span>
+<span class="kt">void</span> <span class="n">Draw3dGroundObjects</span><span class="p">()</span> <span class="p">{}</span></code></pre></figure>
+
+<p>That, along with the library function stubs got rid of the unresolved symbols. But the linker failed with a “fixup overflow” error in the data segment, meaning the size of the data exceeded 64k, and I’m building the code with the medium memory model (<code class="language-plaintext highlighter-rouge">/AM</code>), so there’s just one data segment. I was probably overly greedy in trying to cram as many of the source files into the exe as possible, and I could remove some, but I actually ended up using the <code class="language-plaintext highlighter-rouge">/NOD[EFAULTLIB]</code> linker option to avoid linking in the standard C library and its associated data, because I don’t actually need the resulting executable to be runnable. Doing that, however meant that I also had to stub out a bunch of libc routines to get it to link, but finally link it did, and I had my coveted <code class="language-plaintext highlighter-rouge">f14.exe</code>, built with MSC 5.1 with default flags.</p>
+
+<p>The fact that the executable doesn’t run or have libc, poses a different problem. Because there’s no <code class="language-plaintext highlighter-rouge">START</code> from crt0, the entrypoint for the exectuable is fixed at <code class="language-plaintext highlighter-rouge">0:0</code>. I need to walk the code with my <code class="language-plaintext highlighter-rouge">mzmap</code> tool to figure out where the routines begin and end, so I can extract their signatures for comparison with F15SE2, but if the main entrypoint is broken and control doesn’t really go anywhere, the walker will fail.</p>
+
+<p>However, I <strong>do</strong> know where the routines are located, because the linker output a <code class="language-plaintext highlighter-rouge">.MAP</code> file when it created <code class="language-plaintext highlighter-rouge">f14.exe</code>, and the map file lists all public routines along with their entrypoint addresses. I implemented a new option to <code class="language-plaintext highlighter-rouge">mzmap</code>; <code class="language-plaintext highlighter-rouge">--linkmap</code> lets it ingest the linker map file as a set of “hints” for routine entrypoints, segment locations and data references as well. That adds a useful feature to <code class="language-plaintext highlighter-rouge">mzmap</code>, and while walking <code class="language-plaintext highlighter-rouge">f14.exe</code>, I found and fixed a bunch of pretty serious bugs in the walker, so I’m pretty happy that I took the effort to do so. At the end, I had a map file compatible with my tooling, with most of the <code class="language-plaintext highlighter-rouge">f14.exe</code> routine boundaries discovered.</p>
+
+<p>Okay, now with the F-14 executable built and the map generated, time to extract the signatures. Or is it? My <code class="language-plaintext highlighter-rouge">mzdup</code> tool scans for duplicate routines given two exes and their maps. But I want it to be more flexible, so I ended splitting up the job, implementing <code class="language-plaintext highlighter-rouge">mzsig</code>. Given an exe and its map, plus some options to say what size of routines it should ignore, it will extract the signatures and save them to a file. This also lets me combine signatures from more than one executable in one signature file, which is pretty handy – remember that some F15SE2 routines have been built <a href="/f15-se2/2023/09/02/compiler3.html">with debug flags enabled</a>, so I need to build and extract signatures for at least two versions of <code class="language-plaintext highlighter-rouge">f14.exe</code>, one with <code class="language-plaintext highlighter-rouge">/Zi</code> and one without it.</p>
+
+<p>The new version of <code class="language-plaintext highlighter-rouge">mzdup</code> ingests the signature file along with a exe/mapfile pair to look for matches in. I also changed the edit distance cutoff threshold from a hard value shared between all routines to a configurable ratio of the routine size, meaning bigger routines can have more differing instructions than smaller ones and still be considered matches.</p>
+
+<h2 id="give-us-the-damn-results-already">Give us the damn results already</h2>
+
+<p>Well, okay, since you ask so nicely:</p>
+
+<pre>
+ninja@thinkpad:f15se2-re$ mzdup --verbose --minsize 5 --maxdist 20 ../f14/f14-ot.sig ../ida/egame.exe map/egame.map
+[...]
+Unable to find duplicate of _NCloudLine, 61 instructions, max distance 12
+Unable to find duplicate of _NCloudLine2, 68 instructions, max distance 13
+Unable to find duplicate of _NCloudLine3, 56 instructions, max distance 11
+Unable to find duplicate of routine_1035, 60 instructions, max distance 12
+Unable to find duplicate of _MakeBspDrawList, 16 instructions, max distance 3
+Found duplicate of routine _TrgMul (9 instructions): routine_161/1000:3b2f/013b2f (9 instructions) with distance 1
+Unable to find duplicate of _DPTRGMUL, 6 instructions, max distance 1
+Unable to find duplicate of _MUL256DIV, 24 instructions, max distance 4
+Found duplicate of routine _Icos (5 instructions): routine_158/1000:3b96/013b96 (5 instructions) with distance 1
+Found duplicate of routine _Isin (5 instructions): routine_158/1000:3b96/013b96 (5 instructions) with distance 1
+WARNING: Routine routine_158/1000:3b96/013b96 is a duplicate of _Isin and _Icos with equal distance
+Unable to find duplicate of routine_1037, 9 instructions, max distance 1
+Unable to find duplicate of _TransScaleLine, 58 instructions, max distance 11
+Unable to find duplicate of _TacTransScaleLine, 31 instructions, max distance 6
+Processed 944 signatures, ignored 0 as too short
+Tried to find matches for 400 target exe routines (22524 instructions, 100%)
+Found 22 (unique: 20) matching routines (743 instructions, <r>3%</r>)
+Unable to find 378 matching routines (97%)
+WARNING: Some routines were found as duplicates of more than one routine. This is possible, but unlikely. 
+Try using a longer minimum routine size and/or lower distance threshold to avoid false positives.
+Saving code map (routines = 400) to map/egame.map.dup, reversing relocation by 0x1000
+</pre>
+
+<p>It was able to find matches for 20 unique routines from <code class="language-plaintext highlighter-rouge">f14.exe</code> built with default flags, which constitutes a meager 3% of F15SE2’s <code class="language-plaintext highlighter-rouge">egame.exe</code>. I tried with a version built with <code class="language-plaintext highlighter-rouge">/Zi</code> and it was similar. Increasing the maximum acceptable edit distance ratio does not seem to help much.</p>
+
+<h2 id="great-so-all-that-for-nothing">Great, so all that for nothing?</h2>
+
+<p>Depends on how you look at it. For me, it’s really all about the journey, and I could not have moved on with the reconstruction without settling this issue. Also, I’m still convinced the <em>Fleet Defender</em> codebase will come in useful, and getting familiar with it gave me a new source of insight and inspiration.</p>
+
+<p>I also fixed a bunch of serious bugs in my tooling, further enabling it to work with more than just F15SE2, and implemented useful features which will become useful again when we decide to branch out to F-19 and F-117 in the future. All of this stuff is available in <a href="https://github.com/neuviemeporte/mzretools">mzretools v1.0.0</a>.</p>
+
+<p>Additionally, I am still not convinced my signature search is a 100% reliable. For one, I’m reusing an enum for the instruction class (mov/sub/jump/…) which is an abstract representation of the opcode, and it retains some differences between instructions that I really should make more vague, like the fact that it uselessly distinguishes between call/jmp and their far equivalents. For memory operands, it remembers if an instruction used an 8-, or a 16bit offset for a data reference, which can also introduce differences into otherwise equivalent code. There could also be some serious bugs that make it miss matches for some other reason, who knows. Something <strong>must</strong> be working because when I search for signatures from F-19’s <code class="language-plaintext highlighter-rouge">EGAME.EXE</code> in F15SE2, it’s able to match 38% of the code with a threshold of 10% difference. When I increase the threshold to 30%, the matched code jumps up to 53%, but what I’m saying is that there still could be breakthroughs made on the tooling which would let it find more matches for <code class="language-plaintext highlighter-rouge">f14.exe</code>.</p>
+
+<p>Finally, the leaked code itself introduces problems. Parts of it are disabled with <code class="language-plaintext highlighter-rouge">#ifdef YEP/#endif</code> - WTF??? Parts are commented out, with no way of telling whether they have been that way forever, or just disabled somewhere along the way. More work needs to be done to clean it up, generate more signatures and try again with different variants of the build.</p>
+
+<p>With that said and done, I really should get to reconstructing <code class="language-plaintext highlighter-rouge">egame.exe</code>. I won’t make any promises this time, but the day is getting close…</p>
+
+  </div><a class="u-url" href="/f15-se2/2025/02/27/elephant.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

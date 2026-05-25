@@ -1,0 +1,543 @@
+;	Static Name Aliases
+;
+;	$S1023_rand2	EQU	rand2
+	TITLE   SUPPORT.C
+	NAME    SUPPORT
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+EXTRN	__acrtused:ABS
+EXTRN	_srand:NEAR
+EXTRN	_rand:NEAR
+EXTRN	_inp:NEAR
+EXTRN	_abs:NEAR
+EXTRN	__aNlmul:NEAR
+EXTRN	__aNulmul:NEAR
+EXTRN	_ARCTAN:NEAR
+EXTRN	_TrgMul:NEAR
+EXTRN	_Isin:NEAR
+_BSS      SEGMENT
+COMM NEAR	_ntmp:	BYTE:	 10
+_BSS      ENDS
+_DATA      SEGMENT
+$S1023_rand2	DW	00H
+_DATA      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** #include "library.h"
+;|*** #include "world.h"
+;|*** #include "sdata.h"
+;|*** #include <dos.h>
+;|*** 
+;|*** rng(int x,int a,int b)
+;|*** {
+; Line 7
+	PUBLIC	_rng
+_rng	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+;	x = 4
+;	a = 6
+;	b = 8
+;|***     if (x>b) return b;
+; Line 8
+	*** 000003	8b 46 08 		mov	ax,WORD PTR [bp+8]	;b
+	*** 000006	39 46 04 		cmp	WORD PTR [bp+4],ax	;x
+	*** 000009	7e 05 			jle	$I982
+					$L20011:
+	*** 00000b	8b 46 08 		mov	ax,WORD PTR [bp+8]	;b
+	*** 00000e	5d 			pop	bp
+	*** 00000f	c3 			ret	
+					$I982:
+	*** 000010	8b 46 06 		mov	ax,WORD PTR [bp+6]	;a
+	*** 000013	39 46 04 		cmp	WORD PTR [bp+4],ax	;x
+	*** 000016	7c 06 			jl	$I983
+	*** 000018	8b 46 04 		mov	ax,WORD PTR [bp+4]	;x
+	*** 00001b	5d 			pop	bp
+	*** 00001c	c3 			ret	
+	*** 00001d	90 			nop	
+					$I983:
+	*** 00001e	81 7e 04 00 c0 		cmp	WORD PTR [bp+4],-16384	;x
+	*** 000023	7e e6 			jle	$L20011
+	*** 000025	8b 46 06 		mov	ax,WORD PTR [bp+6]	;a
+	*** 000028	5d 			pop	bp
+	*** 000029	c3 			ret	
+
+_rng	ENDP
+;|***     if (x>=a) return x;
+;|***     if (x>-0x4000) return a;
+;|***     return b;
+;|*** }
+;|*** 
+;|*** rng2(int x,int a,int b)
+;|*** {
+; Line 15
+	PUBLIC	_rng2
+_rng2	PROC NEAR
+	*** 00002a	55 			push	bp
+	*** 00002b	8b ec 			mov	bp,sp
+;	x = 4
+;	a = 6
+;	b = 8
+;|***     if (x>b) return b;
+; Line 16
+	*** 00002d	8b 46 08 		mov	ax,WORD PTR [bp+8]	;b
+	*** 000030	39 46 04 		cmp	WORD PTR [bp+4],ax	;x
+	*** 000033	7f 0b 			jg	$EX989
+	*** 000035	8b 46 06 		mov	ax,WORD PTR [bp+6]	;a
+	*** 000038	39 46 04 		cmp	WORD PTR [bp+4],ax	;x
+	*** 00003b	7c 03 			jl	$EX989
+	*** 00003d	8b 46 04 		mov	ax,WORD PTR [bp+4]	;x
+					$EX989:
+	*** 000040	5d 			pop	bp
+	*** 000041	c3 			ret	
+
+_rng2	ENDP
+;|***     if (x<a) return a;
+;|***     return x;
+;|*** }
+;|*** 
+;|*** xydist(int x,int y)
+;|*** {
+; Line 22
+	PUBLIC	_xydist
+_xydist	PROC NEAR
+	*** 000042	55 			push	bp
+	*** 000043	8b ec 			mov	bp,sp
+	*** 000045	83 ec 04 		sub	sp,4
+;	x = 4
+;	y = 6
+;	d = -4
+;|***     long d;
+;|*** 
+;|***     x = abs(x); y=abs(y);
+; Line 25
+	*** 000048	ff 76 04 		push	WORD PTR [bp+4]	;x
+	*** 00004b	e8 00 00 		call	_abs
+	*** 00004e	83 c4 02 		add	sp,2
+	*** 000051	89 46 04 		mov	WORD PTR [bp+4],ax	;x
+	*** 000054	ff 76 06 		push	WORD PTR [bp+6]	;y
+	*** 000057	e8 00 00 		call	_abs
+	*** 00005a	83 c4 02 		add	sp,2
+	*** 00005d	89 46 06 		mov	WORD PTR [bp+6],ax	;y
+;|***     d = (x>y) ? (long) x+(y>>1): (long) y+(x>>1);
+; Line 26
+	*** 000060	39 46 04 		cmp	WORD PTR [bp+4],ax	;x
+	*** 000063	7e 0b 			jle	$L20000
+	*** 000065	8b 46 04 		mov	ax,WORD PTR [bp+4]	;x
+	*** 000068	99 			cwd	
+	*** 000069	8b c8 			mov	cx,ax
+	*** 00006b	8b 46 06 		mov	ax,WORD PTR [bp+6]	;y
+	*** 00006e	eb 09 			jmp	SHORT $L20012
+					$L20000:
+	*** 000070	8b 46 06 		mov	ax,WORD PTR [bp+6]	;y
+	*** 000073	99 			cwd	
+	*** 000074	8b c8 			mov	cx,ax
+	*** 000076	8b 46 04 		mov	ax,WORD PTR [bp+4]	;x
+					$L20012:
+	*** 000079	d1 f8 			sar	ax,1
+	*** 00007b	8b da 			mov	bx,dx
+	*** 00007d	99 			cwd	
+	*** 00007e	03 c1 			add	ax,cx
+	*** 000080	13 d3 			adc	dx,bx
+	*** 000082	89 46 fc 		mov	WORD PTR [bp-4],ax	;d
+	*** 000085	89 56 fe 		mov	WORD PTR [bp-2],dx
+;|***     if (d>0x7fff) d=0x7fff;
+; Line 27
+	*** 000088	0b d2 			or	dx,dx
+	*** 00008a	7c 11 			jl	$I998
+	*** 00008c	7f 05 			jg	$L20002
+	*** 00008e	3d ff 7f 		cmp	ax,32767
+	*** 000091	76 0a 			jbe	$I998
+					$L20002:
+	*** 000093	c7 46 fc ff 7f 		mov	WORD PTR [bp-4],32767	;d
+	*** 000098	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0
+;|***     return d;
+; Line 28
+					$I998:
+	*** 00009d	8b 46 fc 		mov	ax,WORD PTR [bp-4]	;d
+	*** 0000a0	8b e5 			mov	sp,bp
+	*** 0000a2	5d 			pop	bp
+	*** 0000a3	c3 			ret	
+
+_xydist	ENDP
+;|*** }
+;|*** 
+;|*** uangle(int a, UWORD b)
+;|*** {
+; Line 32
+	PUBLIC	_uangle
+_uangle	PROC NEAR
+	*** 0000a4	55 			push	bp
+	*** 0000a5	8b ec 			mov	bp,sp
+;	a = 4
+;	b = 6
+;|***     if (b>32767) {
+; Line 33
+	*** 0000a7	81 7e 06 ff 7f 		cmp	WORD PTR [bp+6],32767	;b
+	*** 0000ac	76 06 			jbe	$I1003
+;|***         b>>=1;
+; Line 34
+	*** 0000ae	d1 6e 06 		shr	WORD PTR [bp+6],1	;b
+;|***         a>>=1;
+; Line 35
+	*** 0000b1	d1 7e 04 		sar	WORD PTR [bp+4],1	;a
+;|***     }
+; Line 36
+;|***     return ARCTAN (a, b);
+; Line 37
+					$I1003:
+	*** 0000b4	ff 76 06 		push	WORD PTR [bp+6]	;b
+	*** 0000b7	ff 76 04 		push	WORD PTR [bp+4]	;a
+	*** 0000ba	e8 00 00 		call	_ARCTAN
+	*** 0000bd	83 c4 04 		add	sp,4
+	*** 0000c0	5d 			pop	bp
+	*** 0000c1	c3 			ret	
+
+_uangle	ENDP
+;|*** }
+;|*** 
+;|*** 
+;|*** //********************************************
+;|*** //
+;|*** //  DON'T USE THIS!   USE SCOTT'S ARCTAN ROUTINE.  MUCH MORE ACCURATE!!
+;|*** //
+;|*** //*********************************************
+;|*** 
+;|*** //#define PREC 14
+;|*** //#define POINT3 4915  /* constant .3 * 2**PREC  */
+;|*** //
+;|*** //angle (dx,dy)
+;|*** //int dx,dy;
+;|*** //{
+;|*** //    int a,angl,max,xmax,ratio;
+;|*** //    long min;
+;|*** //
+;|*** ///*  dy=-dy;      adjust for y=-y coordinate system */
+;|*** //
+;|*** //    if (dx==0) return (dy>0) ? 0x0000: 0x8000;
+;|*** //    if (dy==0) return (dx>0) ? 0x4000: 0xc000;
+;|*** //
+;|*** //    if (abs(dx)>abs(dy)) {
+;|*** //        min = (long) abs(dy)<<PREC;
+;|*** //        max = abs(dx);
+;|*** //        xmax = TRUE;
+;|*** //    } else {
+;|*** //        min = (long) abs(dx)<<PREC;
+;|*** //        max = abs(dy);
+;|*** //        xmax = FALSE;
+;|*** //    }
+;|*** //
+;|*** //    ratio = min/max;
+;|*** //
+;|*** //    a = ((long) ((40<<8) - (((long)abs(POINT3-ratio)*(11<<8))>>PREC) ) * ratio)>>PREC;
+;|*** //
+;|*** //    if (dx>0) {
+;|*** //        if (dy>0) {
+;|*** //            angl = xmax ? 0x4000-a : a;
+;|*** //        } else {
+;|*** //            angl = xmax ? 0x4000+a : 0x8000-a;
+;|*** //        }
+;|*** //    } else {
+;|*** //        if (dy>0) {
+;|*** //            angl = xmax ? 0xC000+a : -a;
+;|*** //        } else {
+;|*** //            angl = xmax ? 0xC000-a : 0x8000+a;
+;|*** //        }
+;|*** //    }
+;|*** //    return angl;
+;|*** //}
+;|*** 
+;|*** sinX(int angle,int x)
+;|*** {
+; Line 92
+	PUBLIC	_sinX
+_sinX	PROC NEAR
+	*** 0000c2	55 			push	bp
+	*** 0000c3	8b ec 			mov	bp,sp
+;	angle = 4
+;	x = 6
+;|***     return TrgMul (Isin(angle), x);
+; Line 93
+	*** 0000c5	ff 76 06 		push	WORD PTR [bp+6]	;x
+	*** 0000c8	ff 76 04 		push	WORD PTR [bp+4]	;angle
+	*** 0000cb	e8 00 00 		call	_Isin
+	*** 0000ce	83 c4 02 		add	sp,2
+	*** 0000d1	50 			push	ax
+	*** 0000d2	e8 00 00 		call	_TrgMul
+	*** 0000d5	83 c4 04 		add	sp,4
+	*** 0000d8	5d 			pop	bp
+	*** 0000d9	c3 			ret	
+
+_sinX	ENDP
+;|*** }
+;|*** 
+;|*** cosX(int angle,int x)
+;|*** {
+; Line 97
+	PUBLIC	_cosX
+_cosX	PROC NEAR
+	*** 0000da	55 			push	bp
+	*** 0000db	8b ec 			mov	bp,sp
+;	angle = 4
+;	x = 6
+;|***     return sinX(angle+0x4000,x);
+; Line 98
+	*** 0000dd	ff 76 06 		push	WORD PTR [bp+6]	;x
+	*** 0000e0	8b 46 04 		mov	ax,WORD PTR [bp+4]	;angle
+	*** 0000e3	80 c4 40 		add	ah,64
+	*** 0000e6	50 			push	ax
+	*** 0000e7	e8 d8 ff 		call	_sinX
+	*** 0000ea	83 c4 04 		add	sp,4
+	*** 0000ed	5d 			pop	bp
+	*** 0000ee	c3 			ret	
+	*** 0000ef	90 			nop	
+
+_cosX	ENDP
+;|*** }
+;|*** 
+;|*** wrd(int x)
+;|*** {
+; Line 102
+	PUBLIC	_wrd
+_wrd	PROC NEAR
+	*** 0000f0	55 			push	bp
+	*** 0000f1	8b ec 			mov	bp,sp
+;	x = 4
+;|***     x = ((x&255)<128) ? x&255 : (x&255)- 256;
+; Line 103
+	*** 0000f3	80 7e 04 80 		cmp	BYTE PTR [bp+4],128	;x
+	*** 0000f7	73 0b 			jae	$L20003
+	*** 0000f9	8a 46 04 		mov	al,BYTE PTR [bp+4]	;x
+	*** 0000fc	2a e4 			sub	ah,ah
+	*** 0000fe	89 46 04 		mov	WORD PTR [bp+4],ax	;x
+	*** 000101	5d 			pop	bp
+	*** 000102	c3 			ret	
+	*** 000103	90 			nop	
+					$L20003:
+	*** 000104	8a 46 04 		mov	al,BYTE PTR [bp+4]	;x
+	*** 000107	2a e4 			sub	ah,ah
+	*** 000109	2d 00 01 		sub	ax,256
+	*** 00010c	89 46 04 		mov	WORD PTR [bp+4],ax	;x
+;|***     return x;
+; Line 104
+	*** 00010f	5d 			pop	bp
+	*** 000110	c3 			ret	
+	*** 000111	90 			nop	
+
+_wrd	ENDP
+;|*** }
+;|*** 
+;|*** sgn(int x)
+;|*** {
+; Line 108
+	PUBLIC	_sgn
+_sgn	PROC NEAR
+	*** 000112	55 			push	bp
+	*** 000113	8b ec 			mov	bp,sp
+;	x = 4
+;|***     if (x==0) return 0;
+; Line 109
+	*** 000115	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;x
+	*** 000119	75 05 			jne	$I1021
+	*** 00011b	2b c0 			sub	ax,ax
+	*** 00011d	5d 			pop	bp
+	*** 00011e	c3 			ret	
+	*** 00011f	90 			nop	
+					$I1021:
+	*** 000120	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;x
+	*** 000124	7e 06 			jle	$L20005
+	*** 000126	b8 01 00 		mov	ax,1
+	*** 000129	5d 			pop	bp
+	*** 00012a	c3 			ret	
+	*** 00012b	90 			nop	
+					$L20005:
+	*** 00012c	b8 ff ff 		mov	ax,-1
+	*** 00012f	5d 			pop	bp
+	*** 000130	c3 			ret	
+	*** 000131	90 			nop	
+
+_sgn	ENDP
+;|***     return (x>0) ? 1 : -1;
+;|*** }
+;|*** 
+;|*** /****************************************************************************/
+;|*** extern int Replay;
+;|*** static UWORD rand2=0;
+;|*** seedme()
+;|*** {
+; Line 117
+	PUBLIC	_seedme
+_seedme	PROC NEAR
+;|***     rand2 = (BIOS_TICK&7) <<13;
+; Line 118
+	*** 000132	2b db 			sub	bx,bx
+	*** 000134	8e c3 			mov	es,bx
+	*** 000136	bb 6c 04 		mov	bx,1132
+	*** 000139	26 8b 07 		mov	ax,WORD PTR es:[bx]
+	*** 00013c	25 07 00 		and	ax,7
+	*** 00013f	b1 0d 			mov	cl,13
+	*** 000141	d3 e0 			shl	ax,cl
+	*** 000143	a3 00 00 		mov	$S1023_rand2,ax
+;|***     srand (rand2);
+; Line 119
+	*** 000146	50 			push	ax
+	*** 000147	e8 00 00 		call	_srand
+	*** 00014a	83 c4 02 		add	sp,2
+;|*** }
+; Line 120
+	*** 00014d	c3 			ret	
+
+_seedme	ENDP
+;|*** 
+;|*** seedme2()
+;|*** {
+; Line 123
+	PUBLIC	_seedme2
+_seedme2	PROC NEAR
+;|***     rand2 = (BIOS_TICK&7) <<13;
+; Line 124
+	*** 00014e	2b db 			sub	bx,bx
+	*** 000150	8e c3 			mov	es,bx
+	*** 000152	bb 6c 04 		mov	bx,1132
+	*** 000155	26 8b 07 		mov	ax,WORD PTR es:[bx]
+	*** 000158	25 07 00 		and	ax,7
+	*** 00015b	b1 0d 			mov	cl,13
+	*** 00015d	d3 e0 			shl	ax,cl
+	*** 00015f	a3 00 00 		mov	$S1023_rand2,ax
+;|*** }
+; Line 125
+	*** 000162	c3 			ret	
+	*** 000163	90 			nop	
+
+_seedme2	ENDP
+;|*** 
+;|*** rnd(Max) /* deterministic */
+;|*** {
+; Line 128
+	PUBLIC	_rnd
+_rnd	PROC NEAR
+	*** 000164	55 			push	bp
+	*** 000165	8b ec 			mov	bp,sp
+;	Max = 4
+;|***     return ((long) Max*rand()) >>15;
+; Line 129
+	*** 000167	8b 46 04 		mov	ax,WORD PTR [bp+4]	;Max
+	*** 00016a	99 			cwd	
+	*** 00016b	52 			push	dx
+	*** 00016c	50 			push	ax
+	*** 00016d	e8 00 00 		call	_rand
+	*** 000170	99 			cwd	
+	*** 000171	52 			push	dx
+	*** 000172	50 			push	ax
+	*** 000173	e8 00 00 		call	__aNlmul
+	*** 000176	b1 0f 			mov	cl,15
+					$L20013:
+	*** 000178	d1 fa 			sar	dx,1
+	*** 00017a	d1 d8 			rcr	ax,1
+	*** 00017c	fe c9 			dec	cl
+	*** 00017e	75 f8 			jne	$L20013
+	*** 000180	5d 			pop	bp
+	*** 000181	c3 			ret	
+
+_rnd	ENDP
+;|*** }
+;|*** 
+;|*** 
+;|*** rnd2(Max) /* deterministic, no seed */
+;|*** {
+; Line 134
+	PUBLIC	_rnd2
+_rnd2	PROC NEAR
+	*** 000182	55 			push	bp
+	*** 000183	8b ec 			mov	bp,sp
+;	Max = 4
+;|*** 
+;|***     rand2 = rand2*5 +8191;
+; Line 136
+	*** 000185	a1 00 00 		mov	ax,$S1023_rand2
+	*** 000188	8b c8 			mov	cx,ax
+	*** 00018a	d1 e0 			shl	ax,1
+	*** 00018c	d1 e0 			shl	ax,1
+	*** 00018e	03 c1 			add	ax,cx
+	*** 000190	05 ff 1f 		add	ax,8191
+	*** 000193	a3 00 00 		mov	$S1023_rand2,ax
+;|*** 
+;|***     return ((long) Max*rand2) >>16;
+; Line 138
+	*** 000196	2b c0 			sub	ax,ax
+	*** 000198	50 			push	ax
+	*** 000199	ff 36 00 00 		push	WORD PTR $S1023_rand2
+	*** 00019d	8b 46 04 		mov	ax,WORD PTR [bp+4]	;Max
+	*** 0001a0	99 			cwd	
+	*** 0001a1	52 			push	dx
+	*** 0001a2	50 			push	ax
+	*** 0001a3	e8 00 00 		call	__aNulmul
+	*** 0001a6	8b c2 			mov	ax,dx
+	*** 0001a8	5d 			pop	bp
+	*** 0001a9	c3 			ret	
+
+_rnd2	ENDP
+;|*** }
+;|*** 
+;|*** /****************************************************************************/
+;|*** 
+;|*** /*----------*/
+;|*** WaitTicks(unsigned ticks)
+;|*** {
+; Line 145
+	PUBLIC	_WaitTicks
+_WaitTicks	PROC NEAR
+	*** 0001aa	55 			push	bp
+	*** 0001ab	8b ec 			mov	bp,sp
+;	ticks = 4
+;|***     while (ticks--) {
+; Line 146
+	*** 0001ad	eb 1d 			jmp	SHORT $L20015
+	*** 0001af	90 			nop	
+					$FC1040:
+;|***         while ((inp (0x3DA) & 8) == 0);
+; Line 147
+	*** 0001b0	b8 da 03 		mov	ax,986
+	*** 0001b3	50 			push	ax
+	*** 0001b4	e8 00 00 		call	_inp
+	*** 0001b7	83 c4 02 		add	sp,2
+	*** 0001ba	a8 08 			test	al,8
+	*** 0001bc	74 f2 			je	$FC1040
+;|***         while ((inp (0x3DA) & 8) != 0);
+; Line 148
+					$FC1047:
+	*** 0001be	b8 da 03 		mov	ax,986
+	*** 0001c1	50 			push	ax
+	*** 0001c2	e8 00 00 		call	_inp
+	*** 0001c5	83 c4 02 		add	sp,2
+	*** 0001c8	a8 08 			test	al,8
+	*** 0001ca	75 f2 			jne	$FC1047
+					$L20015:
+	*** 0001cc	8b 46 04 		mov	ax,WORD PTR [bp+4]	;ticks
+	*** 0001cf	ff 4e 04 		dec	WORD PTR [bp+4]	;ticks
+	*** 0001d2	0b c0 			or	ax,ax
+	*** 0001d4	75 da 			jne	$FC1040
+;|***     }
+;|*** }
+; Line 150
+	*** 0001d6	5d 			pop	bp
+	*** 0001d7	c3 			ret	
+
+_WaitTicks	ENDP
+_TEXT	ENDS
+END
+;|*** 

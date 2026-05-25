@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Back in the (e)game | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Back in the (e)game" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<meta property="og:description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<link rel="canonical" href="/f15-se2/2025/03/06/back-egame.html" />
+<meta property="og:url" content="/f15-se2/2025/03/06/back-egame.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2025-03-06T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Back in the (e)game" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2025-03-06T00:00:00+00:00","datePublished":"2025-03-06T00:00:00+00:00","description":"(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)","headline":"Back in the (e)game","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2025/03/06/back-egame.html"},"url":"/f15-se2/2025/03/06/back-egame.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Back in the (e)game</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2025-03-06T00:00:00+00:00" itemprop="datePublished">Mar 6, 2025
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><small>(<em>This post is part of a <a href="/category/f15-se2.html">series</a> on the subject of my hobby project, which is recreating the C source code for the 1989 game <a href="/f15-se2/2022/06/05/origins.html">F-15 Strike Eagle II</a> by reverse engineering the original binaries.</em>)</small></p>
+
+<p>This is just a short status update to let anybody interested know that after spending <a href="/f15-se2/2024/12/31/newtooling.html">too</a> <a href="/f15-se2/2025/01/29/newtooling2.html">much</a> time on improvements and bugfixes for my tooling, I’m back to reconstructing the actual game, finally branching into the next executable (<code class="language-plaintext highlighter-rouge">EGAME.EXE</code>) since the previous one is <a href="/f15-se2/2025/01/09/start-runs.html">mostly working</a>. In fact, I just finished <a href="https://github.com/neuviemeporte/f15se2-re/blob/main/src/egame0.c">reconstructing the <code class="language-plaintext highlighter-rouge">main()</code> routine</a>, so I guess this is cause to celebrate. Yay!</p>
+
+<p>Part of the reason this took so long is the fact I was procrastinating because setting up a new executable with my tooling is a bit of a chore. What I basically did was:</p>
+
+<ol>
+  <li>Initial research in and around <code class="language-plaintext highlighter-rouge">main()</code> in IDA, named some routines and variables including the overlay driver trampoline routines, exported the listing</li>
+  <li>Created a config file (<code class="language-plaintext highlighter-rouge">egame_rc.json</code>) for my listing-slicing tools, telling it to tweak segment definitions, export public symbols etc. in the autogenerated files (C header and assembly file holding the not-reconstructed routine stubs as well as the contents of the data segment)</li>
+  <li>Created a new Makefile target for building <code class="language-plaintext highlighter-rouge">EGAME.EXE</code> and its dependencies, including the autogenerated files</li>
+  <li>Wrote the code for <code class="language-plaintext highlighter-rouge">main()</code> using the IDA listing as guidance</li>
+  <li>Ran the build and automated comparison with <code class="language-plaintext highlighter-rouge">mzdiff</code> to the original, tweaked until identical code was emitted</li>
+</ol>
+
+<p>The good news is that now that all that’s done, reconstructing subsequent routines will be much easier, and I’m sure the reconstruction work will see progress, even if it may take a while before it’s complete.</p>
+
+<p>Here is the output from the diffing tool with some statistics at the end:</p>
+
+<pre>
+ninja@RYZEN:f15se2-re$ make verify-egame
+mzretools/debug/mzdiff bin/egame.exe:0x10 build/egame.exe:[558bec83ec??c746] --verbose --loose --ctx 30 --map map/egame.map
+Comparing code between reference (entrypoint 0000:0010/000010) and target (entrypoint 0000:0010/000010) executables
+New comparison location 0000:0010/000010, queue size = 0
+--- Now @0000:0010/000010, routine 0000:0010-0000:0146[000137]: main [near], block 000010-000146[000137], target @0000:0010/000010
+0000:0010/000010: push bp                          == 0000:0010/000010: push bp
+0000:0011/000011: mov bp, sp                       == 0000:0011/000011: mov bp, sp
+0000:0013/000013: sub sp, 0x6                      =~ 0000:0013/000013: sub sp, 0x4
+0000:0016/000016: mov word [bp-0x02], 0x0          == 0000:0016/000016: mov word [bp-0x02], 0x0
+[...]
+Reached end of routine block @ 0000:0146/000146
+Completed comparison of routine main, no more reachable blocks
+New comparison location 0000:0688/000688, queue size = 13
+--- Now @0000:0688/000688, routine 0000:0688-0000:06e0[000059]: routine_14 [near], block 000688-00069a[000013], target @0000:015f/00015f
+<r>0000:0688/000688: push bp                          != 0000:015f/00015f: ret</r> 
+ERROR: Instruction mismatch in routine <r>routine_14</r> at 0000:0688/000688: push bp != 0000:015f/00015f: ret
+[...]
+--- Routine map stats (static):
+Routine map of 400 routines covers 71988/0x11934 bytes (42% of the load module)
+Reachable code totals 71773/0x1185d bytes (99% of the mapped area)
+Unreachable code totals 1494/0x5d6 bytes (2% of the mapped area)
+Excluded 63 routines take 4809/0x12c9 bytes (6% of the mapped area)
+Reachable area of excluded routines is 4986/0x137a bytes (6% of the reachable area)
+--- Comparison run stats (dynamic):
+Seen 2 routines, visited 2 and compared 311/0x137 bytes of opcodes inside (0% of the reachable area)
+Ignored (seen but excluded) 0 routines totaling 0/0x0 bytes (0% of the reachable area)
+Practical coverage (visited &amp; compared + ignored) is 311/0x137 (<g>0%</g> of the reachable area)
+Theoretical(*) coverage (visited &amp; compared + reachable excluded area) is 5297/0x14b1 (7% of the reachable area)
+Missed (not seen and not excluded) 335 routines totaling 66779/0x104db bytes (<r>92%</r> of the covered area)
+(*) Any routines called only by ignored routines have not been seen and will lower the practical score,
+    but theoretically if we stepped into ignored routines, we would have seen and ignored any that were excluded.
+DEBUG: Dumping visited map of size 0x7169 starting at 0x0 to tgt.visited
+Building code map from search queue contents: 15 routines over 2 segments
+Saving target map to map/egame.tgt
+Saving code map (routines = 15) to map/egame.tgt, reversing relocation by 0x0000
+Comparison result: mismatch
+make: *** [Makefile:256: verify-egame] Error 1
+</pre>
+
+<p>So, as expected, <code class="language-plaintext highlighter-rouge">main()</code> was matched, and the comparison failed on <code class="language-plaintext highlighter-rouge">routine_14</code> which I need to do next. You can see that I have completed 0% of the reconstruction, although if we count ignored routines (libc and such) as completed, the completion stat climbs to 7%, so I have about 92% to go.</p>
+
+<p>Additional good news is that the duplicate search functionality developed in the tooling was not a total waste, even if the results were not earth-shattering. Upon repeating the signatures search from <code class="language-plaintext highlighter-rouge">START.EXE</code> for <code class="language-plaintext highlighter-rouge">EGAME.EXE</code> with improved routine boundaries and smaller routines included, it detected 11% of <code class="language-plaintext highlighter-rouge">EGAME.EXE</code> as duplicate of code that I already reconstructed before, although that does include the libc functions, so it’s really just 11-7=4%. Together with the lousy 3% it found as coming from the leaked <em>Fleet Defender</em> codebase, that’s 4+3=7% that I don’t need to do, or at least not from scratch. It’s a rough approximation, but you could say I’m about 7(duplicates from <code class="language-plaintext highlighter-rouge">START.EXE</code> and <em>Fleet Defender</em>)+7(libc)=14% done without really doing much. 😉 I’m pretty sure some routines will turn up as unreachable, same as it was with <code class="language-plaintext highlighter-rouge">START.EXE</code>, so that could further limit the extent of the reconstruction. But there’s no way around it, the bulk of the work is still ahead of me. Still, it’s not as daunting as first starting out because I know much more about how the game works, I have the layout of some common structures and overlay call jump table down, so it’s “just” a matter of going through all the opcodes and writing the correct C code.</p>
+
+<p>This is it for now, I’ll update when I come across something interesting, or if I hit a significant milestone.</p>
+
+  </div><a class="u-url" href="/f15-se2/2025/03/06/back-egame.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

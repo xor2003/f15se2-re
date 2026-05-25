@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>What does it take to take an old game apart? (Part 3) | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="What does it take to take an old game apart? (Part 3)" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(…continued from Part 2)" />
+<meta property="og:description" content="(…continued from Part 2)" />
+<link rel="canonical" href="/f15-se2/2022/12/09/reversing-3.html" />
+<meta property="og:url" content="/f15-se2/2022/12/09/reversing-3.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2022-12-09T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="What does it take to take an old game apart? (Part 3)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2022-12-09T00:00:00+00:00","datePublished":"2022-12-09T00:00:00+00:00","description":"(…continued from Part 2)","headline":"What does it take to take an old game apart? (Part 3)","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2022/12/09/reversing-3.html"},"url":"/f15-se2/2022/12/09/reversing-3.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">What does it take to take an old game apart? (Part 3)</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2022-12-09T00:00:00+00:00" itemprop="datePublished">Dec 9, 2022
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>(…continued from <a href="/f15-se2/2022/12/09/reversing-1.html">Part 2</a>)</p>
+
+<h2 id="process">Process</h2>
+
+<p>Now we are getting into kind of philosophical stuff, but believe or not, this was actually one of the biggest obstacles (next to lacking technical knowledge for many years) towards making progress for me.</p>
+
+<p>What is the end goal for this kind of project? How should I proceed in order to accomplish that goal? There have been multiple successful game reversing projects, and their goals have been diverse, while their methods - usually not widely discussed (which is part of the reason I’m writing all this up).</p>
+
+<p>The first question is simpler to answer. The goal is relatively clear because I’m the obsessive type, and nothing less than almost-85% perfection is going to cut it. ;)</p>
+
+<ol>
+  <li>I want to reconstruct the source code to the game for the important binaries so that I can port it to a modern operating system and possibly expand it.</li>
+  <li>I want to understand the format of the data files so I can modify and expand them on the original DOS platform, or the future modern platform as well.</li>
+  <li>The reconstructed code should behave in a way that is as close as possible to the original, especially in the parts that have to do with the logic of the flight simulation - a bug-for-bug reimplementation.</li>
+</ol>
+
+<p>While the first two goals seem to be relatively clear, the last one is a little bit elusive - just how do you go about making sure your recreation is faithful to the original, and what metrics should you use?</p>
+
+<p>The obvious, naive approach is to just jump in into the disassembly, and start transcribing it into a high level language. This can be done in an ambitious way, where you try to make sense of the machine code at the same time you are transcribing it, and the source code reflects the analysis, functions and variables have meaningful names etc. Alternatively, this can be done in a somewhat mechanistic manner, where you write the code just trying to get it to do the same thing as the machine code did, assigning dummy names to functions and data.</p>
+
+<p>As a side note, the fact that it is a somewhat mindless process, naturally leads to the idea of trying to automate it, and consequently the idea of a “decompiler”. I think more recent versions of IDA even contain such tools, and there are some open source projects in development which claim to be able to perform automatic source code regeneration, but to my knowledge these are limited in what compiler/OS combinations they support, and the result usually requires manual tweaking anyway. I was also thinking it should be possible to apply machine learning to the problem, but the problem of obtaining a training data set, coupled with the need to learn machine learning, and an uncertain outcome where you have what is essentially an untweakable black box, spitting out quasi-random garbage that approximates your desired solution to some degree, made me drop that idea. Perhaps somebody will get it to work some day, I’ve seen some research papers on the subject that claimed some success, but it seems like it’s not easy, and the usual caveats about the compiler/OS combinations that are supported still apply. So bottom line, there appears to be no silver bullet.</p>
+
+<p>A problem with the naive approach is that transcribing the code without some method to verify the work along the way takes a long time, where at the end you are guaranteed to have made at least several mistakes that will be hard to find and debug, and you just assume the reimplementation is faithful (that would be the naive part).</p>
+
+<p>So, we need a way to measure the degree of similarity between the original and the recreation. But how to go about it? The problem (and part of the reason why I started this journal) is that while there have been many successful reverse engineering projects, the maintainers rarely go into detail about their methods. I found <a href="https://re.stunts.no/status/">some notes</a> from the <a href="https://forum.stunts.hu/index.php?board=90.0">restunts project</a> which aims to reverse engineer the old racing game <a href="https://en.wikipedia.org/wiki/Stunts_(video_game)">Stunts</a>, and it looked like those people have some automatic framework for checking the validity of their reimplementation - but I was unable to learn anything more specific about the exact methodology.</p>
+
+<p>We could binarily compare the compiled recreation with the original, but obtaining a binarily identical output with the original might be next to impossible - there are just too many variables that can influence the ordering of code and data in a compiled binary: compiler flags, linking order, code order in the input files… It is ideal and <a href="https://arstechnica.com/gaming/2020/05/beyond-emulation-the-massive-effort-to-reverse-engineer-n64-source-code/">some projects</a> managed to pull it off, but chasing it may be a pipe dream that could just as well hold a project back. For me, I was unable to make progress for a long time because I used to think aiming for perfect binary-level faithfullness was the only way to go. And yeah, I know that the old compiler I’m working with will not do much code reordering or other optimizations, and that pragmas exist that allow me to put specific functions in specific segments, but there was just <a href="https://reverseengineering.stackexchange.com/questions/27811/how-to-maintain-function-ordering-in-an-executable-when-replacing-machine-code-w">so much that could go wrong</a>, and the fact that I would need to wait until the very end, when the last piece falls into place before getting the answer “did I do it right?” meant that the risk was unacceptable for me.</p>
+
+<p>Next, I tried to be smart. I don’t really care if the two binaries are identical, just that they do the same thing. So I could run the original in an instrumented emulator (I actually conceived of <a href="https://github.com/neuviemeporte/mzretools">mzretools</a> as a limited emulator for that purpose, just because the idea of instrumenting DosBox was so unpalatable), record the initial machine state (like the random seed and memory contents), user inputs and program output (say, port and memory writes, which would include the video output since in VGA’s mode 13h the framebuffer is seen as memory starting at segment A000). Then, as I went along, I would run my recreation at some ridiculous speed to save time, playing back the exact same inputs and detecting discrepancies in the output (the idea came to me while watching <a href="https://youtu.be/kSKeWH4TY9Y?t=2441">a youtube video</a>, where Brian Provinciano was talking about automated testing of his game). I would keep eliminating the errors until none remained, at which point I would arguably have a Good Enough(tm) implementation.</p>
+
+<p>I actually kept going along with that idea for a while, but the fact that I decided to implement my own 8086 emulator with mzretools, meant there was a heavy buy-in cost to pay at the outset, and I was frustrated by lack of progress on what actually matters most - the game itself. I was tempted to just dive in with the naive approach an hope for the best, but something kept preventing me from doing so. I became unmotivated about the whole thing. Then I learned that my idea wasn’t even <a href="https://gafferongames.com/post/fix_your_timestep/">that smart to begin with</a>. In short, usually a game engine will be implemented with an infinite loop where in the first step you update the physics, e.g. the location of game objects based on their speed given how much time has elapsed from the last update. Afterwards, the next step in the loop is to actually draw (render) the game view based on the updated physics. These actions take an unpredictable amount of time, because the system might experience heavy load and the game’s framerate takes a dip. Now, the linked article explains it better than I can, but as far as I understand it, if you take the wrong approach with timing the physics updates in relation to the rendering, you might end up with a game whose behaviour is non-deterministic, and when the framerate dips, the extra-long time delta that goes into the physics update logic will lead to problems such as collisions being missed. Then weird things will start happening, like characters falling through the floor etc. What this means for me, is that I have no guarantees that my game is implemented in a way which guarantees determinism, so it may even not generate the same output when compared with itself, and comparing its output with the recreation makes even less sense, which completely destroyed this entire idea.</p>
+
+<p>Around this time, I was emailing various people who had success with completing their own old game reversing projects, and it was the author of the <a href="https://github.com/smitelli/cosmore">Cosmore project</a> who described an approach which worked for him that I could see myself adapting. We can still compare the binaries even if they are not identical. Let’s say we had a tool which would analyze the machine code, disassembling the opcodes as it went along. Start with the main functions of your recreation and the original, and keep comparing the machine instructions. If you encounter a different instruction, that means there’s a discrepancy between the original and the recreation that needs to be fixed. But even if the instructions match, the tool will also encounter differences with regards to the addresses these instructions use to reference data, because that data is located at different locations in the two binaries. Instead of trying to get the locations to match, the tool ignores the difference, and records the mapping of the reconstructed offset onto an original offset in a reference dictionary for later. It’s just a matter of doing the right thing for different data access patterns - for example, stack-based accesses that refer to local data should match, but that’s relatively easy to accomplish - just declare the stack variables in the same order. Whenever it encounters a function call, put the destination into a queue, and go through all the functions in a <a href="https://en.wikipedia.org/wiki/Depth-first_search">DFS</a> sort of approach. When it encounters a reference mismatch, it looks in the dictionary if a mapping between a reconstructed offset and a original one exists in the dictionary, and if it is the same as encountered before. You could have an ignore list for functions which you want to skip in the comparison for some reason - basically, this approach enables total flexibility in adapting the algorithm to the task.</p>
+
+<p>Since mzretools already does disassembly, I am currently adapting its code to be able to perform this, shall we say, semantical comparison. It comes at a buy-in initial cost as well, but it’s much less than implementing a somewhat full-featured emulator with state recording, and it’s much more likely to provide a credible metric of similarity between individual functions of the recreation and the original, that can be applied to an iterative process, where I am implementing functions one by one, and getting instant feedback on whether they are correct or not.</p>
+
+<p>Whew, this was long, but I needed to have this thought process documented. I don’t expect to have more posts like this one about the game - from now on it will be just the technical stuff. ;)</p>
+
+
+  </div><a class="u-url" href="/f15-se2/2022/12/09/reversing-3.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

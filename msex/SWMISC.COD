@@ -1,0 +1,111 @@
+;	Static Name Aliases
+;
+	TITLE   SWMISC.C
+	NAME    SWMISC
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+EXTRN	__acrtused:ABS
+EXTRN	_swputc:NEAR
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** /*
+;|*** 
+;|***                         Copyright (C) 1984-2000 David L. Clark.
+;|*** 
+;|***                         All rights reserved except as specified in the
+;|***                         file license.txt.  Distribution of this file
+;|***                         without the license.txt file accompanying is
+;|***                         prohibited.
+;|*** 
+;|*** */
+;|*** 
+;|*** #define NULL     ((void *)0)
+;|*** #define FALSE    0
+;|*** #define TRUE     1
+;|*** #define NO       0
+;|*** #define YES      1
+;|*** #define FOREVER  for (;;)
+;|*** 
+;|*** int index(char *str,int c);
+;|*** int inportb(unsigned port);
+;|*** void movblock(unsigned int srcoff,unsigned int srcseg,
+;|***               unsigned int destoff,unsigned int destseg,
+;|***               unsigned int count);
+; Line 23
+;|*** /*
+;|***         swmiscjr -      SW miscellaneous
+;|*** 
+;|***                         Copyright (C) 1984-2000 David L. Clark.
+;|*** 
+;|***                         All rights reserved except as specified in the
+;|***                         file license.txt.  Distribution of this file
+;|***                         without the license.txt file accompanying is
+;|***                         prohibited.
+;|*** 
+;|***                         Author: Dave Clark
+;|*** 
+;|***         Modification History:
+;|***                         84-07-23        Development
+;|***                         87-03-09        Microsoft compiler.
+;|*** */
+;|*** #include        "sw.h"
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** puts( sp )
+;|*** char    *sp;
+	PUBLIC	_puts
+_puts	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+	*** 000003	83 ec 02 		sub	sp,2
+	*** 000006	56 			push	si
+;|*** {
+; Line 24
+;	sp = 4
+;	register si = s
+;|*** register char   *s;
+;|*** 
+;|***         s = sp;
+; Line 27
+	*** 000007	8b 76 04 		mov	si,WORD PTR [bp+4]	;sp
+;|***         while( *s )
+; Line 28
+					$FC263:
+	*** 00000a	80 3c 00 		cmp	BYTE PTR [si],0
+	*** 00000d	74 0b 			je	$FB264
+;|***                 swputc( *s++ );
+; Line 29
+	*** 00000f	ac 			lodsb
+	*** 000010	98 			cbw	
+	*** 000011	50 			push	ax
+	*** 000012	e8 00 00 		call	_swputc
+	*** 000015	83 c4 02 		add	sp,2
+	*** 000018	eb f0 			jmp	SHORT $FC263
+					$FB264:
+;|*** }
+; Line 30
+	*** 00001a	5e 			pop	si
+	*** 00001b	8b e5 			mov	sp,bp
+	*** 00001d	5d 			pop	bp
+	*** 00001e	c3 			ret	
+
+_puts	ENDP
+	*** 00001f	90 			nop	
+_TEXT	ENDS
+END

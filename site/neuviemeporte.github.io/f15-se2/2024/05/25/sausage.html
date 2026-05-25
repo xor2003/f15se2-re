@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>How the sausage is made | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="How the sausage is made" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<meta property="og:description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<link rel="canonical" href="/f15-se2/2024/05/25/sausage.html" />
+<meta property="og:url" content="/f15-se2/2024/05/25/sausage.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-05-25T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="How the sausage is made" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2024-05-25T00:00:00+00:00","datePublished":"2024-05-25T00:00:00+00:00","description":"(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)","headline":"How the sausage is made","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2024/05/25/sausage.html"},"url":"/f15-se2/2024/05/25/sausage.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">How the sausage is made</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2024-05-25T00:00:00+00:00" itemprop="datePublished">May 25, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><small>(<em>This post is part of a <a href="/category/f15-se2.html">series</a> on the subject of my hobby project, which is recreating the C source code for the 1989 game <a href="/f15-se2/2022/06/05/origins.html">F-15 Strike Eagle II</a> by reverse engineering the original binaries.</em>)</small></p>
+
+<p>Having just finished reconstructing <a href="/f15-se2/2024/05/05/ghidra.html">a large, complex routine</a>  from <code class="language-plaintext highlighter-rouge">START.EXE</code> into identical opcodes (which took about 3 months), I thought this would be a good time to celebrate by writing up a post to document the process that the project appears to have settled into.</p>
+
+<p>The tooling I have developed for this is working quite well, and it lets me eliminate a substantial amount of repetetive, error-prone work, so let me walk you through a summary of how I analyze the original game executable, write reconstructed code, build it and compare the result with the original.</p>
+
+<p><img src="/images/process_stable.svg" alt="process" /></p>
+
+<p>The first step is of course importing the game executable into IDA, where I do most of the analysis and assign meaningful names to routines and data. I don’t do this all in one go, rather pick up one routine for analysis and reconstruction, walk through the full process to completion, then move to another routine. An important part in this step is figuring out data references, especially where hardcoded offsets are present in the disassembly shown by IDA that are not identified as references to data - all hard-baked numbers need to be scrutinized and changed into symbols if appropriate, otherwise the reconstructed binary will not work when the layout of the data changes.</p>
+
+<p>I make IDA spit out two files: the <code class="language-plaintext highlighter-rouge">.lst</code> listing file, and an include <code class="language-plaintext highlighter-rouge">.inc</code> file with the definitions of all structs and the values of constants (equates). I do this whenever I modify the IDA database.</p>
+
+<p>I am also feeding the game executable to <a href="https://github.com/neuviemeporte/mzretools"><code class="language-plaintext highlighter-rouge">mzmap</code></a>, my tool for walking through the opcodes, following calls and jumps and figuring out the boundaries of subroutines. I could get this information from the IDA listing, but originally I did not have all routines properly identified in IDA, so I implemented this tool to be able to figure out where code was and which parts were reachable for comparison with the other tool, <code class="language-plaintext highlighter-rouge">mzdiff</code>. Additionally, it was not easy to figure out which regions were reachable from parsing the IDA listing, or at least as much work as to implement a code walker. Just don’t ask, OK? 😉</p>
+
+<p>I ran <code class="language-plaintext highlighter-rouge">mzmap</code> only once, and the <code class="language-plaintext highlighter-rouge">.map</code> file it generates is periodically manually updated whenever I assign a new name to a routine in IDA, or when a routine’s boundaries need to change (there’s no way to apply this information automatically, for now). Here’s an example of how the mapfile looks like:</p>
+
+<pre>
+Code1 CODE 0000
+Code2 CODE 06a5
+Data1 DATA 06b5
+Stack1 STACK 0e66
+main: Code1 NEAR 0010-0482 R0010-0482
+initGraphics: Code1 NEAR 04a0-0510 R04a0-0510
+cleanup: Code1 NEAR 0511-0543 R0511-0543
+routine_6: Code1 NEAR 0544-0546 R0544-0546
+routine_5: Code1 NEAR 0547-0549 R0547-0549
+[...]
+routine_192: Code1 NEAR 1d80-1f42 R1d80-1dde U1ddf-1ddf R1de0-1ea6 U1ea7-1ea7 R1ea8-1f42
+</pre>
+
+<p>First come the discovered segments, then the routines, one line per routine. First is the routine name (the <code class="language-plaintext highlighter-rouge">routine_N</code> ones are autogenerated for routines I haven’t touched yet), then the type (<code class="language-plaintext highlighter-rouge">NEAR/FAR</code>), the overall routine extents (where it starts and ends), and a list of (R)eachable and (U)nreachable blocks within those extents.</p>
+
+<p>Next up, I have some Python tooling for parsing the <code class="language-plaintext highlighter-rouge">.lst/.inc</code> output of IDA and autogenerating code for building the reconstructed binary. These tools accept a common JSON-based config file, which contains some information on the transforms which need to be applied to the IDA listing, the list of ported routines which need to be extracted (eliminated) from the listing for replacing with my code etc. Here’s a part of the config:</p>
+
+<figure class="highlight"><pre><code class="language-json" data-lang="json"><span class="p">{</span><span class="w">
+    </span><span class="nl">"preamble"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="s2">".8086"</span><span class="p">,</span><span class="w">
+        </span><span class="s2">".MODEL SMALL"</span><span class="p">,</span><span class="w">
+        </span><span class="s2">"DGROUP GROUP startData,startBss"</span><span class="p">,</span><span class="w">
+        </span><span class="s2">"ASSUME DS:DGROUP"</span><span class="p">,</span><span class="w">
+        </span><span class="s2">"__acrtused = 9876h"</span><span class="p">,</span><span class="w">
+        </span><span class="s2">"PUBLIC __acrtused"</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"in_segments"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">"startCode1"</span><span class="p">,</span><span class="w"> </span><span class="s2">"startCode2"</span><span class="p">,</span><span class="w"> </span><span class="s2">"startData"</span><span class="p">,</span><span class="w"> </span><span class="s2">"startStack"</span><span class="w"> </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"out_segments"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w"> </span><span class="nl">"seg"</span><span class="p">:</span><span class="w"> </span><span class="s2">"startCode1"</span><span class="p">,</span><span class="w"> </span><span class="nl">"class"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CODE"</span><span class="w"> </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w"> </span><span class="nl">"seg"</span><span class="p">:</span><span class="w"> </span><span class="s2">"startCode2"</span><span class="p">,</span><span class="w"> </span><span class="nl">"class"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CODE"</span><span class="w"> </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w"> </span><span class="nl">"seg"</span><span class="p">:</span><span class="w"> </span><span class="s2">"startData"</span><span class="p">,</span><span class="w"> </span><span class="nl">"class"</span><span class="p">:</span><span class="w"> </span><span class="s2">"DATA"</span><span class="w"> </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w"> </span><span class="nl">"seg"</span><span class="p">:</span><span class="w"> </span><span class="s2">"startBss"</span><span class="p">,</span><span class="w"> </span><span class="nl">"class"</span><span class="p">:</span><span class="w"> </span><span class="s2">"BSS"</span><span class="w"> </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w"> </span><span class="nl">"seg"</span><span class="p">:</span><span class="w"> </span><span class="s2">"startStack"</span><span class="p">,</span><span class="w"> </span><span class="nl">"class"</span><span class="p">:</span><span class="w"> </span><span class="s2">"STACK"</span><span class="w"> </span><span class="p">}</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"code_segments"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">"startCode1"</span><span class="p">,</span><span class="w"> </span><span class="s2">"startCode2"</span><span class="w"> </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"data_segments"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">"startData"</span><span class="p">,</span><span class="w"> </span><span class="s2">"startBss"</span><span class="w"> </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"data_size"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x7b10"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"replace"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> 
+        </span><span class="p">{</span><span class="w"> </span><span class="nl">"seg"</span><span class="p">:</span><span class="w"> </span><span class="s2">"startCode1"</span><span class="p">,</span><span class="w"> </span><span class="nl">"off"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x2ff"</span><span class="p">,</span><span class="w"> </span><span class="nl">"to"</span><span class="p">:</span><span class="w"> </span><span class="s2">"db 05h, 48h, 0"</span><span class="w"> </span><span class="p">},</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"insert"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w"> </span><span class="nl">"seg"</span><span class="p">:</span><span class="w"> </span><span class="s2">"startData"</span><span class="p">,</span><span class="w"> </span><span class="nl">"off"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x4585"</span><span class="p">,</span><span class="w"> </span><span class="nl">"from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"db"</span><span class="p">,</span><span class="w"> </span><span class="nl">"to"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> 
+                </span><span class="s2">"startData ends"</span><span class="p">,</span><span class="w"> 
+                </span><span class="s2">"startBss segment byte public </span><span class="se">\"</span><span class="s2">BSS</span><span class="se">\"</span><span class="s2">"</span><span class="w">
+            </span><span class="p">]</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"extract"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> 
+        </span><span class="p">{</span><span class="w"> </span><span class="nl">"seg"</span><span class="p">:</span><span class="w"> </span><span class="s2">"startCode1"</span><span class="p">,</span><span class="w"> </span><span class="nl">"begin"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x10"</span><span class="p">,</span><span class="w"> </span><span class="nl">"end"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x482"</span><span class="p">,</span><span class="w"> </span><span class="nl">"from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"main"</span><span class="p">,</span><span class="w"> </span><span class="nl">"to"</span><span class="p">:</span><span class="w"> </span><span class="s2">"endp"</span><span class="w"> </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w"> </span><span class="nl">"seg"</span><span class="p">:</span><span class="w"> </span><span class="s2">"startCode1"</span><span class="p">,</span><span class="w"> </span><span class="nl">"begin"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x4a0"</span><span class="p">,</span><span class="w"> </span><span class="nl">"end"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x510"</span><span class="p">,</span><span class="w"> </span><span class="nl">"from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"initGraphics"</span><span class="p">,</span><span class="w"> </span><span class="nl">"to"</span><span class="p">:</span><span class="w"> </span><span class="s2">"endp"</span><span class="w"> </span><span class="p">},</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"preserves"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="s2">"installCBreakHandler"</span><span class="p">,</span><span class="w"> </span><span class="s2">"setupOverlaySlots"</span><span class="p">,</span><span class="w"> </span><span class="s2">"setTimerIrqHandler"</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"externs"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">"main"</span><span class="p">,</span><span class="w"> </span><span class="s2">"waitMdaCgaStatus"</span><span class="w"> </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"publics"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> 
+        </span><span class="s2">"word_192EC"</span><span class="p">,</span><span class="w"> </span><span class="s2">"stru_18FC0"</span><span class="p">,</span><span class="w"> </span><span class="s2">"word_182BE"</span><span class="p">,</span><span class="w"> </span><span class="s2">"byte_192FC"</span><span class="p">,</span><span class="w"> </span><span class="s2">"target2"</span><span class="p">,</span><span class="w"> </span><span class="s2">"word_1D00A"</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"header_preamble"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="s2">"#ifndef F15_SE2_START"</span><span class="p">,</span><span class="w">
+        </span><span class="s2">"#define F15_SE2_START"</span><span class="p">,</span><span class="w">
+        </span><span class="s2">"#include &lt;stdio.h&gt;"</span><span class="p">,</span><span class="w">
+        </span><span class="s2">"#define __int32 long"</span><span class="p">,</span><span class="w">
+        </span><span class="s2">"#define __int8 char"</span><span class="p">,</span><span class="w">
+        </span><span class="s2">"#define __cdecl"</span><span class="p">,</span><span class="w">
+        </span><span class="s2">"#define __far far"</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"header_coda"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#endif // F15_SE2_START"</span><span class="w">
+</span><span class="p">}</span></code></pre></figure>
+
+<p>The first script, <code class="language-plaintext highlighter-rouge">lst2ch.py</code>, takes the IDA listing, the incfile and the config, and generates the C header file with <code class="language-plaintext highlighter-rouge">extern</code> declarations for all routines and data found in the IDA listing. This lets me autogenerate the C header automatically, so I don’t have to modify declarations every time I change a name in IDA. It also makes the data (which is currently defined in the assembly, more on that later) known to C code.</p>
+
+<p>The script also spits out a <code class="language-plaintext highlighter-rouge">.c</code> file with all the data definitions from the IDA assembly listing converted into C variables, but it’s not yet used to build the reconstructed binary, it’s just a prototype. It also keeps a running total on the data segment’s size and verifies that the sum of all generated variables’ sizes adds up to the expected size of the entire data segment.</p>
+
+<p>The second script, <code class="language-plaintext highlighter-rouge">lst2asm</code> takes the same input, but it instead generates an assembly file that contains the routine stubs (only containing a return instruction) for all routines which have not been reconstructed into C yet, as well as all the data definitions (while the C data prototype is not functional), plus <code class="language-plaintext highlighter-rouge">PUBLIC</code> declarations for routines and data that need to be exposed for C, as well as <code class="language-plaintext highlighter-rouge">EXTRN</code> declarations for routines that need to be called in the assembly from C.</p>
+
+<p>The assembly code generated by the script is assembled with UASM, because I have had difficulties getting MASM to swallow it.</p>
+
+<p>I go through the IDA listing of the routine I’m currently working on, and write the equivalent reconstructed C code in the <code class="language-plaintext highlighter-rouge">.c</code> files. There are multiple of those, because I’m trying to preserve the order of the routines in a patchwork of C and assembly code, and also some routines need to be compiled with different compiler flags than others.</p>
+
+<p>The C code I have written is compiled with the MS C compiler v5.1 which was used to build the game by Microprose. I use DOSBox to run the compiler, although I do so in headless mode, wrapped in a bash script (<code class="language-plaintext highlighter-rouge">dosbuild.sh</code>) which takes care of the proper path mounting, error handling etc. so I can run the compiler non-interactively from a Makefile on the Linux shell prompt, and not have to deal with the DOS environment for building.</p>
+
+<p>The compiler spits out <code class="language-plaintext highlighter-rouge">.obj</code> object files, which I link with the object file that came from assembling the <code class="language-plaintext highlighter-rouge">.asm</code> with UASM containing the data and the routine stubs using the Microsoft linker that came with the MSC 5.1 compiler, and I get a (partially) reconstructed executable version of the game (which does not run for now).</p>
+
+<p>Finally, I launch my <code class="language-plaintext highlighter-rouge">mzdiff</code> tool to compare my reconstructed executable (the target) with the original (the reference). I also provide it with starting locations in both executables, as well as information on which routines should be skipped in the comparison, in order to ignore libc functions and some other minor cruft. It follows a BFS path from the starting location and displays the instructions of the compared binaries side by side, annotating the non-critical differences (like offsets to data and code, which are not identical between the two), and stops on the first mismatch, displaying the location along with some additional information. This forms the final, feedback step of the process so I can either fix the discrepancy by tweaking the <code class="language-plaintext highlighter-rouge">.c</code> code, the <code class="language-plaintext highlighter-rouge">.map</code> routine blocks, and the <code class="language-plaintext highlighter-rouge">.json</code> config (sometimes I need to go all the way back to IDA for either analysis or modification of the listing), or I could conclude that I’m done with this one and move onto the next routine.</p>
+
+<p>Most of this is wrapped in a Makefile, so when I run <code class="language-plaintext highlighter-rouge">make verify</code>, it will:</p>
+
+<ol>
+  <li>Run lst2ch if the <code class="language-plaintext highlighter-rouge">.lst</code> or <code class="language-plaintext highlighter-rouge">.inc</code> changed to regenerate the C header</li>
+  <li>Launch the DOSBox wrapper script to run the MSC compiler to rebuild the reconstructed <code class="language-plaintext highlighter-rouge">.c</code> files that changed</li>
+  <li>Run lst2asm to regenerate the <code class="language-plaintext highlighter-rouge">.asm</code> file if the <code class="language-plaintext highlighter-rouge">.lst</code> or <code class="language-plaintext highlighter-rouge">.inc</code> changed</li>
+  <li>Run UASM to assemble the <code class="language-plaintext highlighter-rouge">.asm</code> file</li>
+  <li>Build the reconstructed executable by launching the DOSBox wrapper script to run the linker</li>
+  <li>Run <code class="language-plaintext highlighter-rouge">mzdiff</code> to compare the reconstructed executable against the reference</li>
+</ol>
+
+<p>Here’s an example of me running the pipeline for the <code class="language-plaintext highlighter-rouge">START.EXE</code> executable:</p>
+
+<pre>
+ninja@RYZEN:eaglestrike$ make verify
+tools/lst2ch.py lst/start.lst src/f15-se2 conf/start_rc.json --noc
+Found matching include file: lst/start.inc, parsing
+Writing C header file: src/f15-se2/start.h
+Found routines: total: 247, ignored: 53, remaining: 194, ported: 30, need porting: 164
+Accumulated routines' size: remaining: 21638/0x5486/100%, ported: 8475/0x211b/39.17%, need porting: 13163/0x336b/60.83%
+Found 1020 variables, size = 31504/0x7b10
+cl /Gs /Zi /Id:\f15-se2 /NT startCode1 /c /Foe:\start1.obj f15-se2\start1.c
+cl /Gs /Oi /Id:\f15-se2 /NT startCode1 /c /Foe:\start2.obj f15-se2\start2.c
+cl /Gs /Zi /Id:\f15-se2 /NT startCode1 /c /Foe:\start3.obj f15-se2\start3.c
+tools/lst2asm.py lst/start.lst src/f15-se2/start_rc.asm conf/start_rc.json
+UASM/GccUnixR/uasm -q -0 -Zm -nt=startCode1 -nd=startData -Fobuild-f15-se2/start_rc.obj src/f15-se2/start_rc.asm
+link /M /NOD /I start1.obj start2.obj start3.obj start_rc.obj,d:\start.exe,,;
+mzretools/debug/mzdiff ida/start.exe:0x10 build-f15-se2/start.exe:[558bec83ec1c56c706] --verbose --loose --ctx 30 
+--exclude '^_.*|.+_slot_.+' --map map/start.map
+Comparing code between reference (entrypoint 1000:0010/010010) and target (entrypoint 1000:0000/010000) executables
+--- Now @1000:0010/010010, routine 1000:0010-1000:0482/000473: main [near], block 010010-010482/000473, target @1000:0000/010000
+1000:0010/010010: push bp                          == 1000:0000/010000: push bp
+1000:0011/010011: mov bp, sp                       == 1000:0001/010001: mov bp, sp
+1000:0013/010013: sub sp, 0x1c                     == 1000:0003/010003: sub sp, 0x1c
+1000:0016/010016: push si                          == 1000:0006/010006: push si
+<o>1000:0017/010017: mov word [0x628c], 0x0           ~= 1000:0007/010007: mov word [0x62d6], 0x0</o>
+[...]
+--- Now @1000:2bba/012bba, routine 1000:2bba-1000:2c58/00009f: clearRect [near], block 012bba-012c58/00009f, target @1000:239f/01239f
+<r>1000:2bba/012bba: push bp                          != 1000:239f/01239f: ret</r>
+ERROR: Instruction mismatch in routine clearRect at 1000:2bba/012bba: push bp != 1000:239f/01239f: ret
+--- Context information for up to 30 additional instructions after mismatch location:
+1000:2bbb/012bbb: mov bp, sp                       != 1000:23a0/0123a0: ret
+1000:2bbd/012bbd: push di                          != 1000:23a1/0123a1: ret
+[...]
+Load module of executable is 45270/0xb0d6 bytes
+Routine map of 210 routines covers 23897/0x5d59 bytes (52% of the load module)
+Reachable code totals 23640/0x5c58 bytes (98% of the mapped area)
+Unreachable code totals 413/0x19d bytes (1% of the mapped area)
+Excluded 69 routines totaling 5106/0x13f2 bytes (21% of the mapped area)
+Compared 4262/0x10a6 bytes of opcodes (18% of the reachable area)
+Seen 42 routines, ignored (seen but excluded) 16 routines totaling 143/0x8f bytes (0% of the mapped area)
+Excluded routines take 5172/0x1434 bytes (21% of the reachable area)
+Total coverage (seen + excluded) is 9434/0x24da (<g>39%</g> of the reachable area)
+Missed (not seen and not excluded) 115 routines totaling 14354/0x3812 bytes (<r>60%</r> of the mapped area)
+</pre>
+
+<p>There are still some manual parts remaining, but overall the process is pretty streamlined, and it lets me do quick iterations on the reconstruction. I keep improving the tooling, the most recent big change was adding struct support to <code class="language-plaintext highlighter-rouge">lst2ch/lst2asm</code> after I discovered a lot of structures in the game data and changed the IDA data references from raw data to structs.</p>
+
+<p>For now, I am not touching any of the game routines which were originally written in assembly, in order to separate the reconstruction work (recover all code that was written in C) from the porting work (move everything over to C). The latter part is a big can of worms that will be difficult, because for all the complexity of achieving identical opcodes for the C code, at least that lets me know my reconstructed code is 100% correct in relation to the original. Once I rewrite the assembly routines into C, I lose that comfort, my implementation will need to be tested and debugged until I’m reasonably sure it’s “okay”. But I will never know for sure, because it will be different code. Anyway, that’s something I will worry about when I get to it.</p>
+
+<p>I wanted to document this for my own sake, as well as to fulfill the original goal of this journal, which was to present a glimpse into the technical side of working on a project like this. Finally, this will be useful if anybody ever wants to come onboard to collaborate, which will become easier once I release the reconstructed source code – I was planning to do it once <code class="language-plaintext highlighter-rouge">START.EXE</code> is 100% done. For now, thanks for reading.</p>
+
+  </div><a class="u-url" href="/f15-se2/2024/05/25/sausage.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

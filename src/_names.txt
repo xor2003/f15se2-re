@@ -1,0 +1,108 @@
+_bios_clearkeyflags	PROC NEAR
+;	bios_keyflags = -4
+_dos_alloc	PROC NEAR
+;	err = -2
+_dos_free	PROC NEAR
+;	err = -2
+_dos_resize	PROC NEAR
+;	err = -2
+_dos_getfree	PROC NEAR
+;	err = -2
+loadprog	PROC NEAR
+;	err = -2
+_dos_loadOverlay	PROC NEAR
+_dos_runProgram	PROC NEAR
+_dos_loadProgram	PROC NEAR
+;	err = -2
+_dos_getReturnCode	PROC NEAR
+;	err = -2
+_dos_getProcessId	PROC NEAR
+_dos_setProcessId	PROC NEAR
+dos_sysvars	PROC NEAR
+_dos_mcbInfo	PROC NEAR
+;	segment = -8
+;	lol = -142
+;	mcb = -6
+;	total = -10
+;	alloc = -146
+;	free = -2
+;	i = -144
+;	strbuf = -138
+_dos_lastFreeBlock	PROC NEAR
+;	segment = -6
+;	lol = -10
+;	mcb = -4
+_dos_envSize	PROC NEAR
+;	envSegment = -6
+;	envMcb = -4
+_load_driver	PROC NEAR
+;	drvAddress = -6
+;	commPtr = -4
+_game_init	PROC NEAR
+;	gfxDrvAddress = -6
+;	gfxBufAddress = -8
+;	err = -10
+;	freeMemory = -16
+;	charPtr = -4
+;	gfxInit = -14
+_game_run	PROC NEAR
+;	err = -2
+_load_segment	PROC NEAR
+_main	PROC NEAR
+;	i = -6
+;	j = -8
+;	debugMenu = -10
+;	debugFlight = -2
+;	debugDebrief = -4
+;	arg = -12
+;	len = -14
+_output_stdout	PROC NEAR
+_log_open	PROC NEAR
+_log_close	PROC NEAR
+_output_log	PROC NEAR
+_output_tee	PROC NEAR
+_output	PROC NEAR
+;	ap = -2
+_INFO	PROC NEAR
+;	ap = -2
+_ERROR	PROC NEAR
+;	ap = -2
+_FATAL	PROC NEAR
+;	ap = -2
+_DEBUG	PROC NEAR
+;	ap = -2
+_dumpregs	PROC NEAR
+_hexdump	PROC NEAR
+;	bpl = -8
+;	limit = -10
+;	i = -4
+;	j = -6
+;	c = -2
+;	pos = -12
+_overlay_load	PROC NEAR
+;	RESERVE_PARA = -18
+;	EXTRA_PARA = -6
+;	freeMem = -2
+;	alloc = -14
+;	ovlSegment = -4
+;	ovlSize = -16
+;	ovlHeader = -12
+;	err = -8
+_overlay_functionAddress	PROC NEAR
+;	ovlHeader = -8
+;	slotArray = -4
+_strcpyFar	PROC NEAR
+;	dest = -4
+_memcpyFar	PROC NEAR
+;	dest = -4
+_writeWordFar	PROC NEAR
+;	wordPtr = -4
+_blitFileFar	PROC NEAR
+;	dest = -4
+;	buffer = -268
+;	infile = -8
+;	readsize = -6
+;	i = -12
+;	err = -10
+_sizeString	PROC NEAR
+;	bytes = -4

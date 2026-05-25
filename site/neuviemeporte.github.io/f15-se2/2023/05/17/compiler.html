@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Hunting for the Right Compiler, Part 1 | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Hunting for the Right Compiler, Part 1" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<meta property="og:description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<link rel="canonical" href="/f15-se2/2023/05/17/compiler.html" />
+<meta property="og:url" content="/f15-se2/2023/05/17/compiler.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-05-17T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Hunting for the Right Compiler, Part 1" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2023-05-17T00:00:00+00:00","datePublished":"2023-05-17T00:00:00+00:00","description":"(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)","headline":"Hunting for the Right Compiler, Part 1","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2023/05/17/compiler.html"},"url":"/f15-se2/2023/05/17/compiler.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Hunting for the Right Compiler, Part 1</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2023-05-17T00:00:00+00:00" itemprop="datePublished">May 17, 2023
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><small>(<em>This post is part of a <a href="/category/f15-se2.html">series</a> on the subject of my hobby project, which is recreating the C source code for the 1989 game <a href="/f15-se2/2022/06/05/origins.html">F-15 Strike Eagle II</a> by reverse engineering the original binaries.</em>)</small></p>
+
+<p>Back when I was having an <a href="/f15-se2/2022/12/08/firstlook.html">initial look</a> around the game, I was pretty excited to find a <a href="https://en.wikipedia.org/wiki/C_standard_library">C runtime library</a> copyright string embedded in the game’s executables:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ninja@dell:03_test$ xxd egame.exe
+[...]
+00022d70: 0000 0000 0000 0000 4d53 2052 756e 2d54  ........MS Run-T
+00022d80: 696d 6520 4c69 6272 6172 7920 2d20 436f  ime Library - Co
+00022d90: 7079 7269 6768 7420 2863 2920 3139 3838  pyright (c) 1988
+00022da0: 2c20 4d69 6372 6f73 6f66 7420 436f 7270  , Microsoft Corp
+</code></pre></div></div>
+
+<p>The 1988 date tells me that this executable was linked with the version of the library that shipped with the Microsoft C 5.1 compiler. Knowing the compiler is important, because it opens the possibility of the reconstruction being demonstrably perfectly accurate - if I reconstruct the C code correctly, <em>and</em> build it with the correct compiler using the correct options, I should obtain a binary that is identical to the original. If the game had been written in pure assembly (and hence it’s impossible to write C code that results in the same instructions), or if I can’t get my code to match the original binary for some other reason, there is always the possibility that my reconstruction contains mistakes, resulting in inaccurate behaviour of the game. So, it was understandable that discovering the compiler made me excited.</p>
+
+<p>So it’s finally time to get started on the reconstruction. I have obtained a copy of MS C 5.1 and studied its user guide. The workflow I came up with is as follows:</p>
+
+<ol>
+  <li>Look at the original game’s instructions in IDA, starting from the <code class="language-plaintext highlighter-rouge">main()</code> function.</li>
+  <li>Figure out what they do and write the equivalent C code in an editor.</li>
+  <li>Compile the reconstructed code with the MS C 5.1 compiler under DOS</li>
+  <li>Disassemble the compiled binary and compare the instructions to the original ones</li>
+  <li>If the instructions don’t match, go back to #2 and tweak the code</li>
+  <li>If the instructions do match, give myself a pat on the back and move onto the next instructions in #1</li>
+</ol>
+
+<p>The process is repeated for all the functions in the binary until everything is covered and matching. The code does not need to be very pretty or even understandable at this point - getting too deep into the details and trying to figure out too much about the actual intent of the code is adding more complexity to an already difficult task. Research and clarification will be easier later when the code is complete and can be instrumented with logging or run under a symbollic debugger. It’s a matter of preference, but I think dummy function and variable names (e.g. <code class="language-plaintext highlighter-rouge">unknown_123</code>) are fine at this stage. Of course, if something is pretty evident even at this stage, I go ahead and name it properly (e.g. <code class="language-plaintext highlighter-rouge">timerInterruptRoutine</code>). No point in discovering the same thing twice.</p>
+
+<p>Besides the main challenge of doing the reconstruction, there are two technical problems with this process.</p>
+
+<p>First, I don’t want to have to edit the code in DOS. If possible, I don’t want to go into DOS to run the compiler either, the build should be as streamlined as possible to enable quick iterations. Ideally, I want to be able to edit the code in my modern environment, run <code class="language-plaintext highlighter-rouge">make</code> at the command prompt and have the DOS compiler run inside an emulator silently. To that end, I have created a bash script which composes a DOS <code class="language-plaintext highlighter-rouge">.BAT</code> file that takes care of mounting the required paths, setting environment variables etc. before starting it with DosBox in headless mode, which means I don’t even get a DosBox window, it all just runs quietly to completion and terminates:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SDL_VIDEODRIVER=dummy dosbox -conf toolchain.conf $batfile -exit &amp;&gt; /dev/null
+</code></pre></div></div>
+
+<p>Then, I created a Makefile with recipes that run the script with appropriate arguments:</p>
+
+<figure class="highlight"><pre><code class="language-make" data-lang="make"><span class="nv">DOSBUILD</span> <span class="o">:=</span> tools/dosbuild.sh
+
+<span class="nl">$(F15_SE2_BUILDDIR)/%.obj</span><span class="o">:</span> <span class="nf">$(F15_SE2_SRCDIR)/%.c $(F15_SE2_HDRS)</span>
+	<span class="p">@</span><span class="nv">$(DOSBUILD)</span> cc <span class="nv">$(C_TOOLCHAIN)</span> <span class="nt">-i</span> <span class="nv">$&lt;</span> <span class="nt">-o</span> <span class="nv">$@</span> <span class="nt">-f</span> <span class="s2">"</span><span class="nv">$(CFLAGS)</span><span class="s2">"</span>
+
+<span class="nl">$(F15_SE2_BUILDDIR)/%.obj</span><span class="o">:</span> <span class="nf">$(F15_SE2_SRCDIR)/%.asm</span>
+	<span class="p">@</span><span class="nv">$(DOSBUILD)</span> as <span class="nv">$(ASM_TOOLCHAIN)</span> <span class="nt">-i</span> <span class="nv">$&lt;</span> <span class="nt">-o</span> <span class="nv">$@</span> <span class="nt">-f</span> <span class="s2">"</span><span class="nv">$(ASFLAGS)</span><span class="s2">"</span>
+
+<span class="nl">$(F15_SE2_BUILDDIR)/%.exe</span><span class="o">:</span>
+	<span class="p">@</span><span class="nv">$(DOSBUILD)</span> <span class="nb">link</span> <span class="nv">$(LINK_TOOLCHAIN)</span> <span class="nt">-i</span> <span class="nv">$^</span> <span class="nt">-o</span> <span class="nv">$@</span> <span class="nt">-f</span> <span class="s2">"</span><span class="nv">$(LINKFLAGS)</span><span class="s2">"</span> </code></pre></figure>
+
+<p>Now I can just do this:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ninja@dell:eaglestrike$ make build-f15-se2/start.exe
+--- build running cl from msc510
+cl /Gs /Os /Id:\f15-se2 /DMSC_VER=5 /c /Foe:\start.obj f15-se2\start.c
+--- build running masm from masm510
+masm /t f15-se2\slot.asm,e:\slot.obj,,;
+--- build running link from msc510
+link /M /NOD start.obj slot.obj,d:\start.exe,,slibce.lib;
+</code></pre></div></div>
+
+<p>Excellent, now onto the second, more difficult problem. Comparing whether the instructions match manually is going to be a huge pain. I could disassemble the original and the partially reconstructed binary into textfiles and run a diff tool on the results, but it’s going to show a lot of differences because, especially initially, the layout of the two files is going to be different, and the code/data addresses referenced by the instructions are going to be different, even if the code is correct, resulting in a lot of visual “chaff” that will distract from the actual meaningful differences that I want to see at first glance.</p>
+
+<p>This second problem actually took me almost two months to (mostly) solve to my satisfaction. I implemented the <code class="language-plaintext highlighter-rouge">mzdiff</code> tool in <a href="https://github.com/neuviemeporte/mzretools">mzretools</a> which lets me specify the compared binaries, as well as the start locations in both I wish to compare at, and possibly some options on how strict the comparison should be. The tool decodes 8086 instructions and compares them, but not blindly byte by byte. When it sees an address operand that differs between the two, it will look it up in an address translation map between the two executables and see if the difference is consistent. If there is no translation, a new one will be recorded and kept for future reference. Here is a sample output:</p>
+
+<p><img src="/images/mzdiff_demo.png" alt="mzdiff_demo" class="center-image" /></p>
+
+<p>The tool shows the instructions of the reference executable on the left, the compared executable on the right, and it displays <code class="language-plaintext highlighter-rouge">==</code> for ones that match perfectly, <code class="language-plaintext highlighter-rouge">~=</code> and <code class="language-plaintext highlighter-rouge">=~</code> for ones that differed in the first or second operand respectively, and of course <code class="language-plaintext highlighter-rouge">!=</code> for a mismatch, which is also helpfully highlighted in red.</p>
+
+<p>Actually, let me also explain about my expectations as to obtaining an “identical” executable. I do not care if the binary is byte-for-byte binarily identical. It might be nice to achieve as a sort of cherry on top once the code is nice, but for now I do not also care about whether the data segment layout matches the original exactly, same for the functions. I only want all the code and data to be there, and be doing the same thing. I think focusing on 100% accuracy is detrimental to making progress, and the tool lets me focus on the instructions and hides everything else. It means there is a slight chance I can still make mistakes, but I’m willing to live with that, and happily leave sorting it out for later. Divide and conquer, and never bite off more than I can chew.</p>
+
+<p>Anyway, thus armed, I can actually start working on the game using the described workflow. Let’s look at the game’s opcodes from the top of <code class="language-plaintext highlighter-rouge">main()</code> in <code class="language-plaintext highlighter-rouge">START.EXE</code>:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="err">00000010</span>  <span class="err">55</span>                <span class="nf">push</span> <span class="nb">bp</span>
+<span class="err">00000011</span>  <span class="err">8</span><span class="nf">BEC</span>              <span class="nv">mov</span> <span class="nb">bp</span><span class="p">,</span><span class="nb">sp</span>
+<span class="err">00000013</span>  <span class="err">83</span><span class="nf">EC1C</span>            <span class="nv">sub</span> <span class="nb">sp</span><span class="p">,</span><span class="kt">byte</span> <span class="o">+</span><span class="mh">0x1c</span>
+<span class="err">00000016</span>  <span class="err">56</span>                <span class="nf">push</span> <span class="nb">si</span>
+<span class="err">00000017</span>  <span class="nf">C7068C620000</span>      <span class="nv">mov</span> <span class="kt">word</span> <span class="p">[</span><span class="mh">0x628c</span><span class="p">],</span><span class="mh">0x0</span>
+<span class="err">0000001</span><span class="nf">D</span>  <span class="nv">C7068A62F204</span>      <span class="nv">mov</span> <span class="kt">word</span> <span class="p">[</span><span class="mh">0x628a</span><span class="p">],</span><span class="mh">0x4f2</span>
+<span class="err">00000023</span>  <span class="nf">C706FC450000</span>      <span class="nv">mov</span> <span class="kt">word</span> <span class="p">[</span><span class="mh">0x45fc</span><span class="p">],</span><span class="mh">0x0</span>
+<span class="err">00000029</span>  <span class="nf">C706FA45F404</span>      <span class="nv">mov</span> <span class="kt">word</span> <span class="p">[</span><span class="mh">0x45fa</span><span class="p">],</span><span class="mh">0x4f4</span>
+<span class="err">0000002</span><span class="nf">F</span>  <span class="nv">C746F00000</span>        <span class="nv">mov</span> <span class="kt">word</span> <span class="p">[</span><span class="nb">bp</span><span class="o">-</span><span class="mh">0x10</span><span class="p">],</span><span class="mh">0x0</span>
+<span class="err">00000034</span>  <span class="nf">C746EEF004</span>        <span class="nv">mov</span> <span class="kt">word</span> <span class="p">[</span><span class="nb">bp</span><span class="o">-</span><span class="mh">0x12</span><span class="p">],</span><span class="mh">0x4f0</span>
+<span class="err">00000039</span>  <span class="nf">C45EEE</span>            <span class="nv">les</span> <span class="nb">bx</span><span class="p">,[</span><span class="nb">bp</span><span class="o">-</span><span class="mh">0x12</span><span class="p">]</span>
+<span class="err">0000003</span><span class="nf">C</span>  <span class="mi">268</span><span class="nv">B07</span>            <span class="nv">mov</span> <span class="nb">ax</span><span class="p">,[</span><span class="nb">es</span><span class="p">:</span><span class="nb">bx</span><span class="p">]</span>
+<span class="err">0000003</span><span class="nf">F</span>  <span class="nv">A3F477</span>            <span class="nv">mov</span> <span class="p">[</span><span class="mh">0x77f4</span><span class="p">],</span><span class="nb">ax</span>
+<span class="err">00000042</span>  <span class="nf">C706F2770000</span>      <span class="nv">mov</span> <span class="kt">word</span> <span class="p">[</span><span class="mh">0x77f2</span><span class="p">],</span><span class="mh">0x0</span>
+<span class="err">00000048</span>  <span class="err">268</span><span class="nf">B07</span>            <span class="nv">mov</span> <span class="nb">ax</span><span class="p">,[</span><span class="nb">es</span><span class="p">:</span><span class="nb">bx</span><span class="p">]</span>
+<span class="err">0000004</span><span class="nf">B</span>  <span class="nv">A30646</span>            <span class="nv">mov</span> <span class="p">[</span><span class="mh">0x4606</span><span class="p">],</span><span class="nb">ax</span>
+<span class="err">0000004</span><span class="nf">E</span>  <span class="nv">C70604460E12</span>      <span class="nv">mov</span> <span class="kt">word</span> <span class="p">[</span><span class="mh">0x4604</span><span class="p">],</span><span class="mh">0x120e</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span></code></pre></figure>
+
+<p>La di da di da, clickety clickety…</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="c1">// to easily disable DOS-specific keywords when I build it on a modern system some day</span>
+<span class="cp">#define NEAR near
+#define FAR far
+</span>
+<span class="k">union</span> <span class="n">FarAddress</span> <span class="p">{</span>
+    <span class="k">struct</span> <span class="p">{</span> <span class="n">uint16</span> <span class="n">off</span><span class="p">,</span> <span class="n">seg</span><span class="p">;</span> <span class="p">}</span> <span class="n">data</span><span class="p">;</span>
+    <span class="n">uint8</span> <span class="n">FAR</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="cp">#define FARPTR_CAST(type, addr) ((type FAR*)addr.ptr)
+</span>
+<span class="k">static</span> <span class="k">union</span> <span class="n">FarAddress</span> <span class="n">needSplash</span><span class="p">;</span>
+<span class="k">static</span> <span class="k">union</span> <span class="n">FarAddress</span> <span class="n">iacaSuFlag0Ptr</span><span class="p">;</span>
+<span class="k">static</span> <span class="k">union</span> <span class="n">FarAddress</span> <span class="n">commAddr</span><span class="p">;</span>
+<span class="k">static</span> <span class="k">union</span> <span class="n">FarAddress</span> <span class="n">commBufferPtr</span><span class="p">;</span>
+
+<span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">argv</span><span class="p">[])</span> 
+<span class="p">{</span>
+    <span class="k">union</span> <span class="n">FarAddress</span> <span class="n">iacaPtr</span><span class="p">;</span>
+
+    <span class="n">needSplash</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">seg</span> <span class="o">=</span> <span class="n">SEG_LOWMEM</span><span class="p">;</span>
+    <span class="n">needSplash</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">off</span> <span class="o">=</span> <span class="n">OFF_IACA_NEEDSPLASH</span><span class="p">;</span>
+    <span class="n">iacaSuFlag0Ptr</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">seg</span> <span class="o">=</span> <span class="n">SEG_LOWMEM</span><span class="p">;</span>
+    <span class="n">iacaSuFlag0Ptr</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">off</span> <span class="o">=</span> <span class="n">OFF_IACA_FLAG2</span><span class="p">;</span>
+    <span class="n">iacaPtr</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">seg</span> <span class="o">=</span> <span class="n">SEG_LOWMEM</span><span class="p">;</span>
+    <span class="n">iacaPtr</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">off</span> <span class="o">=</span> <span class="n">OFF_IACA_START</span><span class="p">;</span>
+    <span class="n">commAddr</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">seg</span> <span class="o">=</span> <span class="o">*</span><span class="n">FARPTR_CAST</span><span class="p">(</span><span class="n">uint16</span><span class="p">,</span> <span class="n">iacaPtr</span><span class="p">);</span>
+    <span class="n">commAddr</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">off</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">commBufferPtr</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">seg</span> <span class="o">=</span> <span class="o">*</span><span class="n">FARPTR_CAST</span><span class="p">(</span><span class="n">uint16</span><span class="p">,</span> <span class="n">iacaPtr</span><span class="p">);</span>
+    <span class="n">commBufferPtr</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">off</span> <span class="o">=</span> <span class="n">COMM_STARTBUFFER_OFFSET</span><span class="p">;</span>
+    <span class="c1">// more to come later...</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Compile, compare, match. Well, it didn’t right away, but I kept at it and got it to match. This went on for a little while and I was starting to feel confident. Then I came across this bit of code:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="err">0100</span>                 <span class="nf">mov</span>     <span class="nv">timerCounter</span><span class="p">,</span> <span class="mi">0</span>
+<span class="err">0105</span> <span class="nl">waitForKey:</span>
+<span class="err">0105</span>                 <span class="nf">cmp</span>     <span class="nv">timerCounter</span><span class="p">,</span> <span class="mh">78h</span>    <span class="c1">; this is increased in a timer IRQ service routine elsewhere</span>
+<span class="err">010</span><span class="nf">A</span>                 <span class="nv">jnb</span>     <span class="nv">short</span> <span class="nv">keyOrTimeout</span>   <span class="c1">; timeout of 78h (120 ticks) exceeded, break out of loop</span>
+<span class="err">010</span><span class="nf">C</span>                 <span class="nv">call</span>    <span class="nv">far</span> <span class="nv">ptr</span> <span class="nb">ch</span><span class="nv">eck_keybuf</span> <span class="c1">; check for keypress</span>
+<span class="err">0111</span>                 <span class="nf">or</span>      <span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span>               <span class="c1">; check for zero return value (faster than cmp reg,imm)</span>
+<span class="err">0113</span>                 <span class="nf">jnz</span>     <span class="nv">short</span> <span class="nv">continue</span>       <span class="c1">; ax != 0: no keypress, continue spinning</span>
+<span class="err">0115</span>                 <span class="nf">call</span>    <span class="nv">far</span> <span class="nv">ptr</span> <span class="nv">getkey</span>       <span class="c1">; else: fetch key</span>
+<span class="err">011</span><span class="nf">A</span>                 <span class="nv">jmp</span>     <span class="nv">short</span> <span class="nv">keyOrTimeout</span>   <span class="c1">; ...and break out of loop</span>
+<span class="err">011</span><span class="nf">C</span> <span class="nv">continue</span><span class="p">:</span>
+<span class="err">011</span><span class="nf">C</span>                 <span class="nv">jmp</span>     <span class="nv">short</span> <span class="nv">waitForKey</span>     <span class="c1">; try again</span>
+<span class="err">011</span><span class="nf">E</span> <span class="nv">keyOrTimeout</span><span class="p">:</span>
+<span class="err">011</span><span class="nf">E</span>                 <span class="nv">cmp</span>     <span class="nv">timerCounter</span><span class="p">,</span> <span class="mh">78h</span>    <span class="c1">; out of the loop, check reason (timeout or not)</span></code></pre></figure>
+
+<p>This does not look too complicated. This happens after the first splash screen containing the Microprose logo is displayed. A simple loop to spin around waiting until a timeout is exceed or a key is pressed, and depending on the result it will later display the rest of the intro (if no key was pressed), or skip straight to the game. It’s nothing to a seasoned reversing pro like me!</p>
+
+<p>La di da, clickety clickety…</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">static</span> <span class="kt">char</span> <span class="k">volatile</span> <span class="n">timerCounter</span><span class="p">;</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="n">timerCounter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">timerCounter</span> <span class="o">&lt;</span> <span class="mh">0x78</span><span class="p">;)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">check_keybuf</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">getkey</span><span class="p">();</span>
+        <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">continue</span><span class="p">;</span> <span class="c1">// superfluous, but reflects the original instructions</span>
+<span class="p">}</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">timerCounter</span> <span class="o">&gt;=</span> <span class="n">timeout</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// continue displaying intro...</span>
+<span class="p">}</span>    </code></pre></figure>
+
+<p>Compile, compare… Whoopsy!</p>
+
+<pre>
+1000:0100/010100: mov byte [0x76e], 0x0            ~= 1000:0100/010100: mov byte [0x5cf], 0x0
+1000:0105/010105: cmp byte [0x76e], 0x78           ~= 1000:0105/010105: cmp byte [0x5cf], 0x78
+1000:010a/01010a: jnb 0x11e (down)                 ~= 1000:010a/01010a: jnb 0x11a (down)
+1000:010c/01010c: call far 0x16b50c7a              ~= 1000:010c/01010c: call far 0x11c10256
+1000:0111/010111: or ax, ax                        == 1000:0111/010111: or ax, ax
+1000:0113/010113: jnz 0x11c (down)                 ~= 1000:0113/010113: jnz 0x105 (up)
+1000:0115/010115: call far 0x16b50c7f              ~= 1000:0115/010115: call far 0x11c1025b
+<r>1000:011a/01011a: jmp short 0x11e (down)           != 1000:011a/01011a: cmp byte [0x5cf], 0x78</r>
+ERROR: Instruction mismatch in routine main at 1000:011a/01011a: jmp short 0x11e != 1000:011a/01011a: cmp byte [0x5cf], 0x78
+--- Context information for 10 additional instructions after mismatch location:
+1000:011c/01011c: jmp short 0x105 (up)             ~= 1000:011f/01011f: jb 0x172 (down)
+1000:011e/01011e: cmp byte [0x76e], 0x78           != 1000:0121/010121: call far 0x11c101ed
+</pre>
+
+<p>The compiler eliminates the superfluous intermediate jump to <code class="language-plaintext highlighter-rouge">0x11c</code> which jumps back up to <code class="language-plaintext highlighter-rouge">0x105</code> to continue with the next iteration of the loop and just jumps directly to <code class="language-plaintext highlighter-rouge">0x105</code> because that’s more efficient. The end result is the same. But the comparison is off and I was aiming for perfection! Worse still, it throws off my tool that I spent two months creating and I’ll be damned before I give up and revert to manual diffing. 😉</p>
+
+<p>I will spare the reader the details of the number of equivalent variants of this loop that I developed. No matter what I try, pretty much an identical sequence of instructions is emitted that does not match the original. In short, none of the following worked, the compiler is too smart:</p>
+
+<ul>
+  <li>adding explicit continue in an else clause in the loop - eliminated</li>
+  <li>adding empty instructions in the else clause (<code class="language-plaintext highlighter-rouge">;</code>, <code class="language-plaintext highlighter-rouge">(void*)NULL</code>) - eliminated</li>
+  <li>placing explicit intermediate <code class="language-plaintext highlighter-rouge">goto</code>-s in the loop code to force the intermediate jump - eliminated</li>
+  <li>rewriting the entire loop into <code class="language-plaintext highlighter-rouge">goto</code>-based spaghetti code - reduced to identical optimal instructions</li>
+</ul>
+
+<p>Wait, the compiler has some optimization options. Surely tweaking them will get me what I want? Let’s consult the fine manual:</p>
+
+<p><img src="/images/msc_options.png" alt="msc_options" class="center-image" /></p>
+
+<p>Until now, I’ve been compiling without any options, which is equivalent to <code class="language-plaintext highlighter-rouge">/Ot</code> - optimize for speed. So I try all of the other options. Actually, I ended up writing a brute force Python script to generate all the combinations of these options (ones that made sense, because some are mutually exclusive) and ran my build + comparison for each combination - and for each variant of the loop C code that I could think of. I thought that was pretty smart of me, but the compiler was smarter. In short, <code class="language-plaintext highlighter-rouge">/Od</code> makes the loops unoptimized far too much, they have a bunch of additional jumps, but they are the wrong jumps, and everything everywhere else broke anyway. Other than that, all of the other options don’t seem to make a difference in the way the loop is compiled.</p>
+
+<p>The compiler supports a <code class="language-plaintext highlighter-rouge">#pragma loop_opt(on|off)</code> which can be placed before a function and tells it that all loops inside that function should be optimized (or not). It should amount to a more fine-grained <code class="language-plaintext highlighter-rouge">/Ol</code> which I tried already, but perhaps it makes a difference? No, of course it doesn’t. Somebody <a href="https://retrocomputing.stackexchange.com/questions/26758/how-can-i-make-the-microsoft-c-compiler-for-dos-emit-a-loop-with-an-intermediate">please help</a>?</p>
+
+<p>An another possibility is that the code for this loop was not actually written in C but inline assembly. But MS C 5.1 does not support inline assembly.</p>
+
+<p>Well, maybe it was written as a separate inline function in assembly, then linked and placed inline that way? Again, MS C 5.1 does not support inline functions. It supports something it calls “intrinsic functions” (enabled with <code class="language-plaintext highlighter-rouge">/Oi</code>) which are pretty much inline functions, but it only applies to a pre-determined subset of functions (<code class="language-plaintext highlighter-rouge">memset()</code>, <code class="language-plaintext highlighter-rouge">strcpy()</code>, <code class="language-plaintext highlighter-rouge">inp()</code>, some math functions…) from the standard library - you can either elect to have them expanded inline for performance, or keep them as regular functions. To my knowledge, there is no way to make an arbitrary function “intrinsic”.</p>
+
+<p>Damnit. It’s not the right compiler. This one is too good at optimizing. We need a worse one. Or at least one which lets me control the optimizations more finely - which I guess would mean it’s actually better? No, no philosophizing! Bad kitty! 😉</p>
+
+<p>Well, maybe they used an older version of MS C? I can’t fathom why, since they obviously have the library from MS C 5.1, so they also have the compiler available. But maybe this was compiled by a different developer than the one that linked it together at the end, and they had an older version on their PC? Well, no point in guessing, the only way to know for sure is to try. I extended my build script and the Makefile to support using different toolchains and abstract the differences between them so I can try multiple toolchain and flag combinations easily and quickly. The Python bruteforcing script again gets its fair share of use.</p>
+
+<p>Trying MS C 5.0 required me to get rid of the fancy, “modern” (for 1988) <code class="language-plaintext highlighter-rouge">//</code> comments in favour of the <code class="language-plaintext highlighter-rouge">/* ... */</code> ones. For all the work that took, it treated the loop exactly the same as 5.1.</p>
+
+<p>Using MS C 4.0 was more challenging still - no argument names in function prototypes supported, function arguments and variables had to be declared in the ancient, pre-ANSI K&amp;R style, before the initial brace. I had to introduce some <code class="language-plaintext highlighter-rouge">#ifdef</code>s all over to get the code to compile. It supports less optimization options (<code class="language-plaintext highlighter-rouge">/Otsad</code>), but it still behaves the same in regard to the loop code.</p>
+
+<p>Using MS C 3.0 was like a gradual descent into hell - more keywords were unsupported, pragmas were not supported, nowadays-standard header files like STDDEF.H were missing from the C library. But it still didn’t give me what I wanted.</p>
+
+<p>Older versions of the MS C compiler are barely functional, and this doesn’t seem like a reasonable path anymore. But there was another DOS compiler vendor in those days, a towering giant whose influence over the software development industry went far and wide. This is where the <a href="https://en.wikipedia.org/wiki/The_Hunt_for_Red_October">title</a> of this post comes from:</p>
+
+<p><img src="/images/submarines.jpg" alt="submarines" class="center-image" /></p>
+
+<p>Borland was selling a C compiler called Turbo C in the mid-to-late 80s. It boasted faster compilation times than the competition (hence the Turbo moniker), supported fancy features like inline assembly, and advertised its MS C interoperability. In 1990, when they released Turbo C++, the C compiler was folded into that and the standalone Turbo C discontinued. Then in 1991, Borland C++ was released which was aimed at the professional market, while the idea was for Turbo C++ to keep catering to the needs of hobbyists.</p>
+
+<p>I know that the game has a MSC copyright notice inside, but I guess it’s possible the C code was compiled with Borland by one developer who had it installed on their PC, and then somebody else made some tweaks in the assembly code (the executable contains some functions that are clearly manually coded in assembly in another code segment) and linked the object files with the MS C library for release. Computers were slow back then and compiling took time. Why bother recompiling the source code, or maybe the person doing the linking didn’t even have the source code, just the object files? There are many possible things that could have happened.</p>
+
+<p>The game’s 1989 release date means that the following Borland compilers are on the table:</p>
+
+<ul>
+  <li>Turbo C 1.0 (1987)</li>
+  <li>Turbo C 1.5 (1988)</li>
+  <li>Turbo C 2.0 (1988)</li>
+  <li>Turbo C 2.01 (1989, stretching it)</li>
+</ul>
+
+<p>…but the story of that investigation is going to have to wait for <a href="/f15-se2/2023/05/18/compiler2.html">Part 2</a>.</p>
+
+  </div><a class="u-url" href="/f15-se2/2023/05/17/compiler.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

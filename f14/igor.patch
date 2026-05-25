@@ -1,0 +1,48 @@
+diff --git a/Makefile b/Makefile
+index 58bf055..2bdcac3 100644
+--- a/Makefile
++++ b/Makefile
+@@ -19,6 +19,7 @@ UASMFLAGS := -q -0 -Zm
+ # DOS C compiler: no stack probes, debug mode
+ C_TOOLCHAIN ?= msc510
+ MSC_CFLAGS ?= /Gs /Zi /Id:\f15-se2
++#MSC_CFLAGS ?= /Gs /Ot /Fc
+ # DOS assembler
+ ASM_TOOLCHAIN ?= masm510
+ # masm: suppress output in case of successful assembly
+@@ -209,3 +210,29 @@ tools/vgapal: tools/vgapal.c
+ 
+ tools/wldparse: tools/wldparse.cpp
+ 	g++ -o $@ $^ -I$(SRCDIR)
++
++
++$(BUILDDIR)/3DPLANES.OBJ: $(SRCDIR)/3DPLANES.C
++	$(DOSBUILD) cc $(C_TOOLCHAIN) -i $< -o $@ -f "$(MSC_CFLAGS) -Ih"
++
++$(BUILDDIR)/3DOBJECT.OBJ: $(SRCDIR)/3DOBJECT.C
++	$(DOSBUILD) cc $(C_TOOLCHAIN) -i $< -o $@ -f "$(MSC_CFLAGS) -Ih"
++
++$(BUILDDIR)/AWACS.OBJ: $(SRCDIR)/AWACS.C
++	$(DOSBUILD) cc $(C_TOOLCHAIN) -i $< -o $@ -f "$(MSC_CFLAGS) -Ih"
++
++$(BUILDDIR)/MESSAGE.OBJ: $(SRCDIR)/MESSAGE.C
++	$(DOSBUILD) cc $(C_TOOLCHAIN) -i $< -o $@ -f "$(MSC_CFLAGS) -Ih"
++
++$(BUILDDIR)/FLTMATH.OBJ: $(SRCDIR)/FLTMATH.C
++	$(DOSBUILD) cc $(C_TOOLCHAIN) -i $< -o $@ -f "$(MSC_CFLAGS) -Ih"
++
++$(BUILDDIR)/SUPPORT.OBJ: $(SRCDIR)/SUPPORT.C
++	$(DOSBUILD) cc $(C_TOOLCHAIN) -i $< -o $@ -f "$(MSC_CFLAGS) -Ih"
++
++$(BUILDDIR)/%.pat: $(BUILDDIR)/%.OBJ
++	flair/plb -S $< $@
++
++$(BUILDDIR)/f14clean.pat: $(SRCDIR)/f14release.pat
++	cat $< | perl -pe 's! :[0-9A-F]{8} loc_[0-9A-F]{5}!!g; s! ([0-9A-F]{2}) ([0-9A-F]{4}) 0000([0-9A-F]{4}) :0000([0-9A-F]{4}) ! \1 \2 \3 :\4 !' > $@
++
+diff --git a/mzretools b/mzretools
+--- a/mzretools
++++ b/mzretools
+@@ -1 +1 @@
+-Subproject commit 4b08a8354fa98992092f87ff48a2ed0b9882c80a
++Subproject commit 4b08a8354fa98992092f87ff48a2ed0b9882c80a-dirty

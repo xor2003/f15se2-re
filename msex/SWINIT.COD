@@ -1,0 +1,5370 @@
+;	Static Name Aliases
+;
+;	$S347_savescore	EQU	savescore
+;	$S348_ghost	EQU	ghost
+;	$S349_helptxt	EQU	helptxt
+;	$S642_inits	EQU	inits
+;	$S643_initc	EQU	initc
+;	$S644_initm	EQU	initm
+;	$S814_ifx	EQU	ifx
+;	$S815_ify	EQU	ify
+;	$S816_ifdx	EQU	ifdx
+;	$S835_ibx	EQU	ibx
+;	$S836_iby	EQU	iby
+;	$S837_ibdx	EQU	ibdx
+;	$S838_ibdy	EQU	ibdy
+;	$S843_iox	EQU	iox
+;	$S844_ioy	EQU	ioy
+	TITLE   SWINIT.C
+	NAME    SWINIT
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+EXTRN	__acrtused:ABS
+EXTRN	_dispbird:NEAR
+EXTRN	_moveflck:NEAR
+EXTRN	_swflush:NEAR
+EXTRN	_dispflck:NEAR
+EXTRN	_abs:NEAR
+EXTRN	_moveox:NEAR
+EXTRN	_setvdisp:NEAR
+EXTRN	_movemiss:NEAR
+EXTRN	_exit:NEAR
+EXTRN	_dispmiss:NEAR
+EXTRN	_dispscore:NEAR
+EXTRN	_moveburst:NEAR
+EXTRN	_dispburst:NEAR
+EXTRN	_histinit:NEAR
+EXTRN	_allocobj:NEAR
+EXTRN	_initsndt:NEAR
+EXTRN	_swbreak:NEAR
+EXTRN	_intsoff:NEAR
+EXTRN	_swtick:NEAR
+EXTRN	__intsetup:NEAR
+EXTRN	_csseg:NEAR
+EXTRN	_swshfprt:NEAR
+EXTRN	_dsseg:NEAR
+EXTRN	_swkeyint:NEAR
+EXTRN	_swtitln:NEAR
+EXTRN	_intson:NEAR
+EXTRN	_setadisp:NEAR
+EXTRN	_swposcur:NEAR
+EXTRN	_sysint:NEAR
+EXTRN	_swtitlf:NEAR
+EXTRN	_init1mul:NEAR
+EXTRN	_setdxdy:NEAR
+EXTRN	_swputsym:NEAR
+EXTRN	_init1asy:NEAR
+EXTRN	_longjmp:NEAR
+EXTRN	_init2mul:NEAR
+EXTRN	_insertx:NEAR
+EXTRN	_swend:NEAR
+EXTRN	_toupper:NEAR
+EXTRN	_init2asy:NEAR
+EXTRN	_swgetc:NEAR
+EXTRN	_initsound:NEAR
+EXTRN	_dispwobj:NEAR
+EXTRN	_inportb:NEAR
+EXTRN	_swsetblk:NEAR
+EXTRN	_movblock:NEAR
+EXTRN	_puts:NEAR
+EXTRN	_movmem:NEAR
+EXTRN	_dispcomp:NEAR
+EXTRN	_movecomp:NEAR
+EXTRN	_dispplyr:NEAR
+EXTRN	_outportb:NEAR
+EXTRN	_moveplyr:NEAR
+EXTRN	_moveshot:NEAR
+EXTRN	_dispbomb:NEAR
+EXTRN	_deallobj:NEAR
+EXTRN	_movebomb:NEAR
+EXTRN	_setmem:NEAR
+EXTRN	_movetarg:NEAR
+EXTRN	_disptarg:NEAR
+EXTRN	_moveexpl:NEAR
+EXTRN	_deletex:NEAR
+EXTRN	_dispexpl:NEAR
+EXTRN	_swpntsym:NEAR
+EXTRN	_movesmok:NEAR
+EXTRN	_movebird:NEAR
+EXTRN	_getflags:NEAR
+EXTRN	__systype:WORD
+EXTRN	_playmode:WORD
+EXTRN	_swgames:BYTE
+EXTRN	_currgame:WORD
+EXTRN	_ground:BYTE
+EXTRN	_orground:BYTE
+EXTRN	_multbuff:WORD
+EXTRN	_hires:WORD
+EXTRN	_titleflg:WORD
+EXTRN	_keydelay:WORD
+EXTRN	_counttick:WORD
+EXTRN	_soundflg:WORD
+EXTRN	_sintab:BYTE
+EXTRN	_joystick:WORD
+EXTRN	_swghtsym:BYTE
+EXTRN	_ibmkeybd:WORD
+EXTRN	_envrestart:BYTE
+EXTRN	_endsts:BYTE
+EXTRN	_endcount:WORD
+EXTRN	_inplay:WORD
+EXTRN	_goingsun:WORD
+EXTRN	_koveride:WORD
+EXTRN	_compnear:BYTE
+EXTRN	_missok:WORD
+EXTRN	_gamenum:WORD
+EXTRN	_explseed:WORD
+EXTRN	_gmaxspeed:WORD
+EXTRN	_gminspeed:WORD
+EXTRN	_targrnge:WORD
+EXTRN	_displx:WORD
+EXTRN	_maxcrash:WORD
+EXTRN	_disprx:WORD
+EXTRN	_ctlbflag:WORD
+EXTRN	_auxdisp:BYTE
+EXTRN	_dispinit:WORD
+EXTRN	_nobjects:WORD
+EXTRN	_oobjects:BYTE
+EXTRN	_objbot:WORD
+EXTRN	_objtop:WORD
+EXTRN	_objfree:WORD
+EXTRN	_deltop:WORD
+EXTRN	_delbot:WORD
+EXTRN	_targets:BYTE
+EXTRN	_numtarg:BYTE
+EXTRN	_topobj:BYTE
+EXTRN	_botobj:BYTE
+EXTRN	_player:WORD
+EXTRN	_compplane:WORD
+EXTRN	_wdisp:BYTE
+EXTRN	_splatox:WORD
+EXTRN	_oxsplatted:WORD
+EXTRN	_movemax:WORD
+_DATA      SEGMENT
+$SG350	DB	00H
+$SG351	DB	'SOPWITH, Distribution Version',  00H
+$SG352	DB	'(c) Copyright 1984-2000 David L. Clark',  00H
+$SG353	DB	'Modification Date:  October 29, 2000',  00H
+$SG354	DB	00H
+$SG355	DB	'Usage:  sopwith [options]',  00H
+$SG356	DB	'The options are:',  00H
+$SG357	DB	'        -n :  novice single player',  00H
+$SG358	DB	'        -s :  single player',  00H
+$SG359	DB	'        -c :  single player against computer',  00H
+$SG360	DB	'        -a :  2 players over asynchrounous communications li'
+	DB	'ne',  00H
+$SG361	DB	'              (Only one of -n, -s, -c, -a may be specified)',  00H
+$SG362	DB	'        -k :  keyboard only',  00H
+$SG363	DB	'        -j :  joystick and keyboard',  00H
+$SG364	DB	'              (Only one of -k and -j  may be specified)',  00H
+$SG365	DB	'        -q :  begin game with sound off',  00H
+$SG366	DB	'        -p#:  overrides asynchronous port 1 as the asynchrou'
+	DB	'nous port',  00H
+$SG367	DB	'                  to use',  00H
+$SG382	DB	00H, '              ',  00H
+$SG386	DB	'n&s&c&a&k&j&q&x&:',  00H
+	ORG	$+39
+$SG433	DB	0dH,  0aH,  00H
+$SG437	DB	0dH,  0aH,  00H
+$SG471	DB	'Key: K - Keyboard Only',  0dH,  0aH,  00H
+$SG472	DB	'     J - Joystick and Keyboard',  0dH,  0aH,  00H
+$SG483	DB	'Key: S - single player',  0dH,  0aH,  00H
+$SG484	DB	'     C - single player against computer',  0dH,  0aH,  00H
+$SG486	DB	'     A - 2 players on asynchronous line',  00H
+$SG496	DB	'Key: N - novice player',  0dH,  0aH,  00H
+$SG497	DB	'     E - expert player',  0dH,  0aH,  00H
+$SG516	DB	'         Key a game number',  00H
+	ORG	$-286
+$S349_helptxt	DW	DGROUP:$SG350
+	DW	DGROUP:$SG351
+	DW	DGROUP:$SG352
+	DW	DGROUP:$SG353
+	DW	DGROUP:$SG354
+	DW	DGROUP:$SG355
+	DW	DGROUP:$SG356
+	DW	DGROUP:$SG357
+	DW	DGROUP:$SG358
+	DW	DGROUP:$SG359
+	DW	DGROUP:$SG360
+	DW	DGROUP:$SG361
+	DW	DGROUP:$SG362
+	DW	DGROUP:$SG363
+	DW	DGROUP:$SG364
+	DW	DGROUP:$SG365
+	DW	DGROUP:$SG366
+	DW	DGROUP:$SG367
+	DW	00H
+	ORG	$+248
+$S642_inits	DW	00H
+	DW	07H
+$S643_initc	DW	00H
+	DW	07H
+	DW	01H
+	DW	06H
+$S644_initm	DW	00H
+	DW	07H
+	DW	03H
+	DW	04H
+	DW	02H
+	DW	05H
+	DW	01H
+	DW	06H
+$S814_ifx	DW	0172H
+	DW	055aH
+	DW	065eH
+	DW	0a46H
+$S815_ify	DW	0c7H
+	DW	0c7H
+	DW	0c7H
+	DW	0c7H
+$S816_ifdx	DW	02H
+	DW	02H
+	DW	0fffeH
+	DW	0fffeH
+$S835_ibx	DW	08H
+	DW	03H
+	DW	00H
+	DW	06H
+	DW	07H
+	DW	0eH
+	DW	0aH
+	DW	0cH
+$S836_iby	DW	010H
+	DW	01H
+	DW	08H
+	DW	03H
+	DW	0cH
+	DW	0aH
+	DW	07H
+	DW	0eH
+$S837_ibdx	DW	0fffeH
+	DW	02H
+	DW	0fffdH
+	DW	03H
+	DW	0ffffH
+	DW	01H
+	DW	00H
+	DW	00H
+$S838_ibdy	DW	0ffffH
+	DW	0fffeH
+	DW	0ffffH
+	DW	0fffeH
+	DW	0ffffH
+	DW	0fffeH
+	DW	0ffffH
+	DW	0fffeH
+$S843_iox	DW	0560H
+	DW	0648H
+$S844_ioy	DW	050H
+	DW	05bH
+_DATA      ENDS
+_BSS      SEGMENT
+	ORG	$+2
+$S347_savescore	DW 01H DUP (?)
+	ORG	$-4
+$S348_ghost	DW 01H DUP (?)
+_BSS      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** /*
+;|*** 
+;|***                         Copyright (C) 1984-2000 David L. Clark.
+;|*** 
+;|***                         All rights reserved except as specified in the
+;|***                         file license.txt.  Distribution of this file
+;|***                         without the license.txt file accompanying is
+;|***                         prohibited.
+;|*** 
+;|*** */
+;|*** 
+;|*** #define NULL     ((void *)0)
+;|*** #define FALSE    0
+;|*** #define TRUE     1
+;|*** #define NO       0
+;|*** #define YES      1
+;|*** #define FOREVER  for (;;)
+;|*** 
+;|*** int index(char *str,int c);
+;|*** int inportb(unsigned port);
+;|*** void movblock(unsigned int srcoff,unsigned int srcseg,
+;|***               unsigned int destoff,unsigned int destseg,
+;|***               unsigned int count);
+; Line 23
+;|*** /*
+;|***         swinit   -      SW initialization
+;|*** 
+;|***                         Copyright (C) 1984-2000 David L. Clark.
+;|*** 
+;|***                         All rights reserved except as specified in the
+;|***                         file license.txt.  Distribution of this file
+;|***                         without the license.txt file accompanying is
+;|***                         prohibited.
+;|*** 
+;|***                         Author: Dave Clark
+;|*** 
+;|***         Modification History:
+;|***                         84-02-02        Development
+;|***                         85-10-31        Atari
+;|***                         87-01-09        BMB standard help text.
+;|***                                         Multiple serial ports.
+;|***                         87-03-09        Microsoft compiler.
+;|***                         87-03-11        Smaller fuel tank explosions.
+;|***                         87-03-12        Wounded airplanes.
+;|***                         87-03-30        Novice player.
+;|***                         87-03-31        Missiles
+;|***                         87-03-31        Less x-movement in explosions
+;|***                         87-04-04        Missile and starburst support
+;|***                         87-04-05        Less x-movement in explosions
+;|***                         87-04-06        Computer plane avoiding oxen.
+;|***                         87-04-09        Fix to initial missile path.
+;|***                                         Delay between starbursts
+;|***                         96-12-26        New network version.
+;|***                                         Remove keyboard prompts.
+;|***                                         Speed up game a bit.
+;|***                         99-01-24        1999 copyright.
+;|***                                         Disable network support.
+;|***                         2000-10-29      Copyright update.
+;|***                                         Comment out multiplayer selection
+;|***                                           on startup.
+;|*** */
+;|*** #include        "sw.h"
+;|*** 
+;|*** 
+;|*** extern  int     _systype;               /* operating environment            */
+;|*** extern  int     playmode;               /* Mode of play                     */
+;|*** extern  GAMES   swgames[], *currgame;   /* Game parameters and current game */
+;|*** extern  GRNDTYPE ground[];              /* Ground height by pixel           */
+;|*** extern  GRNDTYPE orground[];            /* Original ground height by pixel  */
+;|*** 
+;|*** 
+;|*** extern  MULTIO  *multbuff;              /* Communications buffer            */
+;|*** 
+;|*** extern  BOOL    hires;                  /* High res flag                    */
+;|*** extern  BOOL    titleflg;               /* Title flag                       */
+;|*** extern  BOOL    disppos;                /* Display position flag            */
+;|*** extern  int     keydelay;               /*  Number of displays per keystroke*/
+;|*** extern  int     soundflg;               /*  Sound flag                      */
+;|*** extern  BOOL    repflag;                /*  Report statistics flag          */
+;|*** extern  BOOL    joystick;               /*  Joy stick being used            */
+;|*** extern  BOOL    ibmkeybd;               /*  IBM keyboard or look-alike      */
+;|*** extern  int     multtick;               /*  Multiple user tick delay        */
+;|*** extern  BOOL    inplay;                 /*  Currently playing flag          */
+;|*** extern  int     koveride;               /* Keyboard override index number   */
+;|*** extern  int     missok;                 /* Missiles supported               */
+;|*** 
+;|*** extern  int     gamenum;                /* Current game number              */
+;|*** extern  int     gmaxspeed, gminspeed;   /* Speed range based on game number */
+;|*** extern  int     targrnge;               /* Target range based on game number*/
+;|*** 
+;|*** extern  int     displx, disprx;         /* Display left and right           */
+;|*** extern  char    auxdisp[];              /* Auxiliary display area           */
+;|*** extern  BOOL    dispinit;               /* Initalized display flag.         */
+;|*** extern  char    *histin, *histout;      /* History input and output files   */
+;|*** 
+;|*** extern  OBJECTS *nobjects;              /* Objects list.                    */
+;|*** extern  OBJECTS oobjects[];             /* Original plane object description*/
+;|*** extern  OBJECTS *objbot, *objtop,       /* Top and bottom of object list    */
+;|***                 *objfree,               /* Free list                        */
+;|***                 *deltop, *delbot;       /* Newly deallocated objects        */
+;|*** extern  OBJECTS *targets[];             /* Target status array              */
+;|*** extern  int     numtarg[];              /* number of active targets         */
+;|*** extern  OBJECTS topobj, botobj;         /* Top and Bottom of object by x lst*/
+;|*** extern  int     player;                 /* Pointer to player's object       */
+;|*** extern  BOOL    plyrplane;              /* Current object is the player     */
+;|*** extern  BOOL    compplane;              /* Current object is a comp plane   */
+;|*** extern  int     currobx;                /* Current object index             */
+;|*** extern  OLDWDISP wdisp[];               /* World display status             */
+;|*** extern  int     splatox;                /* Display splatted ox              */
+;|*** extern  int     oxsplatted;             /* An ox has been splotted          */
+;|*** extern  int     movetick, movemax;      /* Move timing                      */
+;|*** 
+;|*** extern  int     dispcomp(),             /*  Display and move functions      */
+;|***                 movecomp(),
+;|***                 dispplyr(),
+;|***                 moveplyr(),
+;|***                 moveshot(),
+;|***                 dispbomb(),
+;|***                 movebomb(),
+;|***                 movetarg(),
+;|***                 disptarg(),
+;|***                 moveexpl(),
+;|***                 dispexpl(),
+;|***                 movesmok(),
+;|***                 movebird(),
+;|***                 dispbird(),
+;|***                 moveflck(),
+;|***                 dispflck(),
+;|***                 moveox(),
+;|***                 movemiss(),
+;|***                 dispmiss(),
+;|***                 moveburst(),
+;|***                 dispburst();
+;|*** 
+;|*** extern  OBJECTS *allocobj();
+;|*** 
+;|*** extern  int      swbreak(), swtick(), swshfprt(), swkeyint();
+;|*** extern  int      counttick, countmove;   /* Performance counters   */
+;|*** 
+;|*** 
+;|*** extern  int     sintab[];               /*  sine table based on angles    */
+;|*** 
+;|*** extern  jmp_buf envrestart;             /* Restart environment for restart  */
+;|***                                         /*  long jump.                      */
+;|*** 
+;|*** extern  int     endsts[];               /* End of game status and move count*/
+;|*** extern  int     endcount;
+;|*** extern  BOOL    goingsun;               /* Heading for the sun flag         */
+;|*** extern  OBJECTS *compnear[];            /*  Array of planes near computers*/
+;|*** extern  unsigned explseed;              /* explosion seed                 */
+;|*** 
+;|*** extern  char    *multfile;              /* Multi user files               */
+;|*** extern  char    *cmndfile;
+;|*** extern  unsigned multaddr;              /* Multiple user diskette adapter */
+;|***                                         /*   address                      */
+;|*** 
+;|*** extern  int      maxcrash;              /* Maximum number of crashes      */
+;|*** 
+;|*** extern  int      ctlbflag;              /* Control break has been pressed */
+;|*** 
+;|*** static  int      savescore;             /* save players score on restart  */
+;|*** static  BOOL     ghost;                 /* ghost display flag             */
+;|*** 
+;|*** static  char     *helptxt[] = {         /* Help text                      */
+;|*** "",
+;|*** "SOPWITH, Distribution Version",
+;|*** "(c) Copyright 1984-2000 David L. Clark",
+;|*** "Modification Date:  October 29, 2000",
+;|*** "",
+;|*** "Usage:  sopwith [options]",
+;|*** "The options are:",
+;|*** "        -n :  novice single player",
+;|*** "        -s :  single player",
+;|*** "        -c :  single player against computer",
+;|*** /*
+;|*** "        -m :  multiple players on a network",
+;|*** */
+;|*** "        -a :  2 players over asynchrounous communications line",
+;|*** "              (Only one of -n, -s, -c, -a may be specified)",
+;|*** "        -k :  keyboard only",
+;|*** "        -j :  joystick and keyboard",
+;|*** "              (Only one of -k and -j  may be specified)",
+;|*** /*
+;|*** "        -i :  IBM PC keyboard",
+;|*** */
+;|*** "        -q :  begin game with sound off",
+;|*** /*
+;|*** "        -r :  resets the multiuser communications file after an abnormal",
+;|*** "                  end of a game",
+;|*** "        -d*:  overrides the default drive C as the device containing the",
+;|*** "                  communications file",
+;|*** */
+;|*** "        -p#:  overrides asynchronous port 1 as the asynchrounous port",
+;|*** "                  to use",
+;|*** 0
+;|*** };
+;|*** 
+;|*** 
+;|*** 
+;|*** swinit( argc, argv )
+;|*** int     argc;
+; Line 177
+	PUBLIC	_swinit
+_swinit	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+	*** 000003	83 ec 14 		sub	sp,20
+;|*** char    *argv[];
+;|*** {
+; Line 179
+;	argc = 4
+;	argv = 6
+;	reset = -12
+;	n = -20
+;	s = -10
+;	c = -8
+;	m = -18
+;	a = -6
+;	k = -16
+;	modeset = -4
+;	keyset = -14
+;	device = -2
+;|*** BOOL    reset = FALSE;
+; Line 180
+	*** 000006	c7 46 f4 00 00 		mov	WORD PTR [bp-12],0	;reset
+;|*** BOOL    n = FALSE;
+; Line 181
+	*** 00000b	c7 46 ec 00 00 		mov	WORD PTR [bp-20],0	;n
+;|*** BOOL    s = FALSE;
+; Line 182
+	*** 000010	c7 46 f6 00 00 		mov	WORD PTR [bp-10],0	;s
+;|*** BOOL    c = FALSE;
+; Line 183
+	*** 000015	c7 46 f8 00 00 		mov	WORD PTR [bp-8],0	;c
+;|*** BOOL    m = FALSE;
+; Line 184
+	*** 00001a	c7 46 ee 00 00 		mov	WORD PTR [bp-18],0	;m
+;|*** BOOL    a = FALSE;
+; Line 185
+	*** 00001f	c7 46 fa 00 00 		mov	WORD PTR [bp-6],0	;a
+;|*** BOOL    k = FALSE;
+; Line 186
+	*** 000024	c7 46 f0 00 00 		mov	WORD PTR [bp-16],0	;k
+;|*** int     modeset, keyset;
+;|*** char    *device   = "\0              ";
+; Line 188
+	*** 000029	c7 46 fe 7d 02 		mov	WORD PTR [bp-2],OFFSET DGROUP:$SG382	;device
+;|*** 
+;|*** 
+;|***         if ( getflags( &argc, &argv,
+;|***                         /*---- 96/12/27------
+;|***                         "n&s&c&m&a&k&i&j&q&h*v*r&d*f*n*t#w&y#e&g#x&:",
+;|***                         &n, &s, &c, &m, &a, &k, &ibmkeybd, &joystick, &soundflg,
+;|***                         &histout, &histin, &reset, &device,
+;|***                         &multfile, &cmndfile, &multtick, &hires, &keydelay,
+;|***                         &repflag, &gamenum, &missok )
+;|***                         ------ 96/12/27----*/
+;|***                         /*---- 99/01/24------
+;|***                         "n&s&c&m&a&k&j&q&h*v*r&d*f*t#w&y#e&g#x&:",
+;|***                         &n, &s, &c, &m, &a, &k, &joystick, &soundflg,
+;|***                         &histout, &histin, &reset, &device,
+;|***                         &multfile, &multtick, &hires, &keydelay,
+;|***                         &repflag, &gamenum, &missok )
+;|***                         ------ 99/01/24----*/
+;|***                         "n&s&c&a&k&j&q&x&:",
+;|***                         &n, &s, &c, &a, &k, &joystick, &soundflg,
+;|***                         &missok )
+;|***                 || ( ( modeset = n + s + c + m + a ) > 1 )
+;|***                 || ( ( keyset = joystick + k ) > 1 ) ) {
+; Line 210
+	*** 00002e	b8 00 00 		mov	ax,OFFSET _missok
+	*** 000031	50 			push	ax
+	*** 000032	b8 00 00 		mov	ax,OFFSET _soundflg
+	*** 000035	50 			push	ax
+	*** 000036	b8 00 00 		mov	ax,OFFSET _joystick
+	*** 000039	50 			push	ax
+	*** 00003a	8d 46 f0 		lea	ax,WORD PTR [bp-16]	;k
+	*** 00003d	50 			push	ax
+	*** 00003e	8d 46 fa 		lea	ax,WORD PTR [bp-6]	;a
+	*** 000041	50 			push	ax
+	*** 000042	8d 46 f8 		lea	ax,WORD PTR [bp-8]	;c
+	*** 000045	50 			push	ax
+	*** 000046	8d 46 f6 		lea	ax,WORD PTR [bp-10]	;s
+	*** 000049	50 			push	ax
+	*** 00004a	8d 46 ec 		lea	ax,WORD PTR [bp-20]	;n
+	*** 00004d	50 			push	ax
+	*** 00004e	b8 8d 02 		mov	ax,OFFSET DGROUP:$SG386
+	*** 000051	50 			push	ax
+	*** 000052	8d 46 06 		lea	ax,WORD PTR [bp+6]	;argv
+	*** 000055	50 			push	ax
+	*** 000056	8d 46 04 		lea	ax,WORD PTR [bp+4]	;argc
+	*** 000059	50 			push	ax
+	*** 00005a	e8 00 00 		call	_getflags
+	*** 00005d	83 c4 16 		add	sp,22
+	*** 000060	0b c0 			or	ax,ax
+	*** 000062	75 26 			jne	$I385
+	*** 000064	8b 46 ec 		mov	ax,WORD PTR [bp-20]	;n
+	*** 000067	03 46 f6 		add	ax,WORD PTR [bp-10]	;s
+	*** 00006a	03 46 f8 		add	ax,WORD PTR [bp-8]	;c
+	*** 00006d	03 46 ee 		add	ax,WORD PTR [bp-18]	;m
+	*** 000070	03 46 fa 		add	ax,WORD PTR [bp-6]	;a
+	*** 000073	89 46 fc 		mov	WORD PTR [bp-4],ax	;modeset
+	*** 000076	3d 01 00 		cmp	ax,1
+	*** 000079	7f 0f 			jg	$I385
+	*** 00007b	8b 46 f0 		mov	ax,WORD PTR [bp-16]	;k
+	*** 00007e	03 06 00 00 		add	ax,_joystick
+	*** 000082	89 46 f2 		mov	WORD PTR [bp-14],ax	;keyset
+	*** 000085	3d 01 00 		cmp	ax,1
+	*** 000088	7e 14 			jle	$I384
+					$I385:
+;|***                 disphelp( helptxt );
+; Line 211
+	*** 00008a	b8 a0 02 		mov	ax,OFFSET DGROUP:$S349_helptxt
+	*** 00008d	50 			push	ax
+	*** 00008e	e8 00 00 		call	disphelp
+	*** 000091	83 c4 02 		add	sp,2
+;|***                 exit( 1 );
+; Line 212
+	*** 000094	b8 01 00 		mov	ax,1
+	*** 000097	50 			push	ax
+	*** 000098	e8 00 00 		call	_exit
+	*** 00009b	83 c4 02 		add	sp,2
+;|***         }
+; Line 213
+;|*** 
+;|***         soundflg = !soundflg;
+; Line 215
+					$I384:
+	*** 00009e	83 3e 00 00 01 		cmp	WORD PTR _soundflg,1
+	*** 0000a3	1b c0 			sbb	ax,ax
+	*** 0000a5	f7 d8 			neg	ax
+	*** 0000a7	a3 00 00 		mov	_soundflg,ax
+;|***         if ( modeset && keyset )
+; Line 216
+	*** 0000aa	83 7e fc 00 		cmp	WORD PTR [bp-4],0	;modeset
+	*** 0000ae	74 0c 			je	$I389
+	*** 0000b0	83 7e f2 00 		cmp	WORD PTR [bp-14],0	;keyset
+	*** 0000b4	74 06 			je	$I389
+;|***                 titleflg = TRUE;
+; Line 217
+	*** 0000b6	c7 06 00 00 01 00 	mov	WORD PTR _titleflg,1
+;|*** 
+;|***         movemax=15;
+; Line 219
+					$I389:
+	*** 0000bc	c7 06 00 00 0f 00 	mov	WORD PTR _movemax,15
+;|***         initseed();
+; Line 220
+	*** 0000c2	e8 00 00 		call	_initseed
+;|***         explseed = histinit( explseed );
+; Line 221
+	*** 0000c5	ff 36 00 00 		push	WORD PTR _explseed
+	*** 0000c9	e8 00 00 		call	_histinit
+	*** 0000cc	83 c4 02 		add	sp,2
+	*** 0000cf	a3 00 00 		mov	_explseed,ax
+;|***         initsndt();
+; Line 222
+	*** 0000d2	e8 00 00 		call	_initsndt
+;|***         intsoff();
+; Line 223
+	*** 0000d5	e8 00 00 		call	_intsoff
+;|***         _intsetup( BREAKINT, swbreak, csseg(), dsseg() );
+; Line 224
+	*** 0000d8	e8 00 00 		call	_dsseg
+	*** 0000db	50 			push	ax
+	*** 0000dc	e8 00 00 		call	_csseg
+	*** 0000df	50 			push	ax
+	*** 0000e0	b8 00 00 		mov	ax,OFFSET _swbreak
+	*** 0000e3	50 			push	ax
+	*** 0000e4	b8 1b 00 		mov	ax,27
+	*** 0000e7	50 			push	ax
+	*** 0000e8	e8 00 00 		call	__intsetup
+	*** 0000eb	83 c4 08 		add	sp,8
+;|***         _intsetup( CLOCKINT, swtick, csseg(), dsseg() );
+; Line 225
+	*** 0000ee	e8 00 00 		call	_dsseg
+	*** 0000f1	50 			push	ax
+	*** 0000f2	e8 00 00 		call	_csseg
+	*** 0000f5	50 			push	ax
+	*** 0000f6	b8 00 00 		mov	ax,OFFSET _swtick
+	*** 0000f9	50 			push	ax
+	*** 0000fa	b8 1c 00 		mov	ax,28
+	*** 0000fd	50 			push	ax
+	*** 0000fe	e8 00 00 		call	__intsetup
+	*** 000101	83 c4 08 		add	sp,8
+;|***         initgrnd();
+; Line 226
+	*** 000104	e8 00 00 		call	initgrnd
+;|***         swtitln();
+; Line 227
+	*** 000107	e8 00 00 		call	_swtitln
+;|***         intson();
+; Line 228
+	*** 00010a	e8 00 00 		call	_intson
+;|*** 
+;|***         if ( modeset )
+; Line 230
+	*** 00010d	83 7e fc 00 		cmp	WORD PTR [bp-4],0	;modeset
+	*** 000111	74 33 			je	$I400
+;|***                 playmode = n ? NOVICE
+;|***                              : ( s ? SINGLE
+;|***                              : ( c ? COMPUTER
+;|***                              : ( m ? MULTIPLE : ASYNCH ) ) );
+; Line 234
+	*** 000113	83 7e ec 00 		cmp	WORD PTR [bp-20],0	;n
+	*** 000117	74 05 			je	$L20002
+	*** 000119	b8 04 00 		mov	ax,4
+	*** 00011c	eb 23 			jmp	SHORT $L20009
+					$L20002:
+	*** 00011e	83 7e f6 00 		cmp	WORD PTR [bp-10],0	;s
+	*** 000122	74 04 			je	$L20004
+	*** 000124	2b c0 			sub	ax,ax
+	*** 000126	eb 19 			jmp	SHORT $L20009
+					$L20004:
+	*** 000128	83 7e f8 00 		cmp	WORD PTR [bp-8],0	;c
+	*** 00012c	74 05 			je	$L20006
+	*** 00012e	b8 02 00 		mov	ax,2
+	*** 000131	eb 0e 			jmp	SHORT $L20009
+					$L20006:
+	*** 000133	83 7e ee 00 		cmp	WORD PTR [bp-18],0	;m
+	*** 000137	74 05 			je	$L20008
+	*** 000139	b8 01 00 		mov	ax,1
+	*** 00013c	eb 03 			jmp	SHORT $L20009
+					$L20008:
+	*** 00013e	b8 03 00 		mov	ax,3
+					$L20009:
+	*** 000141	a3 00 00 		mov	_playmode,ax
+;|***         else
+; Line 235
+	*** 000144	eb 03 			jmp	SHORT $I401
+					$I400:
+;|***                 getmode();
+; Line 236
+	*** 000146	e8 00 00 		call	getmode
+					$I401:
+;|*** 
+;|***         if ( !keyset )
+; Line 238
+	*** 000149	83 7e f2 00 		cmp	WORD PTR [bp-14],0	;keyset
+	*** 00014d	75 03 			jne	$I403
+;|***                 getkey();
+; Line 239
+	*** 00014f	e8 00 00 		call	getkey
+;|*** 
+;|***         if ( ( playmode == MULTIPLE ) || ( playmode == ASYNCH ) ) {
+; Line 241
+					$I403:
+	*** 000152	83 3e 00 00 01 		cmp	WORD PTR _playmode,1
+	*** 000157	74 07 			je	$I406
+	*** 000159	83 3e 00 00 03 		cmp	WORD PTR _playmode,3
+	*** 00015e	75 5b 			jne	$I405
+					$I406:
+;|***                 maxcrash = MAXCRASH * 2;
+; Line 242
+	*** 000160	c7 06 00 00 0a 00 	mov	WORD PTR _maxcrash,10
+;|***                 if ( playmode == MULTIPLE )
+; Line 243
+	*** 000166	83 3e 00 00 01 		cmp	WORD PTR _playmode,1
+	*** 00016b	75 0e 			jne	$I407
+;|***                         init1mul( reset, device );
+; Line 244
+	*** 00016d	ff 76 fe 		push	WORD PTR [bp-2]	;device
+	*** 000170	ff 76 f4 		push	WORD PTR [bp-12]	;reset
+	*** 000173	e8 00 00 		call	_init1mul
+	*** 000176	83 c4 04 		add	sp,4
+;|***                 else
+; Line 245
+	*** 000179	eb 03 			jmp	SHORT $I409
+					$I407:
+;|***                         init1asy();
+; Line 246
+	*** 00017b	e8 00 00 		call	_init1asy
+					$I409:
+;|***                 initgrnd();
+; Line 247
+	*** 00017e	e8 00 00 		call	initgrnd
+;|***                 initobjs();
+; Line 248
+	*** 000181	e8 00 00 		call	initobjs
+;|***                 if ( playmode == MULTIPLE )
+; Line 249
+	*** 000184	83 3e 00 00 01 		cmp	WORD PTR _playmode,1
+	*** 000189	75 05 			jne	$I412
+;|***                         init2mul();
+; Line 250
+	*** 00018b	e8 00 00 		call	_init2mul
+;|***                 else
+; Line 251
+	*** 00018e	eb 03 			jmp	SHORT $I414
+					$I412:
+;|***                         init2asy();
+; Line 252
+	*** 000190	e8 00 00 		call	_init2asy
+					$I414:
+;|***                 inittarg();
+; Line 253
+	*** 000193	e8 00 00 		call	inittarg
+;|***                 if ( currgame->gm_specf )
+; Line 254
+	*** 000196	8b 1e 00 00 		mov	bx,_currgame
+	*** 00019a	83 7f 24 00 		cmp	WORD PTR [bx+36],0
+	*** 00019e	74 03 			je	$I417
+;|***                         ( *currgame->gm_specf ) ();
+; Line 255
+	*** 0001a0	ff 57 24 		call	WORD PTR [bx+36]
+;|***                 initdisp( NO );
+; Line 256
+					$I417:
+	*** 0001a3	2b c0 			sub	ax,ax
+	*** 0001a5	50 			push	ax
+	*** 0001a6	e8 00 00 		call	_initdisp
+	*** 0001a9	83 c4 02 		add	sp,2
+;|***                 if ( keydelay == -1 )
+; Line 257
+	*** 0001ac	83 3e 00 00 ff 		cmp	WORD PTR _keydelay,-1
+	*** 0001b1	75 06 			jne	$I419
+;|***                         keydelay = 1;
+; Line 258
+	*** 0001b3	c7 06 00 00 01 00 	mov	WORD PTR _keydelay,1
+;|***         } else {
+; Line 259
+					$I419:
+	*** 0001b9	eb 5c 			jmp	SHORT $I420
+					$I405:
+;|***                 if ( keydelay == -1 )
+; Line 260
+	*** 0001bb	83 3e 00 00 ff 		cmp	WORD PTR _keydelay,-1
+	*** 0001c0	75 06 			jne	$I421
+;|***                         keydelay = 1;
+; Line 261
+	*** 0001c2	c7 06 00 00 01 00 	mov	WORD PTR _keydelay,1
+;|***                 maxcrash = MAXCRASH;
+; Line 262
+					$I421:
+	*** 0001c8	c7 06 00 00 05 00 	mov	WORD PTR _maxcrash,5
+;|***                 currgame = &swgames[0];
+; Line 263
+	*** 0001ce	c7 06 00 00 00 00 	mov	WORD PTR _currgame,OFFSET _swgames
+;|***                 clrprmpt();
+; Line 264
+	*** 0001d4	e8 00 00 		call	_clrprmpt
+;|***                 initobjs();
+; Line 265
+	*** 0001d7	e8 00 00 		call	initobjs
+;|***                 initplyr( NULL );
+; Line 266
+	*** 0001da	2b c0 			sub	ax,ax
+	*** 0001dc	50 			push	ax
+	*** 0001dd	e8 00 00 		call	_initplyr
+	*** 0001e0	83 c4 02 		add	sp,2
+;|***                 initcomp( NULL );
+; Line 267
+	*** 0001e3	2b c0 			sub	ax,ax
+	*** 0001e5	50 			push	ax
+	*** 0001e6	e8 00 00 		call	_initcomp
+	*** 0001e9	83 c4 02 		add	sp,2
+;|***                 initcomp( NULL );
+; Line 268
+	*** 0001ec	2b c0 			sub	ax,ax
+	*** 0001ee	50 			push	ax
+	*** 0001ef	e8 00 00 		call	_initcomp
+	*** 0001f2	83 c4 02 		add	sp,2
+;|***                 initcomp( NULL );
+; Line 269
+	*** 0001f5	2b c0 			sub	ax,ax
+	*** 0001f7	50 			push	ax
+	*** 0001f8	e8 00 00 		call	_initcomp
+	*** 0001fb	83 c4 02 		add	sp,2
+;|***                 inittarg();
+; Line 270
+	*** 0001fe	e8 00 00 		call	inittarg
+;|***                 if ( currgame->gm_specf )
+; Line 271
+	*** 000201	8b 1e 00 00 		mov	bx,_currgame
+	*** 000205	83 7f 24 00 		cmp	WORD PTR [bx+36],0
+	*** 000209	74 03 			je	$I425
+;|***                         ( *currgame->gm_specf ) ();
+; Line 272
+	*** 00020b	ff 57 24 		call	WORD PTR [bx+36]
+;|***                 initdisp( NO );
+; Line 273
+					$I425:
+	*** 00020e	2b c0 			sub	ax,ax
+	*** 000210	50 			push	ax
+	*** 000211	e8 00 00 		call	_initdisp
+	*** 000214	83 c4 02 		add	sp,2
+;|***         }
+; Line 274
+					$I420:
+;|*** 
+;|***         initflck();
+; Line 276
+	*** 000217	e8 00 00 		call	_initflck
+;|***         initoxen();
+; Line 277
+	*** 00021a	e8 00 00 		call	_initoxen
+;|*** 
+;|***         initgdep();
+; Line 279
+	*** 00021d	e8 00 00 		call	_initgdep
+;|*** 
+;|***         intsoff();
+; Line 281
+	*** 000220	e8 00 00 		call	_intsoff
+;|***         _intsetup( PRINTINT, swshfprt, csseg(), dsseg() );
+; Line 282
+	*** 000223	e8 00 00 		call	_dsseg
+	*** 000226	50 			push	ax
+	*** 000227	e8 00 00 		call	_csseg
+	*** 00022a	50 			push	ax
+	*** 00022b	b8 00 00 		mov	ax,OFFSET _swshfprt
+	*** 00022e	50 			push	ax
+	*** 00022f	b8 05 00 		mov	ax,5
+	*** 000232	50 			push	ax
+	*** 000233	e8 00 00 		call	__intsetup
+	*** 000236	83 c4 08 		add	sp,8
+;|***         koveride = _intsetup( KEYINT, swkeyint, csseg(), dsseg() );
+; Line 283
+	*** 000239	e8 00 00 		call	_dsseg
+	*** 00023c	50 			push	ax
+	*** 00023d	e8 00 00 		call	_csseg
+	*** 000240	50 			push	ax
+	*** 000241	b8 00 00 		mov	ax,OFFSET _swkeyint
+	*** 000244	50 			push	ax
+	*** 000245	b8 09 00 		mov	ax,9
+	*** 000248	50 			push	ax
+	*** 000249	e8 00 00 		call	__intsetup
+	*** 00024c	83 c4 08 		add	sp,8
+	*** 00024f	a3 00 00 		mov	_koveride,ax
+;|***         inplay = TRUE;
+; Line 284
+	*** 000252	c7 06 00 00 01 00 	mov	WORD PTR _inplay,1
+;|***         intson();
+; Line 285
+	*** 000258	e8 00 00 		call	_intson
+;|*** }
+; Line 286
+	*** 00025b	8b e5 			mov	sp,bp
+	*** 00025d	5d 			pop	bp
+	*** 00025e	c3 			ret	
+
+_swinit	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** static  disphelp( hp )
+;|*** char    **hp;
+; Line 291
+disphelp	PROC NEAR
+	*** 00025f	55 			push	bp
+	*** 000260	8b ec 			mov	bp,sp
+	*** 000262	83 ec 02 		sub	sp,2
+	*** 000265	56 			push	si
+;|*** {
+; Line 292
+;	hp = 4
+;	register si = h
+;|*** register char   **h;
+;|*** 
+;|***         h = hp;
+; Line 295
+	*** 000266	8b 76 04 		mov	si,WORD PTR [bp+4]	;hp
+;|***         puts( "\r\n" );
+; Line 296
+	*** 000269	b8 c6 02 		mov	ax,OFFSET DGROUP:$SG433
+	*** 00026c	50 			push	ax
+	*** 00026d	e8 00 00 		call	_puts
+	*** 000270	83 c4 02 		add	sp,2
+;|***         while ( *h ) {
+; Line 297
+					$FC435:
+	*** 000273	83 3c 00 		cmp	WORD PTR [si],0
+	*** 000276	74 18 			je	$FB436
+;|***                 puts( *h++ );
+; Line 298
+	*** 000278	83 c6 02 		add	si,2
+	*** 00027b	ff 74 fe 		push	WORD PTR [si-2]
+	*** 00027e	e8 00 00 		call	_puts
+	*** 000281	83 c4 02 		add	sp,2
+;|***                 puts( "\r\n" );
+; Line 299
+	*** 000284	b8 c9 02 		mov	ax,OFFSET DGROUP:$SG437
+	*** 000287	50 			push	ax
+	*** 000288	e8 00 00 		call	_puts
+	*** 00028b	83 c4 02 		add	sp,2
+;|***         }
+; Line 300
+	*** 00028e	eb e3 			jmp	SHORT $FC435
+					$FB436:
+;|*** }
+; Line 301
+	*** 000290	5e 			pop	si
+	*** 000291	8b e5 			mov	sp,bp
+	*** 000293	5d 			pop	bp
+	*** 000294	c3 			ret	
+
+disphelp	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** initseed()
+;|*** {
+; Line 308
+	PUBLIC	_initseed
+_initseed	PROC NEAR
+	*** 000295	55 			push	bp
+	*** 000296	8b ec 			mov	bp,sp
+	*** 000298	56 			push	si
+;|*** #ifdef IBMPC
+;|***         while ( !explseed ) {
+; Line 310
+					$FC440:
+	*** 000299	83 3e 00 00 00 		cmp	WORD PTR _explseed,0
+	*** 00029e	75 31 			jne	$FB441
+;|***                 outportb( 0x43, 0 );
+; Line 311
+	*** 0002a0	2b c0 			sub	ax,ax
+	*** 0002a2	50 			push	ax
+	*** 0002a3	b8 43 00 		mov	ax,67
+	*** 0002a6	50 			push	ax
+	*** 0002a7	e8 00 00 		call	_outportb
+	*** 0002aa	83 c4 04 		add	sp,4
+;|***                 explseed = ( 0x00FF & inportb( 0x40 ) )
+;|***                          | ( 0xFF00 & ( inportb( 0x40 ) << 8 ) );
+; Line 313
+	*** 0002ad	b8 40 00 		mov	ax,64
+	*** 0002b0	50 			push	ax
+	*** 0002b1	e8 00 00 		call	_inportb
+	*** 0002b4	83 c4 02 		add	sp,2
+	*** 0002b7	2a e4 			sub	ah,ah
+	*** 0002b9	b9 40 00 		mov	cx,64
+	*** 0002bc	51 			push	cx
+	*** 0002bd	8b f0 			mov	si,ax
+	*** 0002bf	e8 00 00 		call	_inportb
+	*** 0002c2	83 c4 02 		add	sp,2
+	*** 0002c5	8a e8 			mov	ch,al
+	*** 0002c7	2a c9 			sub	cl,cl
+	*** 0002c9	0b ce 			or	cx,si
+	*** 0002cb	89 0e 00 00 		mov	_explseed,cx
+;|***         }
+; Line 314
+	*** 0002cf	eb c8 			jmp	SHORT $FC440
+					$FB441:
+;|*** #endif
+;|*** #ifdef ATARI
+;|*** long    trap14();
+;|*** 
+;|***         explseed = trap14( 17 );
+;|*** #endif
+;|*** }
+; Line 321
+	*** 0002d1	5e 			pop	si
+	*** 0002d2	8b e5 			mov	sp,bp
+	*** 0002d4	5d 			pop	bp
+	*** 0002d5	c3 			ret	
+
+_initseed	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** swrestart()
+;|*** {
+; Line 328
+	PUBLIC	_swrestart
+_swrestart	PROC NEAR
+	*** 0002d6	55 			push	bp
+	*** 0002d7	8b ec 			mov	bp,sp
+	*** 0002d9	83 ec 06 		sub	sp,6
+	*** 0002dc	57 			push	di
+	*** 0002dd	56 			push	si
+;	register si = ob
+;	register di = tickwait
+;	inc = -6
+;|*** register OBJECTS  *ob;
+;|*** register int      tickwait, inc;
+;|*** 
+;|***         if ( endsts[player] == WINNER ) {
+; Line 332
+	*** 0002de	8b 1e 00 00 		mov	bx,_player
+	*** 0002e2	d1 e3 			shl	bx,1
+	*** 0002e4	83 bf 00 00 01 		cmp	WORD PTR _endsts[bx],1
+	*** 0002e9	75 5e 			jne	$I447
+;|***                 ob = &nobjects[player];
+; Line 333
+	*** 0002eb	b8 76 00 		mov	ax,118
+	*** 0002ee	f7 2e 00 00 		imul	WORD PTR _player
+	*** 0002f2	8b f0 			mov	si,ax
+	*** 0002f4	03 36 00 00 		add	si,_nobjects
+;|***                 inc = 0;
+; Line 334
+	*** 0002f8	c7 46 fa 00 00 		mov	WORD PTR [bp-6],0	;inc
+;|***                 while ( ob->ob_crashcnt++ < maxcrash ) {
+; Line 335
+					$FC449:
+	*** 0002fd	8b 44 4c 		mov	ax,WORD PTR [si+76]
+	*** 000300	ff 44 4c 		inc	WORD PTR [si+76]
+	*** 000303	3b 06 00 00 		cmp	ax,_maxcrash
+	*** 000307	7d 34 			jge	$FB450
+;|***                         ob->ob_score += ( inc += 25 );
+; Line 336
+	*** 000309	83 46 fa 19 		add	WORD PTR [bp-6],25	;inc
+	*** 00030d	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;inc
+	*** 000310	01 44 16 		add	WORD PTR [si+22],ax
+;|***                         setvdisp();
+; Line 337
+	*** 000313	e8 00 00 		call	_setvdisp
+;|***                         dispcgge( ob );
+; Line 338
+	*** 000316	56 			push	si
+	*** 000317	e8 00 00 		call	_dispcgge
+	*** 00031a	83 c4 02 		add	sp,2
+;|***                         dispscore( ob );
+; Line 339
+	*** 00031d	56 			push	si
+	*** 00031e	e8 00 00 		call	_dispscore
+	*** 000321	83 c4 02 		add	sp,2
+;|***                         intsoff();
+; Line 340
+	*** 000324	e8 00 00 		call	_intsoff
+;|***                         tickwait = 5;
+; Line 341
+	*** 000327	bf 05 00 		mov	di,5
+;|***                         counttick = 0;
+; Line 342
+	*** 00032a	c7 06 00 00 00 00 	mov	WORD PTR _counttick,0
+;|***                         intson();
+; Line 343
+	*** 000330	e8 00 00 		call	_intson
+;|***                         while ( counttick < tickwait );
+; Line 344
+					$FC455:
+	*** 000333	39 3e 00 00 		cmp	_counttick,di
+	*** 000337	7d 02 			jge	$FB456
+	*** 000339	eb f8 			jmp	SHORT $FC455
+					$FB456:
+;|***                 }
+; Line 345
+	*** 00033b	eb c0 			jmp	SHORT $FC449
+					$FB450:
+;|***                 ++gamenum;
+; Line 346
+	*** 00033d	ff 06 00 00 		inc	WORD PTR _gamenum
+;|***                 savescore = ob->ob_score;
+; Line 347
+	*** 000341	8b 44 16 		mov	ax,WORD PTR [si+22]
+	*** 000344	a3 02 00 		mov	$S347_savescore,ax
+;|***         } else {
+; Line 348
+	*** 000347	eb 0c 			jmp	SHORT $I457
+					$I447:
+;|***                 gamenum = 0;
+; Line 349
+	*** 000349	c7 06 00 00 00 00 	mov	WORD PTR _gamenum,0
+;|***                 savescore = 0;
+; Line 350
+	*** 00034f	c7 06 02 00 00 00 	mov	WORD PTR $S347_savescore,0
+;|***         }
+; Line 351
+					$I457:
+;|*** 
+;|***         initsndt();
+; Line 353
+	*** 000355	e8 00 00 		call	_initsndt
+;|***         initgrnd();
+; Line 354
+	*** 000358	e8 00 00 		call	initgrnd
+;|***         initobjs();
+; Line 355
+	*** 00035b	e8 00 00 		call	initobjs
+;|***         initplyr( NULL );
+; Line 356
+	*** 00035e	2b c0 			sub	ax,ax
+	*** 000360	50 			push	ax
+	*** 000361	e8 00 00 		call	_initplyr
+	*** 000364	83 c4 02 		add	sp,2
+;|***         initcomp( NULL );
+; Line 357
+	*** 000367	2b c0 			sub	ax,ax
+	*** 000369	50 			push	ax
+	*** 00036a	e8 00 00 		call	_initcomp
+	*** 00036d	83 c4 02 		add	sp,2
+;|***         initcomp( NULL );
+; Line 358
+	*** 000370	2b c0 			sub	ax,ax
+	*** 000372	50 			push	ax
+	*** 000373	e8 00 00 		call	_initcomp
+	*** 000376	83 c4 02 		add	sp,2
+;|***         initcomp( NULL );
+; Line 359
+	*** 000379	2b c0 			sub	ax,ax
+	*** 00037b	50 			push	ax
+	*** 00037c	e8 00 00 		call	_initcomp
+	*** 00037f	83 c4 02 		add	sp,2
+;|***         inittarg();
+; Line 360
+	*** 000382	e8 00 00 		call	inittarg
+;|***         if ( currgame->gm_specf )
+; Line 361
+	*** 000385	8b 1e 00 00 		mov	bx,_currgame
+	*** 000389	83 7f 24 00 		cmp	WORD PTR [bx+36],0
+	*** 00038d	74 03 			je	$I458
+;|***                 ( *currgame->gm_specf ) ();
+; Line 362
+	*** 00038f	ff 57 24 		call	WORD PTR [bx+36]
+;|*** 
+;|***         initdisp( NO );
+; Line 364
+					$I458:
+	*** 000392	2b c0 			sub	ax,ax
+	*** 000394	50 			push	ax
+	*** 000395	e8 00 00 		call	_initdisp
+	*** 000398	83 c4 02 		add	sp,2
+;|***         initflck();
+; Line 365
+	*** 00039b	e8 00 00 		call	_initflck
+;|***         initoxen();
+; Line 366
+	*** 00039e	e8 00 00 		call	_initoxen
+;|***         initgdep();
+; Line 367
+	*** 0003a1	e8 00 00 		call	_initgdep
+;|*** 
+;|***         longjmp( envrestart, 0 );
+; Line 369
+	*** 0003a4	2b c0 			sub	ax,ax
+	*** 0003a6	50 			push	ax
+	*** 0003a7	b8 00 00 		mov	ax,OFFSET _envrestart
+	*** 0003aa	50 			push	ax
+	*** 0003ab	e8 00 00 		call	_longjmp
+	*** 0003ae	83 c4 04 		add	sp,4
+;|*** }
+; Line 370
+	*** 0003b1	5e 			pop	si
+	*** 0003b2	5f 			pop	di
+	*** 0003b3	8b e5 			mov	sp,bp
+	*** 0003b5	5d 			pop	bp
+	*** 0003b6	c3 			ret	
+
+_swrestart	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** initgdep()
+;|*** {
+; Line 375
+	PUBLIC	_initgdep
+_initgdep	PROC NEAR
+	*** 0003b7	55 			push	bp
+	*** 0003b8	8b ec 			mov	bp,sp
+;|*** 
+;|***         gmaxspeed = MAX_SPEED + gamenum;
+; Line 377
+	*** 0003ba	a1 00 00 		mov	ax,_gamenum
+	*** 0003bd	05 08 00 		add	ax,8
+	*** 0003c0	a3 00 00 		mov	_gmaxspeed,ax
+;|***         gminspeed = MIN_SPEED + gamenum;
+; Line 378
+	*** 0003c3	a1 00 00 		mov	ax,_gamenum
+	*** 0003c6	05 04 00 		add	ax,4
+	*** 0003c9	a3 00 00 		mov	_gminspeed,ax
+;|*** 
+;|***         targrnge = 150;
+; Line 380
+	*** 0003cc	c7 06 00 00 96 00 	mov	WORD PTR _targrnge,150
+;|***         if ( gamenum < 6 )
+; Line 381
+	*** 0003d2	83 3e 00 00 06 		cmp	WORD PTR _gamenum,6
+	*** 0003d7	7d 17 			jge	$I460
+;|***                 targrnge -= 15 * ( 6 - gamenum );
+; Line 382
+	*** 0003d9	b8 06 00 		mov	ax,6
+	*** 0003dc	2b 06 00 00 		sub	ax,_gamenum
+	*** 0003e0	8b c8 			mov	cx,ax
+	*** 0003e2	d1 e0 			shl	ax,1
+	*** 0003e4	d1 e0 			shl	ax,1
+	*** 0003e6	d1 e0 			shl	ax,1
+	*** 0003e8	d1 e0 			shl	ax,1
+	*** 0003ea	2b c1 			sub	ax,cx
+	*** 0003ec	29 06 00 00 		sub	_targrnge,ax
+;|***         targrnge *= targrnge;
+; Line 383
+					$I460:
+	*** 0003f0	a1 00 00 		mov	ax,_targrnge
+	*** 0003f3	f7 e8 			imul	ax
+	*** 0003f5	a3 00 00 		mov	_targrnge,ax
+;|*** }
+; Line 384
+	*** 0003f8	8b e5 			mov	sp,bp
+	*** 0003fa	5d 			pop	bp
+	*** 0003fb	c3 			ret	
+
+_initgdep	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** clrprmpt()
+;|*** {
+; Line 392
+	PUBLIC	_clrprmpt
+_clrprmpt	PROC NEAR
+	*** 0003fc	55 			push	bp
+	*** 0003fd	8b ec 			mov	bp,sp
+	*** 0003ff	83 ec 12 		sub	sp,18
+	*** 000402	56 			push	si
+;	register si = i
+;	reg = -18
+;|*** #ifdef  IBMPC
+;|*** register int    i;
+;|*** struct  regval  reg;
+;|*** 
+;|***         for ( i = 0; i < 4; ++i ) {
+; Line 397
+	*** 000403	2b f6 			sub	si,si
+	*** 000405	eb 01 			jmp	SHORT $F464
+					$FC465:
+	*** 000407	46 			inc	si
+					$F464:
+	*** 000408	83 fe 04 		cmp	si,4
+	*** 00040b	7d 3d 			jge	$FB466
+;|***                 swposcur( 0, 20 + i );
+; Line 398
+	*** 00040d	8d 44 14 		lea	ax,WORD PTR [si+20]
+	*** 000410	50 			push	ax
+	*** 000411	2b c0 			sub	ax,ax
+	*** 000413	50 			push	ax
+	*** 000414	e8 00 00 		call	_swposcur
+	*** 000417	83 c4 04 		add	sp,4
+;|***                 reg.axr = 0x0A20;
+; Line 399
+	*** 00041a	c7 46 ee 20 0a 		mov	WORD PTR [bp-18],2592	;reg
+;|***                 reg.bxr = 0;
+; Line 400
+	*** 00041f	c7 46 f0 00 00 		mov	WORD PTR [bp-16],0
+;|***                 reg.cxr = hires ? 80 : 40;
+; Line 401
+	*** 000424	83 3e 00 00 00 		cmp	WORD PTR _hires,0
+	*** 000429	74 05 			je	$L20010
+	*** 00042b	b8 50 00 		mov	ax,80
+	*** 00042e	eb 03 			jmp	SHORT $L20011
+					$L20010:
+	*** 000430	b8 28 00 		mov	ax,40
+					$L20011:
+	*** 000433	89 46 f2 		mov	WORD PTR [bp-14],ax
+;|***                 sysint( 0x10, &reg, &reg );
+; Line 402
+	*** 000436	8d 46 ee 		lea	ax,WORD PTR [bp-18]	;reg
+	*** 000439	50 			push	ax
+	*** 00043a	8d 46 ee 		lea	ax,WORD PTR [bp-18]	;reg
+	*** 00043d	50 			push	ax
+	*** 00043e	b8 10 00 		mov	ax,16
+	*** 000441	50 			push	ax
+	*** 000442	e8 00 00 		call	_sysint
+	*** 000445	83 c4 06 		add	sp,6
+;|***         }
+; Line 403
+	*** 000448	eb bd 			jmp	SHORT $FC465
+					$FB466:
+;|***         swposcur( 0, 20 );
+; Line 404
+	*** 00044a	b8 14 00 		mov	ax,20
+	*** 00044d	50 			push	ax
+	*** 00044e	2b c0 			sub	ax,ax
+	*** 000450	50 			push	ax
+	*** 000451	e8 00 00 		call	_swposcur
+	*** 000454	83 c4 04 		add	sp,4
+;|*** #endif
+;|*** 
+;|*** #ifdef  ATARI
+;|*** register int     i;
+;|*** 
+;|***         for ( i = 0; i < 4; ++i ) {
+;|***                 swposcur( 0, 20 + i );
+;|***                 puts( "\33K" );
+;|***         }
+;|***         swposcur( 0, 20 );
+;|*** #endif
+;|*** }
+; Line 416
+	*** 000457	5e 			pop	si
+	*** 000458	8b e5 			mov	sp,bp
+	*** 00045a	5d 			pop	bp
+	*** 00045b	c3 			ret	
+
+_clrprmpt	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static getkey()
+;|*** {
+; Line 422
+getkey	PROC NEAR
+	*** 00045c	55 			push	bp
+	*** 00045d	8b ec 			mov	bp,sp
+	*** 00045f	83 ec 02 		sub	sp,2
+;	key = -2
+;|*** register char    key;
+;|*** 
+;|***         /*----------------97/12/27--------------
+;|***         clrprmpt();
+;|***         puts( "Key: 1 - Joystick with IBM Keyboard\r\n" );
+;|***         puts( "     2 - Joystick with non-IBM Keyboard\r\n" );
+;|***         puts( "     3 - IBM Keyboard only\r\n" );
+;|***         puts( "     4 - Non-IBM keyboard only\r\n" );
+;|***         FOREVER {
+;|***                 if ( ctlbreak() )
+;|***                         swend( NULL, NO );
+;|***                 if ( ( ( key = swgetc() & 0x00FF ) < '1' )
+;|***                         || ( key > '4' ) )
+;|***                         continue;
+;|***                 joystick = ( key <= '2' );
+;|***                 ibmkeybd = ( key == '1' ) || ( key == '3' );
+;|***                 return;
+;|***         }
+;|***         ------------------97/12/27--------------*/
+;|***         clrprmpt();
+; Line 442
+	*** 000462	e8 97 ff 		call	_clrprmpt
+;|***         puts( "Key: K - Keyboard Only\r\n" );
+; Line 443
+	*** 000465	b8 cc 02 		mov	ax,OFFSET DGROUP:$SG471
+	*** 000468	50 			push	ax
+	*** 000469	e8 00 00 		call	_puts
+	*** 00046c	83 c4 02 		add	sp,2
+;|***         puts( "     J - Joystick and Keyboard\r\n" );
+; Line 444
+	*** 00046f	b8 e5 02 		mov	ax,OFFSET DGROUP:$SG472
+	*** 000472	50 			push	ax
+	*** 000473	e8 00 00 		call	_puts
+	*** 000476	83 c4 02 		add	sp,2
+;|***         FOREVER {
+; Line 445
+					$FC474:
+;|***                 if ( ctlbreak() )
+; Line 446
+	*** 000479	e8 00 00 		call	_ctlbreak
+	*** 00047c	0b c0 			or	ax,ax
+	*** 00047e	74 0a 			je	$I477
+;|***                         swend( NULL, NO );
+; Line 447
+	*** 000480	2b c0 			sub	ax,ax
+	*** 000482	50 			push	ax
+	*** 000483	50 			push	ax
+	*** 000484	e8 00 00 		call	_swend
+	*** 000487	83 c4 04 		add	sp,4
+;|***                 if ( ( ( key = toupper(swgetc() & 0x00FF) ) != 'K' )
+; Line 448
+					$I477:
+;|***                         && ( key != 'J' ) )
+; Line 449
+	*** 00048a	e8 00 00 		call	_swgetc
+	*** 00048d	2a e4 			sub	ah,ah
+	*** 00048f	50 			push	ax
+	*** 000490	e8 00 00 		call	_toupper
+	*** 000493	83 c4 02 		add	sp,2
+	*** 000496	88 46 fe 		mov	BYTE PTR [bp-2],al	;key
+	*** 000499	3c 4b 			cmp	al,75
+	*** 00049b	74 06 			je	$I481
+	*** 00049d	3c 4a 			cmp	al,74
+	*** 00049f	74 02 			je	$I481
+;|***                         continue;
+; Line 450
+	*** 0004a1	eb d6 			jmp	SHORT $FC474
+;|***                 joystick = key == 'J';
+; Line 451
+					$I481:
+	*** 0004a3	80 7e fe 4a 		cmp	BYTE PTR [bp-2],74	;key
+	*** 0004a7	75 05 			jne	$L20012
+	*** 0004a9	b8 01 00 		mov	ax,1
+	*** 0004ac	eb 02 			jmp	SHORT $L20013
+					$L20012:
+	*** 0004ae	2b c0 			sub	ax,ax
+					$L20013:
+	*** 0004b0	a3 00 00 		mov	_joystick,ax
+;|***                 ibmkeybd = 1;
+; Line 452
+	*** 0004b3	c7 06 00 00 01 00 	mov	WORD PTR _ibmkeybd,1
+;|***                 return;
+; Line 453
+	*** 0004b9	eb 02 			jmp	SHORT $EX469
+;|***         }
+; Line 454
+	*** 0004bb	eb bc 			jmp	SHORT $FC474
+;|*** }
+; Line 455
+					$EX469:
+	*** 0004bd	8b e5 			mov	sp,bp
+	*** 0004bf	5d 			pop	bp
+	*** 0004c0	c3 			ret	
+
+getkey	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static getmode()
+;|*** {
+; Line 462
+getmode	PROC NEAR
+	*** 0004c1	55 			push	bp
+	*** 0004c2	8b ec 			mov	bp,sp
+;|***         clrprmpt();
+; Line 463
+	*** 0004c4	e8 35 ff 		call	_clrprmpt
+;|***         puts( "Key: S - single player\r\n" );
+; Line 464
+	*** 0004c7	b8 06 03 		mov	ax,OFFSET DGROUP:$SG483
+	*** 0004ca	50 			push	ax
+	*** 0004cb	e8 00 00 		call	_puts
+	*** 0004ce	83 c4 02 		add	sp,2
+;|***         puts( "     C - single player against computer\r\n" );
+; Line 465
+	*** 0004d1	b8 1f 03 		mov	ax,OFFSET DGROUP:$SG484
+	*** 0004d4	50 			push	ax
+	*** 0004d5	e8 00 00 		call	_puts
+	*** 0004d8	83 c4 02 		add	sp,2
+;|***         if ( _systype == PCDOS ) {
+; Line 466
+	*** 0004db	83 3e 00 00 00 		cmp	WORD PTR __systype,0
+	*** 0004e0	75 0a 			jne	$I485
+;|***                 /*--------------- 2000/10/29 -----------------------
+;|***                 puts( "     M - multiple players on network\r\n" );
+;|***                 ----------------- 2000/10/29 ---------------------*/
+;|***                 puts( "     A - 2 players on asynchronous line" );
+; Line 470
+	*** 0004e2	b8 49 03 		mov	ax,OFFSET DGROUP:$SG486
+	*** 0004e5	50 			push	ax
+	*** 0004e6	e8 00 00 		call	_puts
+	*** 0004e9	83 c4 02 		add	sp,2
+;|***         }
+; Line 471
+;|***         FOREVER {
+; Line 472
+					$I485:
+;|***                 if ( ctlbreak() )
+; Line 473
+	*** 0004ec	e8 00 00 		call	_ctlbreak
+	*** 0004ef	0b c0 			or	ax,ax
+	*** 0004f1	74 0a 			je	$I490
+;|***                         swend( NULL, NO );
+; Line 474
+	*** 0004f3	2b c0 			sub	ax,ax
+	*** 0004f5	50 			push	ax
+	*** 0004f6	50 			push	ax
+	*** 0004f7	e8 00 00 		call	_swend
+	*** 0004fa	83 c4 04 		add	sp,4
+;|***                 switch ( toupper( swgetc() & 0x00FF ) ) {
+; Line 475
+					$I490:
+	*** 0004fd	e8 00 00 		call	_swgetc
+	*** 000500	2a e4 			sub	ah,ah
+	*** 000502	50 			push	ax
+	*** 000503	e8 00 00 		call	_toupper
+	*** 000506	83 c4 02 		add	sp,2
+	*** 000509	eb 75 			jmp	SHORT $S491
+;|***                         case 'S':
+; Line 476
+					$SC495:
+;|***                                 clrprmpt();
+; Line 477
+	*** 00050b	e8 ee fe 		call	_clrprmpt
+;|***                                 puts( "Key: N - novice player\r\n" );
+; Line 478
+	*** 00050e	b8 71 03 		mov	ax,OFFSET DGROUP:$SG496
+	*** 000511	50 			push	ax
+	*** 000512	e8 00 00 		call	_puts
+	*** 000515	83 c4 02 		add	sp,2
+;|***                                 puts( "     E - expert player\r\n" );
+; Line 479
+	*** 000518	b8 8a 03 		mov	ax,OFFSET DGROUP:$SG497
+	*** 00051b	50 			push	ax
+	*** 00051c	e8 00 00 		call	_puts
+	*** 00051f	83 c4 02 		add	sp,2
+;|***                                 FOREVER {
+; Line 480
+					$FC499:
+;|***                                         if ( ctlbreak() )
+; Line 481
+	*** 000522	e8 00 00 		call	_ctlbreak
+	*** 000525	0b c0 			or	ax,ax
+	*** 000527	74 0a 			je	$I501
+;|***                                                 swend( NULL, NO );
+; Line 482
+	*** 000529	2b c0 			sub	ax,ax
+	*** 00052b	50 			push	ax
+	*** 00052c	50 			push	ax
+	*** 00052d	e8 00 00 		call	_swend
+	*** 000530	83 c4 04 		add	sp,4
+;|***                                         switch ( toupper( swgetc()
+; Line 483
+					$I501:
+;|***                                                         & 0x00FF ) ){
+; Line 484
+	*** 000533	e8 00 00 		call	_swgetc
+	*** 000536	2a e4 			sub	ah,ah
+	*** 000538	50 			push	ax
+	*** 000539	e8 00 00 		call	_toupper
+	*** 00053c	83 c4 02 		add	sp,2
+	*** 00053f	eb 12 			jmp	SHORT $S502
+;|***                                                 case 'N':
+; Line 485
+					$SC506:
+;|***                                                         playmode = NOVICE;
+; Line 486
+	*** 000541	c7 06 00 00 04 00 	mov	WORD PTR _playmode,4
+;|***                                                         return;
+; Line 487
+	*** 000547	eb 53 			jmp	SHORT $EX482
+;|***                                                 case 'E':
+; Line 488
+					$SC507:
+;|***                                                         playmode = SINGLE;
+; Line 489
+	*** 000549	c7 06 00 00 00 00 	mov	WORD PTR _playmode,0
+;|***                                                         return;
+; Line 490
+	*** 00054f	eb 4b 			jmp	SHORT $EX482
+;|***                                         }
+; Line 491
+	*** 000551	eb 0c 			jmp	SHORT $SB503
+					$S502:
+	*** 000553	3d 45 00 		cmp	ax,69
+	*** 000556	74 f1 			je	$SC507
+	*** 000558	3d 4e 00 		cmp	ax,78
+	*** 00055b	74 e4 			je	$SC506
+	*** 00055d	eb 00 			jmp	SHORT $SB503
+					$SB503:
+;|***                                 }
+; Line 492
+	*** 00055f	eb c1 			jmp	SHORT $FC499
+;|***                         case 'M':
+; Line 493
+					$SC508:
+;|***                                 /*----- 2000/10/29 ----------
+;|***                                 if ( _systype == PCDOS ) {
+;|***                                         playmode = MULTIPLE;
+;|***                                         return;
+;|***                                 }
+;|***                                 ------- 2000/10/29 --------*/
+;|***                                 break;
+; Line 500
+	*** 000561	eb 36 			jmp	SHORT $SB492
+;|***                         case 'C':
+; Line 501
+					$SC509:
+;|***                                 playmode = COMPUTER;
+; Line 502
+	*** 000563	c7 06 00 00 02 00 	mov	WORD PTR _playmode,2
+;|***                                 return;
+; Line 503
+	*** 000569	eb 31 			jmp	SHORT $EX482
+;|***                         case 'A':
+; Line 504
+					$SC510:
+;|***                                 if ( _systype == PCDOS ) {
+; Line 505
+	*** 00056b	83 3e 00 00 00 		cmp	WORD PTR __systype,0
+	*** 000570	75 08 			jne	$I511
+;|***                                         playmode = ASYNCH;
+; Line 506
+	*** 000572	c7 06 00 00 03 00 	mov	WORD PTR _playmode,3
+;|***                                         return;
+; Line 507
+	*** 000578	eb 22 			jmp	SHORT $EX482
+;|***                                 }
+; Line 508
+;|***                                 break;
+; Line 509
+					$I511:
+	*** 00057a	eb 1d 			jmp	SHORT $SB492
+;|***                         default:
+; Line 510
+					$SD512:
+;|***                                 break;
+; Line 511
+	*** 00057c	eb 1b 			jmp	SHORT $SB492
+;|***                 }
+; Line 512
+	*** 00057e	eb 19 			jmp	SHORT $SB492
+					$S491:
+	*** 000580	3d 41 00 		cmp	ax,65
+	*** 000583	74 e6 			je	$SC510
+	*** 000585	3d 43 00 		cmp	ax,67
+	*** 000588	74 d9 			je	$SC509
+	*** 00058a	3d 4d 00 		cmp	ax,77
+	*** 00058d	74 d2 			je	$SC508
+	*** 00058f	3d 53 00 		cmp	ax,83
+	*** 000592	75 03 			jne	$JCC1426
+	*** 000594	e9 74 ff 		jmp	$SC495
+					$JCC1426:
+	*** 000597	eb e3 			jmp	SHORT $SD512
+					$SB492:
+;|***         }
+; Line 513
+	*** 000599	e9 50 ff 		jmp	$I485
+;|*** }
+; Line 514
+					$EX482:
+	*** 00059c	8b e5 			mov	sp,bp
+	*** 00059e	5d 			pop	bp
+	*** 00059f	c3 			ret	
+
+getmode	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** getgame()
+;|*** {
+; Line 520
+	PUBLIC	_getgame
+_getgame	PROC NEAR
+	*** 0005a0	55 			push	bp
+	*** 0005a1	8b ec 			mov	bp,sp
+	*** 0005a3	83 ec 02 		sub	sp,2
+	*** 0005a6	56 			push	si
+;	register si = game
+;|*** register int     game;
+;|*** 
+;|***         clrprmpt();
+; Line 523
+	*** 0005a7	e8 52 fe 		call	_clrprmpt
+;|***         puts( "         Key a game number" );
+; Line 524
+	*** 0005aa	b8 a3 03 		mov	ax,OFFSET DGROUP:$SG516
+	*** 0005ad	50 			push	ax
+	*** 0005ae	e8 00 00 		call	_puts
+	*** 0005b1	83 c4 02 		add	sp,2
+;|***         FOREVER {
+; Line 525
+					$FC518:
+;|***                 if ( ctlbreak() )
+; Line 526
+	*** 0005b4	e8 00 00 		call	_ctlbreak
+	*** 0005b7	0b c0 			or	ax,ax
+	*** 0005b9	74 0a 			je	$I520
+;|***                         swend( NULL, NO );
+; Line 527
+	*** 0005bb	2b c0 			sub	ax,ax
+	*** 0005bd	50 			push	ax
+	*** 0005be	50 			push	ax
+	*** 0005bf	e8 00 00 		call	_swend
+	*** 0005c2	83 c4 04 		add	sp,4
+;|***                 if ( ( ( game = ( swgetc() & 0x00FF ) - '0' ) >= 0 )
+; Line 528
+					$I520:
+;|***                     && ( game <= MAX_GAME ) )
+; Line 529
+	*** 0005c5	e8 00 00 		call	_swgetc
+	*** 0005c8	2a e4 			sub	ah,ah
+	*** 0005ca	2d 30 00 		sub	ax,48
+	*** 0005cd	8b f0 			mov	si,ax
+	*** 0005cf	0b f6 			or	si,si
+	*** 0005d1	7c 07 			jl	$I521
+	*** 0005d3	83 fe 07 		cmp	si,7
+	*** 0005d6	7f 02 			jg	$I521
+;|***                         return( game );
+; Line 530
+	*** 0005d8	eb 02 			jmp	SHORT $EX514
+;|***         }
+; Line 531
+					$I521:
+	*** 0005da	eb d8 			jmp	SHORT $FC518
+;|*** }
+; Line 532
+					$EX514:
+	*** 0005dc	5e 			pop	si
+	*** 0005dd	8b e5 			mov	sp,bp
+	*** 0005df	5d 			pop	bp
+	*** 0005e0	c3 			ret	
+
+_getgame	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** BOOL    ctlbreak()
+;|*** {
+; Line 538
+	PUBLIC	_ctlbreak
+_ctlbreak	PROC NEAR
+	*** 0005e1	55 			push	bp
+	*** 0005e2	8b ec 			mov	bp,sp
+;|***         return( ctlbflag );
+; Line 539
+	*** 0005e4	a1 00 00 		mov	ax,_ctlbflag
+	*** 0005e7	eb 00 			jmp	SHORT $EX522
+;|*** }
+; Line 540
+					$EX522:
+	*** 0005e9	8b e5 			mov	sp,bp
+	*** 0005eb	5d 			pop	bp
+	*** 0005ec	c3 			ret	
+
+_ctlbreak	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static  initgrnd()
+;|*** {
+; Line 546
+initgrnd	PROC NEAR
+	*** 0005ed	55 			push	bp
+	*** 0005ee	8b ec 			mov	bp,sp
+;|***         movmem( orground, ground, sizeof( GRNDTYPE ) * MAX_X );
+; Line 547
+	*** 0005f0	b8 b8 0b 		mov	ax,3000
+	*** 0005f3	50 			push	ax
+	*** 0005f4	b8 00 00 		mov	ax,OFFSET _ground
+	*** 0005f7	50 			push	ax
+	*** 0005f8	b8 00 00 		mov	ax,OFFSET _orground
+	*** 0005fb	50 			push	ax
+	*** 0005fc	e8 00 00 		call	_movmem
+	*** 0005ff	83 c4 06 		add	sp,6
+;|*** }
+; Line 548
+	*** 000602	8b e5 			mov	sp,bp
+	*** 000604	5d 			pop	bp
+	*** 000605	c3 			ret	
+
+initgrnd	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** initdisp( reset )
+;|*** BOOL    reset;
+; Line 554
+	PUBLIC	_initdisp
+_initdisp	PROC NEAR
+	*** 000606	55 			push	bp
+	*** 000607	8b ec 			mov	bp,sp
+	*** 000609	83 ec 78 		sub	sp,120
+	*** 00060c	56 			push	si
+;|*** {
+; Line 555
+;	reset = 4
+;	register si = ob
+;	ghostob = -120
+;|*** register OBJECTS *ob;
+;|*** OBJECTS          ghostob;
+;|*** extern   char    swghtsym[];
+;|*** 
+;|***         splatox = oxsplatted = 0;
+; Line 560
+	*** 00060d	2b c0 			sub	ax,ax
+	*** 00060f	a3 00 00 		mov	_oxsplatted,ax
+	*** 000612	a3 00 00 		mov	_splatox,ax
+;|***         if ( !reset ) {
+; Line 561
+	*** 000615	39 46 04 		cmp	WORD PTR [bp+4],ax	;reset
+	*** 000618	75 12 			jne	$I529
+;|***                 clrdispa();
+; Line 562
+	*** 00061a	e8 00 00 		call	clrdispa
+;|***                 setadisp();
+; Line 563
+	*** 00061d	e8 00 00 		call	_setadisp
+;|***                 dispworld();
+; Line 564
+	*** 000620	e8 00 00 		call	dispworld
+;|***                 swtitlf();
+; Line 565
+	*** 000623	e8 00 00 		call	_swtitlf
+;|***                 ghost = FALSE;
+; Line 566
+	*** 000626	c7 06 00 00 00 00 	mov	WORD PTR $S348_ghost,0
+;|***         }
+; Line 567
+;|***         movedisp();
+; Line 568
+					$I529:
+	*** 00062c	e8 00 00 		call	movedisp
+;|***         setvdisp();
+; Line 569
+	*** 00062f	e8 00 00 		call	_setvdisp
+;|***         initwobj();
+; Line 570
+	*** 000632	e8 00 00 		call	initwobj
+;|***         initscore();
+; Line 571
+	*** 000635	e8 00 00 		call	initscore
+;|*** 
+;|***         ob = &nobjects[player];
+; Line 573
+	*** 000638	b8 76 00 		mov	ax,118
+	*** 00063b	f7 2e 00 00 		imul	WORD PTR _player
+	*** 00063f	8b f0 			mov	si,ax
+	*** 000641	03 36 00 00 		add	si,_nobjects
+;|***         if ( ghost ) {
+; Line 574
+	*** 000645	83 3e 00 00 00 		cmp	WORD PTR $S348_ghost,0
+	*** 00064a	74 2d 			je	$I537
+;|***                 ghostob.ob_type = DUMMYTYPE;
+; Line 575
+	*** 00064c	c7 46 e8 63 00 		mov	WORD PTR [bp-24],99
+;|***                 ghostob.ob_symhgt = ghostob.ob_symwdt = 8;
+; Line 576
+	*** 000651	b8 08 00 		mov	ax,8
+	*** 000654	89 46 ac 		mov	WORD PTR [bp-84],ax
+	*** 000657	89 46 aa 		mov	WORD PTR [bp-86],ax
+;|***                 ghostob.ob_clr = ob->ob_clr;
+; Line 577
+	*** 00065a	8b 44 2a 		mov	ax,WORD PTR [si+42]
+	*** 00065d	89 46 b2 		mov	WORD PTR [bp-78],ax
+;|***                 ghostob.ob_newsym = swghtsym;
+; Line 578
+	*** 000660	c7 46 d6 00 00 		mov	WORD PTR [bp-42],OFFSET _swghtsym
+;|***                 swputsym( GHOSTX, 12, &ghostob );
+; Line 579
+	*** 000665	8d 46 88 		lea	ax,WORD PTR [bp-120]	;ghostob
+	*** 000668	50 			push	ax
+	*** 000669	b8 0c 00 		mov	ax,12
+	*** 00066c	50 			push	ax
+	*** 00066d	b8 83 00 		mov	ax,131
+	*** 000670	50 			push	ax
+	*** 000671	e8 00 00 		call	_swputsym
+	*** 000674	83 c4 06 		add	sp,6
+;|***         } else {
+; Line 580
+	*** 000677	eb 2a 			jmp	SHORT $I539
+					$I537:
+;|***                 dispfgge( ob );
+; Line 581
+	*** 000679	56 			push	si
+	*** 00067a	e8 00 00 		call	_dispfgge
+	*** 00067d	83 c4 02 		add	sp,2
+;|***                 dispbgge( ob );
+; Line 582
+	*** 000680	56 			push	si
+	*** 000681	e8 00 00 		call	_dispbgge
+	*** 000684	83 c4 02 		add	sp,2
+;|***                 dispmgge( ob );
+; Line 583
+	*** 000687	56 			push	si
+	*** 000688	e8 00 00 		call	_dispmgge
+	*** 00068b	83 c4 02 		add	sp,2
+;|***                 dispsbgge( ob );
+; Line 584
+	*** 00068e	56 			push	si
+	*** 00068f	e8 00 00 		call	_dispsbgge
+	*** 000692	83 c4 02 		add	sp,2
+;|***                 dispsgge( ob );
+; Line 585
+	*** 000695	56 			push	si
+	*** 000696	e8 00 00 		call	_dispsgge
+	*** 000699	83 c4 02 		add	sp,2
+;|***                 dispcgge( ob );
+; Line 586
+	*** 00069c	56 			push	si
+	*** 00069d	e8 00 00 		call	_dispcgge
+	*** 0006a0	83 c4 02 		add	sp,2
+;|***         }
+; Line 587
+					$I539:
+;|***         dispinit = TRUE;
+; Line 588
+	*** 0006a3	c7 06 00 00 01 00 	mov	WORD PTR _dispinit,1
+;|*** }
+; Line 589
+	*** 0006a9	5e 			pop	si
+	*** 0006aa	8b e5 			mov	sp,bp
+	*** 0006ac	5d 			pop	bp
+	*** 0006ad	c3 			ret	
+
+_initdisp	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** static  initscore()
+;|*** {
+; Line 594
+initscore	PROC NEAR
+	*** 0006ae	55 			push	bp
+	*** 0006af	8b ec 			mov	bp,sp
+;|***         if ( savescore ) {
+; Line 595
+	*** 0006b1	83 3e 02 00 00 		cmp	WORD PTR $S347_savescore,0
+	*** 0006b6	74 10 			je	$I546
+;|***                   nobjects[0].ob_score = savescore;
+; Line 596
+	*** 0006b8	8b 1e 00 00 		mov	bx,_nobjects
+	*** 0006bc	a1 02 00 		mov	ax,$S347_savescore
+	*** 0006bf	89 47 16 		mov	WORD PTR [bx+22],ax
+;|***                   savescore = 0;
+; Line 597
+	*** 0006c2	c7 06 02 00 00 00 	mov	WORD PTR $S347_savescore,0
+;|***         }
+; Line 598
+;|*** 
+;|***         dispscore( &nobjects[0] );
+; Line 600
+					$I546:
+	*** 0006c8	ff 36 00 00 		push	WORD PTR _nobjects
+	*** 0006cc	e8 00 00 		call	_dispscore
+	*** 0006cf	83 c4 02 		add	sp,2
+;|***         if ( ( ( playmode == MULTIPLE ) || ( playmode == ASYNCH ) )
+;|***                 && ( multbuff->mu_maxplyr > 1 ) )
+; Line 602
+	*** 0006d2	83 3e 00 00 01 		cmp	WORD PTR _playmode,1
+	*** 0006d7	74 07 			je	$I548
+	*** 0006d9	83 3e 00 00 03 		cmp	WORD PTR _playmode,3
+	*** 0006de	75 16 			jne	$I547
+					$I548:
+	*** 0006e0	8b 1e 00 00 		mov	bx,_multbuff
+	*** 0006e4	83 3f 01 		cmp	WORD PTR [bx],1
+	*** 0006e7	76 0d 			jbe	$I547
+;|***                 dispscore( &nobjects[1] );
+; Line 603
+	*** 0006e9	a1 00 00 		mov	ax,_nobjects
+	*** 0006ec	05 76 00 		add	ax,118
+	*** 0006ef	50 			push	ax
+	*** 0006f0	e8 00 00 		call	_dispscore
+	*** 0006f3	83 c4 02 		add	sp,2
+;|*** }
+; Line 604
+					$I547:
+	*** 0006f6	8b e5 			mov	sp,bp
+	*** 0006f8	5d 			pop	bp
+	*** 0006f9	c3 			ret	
+
+initscore	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** dispcgge( ob )
+;|*** OBJECTS *ob;
+; Line 610
+	PUBLIC	_dispcgge
+_dispcgge	PROC NEAR
+	*** 0006fa	55 			push	bp
+	*** 0006fb	8b ec 			mov	bp,sp
+;|*** {
+; Line 611
+;	ob = 4
+;|***         dispgge( CGUAGEX, maxcrash - ob->ob_crashcnt, maxcrash, ob->ob_clr );
+; Line 612
+	*** 0006fd	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;ob
+	*** 000700	ff 77 2a 		push	WORD PTR [bx+42]
+	*** 000703	ff 36 00 00 		push	WORD PTR _maxcrash
+	*** 000707	a1 00 00 		mov	ax,_maxcrash
+	*** 00070a	2b 47 4c 		sub	ax,WORD PTR [bx+76]
+	*** 00070d	50 			push	ax
+	*** 00070e	b8 7f 00 		mov	ax,127
+	*** 000711	50 			push	ax
+	*** 000712	e8 00 00 		call	dispgge
+	*** 000715	83 c4 08 		add	sp,8
+;|*** }
+; Line 613
+	*** 000718	8b e5 			mov	sp,bp
+	*** 00071a	5d 			pop	bp
+	*** 00071b	c3 			ret	
+
+_dispcgge	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** dispfgge( ob )
+;|*** OBJECTS *ob;
+; Line 619
+	PUBLIC	_dispfgge
+_dispfgge	PROC NEAR
+	*** 00071c	55 			push	bp
+	*** 00071d	8b ec 			mov	bp,sp
+;|*** {
+; Line 620
+;	ob = 4
+;|***         dispgge( FGUAGEX, ob->ob_life >> 4, MAXFUEL >> 4, ob->ob_clr );
+; Line 621
+	*** 00071f	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;ob
+	*** 000722	ff 77 2a 		push	WORD PTR [bx+42]
+	*** 000725	b8 32 02 		mov	ax,562
+	*** 000728	50 			push	ax
+	*** 000729	8b 47 1e 		mov	ax,WORD PTR [bx+30]
+	*** 00072c	b1 04 			mov	cl,4
+	*** 00072e	d3 f8 			sar	ax,cl
+	*** 000730	50 			push	ax
+	*** 000731	b8 82 00 		mov	ax,130
+	*** 000734	50 			push	ax
+	*** 000735	e8 00 00 		call	dispgge
+	*** 000738	83 c4 08 		add	sp,8
+;|*** }
+; Line 622
+	*** 00073b	8b e5 			mov	sp,bp
+	*** 00073d	5d 			pop	bp
+	*** 00073e	c3 			ret	
+
+_dispfgge	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** dispbgge( ob )
+;|*** OBJECTS *ob;
+; Line 628
+	PUBLIC	_dispbgge
+_dispbgge	PROC NEAR
+	*** 00073f	55 			push	bp
+	*** 000740	8b ec 			mov	bp,sp
+;|*** {
+; Line 629
+;	ob = 4
+;|***         dispgge( BGUAGEX, ob->ob_bombs, MAXBOMBS, 3 - ob->ob_clr );
+; Line 630
+	*** 000742	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;ob
+	*** 000745	b8 03 00 		mov	ax,3
+	*** 000748	2b 47 2a 		sub	ax,WORD PTR [bx+42]
+	*** 00074b	50 			push	ax
+	*** 00074c	b8 05 00 		mov	ax,5
+	*** 00074f	50 			push	ax
+	*** 000750	ff 77 28 		push	WORD PTR [bx+40]
+	*** 000753	b8 85 00 		mov	ax,133
+	*** 000756	50 			push	ax
+	*** 000757	e8 00 00 		call	dispgge
+	*** 00075a	83 c4 08 		add	sp,8
+;|*** }
+; Line 631
+	*** 00075d	8b e5 			mov	sp,bp
+	*** 00075f	5d 			pop	bp
+	*** 000760	c3 			ret	
+
+_dispbgge	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** dispsgge( ob )
+;|*** OBJECTS *ob;
+; Line 637
+	PUBLIC	_dispsgge
+_dispsgge	PROC NEAR
+	*** 000761	55 			push	bp
+	*** 000762	8b ec 			mov	bp,sp
+;|*** {
+; Line 638
+;	ob = 4
+;|***         dispgge( SGUAGEX, ob->ob_rounds, MAXROUNDS, 3 );
+; Line 639
+	*** 000764	b8 03 00 		mov	ax,3
+	*** 000767	50 			push	ax
+	*** 000768	b8 c8 00 		mov	ax,200
+	*** 00076b	50 			push	ax
+	*** 00076c	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;ob
+	*** 00076f	ff 77 18 		push	WORD PTR [bx+24]
+	*** 000772	b8 88 00 		mov	ax,136
+	*** 000775	50 			push	ax
+	*** 000776	e8 00 00 		call	dispgge
+	*** 000779	83 c4 08 		add	sp,8
+;|*** }
+; Line 640
+	*** 00077c	8b e5 			mov	sp,bp
+	*** 00077e	5d 			pop	bp
+	*** 00077f	c3 			ret	
+
+_dispsgge	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** dispmgge( ob )
+;|*** OBJECTS *ob;
+; Line 646
+	PUBLIC	_dispmgge
+_dispmgge	PROC NEAR
+	*** 000780	55 			push	bp
+	*** 000781	8b ec 			mov	bp,sp
+;|*** {
+; Line 647
+;	ob = 4
+;|***         dispgge( MGUAGEX, ob->ob_missiles, MAXMISSILES, ob->ob_clr );
+; Line 648
+	*** 000783	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;ob
+	*** 000786	ff 77 2a 		push	WORD PTR [bx+42]
+	*** 000789	b8 05 00 		mov	ax,5
+	*** 00078c	50 			push	ax
+	*** 00078d	ff 77 68 		push	WORD PTR [bx+104]
+	*** 000790	b8 8b 00 		mov	ax,139
+	*** 000793	50 			push	ax
+	*** 000794	e8 00 00 		call	dispgge
+	*** 000797	83 c4 08 		add	sp,8
+;|*** }
+; Line 649
+	*** 00079a	8b e5 			mov	sp,bp
+	*** 00079c	5d 			pop	bp
+	*** 00079d	c3 			ret	
+
+_dispmgge	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** dispsbgge( ob )
+;|*** OBJECTS *ob;
+; Line 655
+	PUBLIC	_dispsbgge
+_dispsbgge	PROC NEAR
+	*** 00079e	55 			push	bp
+	*** 00079f	8b ec 			mov	bp,sp
+;|*** {
+; Line 656
+;	ob = 4
+;|***         dispgge( SBGUAGEX, ob->ob_bursts, MAXBURSTS, 3 - ob->ob_clr );
+; Line 657
+	*** 0007a1	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;ob
+	*** 0007a4	b8 03 00 		mov	ax,3
+	*** 0007a7	2b 47 2a 		sub	ax,WORD PTR [bx+42]
+	*** 0007aa	50 			push	ax
+	*** 0007ab	b8 05 00 		mov	ax,5
+	*** 0007ae	50 			push	ax
+	*** 0007af	ff 77 70 		push	WORD PTR [bx+112]
+	*** 0007b2	b8 8e 00 		mov	ax,142
+	*** 0007b5	50 			push	ax
+	*** 0007b6	e8 00 00 		call	dispgge
+	*** 0007b9	83 c4 08 		add	sp,8
+;|*** }
+; Line 658
+	*** 0007bc	8b e5 			mov	sp,bp
+	*** 0007be	5d 			pop	bp
+	*** 0007bf	c3 			ret	
+
+_dispsbgge	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static  dispgge( x, cury, maxy, clr )
+;|*** int     x, cury, maxy, clr;
+; Line 664
+dispgge	PROC NEAR
+	*** 0007c0	55 			push	bp
+	*** 0007c1	8b ec 			mov	bp,sp
+	*** 0007c3	83 ec 02 		sub	sp,2
+	*** 0007c6	56 			push	si
+;|*** {
+; Line 665
+;	x = 4
+;	cury = 6
+;	maxy = 8
+;	clr = 10
+;	register si = y
+;|*** register int     y;
+;|*** 
+;|***         if ( ghost )
+; Line 668
+	*** 0007c7	83 3e 00 00 00 		cmp	WORD PTR $S348_ghost,0
+	*** 0007cc	74 02 			je	$I568
+;|***                 return;
+; Line 669
+	*** 0007ce	eb 51 			jmp	SHORT $FB576
+;|*** 
+;|***         cury = cury * 10 / maxy - 1;
+; Line 671
+					$I568:
+	*** 0007d0	8b 46 06 		mov	ax,WORD PTR [bp+6]	;cury
+	*** 0007d3	8b c8 			mov	cx,ax
+	*** 0007d5	d1 e0 			shl	ax,1
+	*** 0007d7	d1 e0 			shl	ax,1
+	*** 0007d9	03 c1 			add	ax,cx
+	*** 0007db	d1 e0 			shl	ax,1
+	*** 0007dd	99 			cwd	
+	*** 0007de	8b 4e 08 		mov	cx,WORD PTR [bp+8]	;maxy
+	*** 0007e1	f7 f9 			idiv	cx
+	*** 0007e3	48 			dec	ax
+	*** 0007e4	89 46 06 		mov	WORD PTR [bp+6],ax	;cury
+;|***         if ( cury > 9 )
+; Line 672
+	*** 0007e7	3d 09 00 		cmp	ax,9
+	*** 0007ea	7e 05 			jle	$I569
+;|***                 cury = 9;
+; Line 673
+	*** 0007ec	c7 46 06 09 00 		mov	WORD PTR [bp+6],9	;cury
+;|***         for ( y = 0; y <= cury; ++y )
+; Line 674
+					$I569:
+	*** 0007f1	2b f6 			sub	si,si
+	*** 0007f3	eb 01 			jmp	SHORT $F570
+					$FC571:
+	*** 0007f5	46 			inc	si
+					$F570:
+	*** 0007f6	39 76 06 		cmp	WORD PTR [bp+6],si	;cury
+	*** 0007f9	7c 0f 			jl	$FB572
+;|***                 swpntsym( x, y, clr );
+; Line 675
+	*** 0007fb	ff 76 0a 		push	WORD PTR [bp+10]	;clr
+	*** 0007fe	56 			push	si
+	*** 0007ff	ff 76 04 		push	WORD PTR [bp+4]	;x
+	*** 000802	e8 00 00 		call	_swpntsym
+	*** 000805	83 c4 06 		add	sp,6
+	*** 000808	eb eb 			jmp	SHORT $FC571
+					$FB572:
+;|***         for ( ; y <= 9; ++y )
+; Line 676
+	*** 00080a	eb 01 			jmp	SHORT $F574
+					$FC575:
+	*** 00080c	46 			inc	si
+					$F574:
+	*** 00080d	83 fe 09 		cmp	si,9
+	*** 000810	7f 0f 			jg	$FB576
+;|***                 swpntsym( x, y, 0 );
+; Line 677
+	*** 000812	2b c0 			sub	ax,ax
+	*** 000814	50 			push	ax
+	*** 000815	56 			push	si
+	*** 000816	ff 76 04 		push	WORD PTR [bp+4]	;x
+	*** 000819	e8 00 00 		call	_swpntsym
+	*** 00081c	83 c4 06 		add	sp,6
+	*** 00081f	eb eb 			jmp	SHORT $FC575
+					$FB576:
+;|*** }
+; Line 678
+	*** 000821	5e 			pop	si
+	*** 000822	8b e5 			mov	sp,bp
+	*** 000824	5d 			pop	bp
+	*** 000825	c3 			ret	
+
+dispgge	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** static dispworld()
+;|*** {
+; Line 683
+dispworld	PROC NEAR
+	*** 000826	55 			push	bp
+	*** 000827	8b ec 			mov	bp,sp
+	*** 000829	83 ec 0c 		sub	sp,12
+	*** 00082c	57 			push	di
+	*** 00082d	56 			push	si
+;	register si = x
+;	register di = y
+;	dx = -8
+;	maxh = -10
+;	sx = -6
+;|*** register int     x, y, dx, maxh, sx;
+;|*** 
+;|***         dx = 0;
+; Line 686
+	*** 00082e	c7 46 f8 00 00 		mov	WORD PTR [bp-8],0	;dx
+;|***         sx = SCR_CENTR;
+; Line 687
+	*** 000833	c7 46 fa 98 00 		mov	WORD PTR [bp-6],152	;sx
+;|*** 
+;|***         maxh = 0;
+; Line 689
+	*** 000838	c7 46 f6 00 00 		mov	WORD PTR [bp-10],0	;maxh
+;|***         y = 0;
+; Line 690
+	*** 00083d	2b ff 			sub	di,di
+;|***         for ( x = 0; x < MAX_X; ++x ) {
+; Line 691
+	*** 00083f	2b f6 			sub	si,si
+	*** 000841	eb 01 			jmp	SHORT $F583
+					$FC584:
+	*** 000843	46 			inc	si
+					$F583:
+	*** 000844	81 fe b8 0b 		cmp	si,3000
+	*** 000848	7c 03 			jl	$JCC2120
+	*** 00084a	e9 96 00 		jmp	$FB585
+					$JCC2120:
+;|*** 
+;|***                 if ( ground[x] > maxh )
+; Line 693
+	*** 00084d	8a 84 00 00 		mov	al,BYTE PTR _ground[si]
+	*** 000851	2a e4 			sub	ah,ah
+	*** 000853	89 46 f4 		mov	WORD PTR [bp-12],ax
+	*** 000856	39 46 f6 		cmp	WORD PTR [bp-10],ax	;maxh
+	*** 000859	73 03 			jae	$I586
+;|***                         maxh = ground[x];
+; Line 694
+	*** 00085b	89 46 f6 		mov	WORD PTR [bp-10],ax	;maxh
+;|*** 
+;|***                 if ( ( ++dx ) == WRLD_RSX ) {
+; Line 696
+					$I586:
+	*** 00085e	ff 46 f8 		inc	WORD PTR [bp-8]	;dx
+	*** 000861	83 7e f8 13 		cmp	WORD PTR [bp-8],19	;dx
+	*** 000865	75 79 			jne	$I587
+;|***                         maxh /= WRLD_RSY;
+; Line 697
+	*** 000867	b9 0d 00 		mov	cx,13
+	*** 00086a	8b 46 f6 		mov	ax,WORD PTR [bp-10]	;maxh
+	*** 00086d	99 			cwd	
+	*** 00086e	f7 f9 			idiv	cx
+	*** 000870	89 46 f6 		mov	WORD PTR [bp-10],ax	;maxh
+;|***                         if ( maxh == y )
+; Line 698
+	*** 000873	3b c7 			cmp	ax,di
+	*** 000875	75 12 			jne	$I588
+;|***                                 swpntsym( sx, maxh, 7 );
+; Line 699
+	*** 000877	b8 07 00 		mov	ax,7
+	*** 00087a	50 			push	ax
+	*** 00087b	ff 76 f6 		push	WORD PTR [bp-10]	;maxh
+	*** 00087e	ff 76 fa 		push	WORD PTR [bp-6]	;sx
+	*** 000881	e8 00 00 		call	_swpntsym
+	*** 000884	83 c4 06 		add	sp,6
+;|***                         else
+; Line 700
+	*** 000887	eb 39 			jmp	SHORT $FB597
+					$I588:
+;|***                                 if ( maxh > y )
+; Line 701
+	*** 000889	39 7e f6 		cmp	WORD PTR [bp-10],di	;maxh
+	*** 00088c	7e 1b 			jle	$I590
+;|***                                         for ( ++y; y <= maxh; ++y )
+; Line 702
+	*** 00088e	47 			inc	di
+	*** 00088f	eb 01 			jmp	SHORT $F591
+					$FC592:
+	*** 000891	47 			inc	di
+					$F591:
+	*** 000892	39 7e f6 		cmp	WORD PTR [bp-10],di	;maxh
+	*** 000895	7c 10 			jl	$FB593
+;|***                                                 swpntsym( sx, y, 7 );
+; Line 703
+	*** 000897	b8 07 00 		mov	ax,7
+	*** 00089a	50 			push	ax
+	*** 00089b	57 			push	di
+	*** 00089c	ff 76 fa 		push	WORD PTR [bp-6]	;sx
+	*** 00089f	e8 00 00 		call	_swpntsym
+	*** 0008a2	83 c4 06 		add	sp,6
+	*** 0008a5	eb ea 			jmp	SHORT $FC592
+					$FB593:
+;|***                                 else
+; Line 704
+	*** 0008a7	eb 19 			jmp	SHORT $FB597
+					$I590:
+;|***                                         for ( --y; y >= maxh; --y )
+; Line 705
+	*** 0008a9	4f 			dec	di
+	*** 0008aa	eb 01 			jmp	SHORT $F595
+					$FC596:
+	*** 0008ac	4f 			dec	di
+					$F595:
+	*** 0008ad	39 7e f6 		cmp	WORD PTR [bp-10],di	;maxh
+	*** 0008b0	7f 10 			jg	$FB597
+;|***                                                 swpntsym( sx, y, 7 );
+; Line 706
+	*** 0008b2	b8 07 00 		mov	ax,7
+	*** 0008b5	50 			push	ax
+	*** 0008b6	57 			push	di
+	*** 0008b7	ff 76 fa 		push	WORD PTR [bp-6]	;sx
+	*** 0008ba	e8 00 00 		call	_swpntsym
+	*** 0008bd	83 c4 06 		add	sp,6
+	*** 0008c0	eb ea 			jmp	SHORT $FC596
+					$FB597:
+;|***                         y = maxh;
+; Line 707
+	*** 0008c2	8b 7e f6 		mov	di,WORD PTR [bp-10]	;maxh
+;|***                         swpntsym( sx, 0, 11 );
+; Line 708
+	*** 0008c5	b8 0b 00 		mov	ax,11
+	*** 0008c8	50 			push	ax
+	*** 0008c9	2b c0 			sub	ax,ax
+	*** 0008cb	50 			push	ax
+	*** 0008cc	ff 76 fa 		push	WORD PTR [bp-6]	;sx
+	*** 0008cf	e8 00 00 		call	_swpntsym
+	*** 0008d2	83 c4 06 		add	sp,6
+;|***                         ++sx;
+; Line 709
+	*** 0008d5	ff 46 fa 		inc	WORD PTR [bp-6]	;sx
+;|***                         dx = maxh = 0;
+; Line 710
+	*** 0008d8	2b c0 			sub	ax,ax
+	*** 0008da	89 46 f6 		mov	WORD PTR [bp-10],ax	;maxh
+	*** 0008dd	89 46 f8 		mov	WORD PTR [bp-8],ax	;dx
+;|***                 }
+; Line 711
+;|***         }
+; Line 712
+					$I587:
+	*** 0008e0	e9 60 ff 		jmp	$FC584
+					$FB585:
+;|***         maxh = MAX_Y / WRLD_RSY;
+; Line 713
+	*** 0008e3	c7 46 f6 0f 00 		mov	WORD PTR [bp-10],15	;maxh
+;|***         for ( y = 0; y <= maxh; ++y ) {
+; Line 714
+	*** 0008e8	2b ff 			sub	di,di
+	*** 0008ea	eb 01 			jmp	SHORT $F598
+					$FC599:
+	*** 0008ec	47 			inc	di
+					$F598:
+	*** 0008ed	39 7e f6 		cmp	WORD PTR [bp-10],di	;maxh
+	*** 0008f0	7c 1f 			jl	$FB600
+;|***                 swpntsym( SCR_CENTR, y, 11 );
+; Line 715
+	*** 0008f2	b8 0b 00 		mov	ax,11
+	*** 0008f5	50 			push	ax
+	*** 0008f6	57 			push	di
+	*** 0008f7	b8 98 00 		mov	ax,152
+	*** 0008fa	50 			push	ax
+	*** 0008fb	e8 00 00 		call	_swpntsym
+	*** 0008fe	83 c4 06 		add	sp,6
+;|***                 swpntsym( sx, y, 11 );
+; Line 716
+	*** 000901	b8 0b 00 		mov	ax,11
+	*** 000904	50 			push	ax
+	*** 000905	57 			push	di
+	*** 000906	ff 76 fa 		push	WORD PTR [bp-6]	;sx
+	*** 000909	e8 00 00 		call	_swpntsym
+	*** 00090c	83 c4 06 		add	sp,6
+;|***         }
+; Line 717
+	*** 00090f	eb db 			jmp	SHORT $FC599
+					$FB600:
+;|*** 
+;|***         for ( x = 0; x < SCR_WDTH; ++x )
+; Line 719
+	*** 000911	2b f6 			sub	si,si
+	*** 000913	eb 01 			jmp	SHORT $F601
+					$FC602:
+	*** 000915	46 			inc	si
+					$F601:
+	*** 000916	81 fe 40 01 		cmp	si,320
+	*** 00091a	7d 11 			jge	$FB603
+;|***                 swpntsym( x, (SCR_MNSH+2), 7 );
+; Line 720
+	*** 00091c	b8 07 00 		mov	ax,7
+	*** 00091f	50 			push	ax
+	*** 000920	b8 12 00 		mov	ax,18
+	*** 000923	50 			push	ax
+	*** 000924	56 			push	si
+	*** 000925	e8 00 00 		call	_swpntsym
+	*** 000928	83 c4 06 		add	sp,6
+	*** 00092b	eb e8 			jmp	SHORT $FC602
+					$FB603:
+;|*** }
+; Line 721
+	*** 00092d	5e 			pop	si
+	*** 00092e	5f 			pop	di
+	*** 00092f	8b e5 			mov	sp,bp
+	*** 000931	5d 			pop	bp
+	*** 000932	c3 			ret	
+
+dispworld	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static initwobj()
+;|*** {
+; Line 728
+initwobj	PROC NEAR
+	*** 000933	55 			push	bp
+	*** 000934	8b ec 			mov	bp,sp
+	*** 000936	83 ec 06 		sub	sp,6
+	*** 000939	57 			push	di
+	*** 00093a	56 			push	si
+;	x = -6
+;	register si = ob
+;	register di = ow
+;|*** int     x;
+;|*** register OBJECTS *ob;
+;|*** register OLDWDISP *ow;
+;|*** 
+;|***         ow = wdisp;
+; Line 733
+	*** 00093b	bf 00 00 		mov	di,OFFSET _wdisp
+;|***         ob = nobjects;
+; Line 734
+	*** 00093e	8b 36 00 00 		mov	si,_nobjects
+;|***         for ( x = 0; x < MAX_OBJS; ++x, ow++, ob++ )
+; Line 735
+	*** 000942	c7 46 fa 00 00 		mov	WORD PTR [bp-6],0	;x
+	*** 000947	eb 0b 			jmp	SHORT $F608
+					$FC609:
+	*** 000949	ff 46 fa 		inc	WORD PTR [bp-6]	;x
+	*** 00094c	8b c7 			mov	ax,di
+	*** 00094e	83 c7 06 		add	di,6
+	*** 000951	83 c6 76 		add	si,118
+					$F608:
+	*** 000954	83 7e fa 64 		cmp	WORD PTR [bp-6],100	;x
+	*** 000958	7d 0c 			jge	$FB610
+;|***                 ow->ow_xorplot = ob->ob_drwflg = ob->ob_delflg = 0;
+; Line 736
+	*** 00095a	2b c0 			sub	ax,ax
+	*** 00095c	89 44 40 		mov	WORD PTR [si+64],ax
+	*** 00095f	89 44 3e 		mov	WORD PTR [si+62],ax
+	*** 000962	89 05 			mov	WORD PTR [di],ax
+	*** 000964	eb e3 			jmp	SHORT $FC609
+					$FB610:
+;|*** 
+;|***         for ( x = 0; x < MAX_TARG; ++x )
+; Line 738
+	*** 000966	c7 46 fa 00 00 		mov	WORD PTR [bp-6],0	;x
+	*** 00096b	eb 03 			jmp	SHORT $F611
+					$FC612:
+	*** 00096d	ff 46 fa 		inc	WORD PTR [bp-6]	;x
+					$F611:
+	*** 000970	83 7e fa 14 		cmp	WORD PTR [bp-6],20	;x
+	*** 000974	7d 1b 			jge	$FB613
+;|***                 if ( ( ob = targets[x] ) && ( ob->ob_state != FINISHED ) )
+; Line 739
+	*** 000976	8b 5e fa 		mov	bx,WORD PTR [bp-6]	;x
+	*** 000979	d1 e3 			shl	bx,1
+	*** 00097b	8b b7 00 00 		mov	si,WORD PTR _targets[bx]
+	*** 00097f	0b f6 			or	si,si
+	*** 000981	74 0c 			je	$I614
+	*** 000983	83 3c 5b 		cmp	WORD PTR [si],91
+	*** 000986	74 07 			je	$I614
+;|***                         dispwobj( ob );
+; Line 740
+	*** 000988	56 			push	si
+	*** 000989	e8 00 00 		call	_dispwobj
+	*** 00098c	83 c4 02 		add	sp,2
+;|*** 
+;|*** }
+; Line 742
+					$I614:
+	*** 00098f	eb dc 			jmp	SHORT $FC612
+					$FB613:
+	*** 000991	5e 			pop	si
+	*** 000992	5f 			pop	di
+	*** 000993	8b e5 			mov	sp,bp
+	*** 000995	5d 			pop	bp
+	*** 000996	c3 			ret	
+
+initwobj	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** static movedisp()
+;|*** {
+; Line 747
+movedisp	PROC NEAR
+	*** 000997	55 			push	bp
+	*** 000998	8b ec 			mov	bp,sp
+;|*** #ifdef IBMPC
+;|***         swsetblk( 0,        SCR_SEGM, 0x1000, 0 );
+; Line 749
+	*** 00099a	2b c0 			sub	ax,ax
+	*** 00099c	50 			push	ax
+	*** 00099d	b8 00 10 		mov	ax,4096
+	*** 0009a0	50 			push	ax
+	*** 0009a1	b8 00 b8 		mov	ax,-18432
+	*** 0009a4	50 			push	ax
+	*** 0009a5	2b c0 			sub	ax,ax
+	*** 0009a7	50 			push	ax
+	*** 0009a8	e8 00 00 		call	_swsetblk
+	*** 0009ab	83 c4 08 		add	sp,8
+;|***         swsetblk( SCR_ROFF, SCR_SEGM, 0x1000, 0 );
+; Line 750
+	*** 0009ae	2b c0 			sub	ax,ax
+	*** 0009b0	50 			push	ax
+	*** 0009b1	b8 00 10 		mov	ax,4096
+	*** 0009b4	50 			push	ax
+	*** 0009b5	b8 00 b8 		mov	ax,-18432
+	*** 0009b8	50 			push	ax
+	*** 0009b9	b8 00 20 		mov	ax,8192
+	*** 0009bc	50 			push	ax
+	*** 0009bd	e8 00 00 		call	_swsetblk
+	*** 0009c0	83 c4 08 		add	sp,8
+;|***         movblock( auxdisp,          dsseg(), 0x1000, SCR_SEGM, 0x1000 );
+; Line 751
+	*** 0009c3	b8 00 10 		mov	ax,4096
+	*** 0009c6	50 			push	ax
+	*** 0009c7	b8 00 b8 		mov	ax,-18432
+	*** 0009ca	50 			push	ax
+	*** 0009cb	b8 00 10 		mov	ax,4096
+	*** 0009ce	50 			push	ax
+	*** 0009cf	e8 00 00 		call	_dsseg
+	*** 0009d2	50 			push	ax
+	*** 0009d3	b8 00 00 		mov	ax,OFFSET _auxdisp
+	*** 0009d6	50 			push	ax
+	*** 0009d7	e8 00 00 		call	_movblock
+	*** 0009da	83 c4 0a 		add	sp,10
+;|***         movblock( auxdisp + 0x1000, dsseg(), 0x3000, SCR_SEGM, 0x1000 );
+; Line 752
+	*** 0009dd	b8 00 10 		mov	ax,4096
+	*** 0009e0	50 			push	ax
+	*** 0009e1	b8 00 b8 		mov	ax,-18432
+	*** 0009e4	50 			push	ax
+	*** 0009e5	b8 00 30 		mov	ax,12288
+	*** 0009e8	50 			push	ax
+	*** 0009e9	e8 00 00 		call	_dsseg
+	*** 0009ec	50 			push	ax
+	*** 0009ed	b8 00 10 		mov	ax,OFFSET _auxdisp+4096
+	*** 0009f0	50 			push	ax
+	*** 0009f1	e8 00 00 		call	_movblock
+	*** 0009f4	83 c4 0a 		add	sp,10
+;|*** #endif
+;|*** 
+;|*** #ifdef ATARI
+;|*** long    trap14(), vidram;
+;|*** 
+;|***         vidram = trap14( 3 );
+;|***         setmem( vidram, 0x4000, 0 );
+;|***         movmem( auxdisp, vidram + 0x4000, 0x4000 );
+;|*** #endif
+;|*** }
+; Line 762
+	*** 0009f7	8b e5 			mov	sp,bp
+	*** 0009f9	5d 			pop	bp
+	*** 0009fa	c3 			ret	
+
+movedisp	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static clrdispa()
+;|*** {
+; Line 768
+clrdispa	PROC NEAR
+	*** 0009fb	55 			push	bp
+	*** 0009fc	8b ec 			mov	bp,sp
+;|*** #ifdef  IBMPC
+;|***         setmem( auxdisp, 0x2000, 0 );
+; Line 770
+	*** 0009fe	2b c0 			sub	ax,ax
+	*** 000a00	50 			push	ax
+	*** 000a01	b8 00 20 		mov	ax,8192
+	*** 000a04	50 			push	ax
+	*** 000a05	b8 00 00 		mov	ax,OFFSET _auxdisp
+	*** 000a08	50 			push	ax
+	*** 000a09	e8 00 00 		call	_setmem
+	*** 000a0c	83 c4 06 		add	sp,6
+;|*** #endif
+;|*** 
+;|*** #ifdef  ATARI
+;|***         setmem( auxdisp, 0x4000, 0 );
+;|*** #endif
+;|*** }
+; Line 776
+	*** 000a0f	8b e5 			mov	sp,bp
+	*** 000a11	5d 			pop	bp
+	*** 000a12	c3 			ret	
+
+clrdispa	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static initobjs()
+;|*** {
+; Line 782
+initobjs	PROC NEAR
+	*** 000a13	55 			push	bp
+	*** 000a14	8b ec 			mov	bp,sp
+	*** 000a16	83 ec 04 		sub	sp,4
+	*** 000a19	57 			push	di
+	*** 000a1a	56 			push	si
+;	register si = ob
+;	register di = o
+;|*** register OBJECTS *ob;
+;|*** register int     o;
+;|*** 
+;|***         topobj.ob_xnext = topobj.ob_next = &botobj;
+; Line 786
+	*** 000a1b	b8 00 00 		mov	ax,OFFSET _botobj
+	*** 000a1e	a3 34 00 		mov	WORD PTR _topobj+52,ax
+	*** 000a21	a3 48 00 		mov	WORD PTR _topobj+72,ax
+;|***         botobj.ob_xprev = botobj.ob_prev = &topobj;
+; Line 787
+	*** 000a24	b8 00 00 		mov	ax,OFFSET _topobj
+	*** 000a27	a3 36 00 		mov	WORD PTR _botobj+54,ax
+	*** 000a2a	a3 4a 00 		mov	WORD PTR _botobj+74,ax
+;|***         topobj.ob_x = -32767;
+; Line 788
+	*** 000a2d	c7 06 02 00 01 80 	mov	WORD PTR _topobj+2,-32767
+;|***         botobj.ob_x = 32767;
+; Line 789
+	*** 000a33	c7 06 02 00 ff 7f 	mov	WORD PTR _botobj+2,32767
+;|*** 
+;|***         objbot = objtop = deltop = delbot = NULL;
+; Line 791
+	*** 000a39	2b c0 			sub	ax,ax
+	*** 000a3b	a3 00 00 		mov	_delbot,ax
+	*** 000a3e	a3 00 00 		mov	_deltop,ax
+	*** 000a41	a3 00 00 		mov	_objtop,ax
+	*** 000a44	a3 00 00 		mov	_objbot,ax
+;|***         objfree = ob = nobjects;
+; Line 792
+	*** 000a47	8b 36 00 00 		mov	si,_nobjects
+	*** 000a4b	89 36 00 00 		mov	_objfree,si
+;|*** 
+;|***         for ( o = 0; o < MAX_OBJS; ++o ) {
+; Line 794
+	*** 000a4f	2b ff 			sub	di,di
+	*** 000a51	eb 01 			jmp	SHORT $F622
+					$FC623:
+	*** 000a53	47 			inc	di
+					$F622:
+	*** 000a54	83 ff 64 		cmp	di,100
+	*** 000a57	7d 10 			jge	$FB624
+;|***                 ob->ob_next = ob + 1;
+; Line 795
+	*** 000a59	8d 44 76 		lea	ax,WORD PTR [si+118]
+	*** 000a5c	89 44 34 		mov	WORD PTR [si+52],ax
+;|***                 (ob++)->ob_index = o;
+; Line 796
+	*** 000a5f	8b de 			mov	bx,si
+	*** 000a61	83 c6 76 		add	si,118
+	*** 000a64	89 7f 38 		mov	WORD PTR [bx+56],di
+;|***         }
+; Line 797
+	*** 000a67	eb ea 			jmp	SHORT $FC623
+					$FB624:
+;|*** 
+;|***         (--ob)->ob_next = NULL;
+; Line 799
+	*** 000a69	83 ee 76 		sub	si,118
+	*** 000a6c	c7 44 34 00 00 		mov	WORD PTR [si+52],0
+;|*** 
+;|*** }
+; Line 801
+	*** 000a71	5e 			pop	si
+	*** 000a72	5f 			pop	di
+	*** 000a73	8b e5 			mov	sp,bp
+	*** 000a75	5d 			pop	bp
+	*** 000a76	c3 			ret	
+
+initobjs	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** initcomp( obp )
+;|*** OBJECTS *obp;
+; Line 806
+	PUBLIC	_initcomp
+_initcomp	PROC NEAR
+	*** 000a77	55 			push	bp
+	*** 000a78	8b ec 			mov	bp,sp
+	*** 000a7a	83 ec 02 		sub	sp,2
+	*** 000a7d	56 			push	si
+;|*** {
+; Line 807
+;	obp = 4
+;	register si = ob
+;|*** register OBJECTS *ob;
+;|*** OBJECTS          *initpln();
+;|*** 
+;|*** 
+;|***         ob = initpln( obp );
+; Line 812
+	*** 000a7e	ff 76 04 		push	WORD PTR [bp+4]	;obp
+	*** 000a81	e8 00 00 		call	_initpln
+	*** 000a84	83 c4 02 		add	sp,2
+	*** 000a87	8b f0 			mov	si,ax
+;|***         if ( !obp ) {
+; Line 813
+	*** 000a89	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;obp
+	*** 000a8d	75 4c 			jne	$I629
+;|***                 ob->ob_drawf = dispcomp;
+; Line 814
+	*** 000a8f	c7 44 44 00 00 		mov	WORD PTR [si+68],OFFSET _dispcomp
+;|***                 ob->ob_movef = movecomp;
+; Line 815
+	*** 000a94	c7 44 46 00 00 		mov	WORD PTR [si+70],OFFSET _movecomp
+;|***                 ob->ob_clr = 2;
+; Line 816
+	*** 000a99	c7 44 2a 02 00 		mov	WORD PTR [si+42],2
+;|***                 if ( ( playmode != MULTIPLE ) && ( playmode != ASYNCH ) )
+; Line 817
+	*** 000a9e	83 3e 00 00 01 		cmp	WORD PTR _playmode,1
+	*** 000aa3	74 12 			je	$I630
+	*** 000aa5	83 3e 00 00 03 		cmp	WORD PTR _playmode,3
+	*** 000aaa	74 0b 			je	$I630
+;|***                         ob->ob_owner = &nobjects[1];
+; Line 818
+	*** 000aac	a1 00 00 		mov	ax,_nobjects
+	*** 000aaf	05 76 00 		add	ax,118
+	*** 000ab2	89 44 20 		mov	WORD PTR [si+32],ax
+;|***                 else
+; Line 819
+	*** 000ab5	eb 12 			jmp	SHORT $I633
+					$I630:
+;|***                         if ( ob->ob_index == 1 )
+; Line 820
+	*** 000ab7	83 7c 38 01 		cmp	WORD PTR [si+56],1
+	*** 000abb	75 05 			jne	$I632
+;|***                                 ob->ob_owner = ob;
+; Line 821
+	*** 000abd	89 74 20 		mov	WORD PTR [si+32],si
+;|***                         else
+; Line 822
+	*** 000ac0	eb 07 			jmp	SHORT $I633
+					$I632:
+;|***                                 ob->ob_owner = ob - 2;
+; Line 823
+	*** 000ac2	8d 84 14 ff 		lea	ax,WORD PTR [si-236]
+	*** 000ac6	89 44 20 		mov	WORD PTR [si+32],ax
+					$I633:
+;|***                 movmem( ob, &oobjects[ob->ob_index], sizeof( OBJECTS ) );
+; Line 824
+	*** 000ac9	b8 76 00 		mov	ax,118
+	*** 000acc	50 			push	ax
+	*** 000acd	f7 6c 38 		imul	WORD PTR [si+56]
+	*** 000ad0	05 00 00 		add	ax,OFFSET _oobjects
+	*** 000ad3	50 			push	ax
+	*** 000ad4	56 			push	si
+	*** 000ad5	e8 00 00 		call	_movmem
+	*** 000ad8	83 c4 06 		add	sp,6
+;|***         }
+; Line 825
+;|***         if ( ( playmode == SINGLE ) || ( playmode == NOVICE ) ){
+; Line 826
+					$I629:
+	*** 000adb	83 3e 00 00 00 		cmp	WORD PTR _playmode,0
+	*** 000ae0	74 07 			je	$I635
+	*** 000ae2	83 3e 00 00 04 		cmp	WORD PTR _playmode,4
+	*** 000ae7	75 0b 			jne	$I634
+					$I635:
+;|***                  ob->ob_state = FINISHED;
+; Line 827
+	*** 000ae9	c7 04 5b 00 		mov	WORD PTR [si],91
+;|***                  deletex( ob );
+; Line 828
+	*** 000aed	56 			push	si
+	*** 000aee	e8 00 00 		call	_deletex
+	*** 000af1	83 c4 02 		add	sp,2
+;|***         }
+; Line 829
+;|*** }
+; Line 830
+					$I634:
+	*** 000af4	5e 			pop	si
+	*** 000af5	8b e5 			mov	sp,bp
+	*** 000af7	5d 			pop	bp
+	*** 000af8	c3 			ret	
+
+_initcomp	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** initplyr( obp )
+;|*** OBJECTS *obp;
+; Line 835
+	PUBLIC	_initplyr
+_initplyr	PROC NEAR
+	*** 000af9	55 			push	bp
+	*** 000afa	8b ec 			mov	bp,sp
+	*** 000afc	83 ec 02 		sub	sp,2
+	*** 000aff	56 			push	si
+;|*** {
+; Line 836
+;	obp = 4
+;	register si = ob
+;|*** register OBJECTS *ob;
+;|*** OBJECTS          *initpln();
+;|*** 
+;|***         ob = initpln( obp );
+; Line 840
+	*** 000b00	ff 76 04 		push	WORD PTR [bp+4]	;obp
+	*** 000b03	e8 00 00 		call	_initpln
+	*** 000b06	83 c4 02 		add	sp,2
+	*** 000b09	8b f0 			mov	si,ax
+;|***         if ( !obp ) {
+; Line 841
+	*** 000b0b	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;obp
+	*** 000b0f	75 38 			jne	$I640
+;|***                 ob->ob_drawf = dispplyr;
+; Line 842
+	*** 000b11	c7 44 44 00 00 		mov	WORD PTR [si+68],OFFSET _dispplyr
+;|***                 ob->ob_movef = moveplyr;
+; Line 843
+	*** 000b16	c7 44 46 00 00 		mov	WORD PTR [si+70],OFFSET _moveplyr
+;|***                 ob->ob_clr = ob->ob_index % 2 + 1;
+; Line 844
+	*** 000b1b	8b 44 38 		mov	ax,WORD PTR [si+56]
+	*** 000b1e	99 			cwd	
+	*** 000b1f	b9 02 00 		mov	cx,2
+	*** 000b22	f7 f9 			idiv	cx
+	*** 000b24	42 			inc	dx
+	*** 000b25	89 54 2a 		mov	WORD PTR [si+42],dx
+;|***                 ob->ob_owner = ob;
+; Line 845
+	*** 000b28	89 74 20 		mov	WORD PTR [si+32],si
+;|***                 movmem( ob, &oobjects[ob->ob_index], sizeof( OBJECTS ) );
+; Line 846
+	*** 000b2b	b8 76 00 		mov	ax,118
+	*** 000b2e	50 			push	ax
+	*** 000b2f	f7 6c 38 		imul	WORD PTR [si+56]
+	*** 000b32	05 00 00 		add	ax,OFFSET _oobjects
+	*** 000b35	50 			push	ax
+	*** 000b36	56 			push	si
+	*** 000b37	e8 00 00 		call	_movmem
+	*** 000b3a	83 c4 06 		add	sp,6
+;|***                 goingsun = FALSE;
+; Line 847
+	*** 000b3d	c7 06 00 00 00 00 	mov	WORD PTR _goingsun,0
+;|***                 endcount = 0;
+; Line 848
+	*** 000b43	c7 06 00 00 00 00 	mov	WORD PTR _endcount,0
+;|***         }
+; Line 849
+;|*** 
+;|***         displx = ob->ob_x - SCR_CENTR;
+; Line 851
+					$I640:
+	*** 000b49	8b 44 02 		mov	ax,WORD PTR [si+2]
+	*** 000b4c	2d 98 00 		sub	ax,152
+	*** 000b4f	a3 00 00 		mov	_displx,ax
+;|***         disprx = displx + SCR_WDTH - 1;
+; Line 852
+	*** 000b52	05 3f 01 		add	ax,319
+	*** 000b55	a3 00 00 		mov	_disprx,ax
+;|*** 
+;|***         swflush();
+; Line 854
+	*** 000b58	e8 00 00 		call	_swflush
+;|*** }
+; Line 855
+	*** 000b5b	5e 			pop	si
+	*** 000b5c	8b e5 			mov	sp,bp
+	*** 000b5e	5d 			pop	bp
+	*** 000b5f	c3 			ret	
+
+_initplyr	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** static  int     inits[2] = { 0, 7 };
+;|*** static  int     initc[4] = { 0, 7, 1, 6 };
+;|*** static  int     initm[8] = { 0, 7, 3, 4, 2, 5, 1, 6 };
+;|*** 
+;|*** 
+;|*** 
+;|*** OBJECTS *initpln( obp )
+;|*** OBJECTS *obp;
+; Line 866
+	PUBLIC	_initpln
+_initpln	PROC NEAR
+	*** 000b60	55 			push	bp
+	*** 000b61	8b ec 			mov	bp,sp
+	*** 000b63	83 ec 0e 		sub	sp,14
+	*** 000b66	57 			push	di
+	*** 000b67	56 			push	si
+;|*** {
+; Line 867
+;	obp = 4
+;	register si = ob
+;	register di = x
+;	height = -6
+;	minx = -8
+;	maxx = -12
+;	n = -10
+;|*** register OBJECTS *ob;
+;|*** register int     x, height, minx, maxx, n;
+;|*** 
+;|***         if ( !obp )
+; Line 871
+	*** 000b68	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;obp
+	*** 000b6c	75 07 			jne	$I653
+;|***                 ob = allocobj();
+; Line 872
+	*** 000b6e	e8 00 00 		call	_allocobj
+	*** 000b71	8b f0 			mov	si,ax
+;|***         else
+; Line 873
+	*** 000b73	eb 03 			jmp	SHORT $I654
+					$I653:
+;|***                 ob = obp;
+; Line 874
+	*** 000b75	8b 76 04 		mov	si,WORD PTR [bp+4]	;obp
+					$I654:
+;|*** 
+;|***         switch ( playmode ) {
+; Line 876
+	*** 000b78	a1 00 00 		mov	ax,_playmode
+	*** 000b7b	eb 2c 			jmp	SHORT $S655
+;|***                 case SINGLE:
+; Line 877
+					$SC659:
+;|***                 case NOVICE:
+;|***                         n = inits[ob->ob_index];
+; Line 879
+	*** 000b7d	8b 5c 38 		mov	bx,WORD PTR [si+56]
+	*** 000b80	d1 e3 			shl	bx,1
+	*** 000b82	8b 87 be 03 		mov	ax,WORD PTR $S642_inits[bx]
+	*** 000b86	89 46 f6 		mov	WORD PTR [bp-10],ax	;n
+;|***                         break;
+; Line 880
+	*** 000b89	eb 38 			jmp	SHORT $SB656
+;|***                 case MULTIPLE:
+; Line 881
+					$SC660:
+;|***                 case ASYNCH:
+;|***                         n = initm[ob->ob_index];
+; Line 883
+	*** 000b8b	8b 5c 38 		mov	bx,WORD PTR [si+56]
+	*** 000b8e	d1 e3 			shl	bx,1
+	*** 000b90	8b 87 ca 03 		mov	ax,WORD PTR $S644_initm[bx]
+	*** 000b94	89 46 f6 		mov	WORD PTR [bp-10],ax	;n
+;|***                         break;
+; Line 884
+	*** 000b97	eb 2a 			jmp	SHORT $SB656
+;|***                 case COMPUTER:
+; Line 885
+					$SC661:
+;|***                         n = initc[ob->ob_index];
+; Line 886
+	*** 000b99	8b 5c 38 		mov	bx,WORD PTR [si+56]
+	*** 000b9c	d1 e3 			shl	bx,1
+	*** 000b9e	8b 87 c2 03 		mov	ax,WORD PTR $S643_initc[bx]
+	*** 000ba2	89 46 f6 		mov	WORD PTR [bp-10],ax	;n
+;|***                         break;
+; Line 887
+	*** 000ba5	eb 1c 			jmp	SHORT $SB656
+;|***         }
+; Line 888
+	*** 000ba7	eb 1a 			jmp	SHORT $SB656
+					$S655:
+	*** 000ba9	0b c0 			or	ax,ax
+	*** 000bab	74 d0 			je	$SC659
+	*** 000bad	3d 01 00 		cmp	ax,1
+	*** 000bb0	74 d9 			je	$SC660
+	*** 000bb2	3d 02 00 		cmp	ax,2
+	*** 000bb5	74 e2 			je	$SC661
+	*** 000bb7	3d 03 00 		cmp	ax,3
+	*** 000bba	74 cf 			je	$SC660
+	*** 000bbc	3d 04 00 		cmp	ax,4
+	*** 000bbf	74 bc 			je	$SC659
+	*** 000bc1	eb 00 			jmp	SHORT $SB656
+					$SB656:
+;|*** 
+;|***         ob->ob_type = PLANE;
+; Line 890
+	*** 000bc3	c7 44 60 01 00 		mov	WORD PTR [si+96],1
+;|*** 
+;|***         ob->ob_x = currgame->gm_x[n];
+; Line 892
+	*** 000bc8	8b 5e f6 		mov	bx,WORD PTR [bp-10]	;n
+	*** 000bcb	d1 e3 			shl	bx,1
+	*** 000bcd	03 1e 00 00 		add	bx,_currgame
+	*** 000bd1	8b 07 			mov	ax,WORD PTR [bx]
+	*** 000bd3	89 44 02 		mov	WORD PTR [si+2],ax
+;|***         minx = ob->ob_x;
+; Line 893
+	*** 000bd6	89 46 f8 		mov	WORD PTR [bp-8],ax	;minx
+;|***         maxx = ob->ob_x + 20;
+; Line 894
+	*** 000bd9	8b 44 02 		mov	ax,WORD PTR [si+2]
+	*** 000bdc	05 14 00 		add	ax,20
+	*** 000bdf	89 46 f4 		mov	WORD PTR [bp-12],ax	;maxx
+;|***         height = 0;
+; Line 895
+	*** 000be2	c7 46 fa 00 00 		mov	WORD PTR [bp-6],0	;height
+;|***         for ( x = minx; x <= maxx; ++x )
+; Line 896
+	*** 000be7	8b 7e f8 		mov	di,WORD PTR [bp-8]	;minx
+	*** 000bea	eb 01 			jmp	SHORT $F662
+					$FC663:
+	*** 000bec	47 			inc	di
+					$F662:
+	*** 000bed	39 7e f4 		cmp	WORD PTR [bp-12],di	;maxx
+	*** 000bf0	7c 13 			jl	$FB664
+;|***                 if ( ground[x] > height )
+; Line 897
+	*** 000bf2	8a 85 00 00 		mov	al,BYTE PTR _ground[di]
+	*** 000bf6	2a e4 			sub	ah,ah
+	*** 000bf8	89 46 f2 		mov	WORD PTR [bp-14],ax
+	*** 000bfb	39 46 fa 		cmp	WORD PTR [bp-6],ax	;height
+	*** 000bfe	73 03 			jae	$I665
+;|***                         height = ground[x];
+; Line 898
+	*** 000c00	89 46 fa 		mov	WORD PTR [bp-6],ax	;height
+;|***         ob->ob_y = height + 13;
+; Line 899
+					$I665:
+	*** 000c03	eb e7 			jmp	SHORT $FC663
+					$FB664:
+	*** 000c05	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;height
+	*** 000c08	05 0d 00 		add	ax,13
+	*** 000c0b	89 44 04 		mov	WORD PTR [si+4],ax
+;|***         ob->ob_lx = ob->ob_ly = ob->ob_speed = ob->ob_flaps = ob->ob_accel
+;|***                   = ob->ob_hitcount = ob->ob_bdelay = ob->ob_mdelay
+;|***                   = ob->ob_bsdelay = 0;
+; Line 902
+	*** 000c0e	2b c0 			sub	ax,ax
+	*** 000c10	89 44 74 		mov	WORD PTR [si+116],ax
+	*** 000c13	89 44 6c 		mov	WORD PTR [si+108],ax
+	*** 000c16	89 44 50 		mov	WORD PTR [si+80],ax
+	*** 000c19	89 44 1a 		mov	WORD PTR [si+26],ax
+	*** 000c1c	89 44 10 		mov	WORD PTR [si+16],ax
+	*** 000c1f	89 44 12 		mov	WORD PTR [si+18],ax
+	*** 000c22	89 44 0e 		mov	WORD PTR [si+14],ax
+	*** 000c25	89 44 2e 		mov	WORD PTR [si+46],ax
+	*** 000c28	89 44 2c 		mov	WORD PTR [si+44],ax
+;|***         setdxdy( ob, 0, 0 );
+; Line 903
+	*** 000c2b	50 			push	ax
+	*** 000c2c	50 			push	ax
+	*** 000c2d	56 			push	si
+	*** 000c2e	e8 00 00 		call	_setdxdy
+	*** 000c31	83 c4 06 		add	sp,6
+;|***         ob->ob_orient = currgame->gm_orient[n];
+; Line 904
+	*** 000c34	8b 5e f6 		mov	bx,WORD PTR [bp-10]	;n
+	*** 000c37	d1 e3 			shl	bx,1
+	*** 000c39	03 1e 00 00 		add	bx,_currgame
+	*** 000c3d	8b 47 10 		mov	ax,WORD PTR [bx+16]
+	*** 000c40	89 44 0c 		mov	WORD PTR [si+12],ax
+;|***         ob->ob_angle = ( ob->ob_orient ) ? ( ANGLES / 2 ) : 0;
+; Line 905
+	*** 000c43	0b c0 			or	ax,ax
+	*** 000c45	74 05 			je	$L20014
+	*** 000c47	b8 08 00 		mov	ax,8
+	*** 000c4a	eb 02 			jmp	SHORT $L20015
+					$L20014:
+	*** 000c4c	2b c0 			sub	ax,ax
+					$L20015:
+	*** 000c4e	89 44 0a 		mov	WORD PTR [si+10],ax
+;|***         ob->ob_target = ob->ob_firing = ob->ob_mfiring = NULL;
+; Line 906
+	*** 000c51	2b c0 			sub	ax,ax
+	*** 000c53	89 44 6a 		mov	WORD PTR [si+106],ax
+	*** 000c56	89 44 14 		mov	WORD PTR [si+20],ax
+	*** 000c59	89 44 6e 		mov	WORD PTR [si+110],ax
+;|***         ob->ob_bombing = ob->ob_bfiring = ob->ob_home = FALSE;
+; Line 907
+	*** 000c5c	89 44 52 		mov	WORD PTR [si+82],ax
+	*** 000c5f	89 44 72 		mov	WORD PTR [si+114],ax
+	*** 000c62	89 44 26 		mov	WORD PTR [si+38],ax
+;|***         ob->ob_symhgt = SYM_HGHT;
+; Line 908
+	*** 000c65	c7 44 22 10 00 		mov	WORD PTR [si+34],16
+;|***         ob->ob_symwdt = SYM_WDTH;
+; Line 909
+	*** 000c6a	c7 44 24 10 00 		mov	WORD PTR [si+36],16
+;|***         ob->ob_athome = TRUE;
+; Line 910
+	*** 000c6f	c7 44 64 01 00 		mov	WORD PTR [si+100],1
+;|***         if ( ( !obp ) || ( ob->ob_state == CRASHED )
+;|***                 || ( ob->ob_state == GHOSTCRASHED ) ) {
+; Line 912
+	*** 000c74	39 46 04 		cmp	WORD PTR [bp+4],ax	;obp
+	*** 000c77	74 0a 			je	$I668
+	*** 000c79	83 3c 04 		cmp	WORD PTR [si],4
+	*** 000c7c	74 05 			je	$I668
+	*** 000c7e	83 3c 5d 		cmp	WORD PTR [si],93
+	*** 000c81	75 19 			jne	$I667
+					$I668:
+;|***                 ob->ob_rounds = MAXROUNDS;
+; Line 913
+	*** 000c83	c7 44 18 c8 00 		mov	WORD PTR [si+24],200
+;|***                 ob->ob_bombs = MAXBOMBS;
+; Line 914
+	*** 000c88	c7 44 28 05 00 		mov	WORD PTR [si+40],5
+;|***                 ob->ob_missiles = MAXMISSILES;
+; Line 915
+	*** 000c8d	c7 44 68 05 00 		mov	WORD PTR [si+104],5
+;|***                 ob->ob_bursts = MAXBURSTS;
+; Line 916
+	*** 000c92	c7 44 70 05 00 		mov	WORD PTR [si+112],5
+;|***                 ob->ob_life = MAXFUEL;
+; Line 917
+	*** 000c97	c7 44 1e 28 23 		mov	WORD PTR [si+30],9000
+;|***         }
+; Line 918
+;|***         if ( !obp ) {
+; Line 919
+					$I667:
+	*** 000c9c	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;obp
+	*** 000ca0	75 2a 			jne	$I669
+;|***                 ob->ob_score = ob->ob_updcount = ob->ob_crashcnt
+;|***                              = endsts[ob->ob_index] = 0;
+; Line 921
+	*** 000ca2	8b 5c 38 		mov	bx,WORD PTR [si+56]
+	*** 000ca5	d1 e3 			shl	bx,1
+	*** 000ca7	2b c0 			sub	ax,ax
+	*** 000ca9	89 87 00 00 		mov	WORD PTR _endsts[bx],ax
+	*** 000cad	89 44 4c 		mov	WORD PTR [si+76],ax
+	*** 000cb0	89 44 1c 		mov	WORD PTR [si+28],ax
+	*** 000cb3	89 44 16 		mov	WORD PTR [si+22],ax
+;|***                 compnear[ob->ob_index] = NULL;
+; Line 922
+	*** 000cb6	8b 5c 38 		mov	bx,WORD PTR [si+56]
+	*** 000cb9	d1 e3 			shl	bx,1
+	*** 000cbb	89 87 00 00 		mov	WORD PTR _compnear[bx],ax
+;|***                 insertx( ob, &topobj );
+; Line 923
+	*** 000cbf	b8 00 00 		mov	ax,OFFSET _topobj
+	*** 000cc2	50 			push	ax
+	*** 000cc3	56 			push	si
+	*** 000cc4	e8 00 00 		call	_insertx
+	*** 000cc7	83 c4 04 		add	sp,4
+;|***         } else {
+; Line 924
+	*** 000cca	eb 11 			jmp	SHORT $I671
+					$I669:
+;|***                 deletex( ob );
+; Line 925
+	*** 000ccc	56 			push	si
+	*** 000ccd	e8 00 00 		call	_deletex
+	*** 000cd0	83 c4 02 		add	sp,2
+;|***                 insertx( ob, ob->ob_xnext );
+; Line 926
+	*** 000cd3	ff 74 48 		push	WORD PTR [si+72]
+	*** 000cd6	56 			push	si
+	*** 000cd7	e8 00 00 		call	_insertx
+	*** 000cda	83 c4 04 		add	sp,4
+;|***         }
+; Line 927
+					$I671:
+;|*** 
+;|***         if ( ( ( playmode == MULTIPLE ) || ( playmode == ASYNCH ) )
+;|***                 && ( ob->ob_crashcnt >= maxcrash ) ) {
+; Line 930
+	*** 000cdd	83 3e 00 00 01 		cmp	WORD PTR _playmode,1
+	*** 000ce2	74 07 			je	$I673
+	*** 000ce4	83 3e 00 00 03 		cmp	WORD PTR _playmode,3
+	*** 000ce9	75 1c 			jne	$I672
+					$I673:
+	*** 000ceb	a1 00 00 		mov	ax,_maxcrash
+	*** 000cee	39 44 4c 		cmp	WORD PTR [si+76],ax
+	*** 000cf1	7c 14 			jl	$I672
+;|***                 ob->ob_state = GHOST;
+; Line 931
+	*** 000cf3	c7 04 5c 00 		mov	WORD PTR [si],92
+;|***                 if ( ob->ob_index == player )
+; Line 932
+	*** 000cf7	a1 00 00 		mov	ax,_player
+	*** 000cfa	39 44 38 		cmp	WORD PTR [si+56],ax
+	*** 000cfd	75 06 			jne	$I674
+;|***                         ghost = TRUE;
+; Line 933
+	*** 000cff	c7 06 00 00 01 00 	mov	WORD PTR $S348_ghost,1
+;|***         } else
+; Line 934
+					$I674:
+	*** 000d05	eb 04 			jmp	SHORT $I675
+					$I672:
+;|***                 ob->ob_state = FLYING;
+; Line 935
+	*** 000d07	c7 04 01 00 		mov	WORD PTR [si],1
+					$I675:
+;|*** 
+;|***         return( ob );
+; Line 937
+	*** 000d0b	8b c6 			mov	ax,si
+	*** 000d0d	eb 00 			jmp	SHORT $EX646
+;|*** }
+; Line 938
+					$EX646:
+	*** 000d0f	5e 			pop	si
+	*** 000d10	5f 			pop	di
+	*** 000d11	8b e5 			mov	sp,bp
+	*** 000d13	5d 			pop	bp
+	*** 000d14	c3 			ret	
+
+_initpln	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** initshot( obop, targ )
+;|*** OBJECTS *obop, *targ;
+; Line 943
+	PUBLIC	_initshot
+_initshot	PROC NEAR
+	*** 000d15	55 			push	bp
+	*** 000d16	8b ec 			mov	bp,sp
+	*** 000d18	83 ec 14 		sub	sp,20
+	*** 000d1b	57 			push	di
+	*** 000d1c	56 			push	si
+;|*** {
+; Line 944
+;	obop = 4
+;	targ = 6
+;	register si = ob
+;	register di = obo
+;	nangle = -10
+;	nspeed = -20
+;	dx = -16
+;	dy = -18
+;	r = -6
+;	bspeed = -8
+;	x = -12
+;	y = -14
+;|*** register OBJECTS *ob, *obo;
+;|*** int      nangle, nspeed, dx, dy, r, bspeed, x, y;
+;|*** 
+;|*** 
+;|***         if ( ( !targ ) && ( !compplane ) && ( !obo->ob_rounds ))
+; Line 949
+	*** 000d1d	83 7e 06 00 		cmp	WORD PTR [bp+6],0	;targ
+	*** 000d21	75 10 			jne	$I690
+	*** 000d23	83 3e 00 00 00 		cmp	WORD PTR _compplane,0
+	*** 000d28	75 09 			jne	$I690
+	*** 000d2a	83 7d 18 00 		cmp	WORD PTR [di+24],0
+	*** 000d2e	75 03 			jne	$I690
+;|***                 return;
+; Line 950
+	*** 000d30	e9 31 01 		jmp	$EX679
+;|*** 
+;|***         if ( !( ob = allocobj() ) )
+; Line 952
+					$I690:
+	*** 000d33	e8 00 00 		call	_allocobj
+	*** 000d36	8b f0 			mov	si,ax
+	*** 000d38	0b f6 			or	si,si
+	*** 000d3a	75 03 			jne	$I691
+;|***                 return;
+; Line 953
+	*** 000d3c	e9 25 01 		jmp	$EX679
+;|*** 
+;|***         obo = obop;
+; Line 955
+					$I691:
+	*** 000d3f	8b 7e 04 		mov	di,WORD PTR [bp+4]	;obop
+;|***         if ( playmode != NOVICE )
+; Line 956
+	*** 000d42	83 3e 00 00 04 		cmp	WORD PTR _playmode,4
+	*** 000d47	74 03 			je	$I692
+;|***                 --obo->ob_rounds;
+; Line 957
+	*** 000d49	ff 4d 18 		dec	WORD PTR [di+24]
+;|*** 
+;|***         bspeed = BULSPEED + gamenum;
+; Line 959
+					$I692:
+	*** 000d4c	a1 00 00 		mov	ax,_gamenum
+	*** 000d4f	05 0a 00 		add	ax,10
+	*** 000d52	89 46 f8 		mov	WORD PTR [bp-8],ax	;bspeed
+;|*** 
+;|***         if ( targ ) {
+; Line 961
+	*** 000d55	83 7e 06 00 		cmp	WORD PTR [bp+6],0	;targ
+	*** 000d59	74 7b 			je	$I693
+;|***                 x = targ->ob_x + ( targ->ob_dx << 2 );
+; Line 962
+	*** 000d5b	8b 5e 06 		mov	bx,WORD PTR [bp+6]	;targ
+	*** 000d5e	8b 47 06 		mov	ax,WORD PTR [bx+6]
+	*** 000d61	d1 e0 			shl	ax,1
+	*** 000d63	d1 e0 			shl	ax,1
+	*** 000d65	03 47 02 		add	ax,WORD PTR [bx+2]
+	*** 000d68	89 46 f4 		mov	WORD PTR [bp-12],ax	;x
+;|***                 y = targ->ob_y + ( targ->ob_dy << 2 );
+; Line 963
+	*** 000d6b	8b 47 08 		mov	ax,WORD PTR [bx+8]
+	*** 000d6e	d1 e0 			shl	ax,1
+	*** 000d70	d1 e0 			shl	ax,1
+	*** 000d72	03 47 04 		add	ax,WORD PTR [bx+4]
+	*** 000d75	89 46 f2 		mov	WORD PTR [bp-14],ax	;y
+;|***                 dx = x - obo->ob_x;
+; Line 964
+	*** 000d78	8b 46 f4 		mov	ax,WORD PTR [bp-12]	;x
+	*** 000d7b	2b 45 02 		sub	ax,WORD PTR [di+2]
+	*** 000d7e	89 46 f0 		mov	WORD PTR [bp-16],ax	;dx
+;|***                 dy = y - obo->ob_y;
+; Line 965
+	*** 000d81	8b 46 f2 		mov	ax,WORD PTR [bp-14]	;y
+	*** 000d84	2b 45 04 		sub	ax,WORD PTR [di+4]
+	*** 000d87	89 46 ee 		mov	WORD PTR [bp-18],ax	;dy
+;|***                 if ( ( r = isrange( x, y, obo->ob_x, obo->ob_y ) ) < 1 ) {
+; Line 966
+	*** 000d8a	ff 75 04 		push	WORD PTR [di+4]
+	*** 000d8d	ff 75 02 		push	WORD PTR [di+2]
+	*** 000d90	ff 76 f2 		push	WORD PTR [bp-14]	;y
+	*** 000d93	ff 76 f4 		push	WORD PTR [bp-12]	;x
+	*** 000d96	e8 00 00 		call	isrange
+	*** 000d99	83 c4 08 		add	sp,8
+	*** 000d9c	89 46 fa 		mov	WORD PTR [bp-6],ax	;r
+	*** 000d9f	3d 01 00 		cmp	ax,1
+	*** 000da2	7d 0a 			jge	$I695
+;|***                         deallobj( ob );
+; Line 967
+	*** 000da4	56 			push	si
+	*** 000da5	e8 00 00 		call	_deallobj
+	*** 000da8	83 c4 02 		add	sp,2
+;|***                         return;
+; Line 968
+	*** 000dab	e9 b6 00 		jmp	$EX679
+;|***                 }
+; Line 969
+;|***                 ob->ob_dx = ( dx * bspeed ) / r;
+; Line 970
+					$I695:
+	*** 000dae	8b 46 f0 		mov	ax,WORD PTR [bp-16]	;dx
+	*** 000db1	f7 6e f8 		imul	WORD PTR [bp-8]	;bspeed
+	*** 000db4	99 			cwd	
+	*** 000db5	8b 4e fa 		mov	cx,WORD PTR [bp-6]	;r
+	*** 000db8	f7 f9 			idiv	cx
+	*** 000dba	89 44 06 		mov	WORD PTR [si+6],ax
+;|***                 ob->ob_dy = ( dy * bspeed ) / r;
+; Line 971
+	*** 000dbd	8b 46 ee 		mov	ax,WORD PTR [bp-18]	;dy
+	*** 000dc0	f7 6e f8 		imul	WORD PTR [bp-8]	;bspeed
+	*** 000dc3	99 			cwd	
+	*** 000dc4	8b 4e fa 		mov	cx,WORD PTR [bp-6]	;r
+	*** 000dc7	f7 f9 			idiv	cx
+	*** 000dc9	89 44 08 		mov	WORD PTR [si+8],ax
+;|***                 ob->ob_ldx = ob->ob_ldy = 0;
+; Line 972
+	*** 000dcc	2b c0 			sub	ax,ax
+	*** 000dce	89 44 32 		mov	WORD PTR [si+50],ax
+	*** 000dd1	89 44 30 		mov	WORD PTR [si+48],ax
+;|***         } else {
+; Line 973
+	*** 000dd4	eb 3d 			jmp	SHORT $I697
+					$I693:
+;|***                 nspeed = obo->ob_speed + bspeed;
+; Line 974
+	*** 000dd6	8b 45 0e 		mov	ax,WORD PTR [di+14]
+	*** 000dd9	03 46 f8 		add	ax,WORD PTR [bp-8]	;bspeed
+	*** 000ddc	89 46 ec 		mov	WORD PTR [bp-20],ax	;nspeed
+;|***                 nangle = obo->ob_angle;
+; Line 975
+	*** 000ddf	8b 45 0a 		mov	ax,WORD PTR [di+10]
+	*** 000de2	89 46 f6 		mov	WORD PTR [bp-10],ax	;nangle
+;|***                 setdxdy( ob, nspeed * COS( nangle ),
+;|***                              nspeed * SIN( nangle ) );
+; Line 977
+	*** 000de5	99 			cwd	
+	*** 000de6	b9 10 00 		mov	cx,16
+	*** 000de9	f7 f9 			idiv	cx
+	*** 000deb	8b da 			mov	bx,dx
+	*** 000ded	d1 e3 			shl	bx,1
+	*** 000def	8b 87 00 00 		mov	ax,WORD PTR _sintab[bx]
+	*** 000df3	f7 6e ec 		imul	WORD PTR [bp-20]	;nspeed
+	*** 000df6	50 			push	ax
+	*** 000df7	8b 46 f6 		mov	ax,WORD PTR [bp-10]	;nangle
+	*** 000dfa	05 04 00 		add	ax,4
+	*** 000dfd	99 			cwd	
+	*** 000dfe	f7 f9 			idiv	cx
+	*** 000e00	8b da 			mov	bx,dx
+	*** 000e02	d1 e3 			shl	bx,1
+	*** 000e04	8b 87 00 00 		mov	ax,WORD PTR _sintab[bx]
+	*** 000e08	f7 6e ec 		imul	WORD PTR [bp-20]	;nspeed
+	*** 000e0b	50 			push	ax
+	*** 000e0c	56 			push	si
+	*** 000e0d	e8 00 00 		call	_setdxdy
+	*** 000e10	83 c4 06 		add	sp,6
+;|***         }
+; Line 978
+					$I697:
+;|*** 
+;|***         ob->ob_type = SHOT;
+; Line 980
+	*** 000e13	c7 44 60 03 00 		mov	WORD PTR [si+96],3
+;|***         ob->ob_x = obo->ob_x + SYM_WDTH / 2;
+; Line 981
+	*** 000e18	8b 45 02 		mov	ax,WORD PTR [di+2]
+	*** 000e1b	05 08 00 		add	ax,8
+	*** 000e1e	89 44 02 		mov	WORD PTR [si+2],ax
+;|***         ob->ob_y = obo->ob_y - SYM_HGHT / 2;
+; Line 982
+	*** 000e21	8b 45 04 		mov	ax,WORD PTR [di+4]
+	*** 000e24	2d 08 00 		sub	ax,8
+	*** 000e27	89 44 04 		mov	WORD PTR [si+4],ax
+;|***         ob->ob_lx = obo->ob_lx;
+; Line 983
+	*** 000e2a	8b 45 2c 		mov	ax,WORD PTR [di+44]
+	*** 000e2d	89 44 2c 		mov	WORD PTR [si+44],ax
+;|***         ob->ob_ly = obo->ob_ly;
+; Line 984
+	*** 000e30	8b 45 2e 		mov	ax,WORD PTR [di+46]
+	*** 000e33	89 44 2e 		mov	WORD PTR [si+46],ax
+;|*** 
+;|*** 
+;|***         ob->ob_life = BULLIFE;
+; Line 987
+	*** 000e36	c7 44 1e 0a 00 		mov	WORD PTR [si+30],10
+;|***         ob->ob_owner = obo;
+; Line 988
+	*** 000e3b	89 7c 20 		mov	WORD PTR [si+32],di
+;|***         ob->ob_clr = obo->ob_clr;
+; Line 989
+	*** 000e3e	8b 45 2a 		mov	ax,WORD PTR [di+42]
+	*** 000e41	89 44 2a 		mov	WORD PTR [si+42],ax
+;|***         ob->ob_symhgt = ob->ob_symwdt = 1;
+; Line 990
+	*** 000e44	b8 01 00 		mov	ax,1
+	*** 000e47	89 44 24 		mov	WORD PTR [si+36],ax
+	*** 000e4a	89 44 22 		mov	WORD PTR [si+34],ax
+;|***         ob->ob_drawf = NULL;
+; Line 991
+	*** 000e4d	c7 44 44 00 00 		mov	WORD PTR [si+68],0
+;|***         ob->ob_movef = moveshot;
+; Line 992
+	*** 000e52	c7 44 46 00 00 		mov	WORD PTR [si+70],OFFSET _moveshot
+;|***         ob->ob_speed = 0;
+; Line 993
+	*** 000e57	c7 44 0e 00 00 		mov	WORD PTR [si+14],0
+;|*** 
+;|***         insertx( ob, obo );
+; Line 995
+	*** 000e5c	57 			push	di
+	*** 000e5d	56 			push	si
+	*** 000e5e	e8 00 00 		call	_insertx
+	*** 000e61	83 c4 04 		add	sp,4
+;|*** 
+;|*** }
+; Line 997
+					$EX679:
+	*** 000e64	5e 			pop	si
+	*** 000e65	5f 			pop	di
+	*** 000e66	8b e5 			mov	sp,bp
+	*** 000e68	5d 			pop	bp
+	*** 000e69	c3 			ret	
+
+_initshot	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static isrange( x, y, ax, ay )
+;|*** int     x, y, ax, ay;
+; Line 1004
+isrange	PROC NEAR
+	*** 000e6a	55 			push	bp
+	*** 000e6b	8b ec 			mov	bp,sp
+	*** 000e6d	83 ec 06 		sub	sp,6
+	*** 000e70	57 			push	di
+	*** 000e71	56 			push	si
+;|*** {
+; Line 1005
+;	register di = dy
+;	t = -2
+;	x = 4
+;	y = 6
+;	ax = 8
+;	ay = 10
+;	register si = dx
+;|*** register int     dx, dy, t;
+;|*** 
+;|***         dy = abs( y - ay );
+; Line 1008
+	*** 000e72	8b 46 06 		mov	ax,WORD PTR [bp+6]	;y
+	*** 000e75	2b 46 0a 		sub	ax,WORD PTR [bp+10]	;ay
+	*** 000e78	50 			push	ax
+	*** 000e79	e8 00 00 		call	_abs
+	*** 000e7c	83 c4 02 		add	sp,2
+	*** 000e7f	8b f8 			mov	di,ax
+;|***         dy += dy >> 1;
+; Line 1009
+	*** 000e81	d1 f8 			sar	ax,1
+	*** 000e83	03 f8 			add	di,ax
+;|***         if ( ( ( dx = abs( x - ax ) ) > 100 ) || ( dy > 100 ) )
+; Line 1010
+	*** 000e85	8b 46 04 		mov	ax,WORD PTR [bp+4]	;x
+	*** 000e88	2b 46 08 		sub	ax,WORD PTR [bp+8]	;ax
+	*** 000e8b	50 			push	ax
+	*** 000e8c	e8 00 00 		call	_abs
+	*** 000e8f	83 c4 02 		add	sp,2
+	*** 000e92	8b f0 			mov	si,ax
+	*** 000e94	83 fe 64 		cmp	si,100
+	*** 000e97	7f 05 			jg	$I708
+	*** 000e99	83 ff 64 		cmp	di,100
+	*** 000e9c	7e 05 			jle	$I707
+					$I708:
+;|***                 return ( -1 );
+; Line 1011
+	*** 000e9e	b8 ff ff 		mov	ax,-1
+	*** 000ea1	eb 26 			jmp	SHORT $EX702
+;|*** 
+;|***         if ( dx < dy ) {
+; Line 1013
+					$I707:
+	*** 000ea3	3b f7 			cmp	si,di
+	*** 000ea5	7d 08 			jge	$I709
+;|***                 t = dx;
+; Line 1014
+	*** 000ea7	89 76 fe 		mov	WORD PTR [bp-2],si	;t
+;|***                 dx = dy;
+; Line 1015
+	*** 000eaa	8b f7 			mov	si,di
+;|***                 dy = t;
+; Line 1016
+	*** 000eac	8b 7e fe 		mov	di,WORD PTR [bp-2]	;t
+;|***         }
+; Line 1017
+;|*** 
+;|***         return( ( ( 7 * dx ) + ( dy << 2 ) ) >> 3 );
+; Line 1019
+					$I709:
+	*** 000eaf	8b c6 			mov	ax,si
+	*** 000eb1	8b c8 			mov	cx,ax
+	*** 000eb3	d1 e0 			shl	ax,1
+	*** 000eb5	03 c1 			add	ax,cx
+	*** 000eb7	d1 e0 			shl	ax,1
+	*** 000eb9	03 c1 			add	ax,cx
+	*** 000ebb	8b cf 			mov	cx,di
+	*** 000ebd	d1 e1 			shl	cx,1
+	*** 000ebf	d1 e1 			shl	cx,1
+	*** 000ec1	03 c1 			add	ax,cx
+	*** 000ec3	b1 03 			mov	cl,3
+	*** 000ec5	d3 f8 			sar	ax,cl
+	*** 000ec7	eb 00 			jmp	SHORT $EX702
+;|*** }
+; Line 1020
+					$EX702:
+	*** 000ec9	5e 			pop	si
+	*** 000eca	5f 			pop	di
+	*** 000ecb	8b e5 			mov	sp,bp
+	*** 000ecd	5d 			pop	bp
+	*** 000ece	c3 			ret	
+
+isrange	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** initbomb( obop )
+;|*** OBJECTS *obop;
+; Line 1025
+	PUBLIC	_initbomb
+_initbomb	PROC NEAR
+	*** 000ecf	55 			push	bp
+	*** 000ed0	8b ec 			mov	bp,sp
+	*** 000ed2	83 ec 06 		sub	sp,6
+	*** 000ed5	57 			push	di
+	*** 000ed6	56 			push	si
+;|*** {
+; Line 1026
+;	obop = 4
+;	register si = ob
+;	register di = obo
+;	angle = -6
+;|*** register OBJECTS *ob, *obo;
+;|*** int              angle;
+;|*** 
+;|***         obo = obop;
+; Line 1030
+	*** 000ed7	8b 7e 04 		mov	di,WORD PTR [bp+4]	;obop
+;|***         if ( ( ( !compplane) && ( !obo->ob_bombs ) ) || ( obo->ob_bdelay ) )
+; Line 1031
+	*** 000eda	83 3e 00 00 00 		cmp	WORD PTR _compplane,0
+	*** 000edf	75 06 			jne	$I718
+	*** 000ee1	83 7d 28 00 		cmp	WORD PTR [di+40],0
+	*** 000ee5	74 06 			je	$I717
+					$I718:
+	*** 000ee7	83 7d 50 00 		cmp	WORD PTR [di+80],0
+	*** 000eeb	74 03 			je	$I716
+					$I717:
+;|***                 return;
+; Line 1032
+	*** 000eed	e9 e0 00 		jmp	$EX712
+;|***         if ( !( ob = allocobj() ) )
+; Line 1033
+					$I716:
+	*** 000ef0	e8 00 00 		call	_allocobj
+	*** 000ef3	8b f0 			mov	si,ax
+	*** 000ef5	0b f6 			or	si,si
+	*** 000ef7	75 03 			jne	$I719
+;|***                 return;
+; Line 1034
+	*** 000ef9	e9 d4 00 		jmp	$EX712
+;|*** 
+;|***         if ( playmode != NOVICE )
+; Line 1036
+					$I719:
+	*** 000efc	83 3e 00 00 04 		cmp	WORD PTR _playmode,4
+	*** 000f01	74 03 			je	$I720
+;|***                 --obo->ob_bombs;
+; Line 1037
+	*** 000f03	ff 4d 28 		dec	WORD PTR [di+40]
+;|*** 
+;|***         obo->ob_bdelay = 10;
+; Line 1039
+					$I720:
+	*** 000f06	c7 45 50 0a 00 		mov	WORD PTR [di+80],10
+;|*** 
+;|***         ob->ob_type = BOMB;
+; Line 1041
+	*** 000f0b	c7 44 60 02 00 		mov	WORD PTR [si+96],2
+;|***         ob->ob_state = FALLING;
+; Line 1042
+	*** 000f10	c7 04 05 00 		mov	WORD PTR [si],5
+;|***         ob->ob_dx = obo->ob_dx;
+; Line 1043
+	*** 000f14	8b 45 06 		mov	ax,WORD PTR [di+6]
+	*** 000f17	89 44 06 		mov	WORD PTR [si+6],ax
+;|***         ob->ob_dy = obo->ob_dy;
+; Line 1044
+	*** 000f1a	8b 45 08 		mov	ax,WORD PTR [di+8]
+	*** 000f1d	89 44 08 		mov	WORD PTR [si+8],ax
+;|*** 
+;|***         if ( obo->ob_orient )
+; Line 1046
+	*** 000f20	83 7d 0c 00 		cmp	WORD PTR [di+12],0
+	*** 000f24	74 11 			je	$I721
+;|***                 angle = ( obo->ob_angle + ( ANGLES / 4 ) ) % ANGLES;
+; Line 1047
+	*** 000f26	8b 45 0a 		mov	ax,WORD PTR [di+10]
+	*** 000f29	05 04 00 		add	ax,4
+	*** 000f2c	99 			cwd	
+	*** 000f2d	b9 10 00 		mov	cx,16
+	*** 000f30	f7 f9 			idiv	cx
+	*** 000f32	89 56 fa 		mov	WORD PTR [bp-6],dx	;angle
+;|***         else
+; Line 1048
+	*** 000f35	eb 0f 			jmp	SHORT $I722
+					$I721:
+;|***                 angle = ( obo->ob_angle + ( 3 * ANGLES / 4 ) ) % ANGLES;
+; Line 1049
+	*** 000f37	8b 45 0a 		mov	ax,WORD PTR [di+10]
+	*** 000f3a	05 0c 00 		add	ax,12
+	*** 000f3d	99 			cwd	
+	*** 000f3e	b9 10 00 		mov	cx,16
+	*** 000f41	f7 f9 			idiv	cx
+	*** 000f43	89 56 fa 		mov	WORD PTR [bp-6],dx	;angle
+					$I722:
+;|***         ob->ob_x = obo->ob_x + ( ( COS( angle ) * 10 ) >> 8 ) + 4;
+; Line 1050
+	*** 000f46	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;angle
+	*** 000f49	05 04 00 		add	ax,4
+	*** 000f4c	99 			cwd	
+	*** 000f4d	b9 10 00 		mov	cx,16
+	*** 000f50	f7 f9 			idiv	cx
+	*** 000f52	8b da 			mov	bx,dx
+	*** 000f54	d1 e3 			shl	bx,1
+	*** 000f56	8b 87 00 00 		mov	ax,WORD PTR _sintab[bx]
+	*** 000f5a	8b c8 			mov	cx,ax
+	*** 000f5c	d1 e0 			shl	ax,1
+	*** 000f5e	d1 e0 			shl	ax,1
+	*** 000f60	03 c1 			add	ax,cx
+	*** 000f62	d1 e0 			shl	ax,1
+	*** 000f64	b1 08 			mov	cl,8
+	*** 000f66	d3 f8 			sar	ax,cl
+	*** 000f68	03 45 02 		add	ax,WORD PTR [di+2]
+	*** 000f6b	05 04 00 		add	ax,4
+	*** 000f6e	89 44 02 		mov	WORD PTR [si+2],ax
+;|***         ob->ob_y = obo->ob_y + ( ( SIN( angle ) * 10 ) >> 8 ) - 4;
+; Line 1051
+	*** 000f71	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;angle
+	*** 000f74	99 			cwd	
+	*** 000f75	b9 10 00 		mov	cx,16
+	*** 000f78	f7 f9 			idiv	cx
+	*** 000f7a	8b da 			mov	bx,dx
+	*** 000f7c	d1 e3 			shl	bx,1
+	*** 000f7e	8b 87 00 00 		mov	ax,WORD PTR _sintab[bx]
+	*** 000f82	8b c8 			mov	cx,ax
+	*** 000f84	d1 e0 			shl	ax,1
+	*** 000f86	d1 e0 			shl	ax,1
+	*** 000f88	03 c1 			add	ax,cx
+	*** 000f8a	d1 e0 			shl	ax,1
+	*** 000f8c	b1 08 			mov	cl,8
+	*** 000f8e	d3 f8 			sar	ax,cl
+	*** 000f90	03 45 04 		add	ax,WORD PTR [di+4]
+	*** 000f93	2d 04 00 		sub	ax,4
+	*** 000f96	89 44 04 		mov	WORD PTR [si+4],ax
+;|***         ob->ob_lx = ob->ob_ly = ob->ob_ldx = ob->ob_ldy = 0;
+; Line 1052
+	*** 000f99	2b c0 			sub	ax,ax
+	*** 000f9b	89 44 32 		mov	WORD PTR [si+50],ax
+	*** 000f9e	89 44 30 		mov	WORD PTR [si+48],ax
+	*** 000fa1	89 44 2e 		mov	WORD PTR [si+46],ax
+	*** 000fa4	89 44 2c 		mov	WORD PTR [si+44],ax
+;|*** 
+;|***         ob->ob_life = BOMBLIFE;
+; Line 1054
+	*** 000fa7	c7 44 1e 05 00 		mov	WORD PTR [si+30],5
+;|***         ob->ob_owner = obo;
+; Line 1055
+	*** 000fac	89 7c 20 		mov	WORD PTR [si+32],di
+;|***         ob->ob_clr = obo->ob_clr;
+; Line 1056
+	*** 000faf	8b 45 2a 		mov	ax,WORD PTR [di+42]
+	*** 000fb2	89 44 2a 		mov	WORD PTR [si+42],ax
+;|***         ob->ob_symhgt = ob->ob_symwdt = 8;
+; Line 1057
+	*** 000fb5	b8 08 00 		mov	ax,8
+	*** 000fb8	89 44 24 		mov	WORD PTR [si+36],ax
+	*** 000fbb	89 44 22 		mov	WORD PTR [si+34],ax
+;|***         ob->ob_drawf = dispbomb;
+; Line 1058
+	*** 000fbe	c7 44 44 00 00 		mov	WORD PTR [si+68],OFFSET _dispbomb
+;|***         ob->ob_movef = movebomb;
+; Line 1059
+	*** 000fc3	c7 44 46 00 00 		mov	WORD PTR [si+70],OFFSET _movebomb
+;|*** 
+;|***         insertx( ob, obo );
+; Line 1061
+	*** 000fc8	57 			push	di
+	*** 000fc9	56 			push	si
+	*** 000fca	e8 00 00 		call	_insertx
+	*** 000fcd	83 c4 04 		add	sp,4
+;|*** 
+;|*** }
+; Line 1063
+					$EX712:
+	*** 000fd0	5e 			pop	si
+	*** 000fd1	5f 			pop	di
+	*** 000fd2	8b e5 			mov	sp,bp
+	*** 000fd4	5d 			pop	bp
+	*** 000fd5	c3 			ret	
+
+_initbomb	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** initmiss( obop )
+;|*** OBJECTS *obop;
+; Line 1068
+	PUBLIC	_initmiss
+_initmiss	PROC NEAR
+	*** 000fd6	55 			push	bp
+	*** 000fd7	8b ec 			mov	bp,sp
+	*** 000fd9	83 ec 08 		sub	sp,8
+	*** 000fdc	57 			push	di
+	*** 000fdd	56 			push	si
+;|*** {
+; Line 1069
+;	obop = 4
+;	register si = ob
+;	register di = obo
+;	angle = -6
+;	nspeed = -8
+;|*** register OBJECTS *ob, *obo;
+;|*** int              angle, nspeed;
+;|*** 
+;|***         obo = obop;
+; Line 1073
+	*** 000fde	8b 7e 04 		mov	di,WORD PTR [bp+4]	;obop
+;|***         if ( obo->ob_mdelay || ( !obo->ob_missiles ) || !missok )
+; Line 1074
+	*** 000fe1	83 7d 6c 00 		cmp	WORD PTR [di+108],0
+	*** 000fe5	75 0d 			jne	$I731
+	*** 000fe7	83 7d 68 00 		cmp	WORD PTR [di+104],0
+	*** 000feb	74 07 			je	$I731
+	*** 000fed	83 3e 00 00 00 		cmp	WORD PTR _missok,0
+	*** 000ff2	75 03 			jne	$I730
+					$I731:
+;|***                 return;
+; Line 1075
+	*** 000ff4	e9 eb 00 		jmp	$EX725
+;|***         if ( !( ob = allocobj() ) )
+; Line 1076
+					$I730:
+	*** 000ff7	e8 00 00 		call	_allocobj
+	*** 000ffa	8b f0 			mov	si,ax
+	*** 000ffc	0b f6 			or	si,si
+	*** 000ffe	75 03 			jne	$I732
+;|***                 return;
+; Line 1077
+	*** 001000	e9 df 00 		jmp	$EX725
+;|*** 
+;|***         if ( playmode != NOVICE )
+; Line 1079
+					$I732:
+	*** 001003	83 3e 00 00 04 		cmp	WORD PTR _playmode,4
+	*** 001008	74 03 			je	$I733
+;|***                 --obo->ob_missiles;
+; Line 1080
+	*** 00100a	ff 4d 68 		dec	WORD PTR [di+104]
+;|*** 
+;|***         obo->ob_mdelay = 5;
+; Line 1082
+					$I733:
+	*** 00100d	c7 45 6c 05 00 		mov	WORD PTR [di+108],5
+;|*** 
+;|***         ob->ob_type = MISSILE;
+; Line 1084
+	*** 001012	c7 44 60 0a 00 		mov	WORD PTR [si+96],10
+;|***         ob->ob_state = FLYING;
+; Line 1085
+	*** 001017	c7 04 01 00 		mov	WORD PTR [si],1
+;|*** 
+;|***         angle = ob->ob_angle = obo->ob_angle;
+; Line 1087
+	*** 00101b	8b 45 0a 		mov	ax,WORD PTR [di+10]
+	*** 00101e	89 44 0a 		mov	WORD PTR [si+10],ax
+	*** 001021	89 46 fa 		mov	WORD PTR [bp-6],ax	;angle
+;|***         ob->ob_x = obo->ob_x + ( COS( angle ) >> 4 ) + 4;
+; Line 1088
+	*** 001024	05 04 00 		add	ax,4
+	*** 001027	99 			cwd	
+	*** 001028	b9 10 00 		mov	cx,16
+	*** 00102b	f7 f9 			idiv	cx
+	*** 00102d	8b da 			mov	bx,dx
+	*** 00102f	d1 e3 			shl	bx,1
+	*** 001031	8b 87 00 00 		mov	ax,WORD PTR _sintab[bx]
+	*** 001035	b1 04 			mov	cl,4
+	*** 001037	d3 f8 			sar	ax,cl
+	*** 001039	03 45 02 		add	ax,WORD PTR [di+2]
+	*** 00103c	05 04 00 		add	ax,4
+	*** 00103f	89 44 02 		mov	WORD PTR [si+2],ax
+;|***         ob->ob_y = obo->ob_y + ( SIN( angle ) >> 4 ) - 4;
+; Line 1089
+	*** 001042	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;angle
+	*** 001045	99 			cwd	
+	*** 001046	b9 10 00 		mov	cx,16
+	*** 001049	f7 f9 			idiv	cx
+	*** 00104b	8b da 			mov	bx,dx
+	*** 00104d	d1 e3 			shl	bx,1
+	*** 00104f	8b 87 00 00 		mov	ax,WORD PTR _sintab[bx]
+	*** 001053	b1 04 			mov	cl,4
+	*** 001055	d3 f8 			sar	ax,cl
+	*** 001057	03 45 04 		add	ax,WORD PTR [di+4]
+	*** 00105a	2d 04 00 		sub	ax,4
+	*** 00105d	89 44 04 		mov	WORD PTR [si+4],ax
+;|***         ob->ob_lx = ob->ob_ly = 0;
+; Line 1090
+	*** 001060	2b c0 			sub	ax,ax
+	*** 001062	89 44 2e 		mov	WORD PTR [si+46],ax
+	*** 001065	89 44 2c 		mov	WORD PTR [si+44],ax
+;|***         ob->ob_speed = nspeed = gmaxspeed + ( gmaxspeed >> 1 );
+; Line 1091
+	*** 001068	a1 00 00 		mov	ax,_gmaxspeed
+	*** 00106b	d1 f8 			sar	ax,1
+	*** 00106d	03 06 00 00 		add	ax,_gmaxspeed
+	*** 001071	89 46 f8 		mov	WORD PTR [bp-8],ax	;nspeed
+	*** 001074	89 44 0e 		mov	WORD PTR [si+14],ax
+;|***         setdxdy( ob, nspeed * COS( angle ), nspeed * SIN( angle ) );
+; Line 1092
+	*** 001077	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;angle
+	*** 00107a	99 			cwd	
+	*** 00107b	b9 10 00 		mov	cx,16
+	*** 00107e	f7 f9 			idiv	cx
+	*** 001080	8b da 			mov	bx,dx
+	*** 001082	d1 e3 			shl	bx,1
+	*** 001084	8b 87 00 00 		mov	ax,WORD PTR _sintab[bx]
+	*** 001088	f7 6e f8 		imul	WORD PTR [bp-8]	;nspeed
+	*** 00108b	50 			push	ax
+	*** 00108c	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;angle
+	*** 00108f	05 04 00 		add	ax,4
+	*** 001092	99 			cwd	
+	*** 001093	f7 f9 			idiv	cx
+	*** 001095	8b da 			mov	bx,dx
+	*** 001097	d1 e3 			shl	bx,1
+	*** 001099	8b 87 00 00 		mov	ax,WORD PTR _sintab[bx]
+	*** 00109d	f7 6e f8 		imul	WORD PTR [bp-8]	;nspeed
+	*** 0010a0	50 			push	ax
+	*** 0010a1	56 			push	si
+	*** 0010a2	e8 00 00 		call	_setdxdy
+	*** 0010a5	83 c4 06 		add	sp,6
+;|*** 
+;|***         ob->ob_life = MISSLIFE;
+; Line 1094
+	*** 0010a8	c7 44 1e 32 00 		mov	WORD PTR [si+30],50
+;|***         ob->ob_owner = obo;
+; Line 1095
+	*** 0010ad	89 7c 20 		mov	WORD PTR [si+32],di
+;|***         ob->ob_clr = obo->ob_clr;
+; Line 1096
+	*** 0010b0	8b 45 2a 		mov	ax,WORD PTR [di+42]
+	*** 0010b3	89 44 2a 		mov	WORD PTR [si+42],ax
+;|***         ob->ob_symhgt = ob->ob_symwdt = 8;
+; Line 1097
+	*** 0010b6	b8 08 00 		mov	ax,8
+	*** 0010b9	89 44 24 		mov	WORD PTR [si+36],ax
+	*** 0010bc	89 44 22 		mov	WORD PTR [si+34],ax
+;|***         ob->ob_drawf = dispmiss;
+; Line 1098
+	*** 0010bf	c7 44 44 00 00 		mov	WORD PTR [si+68],OFFSET _dispmiss
+;|***         ob->ob_movef = movemiss;
+; Line 1099
+	*** 0010c4	c7 44 46 00 00 		mov	WORD PTR [si+70],OFFSET _movemiss
+;|***         ob->ob_target = obo->ob_mfiring;
+; Line 1100
+	*** 0010c9	8b 45 6a 		mov	ax,WORD PTR [di+106]
+	*** 0010cc	89 44 6e 		mov	WORD PTR [si+110],ax
+;|***         ob->ob_orient = ob->ob_accel = ob->ob_flaps = 0;
+; Line 1101
+	*** 0010cf	2b c0 			sub	ax,ax
+	*** 0010d1	89 44 12 		mov	WORD PTR [si+18],ax
+	*** 0010d4	89 44 10 		mov	WORD PTR [si+16],ax
+	*** 0010d7	89 44 0c 		mov	WORD PTR [si+12],ax
+;|*** 
+;|***         insertx( ob, obo );
+; Line 1103
+	*** 0010da	57 			push	di
+	*** 0010db	56 			push	si
+	*** 0010dc	e8 00 00 		call	_insertx
+	*** 0010df	83 c4 04 		add	sp,4
+;|*** 
+;|*** }
+; Line 1105
+					$EX725:
+	*** 0010e2	5e 			pop	si
+	*** 0010e3	5f 			pop	di
+	*** 0010e4	8b e5 			mov	sp,bp
+	*** 0010e6	5d 			pop	bp
+	*** 0010e7	c3 			ret	
+
+_initmiss	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** initburst( obop )
+;|*** OBJECTS *obop;
+; Line 1110
+	PUBLIC	_initburst
+_initburst	PROC NEAR
+	*** 0010e8	55 			push	bp
+	*** 0010e9	8b ec 			mov	bp,sp
+	*** 0010eb	83 ec 06 		sub	sp,6
+	*** 0010ee	57 			push	di
+	*** 0010ef	56 			push	si
+;|*** {
+; Line 1111
+;	obop = 4
+;	register si = ob
+;	register di = obo
+;	angle = -6
+;|*** register OBJECTS *ob, *obo;
+;|*** int              angle;
+;|*** 
+;|***         obo = obop;
+; Line 1115
+	*** 0010f0	8b 7e 04 		mov	di,WORD PTR [bp+4]	;obop
+;|***         if ( obo->ob_bsdelay || ( !obo->ob_bursts ) || !missok )
+; Line 1116
+	*** 0010f3	83 7d 74 00 		cmp	WORD PTR [di+116],0
+	*** 0010f7	75 0d 			jne	$I741
+	*** 0010f9	83 7d 70 00 		cmp	WORD PTR [di+112],0
+	*** 0010fd	74 07 			je	$I741
+	*** 0010ff	83 3e 00 00 00 		cmp	WORD PTR _missok,0
+	*** 001104	75 03 			jne	$I740
+					$I741:
+;|***                 return;
+; Line 1117
+	*** 001106	e9 0d 01 		jmp	$EX736
+;|***         if ( !( ob = allocobj() ) )
+; Line 1118
+					$I740:
+	*** 001109	e8 00 00 		call	_allocobj
+	*** 00110c	8b f0 			mov	si,ax
+	*** 00110e	0b f6 			or	si,si
+	*** 001110	75 03 			jne	$I742
+;|***                 return;
+; Line 1119
+	*** 001112	e9 01 01 		jmp	$EX736
+;|*** 
+;|***         ob->ob_bsdelay = 5;
+; Line 1121
+					$I742:
+	*** 001115	c7 44 74 05 00 		mov	WORD PTR [si+116],5
+;|*** 
+;|***         if ( playmode != NOVICE )
+; Line 1123
+	*** 00111a	83 3e 00 00 04 		cmp	WORD PTR _playmode,4
+	*** 00111f	74 03 			je	$I743
+;|***                 --obo->ob_bursts;
+; Line 1124
+	*** 001121	ff 4d 70 		dec	WORD PTR [di+112]
+;|*** 
+;|***         ob->ob_type = STARBURST;
+; Line 1126
+					$I743:
+	*** 001124	c7 44 60 0b 00 		mov	WORD PTR [si+96],11
+;|***         ob->ob_state = FALLING;
+; Line 1127
+	*** 001129	c7 04 05 00 		mov	WORD PTR [si],5
+;|*** 
+;|***         if ( obo->ob_orient )
+; Line 1129
+	*** 00112d	83 7d 0c 00 		cmp	WORD PTR [di+12],0
+	*** 001131	74 11 			je	$I744
+;|***                 angle = ( obo->ob_angle + ( 3 * ANGLES / 8 ) ) % ANGLES;
+; Line 1130
+	*** 001133	8b 45 0a 		mov	ax,WORD PTR [di+10]
+	*** 001136	05 06 00 		add	ax,6
+	*** 001139	99 			cwd	
+	*** 00113a	b9 10 00 		mov	cx,16
+	*** 00113d	f7 f9 			idiv	cx
+	*** 00113f	89 56 fa 		mov	WORD PTR [bp-6],dx	;angle
+;|***         else
+; Line 1131
+	*** 001142	eb 0f 			jmp	SHORT $I745
+					$I744:
+;|***                 angle = ( obo->ob_angle + ( 5 * ANGLES / 8 ) ) % ANGLES;
+; Line 1132
+	*** 001144	8b 45 0a 		mov	ax,WORD PTR [di+10]
+	*** 001147	05 0a 00 		add	ax,10
+	*** 00114a	99 			cwd	
+	*** 00114b	b9 10 00 		mov	cx,16
+	*** 00114e	f7 f9 			idiv	cx
+	*** 001150	89 56 fa 		mov	WORD PTR [bp-6],dx	;angle
+					$I745:
+;|***         setdxdy( ob, gminspeed * COS( angle ), gminspeed * SIN( angle ) );
+; Line 1133
+	*** 001153	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;angle
+	*** 001156	99 			cwd	
+	*** 001157	b9 10 00 		mov	cx,16
+	*** 00115a	f7 f9 			idiv	cx
+	*** 00115c	8b da 			mov	bx,dx
+	*** 00115e	d1 e3 			shl	bx,1
+	*** 001160	8b 87 00 00 		mov	ax,WORD PTR _sintab[bx]
+	*** 001164	f7 2e 00 00 		imul	WORD PTR _gminspeed
+	*** 001168	50 			push	ax
+	*** 001169	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;angle
+	*** 00116c	05 04 00 		add	ax,4
+	*** 00116f	99 			cwd	
+	*** 001170	f7 f9 			idiv	cx
+	*** 001172	8b da 			mov	bx,dx
+	*** 001174	d1 e3 			shl	bx,1
+	*** 001176	8b 87 00 00 		mov	ax,WORD PTR _sintab[bx]
+	*** 00117a	f7 2e 00 00 		imul	WORD PTR _gminspeed
+	*** 00117e	50 			push	ax
+	*** 00117f	56 			push	si
+	*** 001180	e8 00 00 		call	_setdxdy
+	*** 001183	83 c4 06 		add	sp,6
+;|***         ob->ob_dx += obo->ob_dx;
+; Line 1134
+	*** 001186	8b 45 06 		mov	ax,WORD PTR [di+6]
+	*** 001189	01 44 06 		add	WORD PTR [si+6],ax
+;|***         ob->ob_dy += obo->ob_dy;
+; Line 1135
+	*** 00118c	8b 45 08 		mov	ax,WORD PTR [di+8]
+	*** 00118f	01 44 08 		add	WORD PTR [si+8],ax
+;|*** 
+;|***         ob->ob_x = obo->ob_x + ( ( COS( angle ) * 10 ) >> 10 ) + 4;
+; Line 1137
+	*** 001192	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;angle
+	*** 001195	05 04 00 		add	ax,4
+	*** 001198	99 			cwd	
+	*** 001199	b9 10 00 		mov	cx,16
+	*** 00119c	f7 f9 			idiv	cx
+	*** 00119e	8b da 			mov	bx,dx
+	*** 0011a0	d1 e3 			shl	bx,1
+	*** 0011a2	8b 87 00 00 		mov	ax,WORD PTR _sintab[bx]
+	*** 0011a6	8b c8 			mov	cx,ax
+	*** 0011a8	d1 e0 			shl	ax,1
+	*** 0011aa	d1 e0 			shl	ax,1
+	*** 0011ac	03 c1 			add	ax,cx
+	*** 0011ae	d1 e0 			shl	ax,1
+	*** 0011b0	b1 0a 			mov	cl,10
+	*** 0011b2	d3 f8 			sar	ax,cl
+	*** 0011b4	03 45 02 		add	ax,WORD PTR [di+2]
+	*** 0011b7	05 04 00 		add	ax,4
+	*** 0011ba	89 44 02 		mov	WORD PTR [si+2],ax
+;|***         ob->ob_y = obo->ob_y + ( ( SIN( angle ) * 10 ) >> 10 ) - 4;
+; Line 1138
+	*** 0011bd	8b 46 fa 		mov	ax,WORD PTR [bp-6]	;angle
+	*** 0011c0	99 			cwd	
+	*** 0011c1	b9 10 00 		mov	cx,16
+	*** 0011c4	f7 f9 			idiv	cx
+	*** 0011c6	8b da 			mov	bx,dx
+	*** 0011c8	d1 e3 			shl	bx,1
+	*** 0011ca	8b 87 00 00 		mov	ax,WORD PTR _sintab[bx]
+	*** 0011ce	8b c8 			mov	cx,ax
+	*** 0011d0	d1 e0 			shl	ax,1
+	*** 0011d2	d1 e0 			shl	ax,1
+	*** 0011d4	03 c1 			add	ax,cx
+	*** 0011d6	d1 e0 			shl	ax,1
+	*** 0011d8	b1 0a 			mov	cl,10
+	*** 0011da	d3 f8 			sar	ax,cl
+	*** 0011dc	03 45 04 		add	ax,WORD PTR [di+4]
+	*** 0011df	2d 04 00 		sub	ax,4
+	*** 0011e2	89 44 04 		mov	WORD PTR [si+4],ax
+;|***         ob->ob_lx = ob->ob_ly = 0;
+; Line 1139
+	*** 0011e5	2b c0 			sub	ax,ax
+	*** 0011e7	89 44 2e 		mov	WORD PTR [si+46],ax
+	*** 0011ea	89 44 2c 		mov	WORD PTR [si+44],ax
+;|*** 
+;|***         ob->ob_life = BURSTLIFE;
+; Line 1141
+	*** 0011ed	c7 44 1e 14 00 		mov	WORD PTR [si+30],20
+;|***         ob->ob_owner = obo;
+; Line 1142
+	*** 0011f2	89 7c 20 		mov	WORD PTR [si+32],di
+;|***         ob->ob_clr = obo->ob_clr;
+; Line 1143
+	*** 0011f5	8b 45 2a 		mov	ax,WORD PTR [di+42]
+	*** 0011f8	89 44 2a 		mov	WORD PTR [si+42],ax
+;|***         ob->ob_symhgt = ob->ob_symwdt = 8;
+; Line 1144
+	*** 0011fb	b8 08 00 		mov	ax,8
+	*** 0011fe	89 44 24 		mov	WORD PTR [si+36],ax
+	*** 001201	89 44 22 		mov	WORD PTR [si+34],ax
+;|***         ob->ob_drawf = dispburst;
+; Line 1145
+	*** 001204	c7 44 44 00 00 		mov	WORD PTR [si+68],OFFSET _dispburst
+;|***         ob->ob_movef = moveburst;
+; Line 1146
+	*** 001209	c7 44 46 00 00 		mov	WORD PTR [si+70],OFFSET _moveburst
+;|*** 
+;|***         insertx( ob, obo );
+; Line 1148
+	*** 00120e	57 			push	di
+	*** 00120f	56 			push	si
+	*** 001210	e8 00 00 		call	_insertx
+	*** 001213	83 c4 04 		add	sp,4
+;|*** 
+;|*** }
+; Line 1150
+					$EX736:
+	*** 001216	5e 			pop	si
+	*** 001217	5f 			pop	di
+	*** 001218	8b e5 			mov	sp,bp
+	*** 00121a	5d 			pop	bp
+	*** 00121b	c3 			ret	
+
+_initburst	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** static inittarg()
+;|*** {
+; Line 1155
+inittarg	PROC NEAR
+	*** 00121c	55 			push	bp
+	*** 00121d	8b ec 			mov	bp,sp
+	*** 00121f	83 ec 16 		sub	sp,22
+	*** 001222	57 			push	di
+	*** 001223	56 			push	si
+;	register si = ob
+;	register di = x
+;	i = -10
+;	tx = -16
+;	tt = -6
+;	minh = -14
+;	maxh = -20
+;	aveh = -4
+;	minx = -12
+;	maxx = -18
+;|*** register OBJECTS *ob;
+;|*** register int x, i;
+;|*** int     *tx, *tt;
+;|*** int     minh, maxh, aveh, minx, maxx;
+;|*** 
+;|***         tx = currgame->gm_xtarg;
+; Line 1161
+	*** 001224	a1 00 00 		mov	ax,_currgame
+	*** 001227	05 26 00 		add	ax,38
+	*** 00122a	89 46 f0 		mov	WORD PTR [bp-16],ax	;tx
+;|***         tt = currgame->gm_ttarg;
+; Line 1162
+	*** 00122d	a1 00 00 		mov	ax,_currgame
+	*** 001230	05 4e 00 		add	ax,78
+	*** 001233	89 46 fa 		mov	WORD PTR [bp-6],ax	;tt
+;|*** 
+;|***         if ( ( ( playmode != MULTIPLE ) && ( playmode != ASYNCH ) )
+;|***                 || ( multbuff->mu_maxplyr == 1 ) ) {
+; Line 1165
+	*** 001236	83 3e 00 00 01 		cmp	WORD PTR _playmode,1
+	*** 00123b	74 07 			je	$I759
+	*** 00123d	83 3e 00 00 03 		cmp	WORD PTR _playmode,3
+	*** 001242	75 09 			jne	$I758
+					$I759:
+	*** 001244	8b 1e 00 00 		mov	bx,_multbuff
+	*** 001248	83 3f 01 		cmp	WORD PTR [bx],1
+	*** 00124b	75 0e 			jne	$I757
+					$I758:
+;|***                 numtarg[0] = 0;
+; Line 1166
+	*** 00124d	c7 06 00 00 00 00 	mov	WORD PTR _numtarg,0
+;|***                 numtarg[1] = MAX_TARG - 3;
+; Line 1167
+	*** 001253	c7 06 02 00 11 00 	mov	WORD PTR _numtarg+2,17
+;|***         } else
+; Line 1168
+	*** 001259	eb 09 			jmp	SHORT $I760
+					$I757:
+;|***                 numtarg[0] = numtarg[1] = MAX_TARG / 2;
+; Line 1169
+	*** 00125b	b8 0a 00 		mov	ax,10
+	*** 00125e	a3 02 00 		mov	WORD PTR _numtarg+2,ax
+	*** 001261	a3 00 00 		mov	WORD PTR _numtarg,ax
+					$I760:
+;|*** 
+;|***         for ( i = 0; i < MAX_TARG; ++i, ++tx, ++tt ) {
+; Line 1171
+	*** 001264	c7 46 f6 00 00 		mov	WORD PTR [bp-10],0	;i
+	*** 001269	eb 0b 			jmp	SHORT $F761
+					$FC762:
+	*** 00126b	ff 46 f6 		inc	WORD PTR [bp-10]	;i
+	*** 00126e	83 46 f0 02 		add	WORD PTR [bp-16],2	;tx
+	*** 001272	83 46 fa 02 		add	WORD PTR [bp-6],2	;tt
+					$F761:
+	*** 001276	83 7e f6 14 		cmp	WORD PTR [bp-10],20	;i
+	*** 00127a	7c 03 			jl	$JCC4730
+	*** 00127c	e9 39 01 		jmp	$FB763
+					$JCC4730:
+;|***                 targets[i] = ob = allocobj();
+; Line 1172
+	*** 00127f	e8 00 00 		call	_allocobj
+	*** 001282	8b f0 			mov	si,ax
+	*** 001284	8b 5e f6 		mov	bx,WORD PTR [bp-10]	;i
+	*** 001287	d1 e3 			shl	bx,1
+	*** 001289	89 b7 00 00 		mov	WORD PTR _targets[bx],si
+;|***                 minx = ob->ob_x = *tx;
+; Line 1173
+	*** 00128d	8b 5e f0 		mov	bx,WORD PTR [bp-16]	;tx
+	*** 001290	8b 07 			mov	ax,WORD PTR [bx]
+	*** 001292	89 44 02 		mov	WORD PTR [si+2],ax
+	*** 001295	89 46 f4 		mov	WORD PTR [bp-12],ax	;minx
+;|***                 maxx = ob->ob_x + 15;
+; Line 1174
+	*** 001298	8b 44 02 		mov	ax,WORD PTR [si+2]
+	*** 00129b	05 0f 00 		add	ax,15
+	*** 00129e	89 46 ee 		mov	WORD PTR [bp-18],ax	;maxx
+;|***                 minh = 999;
+; Line 1175
+	*** 0012a1	c7 46 f2 e7 03 		mov	WORD PTR [bp-14],999	;minh
+;|***                 maxh = 0;
+; Line 1176
+	*** 0012a6	c7 46 ec 00 00 		mov	WORD PTR [bp-20],0	;maxh
+;|***                 for ( x = minx; x <= maxx; ++x ) {
+; Line 1177
+	*** 0012ab	8b 7e f4 		mov	di,WORD PTR [bp-12]	;minx
+	*** 0012ae	eb 01 			jmp	SHORT $F764
+					$FC765:
+	*** 0012b0	47 			inc	di
+					$F764:
+	*** 0012b1	39 7e ee 		cmp	WORD PTR [bp-18],di	;maxx
+	*** 0012b4	7c 24 			jl	$FB766
+;|***                         if ( ground[x] > maxh )
+; Line 1178
+	*** 0012b6	8a 85 00 00 		mov	al,BYTE PTR _ground[di]
+	*** 0012ba	2a e4 			sub	ah,ah
+	*** 0012bc	89 46 ea 		mov	WORD PTR [bp-22],ax
+	*** 0012bf	39 46 ec 		cmp	WORD PTR [bp-20],ax	;maxh
+	*** 0012c2	73 03 			jae	$I767
+;|***                                 maxh = ground[x];
+; Line 1179
+	*** 0012c4	89 46 ec 		mov	WORD PTR [bp-20],ax	;maxh
+;|***                         if ( ground[x] < minh )
+; Line 1180
+					$I767:
+	*** 0012c7	8a 85 00 00 		mov	al,BYTE PTR _ground[di]
+	*** 0012cb	2a e4 			sub	ah,ah
+	*** 0012cd	89 46 ea 		mov	WORD PTR [bp-22],ax
+	*** 0012d0	39 46 f2 		cmp	WORD PTR [bp-14],ax	;minh
+	*** 0012d3	76 03 			jbe	$I768
+;|***                                 minh = ground[x];
+; Line 1181
+	*** 0012d5	89 46 f2 		mov	WORD PTR [bp-14],ax	;minh
+;|***                 }
+; Line 1182
+					$I768:
+	*** 0012d8	eb d6 			jmp	SHORT $FC765
+					$FB766:
+;|***                 aveh = ( minh + maxh ) >> 1;
+; Line 1183
+	*** 0012da	8b 46 f2 		mov	ax,WORD PTR [bp-14]	;minh
+	*** 0012dd	03 46 ec 		add	ax,WORD PTR [bp-20]	;maxh
+	*** 0012e0	d1 f8 			sar	ax,1
+	*** 0012e2	89 46 fc 		mov	WORD PTR [bp-4],ax	;aveh
+;|*** 
+;|***                 while ( ( ob->ob_y = aveh + 16 ) >= MAX_Y )
+; Line 1185
+					$FC770:
+	*** 0012e5	8b 46 fc 		mov	ax,WORD PTR [bp-4]	;aveh
+	*** 0012e8	05 10 00 		add	ax,16
+	*** 0012eb	89 44 04 		mov	WORD PTR [si+4],ax
+	*** 0012ee	3d c8 00 		cmp	ax,200
+	*** 0012f1	7c 05 			jl	$FB771
+;|***                         --aveh;
+; Line 1186
+	*** 0012f3	ff 4e fc 		dec	WORD PTR [bp-4]	;aveh
+	*** 0012f6	eb ed 			jmp	SHORT $FC770
+					$FB771:
+;|*** 
+;|***                 for ( x = minx; x <= maxx; ++x )
+; Line 1188
+	*** 0012f8	8b 7e f4 		mov	di,WORD PTR [bp-12]	;minx
+	*** 0012fb	eb 01 			jmp	SHORT $F772
+					$FC773:
+	*** 0012fd	47 			inc	di
+					$F772:
+	*** 0012fe	39 7e ee 		cmp	WORD PTR [bp-18],di	;maxx
+	*** 001301	7c 09 			jl	$FB774
+;|***                         ground[x] = aveh;
+; Line 1189
+	*** 001303	8a 46 fc 		mov	al,BYTE PTR [bp-4]	;aveh
+	*** 001306	88 85 00 00 		mov	BYTE PTR _ground[di],al
+	*** 00130a	eb f1 			jmp	SHORT $FC773
+					$FB774:
+;|*** 
+;|***                 ob->ob_dx = ob->ob_dy = ob->ob_lx = ob->ob_ly = ob->ob_ldx
+;|***                           = ob->ob_ldy = ob->ob_angle = ob->ob_hitcount = 0;
+; Line 1192
+	*** 00130c	2b c0 			sub	ax,ax
+	*** 00130e	89 44 1a 		mov	WORD PTR [si+26],ax
+	*** 001311	89 44 0a 		mov	WORD PTR [si+10],ax
+	*** 001314	89 44 32 		mov	WORD PTR [si+50],ax
+	*** 001317	89 44 30 		mov	WORD PTR [si+48],ax
+	*** 00131a	89 44 2e 		mov	WORD PTR [si+46],ax
+	*** 00131d	89 44 2c 		mov	WORD PTR [si+44],ax
+	*** 001320	89 44 08 		mov	WORD PTR [si+8],ax
+	*** 001323	89 44 06 		mov	WORD PTR [si+6],ax
+;|***                 ob->ob_type = TARGET;
+; Line 1193
+	*** 001326	c7 44 60 04 00 		mov	WORD PTR [si+96],4
+;|***                 ob->ob_state = STANDING;
+; Line 1194
+	*** 00132b	c7 04 06 00 		mov	WORD PTR [si],6
+;|***                 ob->ob_orient = *tt;
+; Line 1195
+	*** 00132f	8b 5e fa 		mov	bx,WORD PTR [bp-6]	;tt
+	*** 001332	8b 07 			mov	ax,WORD PTR [bx]
+	*** 001334	89 44 0c 		mov	WORD PTR [si+12],ax
+;|***                 ob->ob_life = i;
+; Line 1196
+	*** 001337	8b 46 f6 		mov	ax,WORD PTR [bp-10]	;i
+	*** 00133a	89 44 1e 		mov	WORD PTR [si+30],ax
+;|*** 
+;|***                 if ( ( ( playmode != MULTIPLE ) && ( playmode != ASYNCH ) )
+;|***                         || ( multbuff->mu_maxplyr == 1 ) )
+; Line 1199
+	*** 00133d	83 3e 00 00 01 		cmp	WORD PTR _playmode,1
+	*** 001342	74 07 			je	$I777
+	*** 001344	83 3e 00 00 03 		cmp	WORD PTR _playmode,3
+	*** 001349	75 09 			jne	$I776
+					$I777:
+	*** 00134b	8b 1e 00 00 		mov	bx,_multbuff
+	*** 00134f	83 3f 01 		cmp	WORD PTR [bx],1
+	*** 001352	75 21 			jne	$I775
+					$I776:
+;|***                         ob->ob_owner = &nobjects[( ( i < MAX_TARG / 2 )
+;|***                                                  && ( i > MAX_TARG /2 - 4 ) )
+;|***                                                  ? 0 : 1 ];
+; Line 1202
+	*** 001354	83 7e f6 0a 		cmp	WORD PTR [bp-10],10	;i
+	*** 001358	7d 0a 			jge	$L20016
+	*** 00135a	83 7e f6 06 		cmp	WORD PTR [bp-10],6	;i
+	*** 00135e	7e 04 			jle	$L20016
+	*** 001360	2b c0 			sub	ax,ax
+	*** 001362	eb 03 			jmp	SHORT $L20017
+					$L20016:
+	*** 001364	b8 01 00 		mov	ax,1
+					$L20017:
+	*** 001367	b9 76 00 		mov	cx,118
+	*** 00136a	f7 e9 			imul	cx
+	*** 00136c	03 06 00 00 		add	ax,_nobjects
+	*** 001370	89 44 20 		mov	WORD PTR [si+32],ax
+;|***                 else
+; Line 1203
+	*** 001373	eb 19 			jmp	SHORT $I778
+					$I775:
+;|***                         ob->ob_owner = &nobjects[i >= ( MAX_TARG / 2 ) ];
+; Line 1204
+	*** 001375	83 7e f6 0a 		cmp	WORD PTR [bp-10],10	;i
+	*** 001379	7c 05 			jl	$L20019
+	*** 00137b	b8 01 00 		mov	ax,1
+	*** 00137e	eb 02 			jmp	SHORT $L20020
+					$L20019:
+	*** 001380	2b c0 			sub	ax,ax
+					$L20020:
+	*** 001382	b9 76 00 		mov	cx,118
+	*** 001385	f7 e9 			imul	cx
+	*** 001387	03 06 00 00 		add	ax,_nobjects
+	*** 00138b	89 44 20 		mov	WORD PTR [si+32],ax
+					$I778:
+;|***                 ob->ob_clr = ob->ob_owner->ob_clr;
+; Line 1205
+	*** 00138e	8b 5c 20 		mov	bx,WORD PTR [si+32]
+	*** 001391	8b 47 2a 		mov	ax,WORD PTR [bx+42]
+	*** 001394	89 44 2a 		mov	WORD PTR [si+42],ax
+;|***                 ob->ob_symhgt = ob->ob_symwdt = 16;
+; Line 1206
+	*** 001397	b8 10 00 		mov	ax,16
+	*** 00139a	89 44 24 		mov	WORD PTR [si+36],ax
+	*** 00139d	89 44 22 		mov	WORD PTR [si+34],ax
+;|***                 ob->ob_drawf = disptarg;
+; Line 1207
+	*** 0013a0	c7 44 44 00 00 		mov	WORD PTR [si+68],OFFSET _disptarg
+;|***                 ob->ob_movef = movetarg;
+; Line 1208
+	*** 0013a5	c7 44 46 00 00 		mov	WORD PTR [si+70],OFFSET _movetarg
+;|*** 
+;|***                 insertx( ob, &topobj );
+; Line 1210
+	*** 0013aa	b8 00 00 		mov	ax,OFFSET _topobj
+	*** 0013ad	50 			push	ax
+	*** 0013ae	56 			push	si
+	*** 0013af	e8 00 00 		call	_insertx
+	*** 0013b2	83 c4 04 		add	sp,4
+;|***         }
+; Line 1211
+	*** 0013b5	e9 b3 fe 		jmp	$FC762
+					$FB763:
+;|*** }
+; Line 1212
+	*** 0013b8	5e 			pop	si
+	*** 0013b9	5f 			pop	di
+	*** 0013ba	8b e5 			mov	sp,bp
+	*** 0013bc	5d 			pop	bp
+	*** 0013bd	c3 			ret	
+
+inittarg	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** initexpl( obop, small )
+;|*** OBJECTS *obop;
+; Line 1217
+	PUBLIC	_initexpl
+_initexpl	PROC NEAR
+	*** 0013be	55 			push	bp
+	*** 0013bf	8b ec 			mov	bp,sp
+	*** 0013c1	83 ec 1c 		sub	sp,28
+	*** 0013c4	57 			push	di
+	*** 0013c5	56 			push	si
+;|*** int     small;
+;|*** {
+; Line 1219
+;	obop = 4
+;	small = 6
+;	register si = ob
+;	register di = obo
+;	i = -22
+;	ic = -26
+;	life = -2
+;	speed = -10
+;	obox = -18
+;	oboy = -20
+;	obodx = -24
+;	obody = -28
+;	oboclr = -8
+;	obotype = -14
+;	mansym = -16
+;	orient = -6
+;|*** register OBJECTS *ob, *obo;
+;|*** int      i, ic, life, speed;
+;|*** int      obox, oboy, obodx, obody, oboclr, obotype;
+;|*** BOOL     mansym;
+;|*** int      orient;
+;|*** 
+;|*** 
+;|***         obo = obop;
+; Line 1227
+	*** 0013c6	8b 7e 04 		mov	di,WORD PTR [bp+4]	;obop
+;|***         obox   = obo->ob_x + ( obo->ob_symwdt >> 1 );
+; Line 1228
+	*** 0013c9	8b 45 24 		mov	ax,WORD PTR [di+36]
+	*** 0013cc	d1 f8 			sar	ax,1
+	*** 0013ce	03 45 02 		add	ax,WORD PTR [di+2]
+	*** 0013d1	89 46 ee 		mov	WORD PTR [bp-18],ax	;obox
+;|***         oboy   = obo->ob_y + ( obo->ob_symhgt >> 1 );
+; Line 1229
+	*** 0013d4	8b 45 22 		mov	ax,WORD PTR [di+34]
+	*** 0013d7	d1 f8 			sar	ax,1
+	*** 0013d9	03 45 04 		add	ax,WORD PTR [di+4]
+	*** 0013dc	89 46 ec 		mov	WORD PTR [bp-20],ax	;oboy
+;|***         obodx  = obo->ob_dx >> 2;
+; Line 1230
+	*** 0013df	8b 45 06 		mov	ax,WORD PTR [di+6]
+	*** 0013e2	d1 f8 			sar	ax,1
+	*** 0013e4	d1 f8 			sar	ax,1
+	*** 0013e6	89 46 e8 		mov	WORD PTR [bp-24],ax	;obodx
+;|***         obody  = obo->ob_dy >> 2;
+; Line 1231
+	*** 0013e9	8b 45 08 		mov	ax,WORD PTR [di+8]
+	*** 0013ec	d1 f8 			sar	ax,1
+	*** 0013ee	d1 f8 			sar	ax,1
+	*** 0013f0	89 46 e4 		mov	WORD PTR [bp-28],ax	;obody
+;|***         oboclr = obo->ob_clr;
+; Line 1232
+	*** 0013f3	8b 45 2a 		mov	ax,WORD PTR [di+42]
+	*** 0013f6	89 46 f8 		mov	WORD PTR [bp-8],ax	;oboclr
+;|*** 
+;|***         if ( ( ( obotype = obo->ob_type ) == TARGET )
+;|***                 && ( obo->ob_orient == 2 ) ) {
+; Line 1235
+	*** 0013f9	8b 45 60 		mov	ax,WORD PTR [di+96]
+	*** 0013fc	89 46 f2 		mov	WORD PTR [bp-14],ax	;obotype
+	*** 0013ff	3d 04 00 		cmp	ax,4
+	*** 001402	75 13 			jne	$I797
+	*** 001404	83 7d 0c 02 		cmp	WORD PTR [di+12],2
+	*** 001408	75 0d 			jne	$I797
+;|***                 ic = 1;
+; Line 1236
+	*** 00140a	c7 46 e6 01 00 		mov	WORD PTR [bp-26],1	;ic
+;|***                 speed = gminspeed;
+; Line 1237
+	*** 00140f	a1 00 00 		mov	ax,_gminspeed
+	*** 001412	89 46 f6 		mov	WORD PTR [bp-10],ax	;speed
+;|***         } else {
+; Line 1238
+	*** 001415	eb 28 			jmp	SHORT $I798
+					$I797:
+;|***                 ic = small ? 6 : 2;
+; Line 1239
+	*** 001417	83 7e 06 00 		cmp	WORD PTR [bp+6],0	;small
+	*** 00141b	74 05 			je	$L20021
+	*** 00141d	b8 06 00 		mov	ax,6
+	*** 001420	eb 03 			jmp	SHORT $L20022
+					$L20021:
+	*** 001422	b8 02 00 		mov	ax,2
+					$L20022:
+	*** 001425	89 46 e6 		mov	WORD PTR [bp-26],ax	;ic
+;|***                 speed = gminspeed >> ( ( explseed & 7 ) != 7 );
+; Line 1240
+	*** 001428	a0 00 00 		mov	al,BYTE PTR _explseed
+	*** 00142b	24 07 			and	al,7
+	*** 00142d	3c 07 			cmp	al,7
+	*** 00142f	74 04 			je	$L20023
+	*** 001431	b1 01 			mov	cl,1
+	*** 001433	eb 02 			jmp	SHORT $L20024
+					$L20023:
+	*** 001435	2a c9 			sub	cl,cl
+					$L20024:
+	*** 001437	a1 00 00 		mov	ax,_gminspeed
+	*** 00143a	d3 f8 			sar	ax,cl
+	*** 00143c	89 46 f6 		mov	WORD PTR [bp-10],ax	;speed
+;|***         }
+; Line 1241
+					$I798:
+;|***         mansym = ( obotype == PLANE ) && ( ( obo->ob_state == FLYING )
+;|***                                       || ( obo->ob_state == WOUNDED ) );
+; Line 1243
+	*** 00143f	83 7e f2 01 		cmp	WORD PTR [bp-14],1	;obotype
+	*** 001443	75 0f 			jne	$L20025
+	*** 001445	83 3d 01 		cmp	WORD PTR [di],1
+	*** 001448	74 05 			je	$L20028
+	*** 00144a	83 3d 09 		cmp	WORD PTR [di],9
+	*** 00144d	75 05 			jne	$L20025
+					$L20028:
+	*** 00144f	b8 01 00 		mov	ax,1
+	*** 001452	eb 02 			jmp	SHORT $L20026
+					$L20025:
+	*** 001454	2b c0 			sub	ax,ax
+					$L20026:
+	*** 001456	89 46 f0 		mov	WORD PTR [bp-16],ax	;mansym
+;|*** 
+;|***         for ( i = 1; i <= 15; i += ic ) {
+; Line 1245
+	*** 001459	c7 46 ea 01 00 		mov	WORD PTR [bp-22],1	;i
+	*** 00145e	eb 06 			jmp	SHORT $F799
+					$FC800:
+	*** 001460	8b 46 e6 		mov	ax,WORD PTR [bp-26]	;ic
+	*** 001463	01 46 ea 		add	WORD PTR [bp-22],ax	;i
+					$F799:
+	*** 001466	83 7e ea 0f 		cmp	WORD PTR [bp-22],15	;i
+	*** 00146a	7e 03 			jle	$JCC5226
+	*** 00146c	e9 f9 00 		jmp	$FB801
+					$JCC5226:
+;|***                 if ( !( ob = allocobj() ) )
+; Line 1246
+	*** 00146f	e8 00 00 		call	_allocobj
+	*** 001472	8b f0 			mov	si,ax
+	*** 001474	0b f6 			or	si,si
+	*** 001476	75 03 			jne	$I802
+;|***                         return;
+; Line 1247
+	*** 001478	e9 ed 00 		jmp	$FB801
+;|*** 
+;|***                 ob->ob_type = EXPLOSION;
+; Line 1249
+					$I802:
+	*** 00147b	c7 44 60 05 00 		mov	WORD PTR [si+96],5
+;|*** 
+;|***                 setdxdy( ob, COS( i ) * speed, SIN( i ) * speed );
+; Line 1251
+	*** 001480	8b 46 ea 		mov	ax,WORD PTR [bp-22]	;i
+	*** 001483	99 			cwd	
+	*** 001484	b9 10 00 		mov	cx,16
+	*** 001487	f7 f9 			idiv	cx
+	*** 001489	8b da 			mov	bx,dx
+	*** 00148b	d1 e3 			shl	bx,1
+	*** 00148d	8b 87 00 00 		mov	ax,WORD PTR _sintab[bx]
+	*** 001491	f7 6e f6 		imul	WORD PTR [bp-10]	;speed
+	*** 001494	50 			push	ax
+	*** 001495	8b 46 ea 		mov	ax,WORD PTR [bp-22]	;i
+	*** 001498	05 04 00 		add	ax,4
+	*** 00149b	99 			cwd	
+	*** 00149c	f7 f9 			idiv	cx
+	*** 00149e	8b da 			mov	bx,dx
+	*** 0014a0	d1 e3 			shl	bx,1
+	*** 0014a2	8b 87 00 00 		mov	ax,WORD PTR _sintab[bx]
+	*** 0014a6	f7 6e f6 		imul	WORD PTR [bp-10]	;speed
+	*** 0014a9	50 			push	ax
+	*** 0014aa	56 			push	si
+	*** 0014ab	e8 00 00 		call	_setdxdy
+	*** 0014ae	83 c4 06 		add	sp,6
+;|***                 ob->ob_dx += obodx;
+; Line 1252
+	*** 0014b1	8b 46 e8 		mov	ax,WORD PTR [bp-24]	;obodx
+	*** 0014b4	01 44 06 		add	WORD PTR [si+6],ax
+;|***                 ob->ob_dy += obody;
+; Line 1253
+	*** 0014b7	8b 46 e4 		mov	ax,WORD PTR [bp-28]	;obody
+	*** 0014ba	01 44 08 		add	WORD PTR [si+8],ax
+;|*** 
+;|***                 if ( !( explseed = ( ob->ob_x = obox + ob->ob_dx )
+;|***                         * ( ob->ob_y = oboy + ob->ob_dy )
+;|***                         * explseed + 7491 ) )
+; Line 1257
+	*** 0014bd	8b 4e ec 		mov	cx,WORD PTR [bp-20]	;oboy
+	*** 0014c0	03 4c 08 		add	cx,WORD PTR [si+8]
+	*** 0014c3	89 4c 04 		mov	WORD PTR [si+4],cx
+	*** 0014c6	8b 46 ee 		mov	ax,WORD PTR [bp-18]	;obox
+	*** 0014c9	03 44 06 		add	ax,WORD PTR [si+6]
+	*** 0014cc	89 44 02 		mov	WORD PTR [si+2],ax
+	*** 0014cf	f7 e9 			imul	cx
+	*** 0014d1	f7 26 00 00 		mul	WORD PTR _explseed
+	*** 0014d5	05 43 1d 		add	ax,7491
+	*** 0014d8	a3 00 00 		mov	_explseed,ax
+	*** 0014db	0b c0 			or	ax,ax
+	*** 0014dd	75 06 			jne	$I803
+;|***                         explseed = 74917777;
+; Line 1258
+	*** 0014df	c7 06 00 00 91 27 	mov	WORD PTR _explseed,10129
+;|*** 
+;|***                 ob->ob_life = EXPLLIFE;
+; Line 1260
+					$I803:
+	*** 0014e5	c7 44 1e 03 00 		mov	WORD PTR [si+30],3
+;|***                 orient = ob->ob_orient =   ( explseed & 0x01C0 ) >> 6;
+; Line 1261
+	*** 0014ea	a1 00 00 		mov	ax,_explseed
+	*** 0014ed	25 c0 01 		and	ax,448
+	*** 0014f0	b1 06 			mov	cl,6
+	*** 0014f2	d3 e8 			shr	ax,cl
+	*** 0014f4	89 44 0c 		mov	WORD PTR [si+12],ax
+	*** 0014f7	89 46 fa 		mov	WORD PTR [bp-6],ax	;orient
+;|***                 if ( mansym && ( ( !orient ) || ( orient == 7 ) ) ) {
+; Line 1262
+	*** 0014fa	83 7e f0 00 		cmp	WORD PTR [bp-16],0	;mansym
+	*** 0014fe	74 22 			je	$I804
+	*** 001500	0b c0 			or	ax,ax
+	*** 001502	74 05 			je	$I805
+	*** 001504	3d 07 00 		cmp	ax,7
+	*** 001507	75 19 			jne	$I804
+					$I805:
+;|***                         mansym = orient = ob->ob_orient = 0;
+; Line 1263
+	*** 001509	2b c0 			sub	ax,ax
+	*** 00150b	89 44 0c 		mov	WORD PTR [si+12],ax
+	*** 00150e	89 46 fa 		mov	WORD PTR [bp-6],ax	;orient
+	*** 001511	89 46 f0 		mov	WORD PTR [bp-16],ax	;mansym
+;|***                         ob->ob_dx = obodx;
+; Line 1264
+	*** 001514	8b 46 e8 		mov	ax,WORD PTR [bp-24]	;obodx
+	*** 001517	89 44 06 		mov	WORD PTR [si+6],ax
+;|***                         ob->ob_dy = -gminspeed;
+; Line 1265
+	*** 00151a	a1 00 00 		mov	ax,_gminspeed
+	*** 00151d	f7 d8 			neg	ax
+	*** 00151f	89 44 08 		mov	WORD PTR [si+8],ax
+;|***                 }
+; Line 1266
+;|*** 
+;|***                 ob->ob_lx = ob->ob_ly = ob->ob_hitcount = ob->ob_speed = 0;
+; Line 1268
+					$I804:
+	*** 001522	2b c0 			sub	ax,ax
+	*** 001524	89 44 0e 		mov	WORD PTR [si+14],ax
+	*** 001527	89 44 1a 		mov	WORD PTR [si+26],ax
+	*** 00152a	89 44 2e 		mov	WORD PTR [si+46],ax
+	*** 00152d	89 44 2c 		mov	WORD PTR [si+44],ax
+;|***                 ob->ob_owner = obo;
+; Line 1269
+	*** 001530	89 7c 20 		mov	WORD PTR [si+32],di
+;|***                 ob->ob_clr = oboclr;
+; Line 1270
+	*** 001533	8b 46 f8 		mov	ax,WORD PTR [bp-8]	;oboclr
+	*** 001536	89 44 2a 		mov	WORD PTR [si+42],ax
+;|***                 ob->ob_symhgt = ob->ob_symwdt = 8;
+; Line 1271
+	*** 001539	b8 08 00 		mov	ax,8
+	*** 00153c	89 44 24 		mov	WORD PTR [si+36],ax
+	*** 00153f	89 44 22 		mov	WORD PTR [si+34],ax
+;|***                 ob->ob_drawf = dispexpl;
+; Line 1272
+	*** 001542	c7 44 44 00 00 		mov	WORD PTR [si+68],OFFSET _dispexpl
+;|***                 ob->ob_movef = moveexpl;
+; Line 1273
+	*** 001547	c7 44 46 00 00 		mov	WORD PTR [si+70],OFFSET _moveexpl
+;|*** 
+;|***                 if ( orient )
+; Line 1275
+	*** 00154c	83 7e fa 00 		cmp	WORD PTR [bp-6],0	;orient
+	*** 001550	74 0b 			je	$I806
+;|***                         initsound( ob, S_EXPLOSION );
+; Line 1276
+	*** 001552	b8 0a 00 		mov	ax,10
+	*** 001555	50 			push	ax
+	*** 001556	56 			push	si
+	*** 001557	e8 00 00 		call	_initsound
+	*** 00155a	83 c4 04 		add	sp,4
+;|*** 
+;|***                 insertx( ob, obo );
+; Line 1278
+					$I806:
+	*** 00155d	57 			push	di
+	*** 00155e	56 			push	si
+	*** 00155f	e8 00 00 		call	_insertx
+	*** 001562	83 c4 04 		add	sp,4
+;|***         }
+; Line 1279
+	*** 001565	e9 f8 fe 		jmp	$FC800
+					$FB801:
+;|*** }
+; Line 1280
+	*** 001568	5e 			pop	si
+	*** 001569	5f 			pop	di
+	*** 00156a	8b e5 			mov	sp,bp
+	*** 00156c	5d 			pop	bp
+	*** 00156d	c3 			ret	
+
+_initexpl	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** initsmok( obop )
+;|*** OBJECTS *obop;
+; Line 1285
+	PUBLIC	_initsmok
+_initsmok	PROC NEAR
+	*** 00156e	55 			push	bp
+	*** 00156f	8b ec 			mov	bp,sp
+	*** 001571	83 ec 04 		sub	sp,4
+	*** 001574	57 			push	di
+	*** 001575	56 			push	si
+;|*** {
+; Line 1286
+;	obop = 4
+;	register si = ob
+;	register di = obo
+;|*** register OBJECTS *ob, *obo;
+;|*** 
+;|*** 
+;|***         if ( !( ob = allocobj() ) )
+; Line 1290
+	*** 001576	e8 00 00 		call	_allocobj
+	*** 001579	8b f0 			mov	si,ax
+	*** 00157b	0b f6 			or	si,si
+	*** 00157d	75 02 			jne	$I813
+;|***                 return;
+; Line 1291
+	*** 00157f	eb 55 			jmp	SHORT $EX810
+;|*** 
+;|***         ob->ob_type = SMOKE;
+; Line 1293
+					$I813:
+	*** 001581	c7 44 60 06 00 		mov	WORD PTR [si+96],6
+;|*** 
+;|***         ob->ob_x = ( obo = obop )->ob_x + 8;
+; Line 1295
+	*** 001586	8b 7e 04 		mov	di,WORD PTR [bp+4]	;obop
+	*** 001589	8b 45 02 		mov	ax,WORD PTR [di+2]
+	*** 00158c	05 08 00 		add	ax,8
+	*** 00158f	89 44 02 		mov	WORD PTR [si+2],ax
+;|***         ob->ob_y = obo->ob_y - 8;
+; Line 1296
+	*** 001592	8b 45 04 		mov	ax,WORD PTR [di+4]
+	*** 001595	2d 08 00 		sub	ax,8
+	*** 001598	89 44 04 		mov	WORD PTR [si+4],ax
+;|***         ob->ob_dx = obo->ob_dx;
+; Line 1297
+	*** 00159b	8b 45 06 		mov	ax,WORD PTR [di+6]
+	*** 00159e	89 44 06 		mov	WORD PTR [si+6],ax
+;|***         ob->ob_dy = obo->ob_dy;
+; Line 1298
+	*** 0015a1	8b 45 08 		mov	ax,WORD PTR [di+8]
+	*** 0015a4	89 44 08 		mov	WORD PTR [si+8],ax
+;|***         ob->ob_lx = ob->ob_ly = ob->ob_ldx = ob->ob_ldy = 0;
+; Line 1299
+	*** 0015a7	2b c0 			sub	ax,ax
+	*** 0015a9	89 44 32 		mov	WORD PTR [si+50],ax
+	*** 0015ac	89 44 30 		mov	WORD PTR [si+48],ax
+	*** 0015af	89 44 2e 		mov	WORD PTR [si+46],ax
+	*** 0015b2	89 44 2c 		mov	WORD PTR [si+44],ax
+;|***         ob->ob_life = SMOKELIFE;
+; Line 1300
+	*** 0015b5	c7 44 1e 0a 00 		mov	WORD PTR [si+30],10
+;|***         ob->ob_owner = obo;
+; Line 1301
+	*** 0015ba	89 7c 20 		mov	WORD PTR [si+32],di
+;|***         ob->ob_symhgt = ob->ob_symwdt = 1;
+; Line 1302
+	*** 0015bd	b8 01 00 		mov	ax,1
+	*** 0015c0	89 44 24 		mov	WORD PTR [si+36],ax
+	*** 0015c3	89 44 22 		mov	WORD PTR [si+34],ax
+;|***         ob->ob_drawf = NULL;
+; Line 1303
+	*** 0015c6	c7 44 44 00 00 		mov	WORD PTR [si+68],0
+;|***         ob->ob_movef = movesmok;
+; Line 1304
+	*** 0015cb	c7 44 46 00 00 		mov	WORD PTR [si+70],OFFSET _movesmok
+;|***         ob->ob_clr = obo->ob_clr;
+; Line 1305
+	*** 0015d0	8b 45 2a 		mov	ax,WORD PTR [di+42]
+	*** 0015d3	89 44 2a 		mov	WORD PTR [si+42],ax
+;|*** }
+; Line 1306
+					$EX810:
+	*** 0015d6	5e 			pop	si
+	*** 0015d7	5f 			pop	di
+	*** 0015d8	8b e5 			mov	sp,bp
+	*** 0015da	5d 			pop	bp
+	*** 0015db	c3 			ret	
+
+_initsmok	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static  ifx[] = { MINFLCKX, MINFLCKX + 1000, MAXFLCKX - 1000, MAXFLCKX };
+;|*** static  ify[] = { MAX_Y-1,  MAX_Y-1,         MAX_Y-1,         MAX_Y-1  };
+;|*** static  ifdx[] = { 2,       2,               -2,              -2       };
+;|*** 
+;|*** 
+;|*** 
+;|*** initflck()
+;|*** {
+; Line 1318
+	PUBLIC	_initflck
+_initflck	PROC NEAR
+	*** 0015dc	55 			push	bp
+	*** 0015dd	8b ec 			mov	bp,sp
+	*** 0015df	83 ec 08 		sub	sp,8
+	*** 0015e2	57 			push	di
+	*** 0015e3	56 			push	si
+;	register si = ob
+;	register di = i
+;	j = -6
+;|*** register OBJECTS *ob;
+;|*** register int     i, j;
+;|*** 
+;|***         if ( playmode == NOVICE )
+; Line 1322
+	*** 0015e4	83 3e 00 00 04 		cmp	WORD PTR _playmode,4
+	*** 0015e9	75 03 			jne	$I821
+;|***                 return;
+; Line 1323
+	*** 0015eb	e9 a5 00 		jmp	$FB824
+;|*** 
+;|***         for ( i = 0; i < MAX_FLCK; ++i ) {
+; Line 1325
+					$I821:
+	*** 0015ee	2b ff 			sub	di,di
+	*** 0015f0	eb 01 			jmp	SHORT $F822
+					$FC823:
+	*** 0015f2	47 			inc	di
+					$F822:
+	*** 0015f3	83 ff 04 		cmp	di,4
+	*** 0015f6	7c 03 			jl	$JCC5622
+	*** 0015f8	e9 98 00 		jmp	$FB824
+					$JCC5622:
+;|*** 
+;|***                 if ( !( ob = allocobj() ) )
+; Line 1327
+	*** 0015fb	e8 00 00 		call	_allocobj
+	*** 0015fe	8b f0 			mov	si,ax
+	*** 001600	0b f6 			or	si,si
+	*** 001602	75 03 			jne	$I825
+;|***                         return;
+; Line 1328
+	*** 001604	e9 8c 00 		jmp	$FB824
+;|*** 
+;|***                 ob->ob_type = FLOCK;
+; Line 1330
+					$I825:
+	*** 001607	c7 44 60 07 00 		mov	WORD PTR [si+96],7
+;|***                 ob->ob_state = FLYING;
+; Line 1331
+	*** 00160c	c7 04 01 00 		mov	WORD PTR [si],1
+;|***                 ob->ob_x = ifx[i];
+; Line 1332
+	*** 001610	8b c7 			mov	ax,di
+	*** 001612	d1 e0 			shl	ax,1
+	*** 001614	89 46 f8 		mov	WORD PTR [bp-8],ax
+	*** 001617	8b d8 			mov	bx,ax
+	*** 001619	8b 87 da 03 		mov	ax,WORD PTR $S814_ifx[bx]
+	*** 00161d	89 44 02 		mov	WORD PTR [si+2],ax
+;|***                 ob->ob_y = ify[i];
+; Line 1333
+	*** 001620	8b 5e f8 		mov	bx,WORD PTR [bp-8]
+	*** 001623	8b 87 e2 03 		mov	ax,WORD PTR $S815_ify[bx]
+	*** 001627	89 44 04 		mov	WORD PTR [si+4],ax
+;|***                 ob->ob_dx = ifdx[i];
+; Line 1334
+	*** 00162a	8b 5e f8 		mov	bx,WORD PTR [bp-8]
+	*** 00162d	8b 87 ea 03 		mov	ax,WORD PTR $S816_ifdx[bx]
+	*** 001631	89 44 06 		mov	WORD PTR [si+6],ax
+;|***                 ob->ob_dy = ob->ob_lx = ob->ob_ly = ob->ob_ldx = ob->ob_ldy = 0;
+; Line 1335
+	*** 001634	2b c0 			sub	ax,ax
+	*** 001636	89 44 32 		mov	WORD PTR [si+50],ax
+	*** 001639	89 44 30 		mov	WORD PTR [si+48],ax
+	*** 00163c	89 44 2e 		mov	WORD PTR [si+46],ax
+	*** 00163f	89 44 2c 		mov	WORD PTR [si+44],ax
+	*** 001642	89 44 08 		mov	WORD PTR [si+8],ax
+;|***                 ob->ob_orient = 0;
+; Line 1336
+	*** 001645	89 44 0c 		mov	WORD PTR [si+12],ax
+;|***                 ob->ob_life = FLOCKLIFE;
+; Line 1337
+	*** 001648	c7 44 1e 05 00 		mov	WORD PTR [si+30],5
+;|***                 ob->ob_owner = ob;
+; Line 1338
+	*** 00164d	89 74 20 		mov	WORD PTR [si+32],si
+;|***                 ob->ob_symhgt = ob->ob_symwdt = 16;
+; Line 1339
+	*** 001650	b8 10 00 		mov	ax,16
+	*** 001653	89 44 24 		mov	WORD PTR [si+36],ax
+	*** 001656	89 44 22 		mov	WORD PTR [si+34],ax
+;|***                 ob->ob_drawf = dispflck;
+; Line 1340
+	*** 001659	c7 44 44 00 00 		mov	WORD PTR [si+68],OFFSET _dispflck
+;|***                 ob->ob_movef = moveflck;
+; Line 1341
+	*** 00165e	c7 44 46 00 00 		mov	WORD PTR [si+70],OFFSET _moveflck
+;|***                 ob->ob_clr = 9;
+; Line 1342
+	*** 001663	c7 44 2a 09 00 		mov	WORD PTR [si+42],9
+;|***                 insertx( ob, &topobj );
+; Line 1343
+	*** 001668	b8 00 00 		mov	ax,OFFSET _topobj
+	*** 00166b	50 			push	ax
+	*** 00166c	56 			push	si
+	*** 00166d	e8 00 00 		call	_insertx
+	*** 001670	83 c4 04 		add	sp,4
+;|***                 for ( j = 0; j < MAX_BIRD; ++j )
+; Line 1344
+	*** 001673	c7 46 fa 00 00 		mov	WORD PTR [bp-6],0	;j
+	*** 001678	eb 03 			jmp	SHORT $F826
+					$FC827:
+	*** 00167a	ff 46 fa 		inc	WORD PTR [bp-6]	;j
+					$F826:
+	*** 00167d	83 7e fa 01 		cmp	WORD PTR [bp-6],1	;j
+	*** 001681	7d 0d 			jge	$FB828
+;|***                         initbird( ob, 1 );
+; Line 1345
+	*** 001683	b8 01 00 		mov	ax,1
+	*** 001686	50 			push	ax
+	*** 001687	56 			push	si
+	*** 001688	e8 00 00 		call	_initbird
+	*** 00168b	83 c4 04 		add	sp,4
+	*** 00168e	eb ea 			jmp	SHORT $FC827
+					$FB828:
+;|***         }
+; Line 1346
+	*** 001690	e9 5f ff 		jmp	$FC823
+					$FB824:
+;|*** }
+; Line 1347
+	*** 001693	5e 			pop	si
+	*** 001694	5f 			pop	di
+	*** 001695	8b e5 			mov	sp,bp
+	*** 001697	5d 			pop	bp
+	*** 001698	c3 			ret	
+
+_initflck	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** initbird( obop, i )
+;|*** OBJECTS *obop;
+; Line 1352
+	PUBLIC	_initbird
+_initbird	PROC NEAR
+	*** 001699	55 			push	bp
+	*** 00169a	8b ec 			mov	bp,sp
+	*** 00169c	83 ec 04 		sub	sp,4
+	*** 00169f	57 			push	di
+	*** 0016a0	56 			push	si
+;|*** int     i;
+;|*** {
+; Line 1354
+;	register si = ob
+;	register di = obo
+;	obop = 4
+;	i = 6
+;|*** register OBJECTS *ob, *obo;
+;|*** static   ibx[] = { 8, 3, 0, 6, 7, 14, 10, 12 };
+;|*** static   iby[] = { 16, 1, 8, 3, 12, 10, 7, 14 };
+;|*** static   ibdx[] = { -2, 2, -3, 3, -1, 1, 0, 0 };
+;|*** static   ibdy[] = { -1, -2, -1, -2, -1, -2, -1, -2 };
+;|*** 
+;|*** 
+;|***         if ( !( ob = allocobj() ) )
+; Line 1362
+	*** 0016a1	e8 00 00 		call	_allocobj
+	*** 0016a4	8b f0 			mov	si,ax
+	*** 0016a6	0b f6 			or	si,si
+	*** 0016a8	75 02 			jne	$I839
+;|***                 return;
+; Line 1363
+	*** 0016aa	eb 79 			jmp	SHORT $EX832
+;|*** 
+;|***         ob->ob_type = BIRD;
+; Line 1365
+					$I839:
+	*** 0016ac	c7 44 60 08 00 		mov	WORD PTR [si+96],8
+;|*** 
+;|***         ob->ob_x = ( obo = obop )->ob_x + ibx[i];
+; Line 1367
+	*** 0016b1	8b 7e 04 		mov	di,WORD PTR [bp+4]	;obop
+	*** 0016b4	8b 45 02 		mov	ax,WORD PTR [di+2]
+	*** 0016b7	8b 5e 06 		mov	bx,WORD PTR [bp+6]	;i
+	*** 0016ba	d1 e3 			shl	bx,1
+	*** 0016bc	03 87 f2 03 		add	ax,WORD PTR $S835_ibx[bx]
+	*** 0016c0	89 44 02 		mov	WORD PTR [si+2],ax
+;|***         ob->ob_y = obo->ob_y - iby[i];
+; Line 1368
+	*** 0016c3	8b 45 04 		mov	ax,WORD PTR [di+4]
+	*** 0016c6	8b 5e 06 		mov	bx,WORD PTR [bp+6]	;i
+	*** 0016c9	d1 e3 			shl	bx,1
+	*** 0016cb	2b 87 02 04 		sub	ax,WORD PTR $S836_iby[bx]
+	*** 0016cf	89 44 04 		mov	WORD PTR [si+4],ax
+;|***         ob->ob_dx = ibdx[i];
+; Line 1369
+	*** 0016d2	8b 5e 06 		mov	bx,WORD PTR [bp+6]	;i
+	*** 0016d5	d1 e3 			shl	bx,1
+	*** 0016d7	8b 87 12 04 		mov	ax,WORD PTR $S837_ibdx[bx]
+	*** 0016db	89 44 06 		mov	WORD PTR [si+6],ax
+;|***         ob->ob_dy = ibdy[i];
+; Line 1370
+	*** 0016de	8b 5e 06 		mov	bx,WORD PTR [bp+6]	;i
+	*** 0016e1	d1 e3 			shl	bx,1
+	*** 0016e3	8b 87 22 04 		mov	ax,WORD PTR $S838_ibdy[bx]
+	*** 0016e7	89 44 08 		mov	WORD PTR [si+8],ax
+;|***         ob->ob_orient = ob->ob_lx = ob->ob_ly = ob->ob_ldx = ob->ob_ldy = 0;
+; Line 1371
+	*** 0016ea	2b c0 			sub	ax,ax
+	*** 0016ec	89 44 32 		mov	WORD PTR [si+50],ax
+	*** 0016ef	89 44 30 		mov	WORD PTR [si+48],ax
+	*** 0016f2	89 44 2e 		mov	WORD PTR [si+46],ax
+	*** 0016f5	89 44 2c 		mov	WORD PTR [si+44],ax
+	*** 0016f8	89 44 0c 		mov	WORD PTR [si+12],ax
+;|***         ob->ob_life = BIRDLIFE;
+; Line 1372
+	*** 0016fb	c7 44 1e 04 00 		mov	WORD PTR [si+30],4
+;|***         ob->ob_owner = obo;
+; Line 1373
+	*** 001700	89 7c 20 		mov	WORD PTR [si+32],di
+;|***         ob->ob_symhgt = 2;
+; Line 1374
+	*** 001703	c7 44 22 02 00 		mov	WORD PTR [si+34],2
+;|***         ob->ob_symwdt = 4;
+; Line 1375
+	*** 001708	c7 44 24 04 00 		mov	WORD PTR [si+36],4
+;|***         ob->ob_drawf = dispbird;
+; Line 1376
+	*** 00170d	c7 44 44 00 00 		mov	WORD PTR [si+68],OFFSET _dispbird
+;|***         ob->ob_movef = movebird;
+; Line 1377
+	*** 001712	c7 44 46 00 00 		mov	WORD PTR [si+70],OFFSET _movebird
+;|***         ob->ob_clr = obo->ob_clr;
+; Line 1378
+	*** 001717	8b 45 2a 		mov	ax,WORD PTR [di+42]
+	*** 00171a	89 44 2a 		mov	WORD PTR [si+42],ax
+;|***         insertx( ob, obo );
+; Line 1379
+	*** 00171d	57 			push	di
+	*** 00171e	56 			push	si
+	*** 00171f	e8 00 00 		call	_insertx
+	*** 001722	83 c4 04 		add	sp,4
+;|*** }
+; Line 1380
+					$EX832:
+	*** 001725	5e 			pop	si
+	*** 001726	5f 			pop	di
+	*** 001727	8b e5 			mov	sp,bp
+	*** 001729	5d 			pop	bp
+	*** 00172a	c3 			ret	
+
+_initbird	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** initoxen()
+;|*** {
+; Line 1385
+	PUBLIC	_initoxen
+_initoxen	PROC NEAR
+	*** 00172b	55 			push	bp
+	*** 00172c	8b ec 			mov	bp,sp
+	*** 00172e	83 ec 06 		sub	sp,6
+	*** 001731	57 			push	di
+	*** 001732	56 			push	si
+;	register si = ob
+;	register di = i
+;|*** register OBJECTS *ob;
+;|*** register int      i;
+;|*** static   iox[] = { 1376, 1608 };
+;|*** static   ioy[] = { 80,   91   };
+;|*** 
+;|***         if ( playmode == NOVICE ) {
+; Line 1391
+	*** 001733	83 3e 00 00 04 		cmp	WORD PTR _playmode,4
+	*** 001738	75 18 			jne	$I845
+;|***                 for ( i = 0; i < MAX_OXEN; ++i )
+; Line 1392
+	*** 00173a	2b ff 			sub	di,di
+	*** 00173c	eb 01 			jmp	SHORT $F846
+					$FC847:
+	*** 00173e	47 			inc	di
+					$F846:
+	*** 00173f	83 ff 02 		cmp	di,2
+	*** 001742	7d 0c 			jge	$FB848
+;|***                         targets[MAX_TARG + i] = NULL;
+; Line 1393
+	*** 001744	8b df 			mov	bx,di
+	*** 001746	d1 e3 			shl	bx,1
+	*** 001748	c7 87 28 00 00 00 	mov	WORD PTR _targets[bx+40],0
+	*** 00174e	eb ee 			jmp	SHORT $FC847
+					$FB848:
+;|***                 return;
+; Line 1394
+	*** 001750	eb 7e 			jmp	SHORT $FB851
+;|***         }
+; Line 1395
+;|*** 
+;|***         for ( i = 0; i < MAX_OXEN; ++i ) {
+; Line 1397
+					$I845:
+	*** 001752	2b ff 			sub	di,di
+	*** 001754	eb 01 			jmp	SHORT $F849
+					$FC850:
+	*** 001756	47 			inc	di
+					$F849:
+	*** 001757	83 ff 02 		cmp	di,2
+	*** 00175a	7d 74 			jge	$FB851
+;|***                 if ( !( targets[MAX_TARG + i] = ob = allocobj() ) )
+; Line 1398
+	*** 00175c	e8 00 00 		call	_allocobj
+	*** 00175f	8b f0 			mov	si,ax
+	*** 001761	8b df 			mov	bx,di
+	*** 001763	d1 e3 			shl	bx,1
+	*** 001765	89 b7 28 00 		mov	WORD PTR _targets[bx+40],si
+	*** 001769	0b f6 			or	si,si
+	*** 00176b	75 02 			jne	$I852
+;|***                         return;
+; Line 1399
+	*** 00176d	eb 61 			jmp	SHORT $FB851
+;|*** 
+;|***                 ob->ob_type = OX;
+; Line 1401
+					$I852:
+	*** 00176f	c7 44 60 09 00 		mov	WORD PTR [si+96],9
+;|***                 ob->ob_state = STANDING;
+; Line 1402
+	*** 001774	c7 04 06 00 		mov	WORD PTR [si],6
+;|***                 ob->ob_x = iox[i];
+; Line 1403
+	*** 001778	8b c7 			mov	ax,di
+	*** 00177a	d1 e0 			shl	ax,1
+	*** 00177c	89 46 fa 		mov	WORD PTR [bp-6],ax
+	*** 00177f	8b d8 			mov	bx,ax
+	*** 001781	8b 87 32 04 		mov	ax,WORD PTR $S843_iox[bx]
+	*** 001785	89 44 02 		mov	WORD PTR [si+2],ax
+;|***                 ob->ob_y = ioy[i];
+; Line 1404
+	*** 001788	8b 5e fa 		mov	bx,WORD PTR [bp-6]
+	*** 00178b	8b 87 36 04 		mov	ax,WORD PTR $S844_ioy[bx]
+	*** 00178f	89 44 04 		mov	WORD PTR [si+4],ax
+;|***                 ob->ob_orient = ob->ob_lx = ob->ob_ly = ob->ob_ldx = ob->ob_ldy
+;|***                               = ob->ob_dx = ob->ob_dy = 0;
+; Line 1406
+	*** 001792	2b c0 			sub	ax,ax
+	*** 001794	89 44 08 		mov	WORD PTR [si+8],ax
+	*** 001797	89 44 06 		mov	WORD PTR [si+6],ax
+	*** 00179a	89 44 32 		mov	WORD PTR [si+50],ax
+	*** 00179d	89 44 30 		mov	WORD PTR [si+48],ax
+	*** 0017a0	89 44 2e 		mov	WORD PTR [si+46],ax
+	*** 0017a3	89 44 2c 		mov	WORD PTR [si+44],ax
+	*** 0017a6	89 44 0c 		mov	WORD PTR [si+12],ax
+;|***                 ob->ob_owner = ob;
+; Line 1407
+	*** 0017a9	89 74 20 		mov	WORD PTR [si+32],si
+;|***                 ob->ob_symhgt = 16;
+; Line 1408
+	*** 0017ac	c7 44 22 10 00 		mov	WORD PTR [si+34],16
+;|***                 ob->ob_symwdt = 16;
+; Line 1409
+	*** 0017b1	c7 44 24 10 00 		mov	WORD PTR [si+36],16
+;|***                 ob->ob_drawf = NULL;
+; Line 1410
+	*** 0017b6	89 44 44 		mov	WORD PTR [si+68],ax
+;|***                 ob->ob_movef = moveox;
+; Line 1411
+	*** 0017b9	c7 44 46 00 00 		mov	WORD PTR [si+70],OFFSET _moveox
+;|***                 ob->ob_clr = 1;
+; Line 1412
+	*** 0017be	c7 44 2a 01 00 		mov	WORD PTR [si+42],1
+;|***                 insertx( ob, &topobj );
+; Line 1413
+	*** 0017c3	b8 00 00 		mov	ax,OFFSET _topobj
+	*** 0017c6	50 			push	ax
+	*** 0017c7	56 			push	si
+	*** 0017c8	e8 00 00 		call	_insertx
+	*** 0017cb	83 c4 04 		add	sp,4
+;|***         }
+; Line 1414
+	*** 0017ce	eb 86 			jmp	SHORT $FC850
+					$FB851:
+;|*** }
+; Line 1415
+	*** 0017d0	5e 			pop	si
+	*** 0017d1	5f 			pop	di
+	*** 0017d2	8b e5 			mov	sp,bp
+	*** 0017d4	5d 			pop	bp
+	*** 0017d5	c3 			ret	
+
+_initoxen	ENDP
+_TEXT	ENDS
+END

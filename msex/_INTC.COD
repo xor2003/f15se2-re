@@ -1,0 +1,381 @@
+;	Static Name Aliases
+;
+	TITLE   _INTC.C
+	NAME    _INTC
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+EXTRN	__acrtused:ABS
+EXTRN	__int1vec:NEAR
+EXTRN	__int2vec:NEAR
+EXTRN	_get_ivec:NEAR
+EXTRN	_set_ivec:NEAR
+EXTRN	_csseg:NEAR
+_BSS      SEGMENT
+COMM NEAR	__inttab:	BYTE:	 100
+_BSS      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** /*
+;|*** 
+;|***                         Copyright (C) 1984-2000 David L. Clark.
+;|*** 
+;|***                         All rights reserved except as specified in the
+;|***                         file license.txt.  Distribution of this file
+;|***                         without the license.txt file accompanying is
+;|***                         prohibited.
+;|*** 
+;|*** */
+;|*** 
+;|*** #define NULL     ((void *)0)
+;|*** #define FALSE    0
+;|*** #define TRUE     1
+;|*** #define NO       0
+;|*** #define YES      1
+;|*** #define FOREVER  for (;;)
+;|*** 
+;|*** int index(char *str,int c);
+;|*** int inportb(unsigned port);
+;|*** void movblock(unsigned int srcoff,unsigned int srcseg,
+;|***               unsigned int destoff,unsigned int destseg,
+;|***               unsigned int count);
+; Line 23
+;|*** /*
+;|***         _intc.c   -     Interrupt Override Handling
+;|*** 
+;|***                         Copyright (C) 1984-2000 David L. Clark.
+;|*** 
+;|***                         All rights reserved except as specified in the
+;|***                         file license.txt.  Distribution of this file
+;|***                         without the license.txt file accompanying is
+;|***                         prohibited.
+;|*** 
+;|***                         Author: Dave Clark
+;|*** 
+;|***         Modification History:
+;|***                         84-03-15        Development
+;|***                         85-11-06        Atari
+;|***                         87-03-10        Microsoft compiler.
+;|*** 
+;|***         Usage:  --------------------------------------------------------
+;|***                 _intsetup( inter, offset );
+;|***                 int     inter, *offset;
+;|*** 
+;|***                 replaces the vector for the specified interrupt with the
+;|***                 IP:CS passed in as the driver address.
+;|*** 
+;|***                 returns an index into the overridden interrupt table if
+;|***                 successful, -1 if not.
+;|***                 --------------------------------------------------------
+;|*** 
+;|***                 _intreset( index )
+;|***                 int     index;
+;|*** 
+;|***                 resets the interrupt vector for the specified index into
+;|***                 the interrupt table.  Returns the index passed if
+;|***                 successful, -1 if not.
+;|*** 
+;|***                 ---------------------------------------------------
+;|*** 
+;|***                 _intterm()
+;|*** 
+;|***                 Call to cleanup all overridden vectors.to cleanup
+;|*** */
+;|*** 
+;|*** 
+;|*** #include        "std.h"
+;|*** #define MAXINTS 10
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** struct {
+;|***         long    newserv;
+;|***         long    oldserv;
+;|***         int     internum;
+;|*** }       _inttab[MAXINTS];
+;|*** 
+;|*** 
+;|*** 
+;|*** _intsetup( inter, offset )
+;|*** int     inter, *offset;
+; Line 59
+	PUBLIC	__intsetup
+__intsetup	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+	*** 000003	83 ec 06 		sub	sp,6
+	*** 000006	57 			push	di
+	*** 000007	56 			push	si
+;|*** {
+; Line 60
+;	offset = 6
+;	vec1 = -6
+;	vec2 = -2
+;	register si = i
+;	inter = 4
+;|*** char     *vec1, *vec2;
+;|*** int      _int1vec(), _int2vec();
+;|*** long     get_ivec();
+;|*** register i;
+;|*** 
+;|*** 
+;|***         /*                                         */
+;|***         /*      Find an empty slot in the table    */
+;|***         /*                                         */
+;|*** 
+;|***         for ( i = 0; i < MAXINTS ; ++i )
+; Line 71
+	*** 000008	2b f6 			sub	si,si
+	*** 00000a	eb 01 			jmp	SHORT $F137
+					$FC138:
+	*** 00000c	46 			inc	si
+					$F137:
+	*** 00000d	83 fe 0a 		cmp	si,10
+	*** 000010	7d 17 			jge	$FB139
+;|***                 if ( !_inttab[i].internum )
+; Line 72
+	*** 000012	8b de 			mov	bx,si
+	*** 000014	8b c3 			mov	ax,bx
+	*** 000016	d1 e3 			shl	bx,1
+	*** 000018	d1 e3 			shl	bx,1
+	*** 00001a	03 d8 			add	bx,ax
+	*** 00001c	d1 e3 			shl	bx,1
+	*** 00001e	83 bf 08 00 00 		cmp	WORD PTR __inttab[bx+8],0
+	*** 000023	75 02 			jne	$I140
+;|***                         break;
+; Line 73
+	*** 000025	eb 02 			jmp	SHORT $FB139
+;|***         if ( i == MAXINTS )
+; Line 74
+					$I140:
+	*** 000027	eb e3 			jmp	SHORT $FC138
+					$FB139:
+	*** 000029	83 fe 0a 		cmp	si,10
+	*** 00002c	75 05 			jne	$I141
+;|***                 return( -1 );
+; Line 75
+	*** 00002e	b8 ff ff 		mov	ax,-1
+	*** 000031	eb 65 			jmp	SHORT $EX130
+;|***         _inttab[i].internum = inter + 1;
+; Line 76
+					$I141:
+	*** 000033	8b c6 			mov	ax,si
+	*** 000035	8b c8 			mov	cx,ax
+	*** 000037	d1 e0 			shl	ax,1
+	*** 000039	d1 e0 			shl	ax,1
+	*** 00003b	03 c1 			add	ax,cx
+	*** 00003d	d1 e0 			shl	ax,1
+	*** 00003f	8b f8 			mov	di,ax
+	*** 000041	8b 46 04 		mov	ax,WORD PTR [bp+4]	;inter
+	*** 000044	40 			inc	ax
+	*** 000045	89 85 08 00 		mov	WORD PTR __inttab[di+8],ax
+;|*** 
+;|*** 
+;|*** 
+;|***         /*                                          */
+;|***         /*      Get old interrupt vector            */
+;|***         /*      Set up new interrupt vector         */
+;|***         /*                                          */
+;|*** 
+;|***         _inttab[i].oldserv = get_ivec( inter );
+; Line 85
+	*** 000049	ff 76 04 		push	WORD PTR [bp+4]	;inter
+	*** 00004c	e8 00 00 		call	_get_ivec
+	*** 00004f	83 c4 02 		add	sp,2
+	*** 000052	89 85 04 00 		mov	WORD PTR __inttab[di+4],ax
+	*** 000056	89 95 06 00 		mov	WORD PTR __inttab[di+6],dx
+;|***         _inttab[i].newserv = (long) offset;
+; Line 86
+	*** 00005a	8b de 			mov	bx,si
+	*** 00005c	8b c3 			mov	ax,bx
+	*** 00005e	d1 e3 			shl	bx,1
+	*** 000060	d1 e3 			shl	bx,1
+	*** 000062	03 d8 			add	bx,ax
+	*** 000064	d1 e3 			shl	bx,1
+	*** 000066	8b 46 06 		mov	ax,WORD PTR [bp+6]	;offset
+	*** 000069	89 87 00 00 		mov	WORD PTR __inttab[bx],ax
+	*** 00006d	8c 9f 02 00 		mov	WORD PTR __inttab[bx+2],ds
+;|***         vec1 = (char *)_int1vec;
+; Line 87
+	*** 000071	c7 46 fa 00 00 		mov	WORD PTR [bp-6],OFFSET __int1vec	;vec1
+;|***         vec2 = (char *)_int2vec;
+; Line 88
+	*** 000076	c7 46 fe 00 00 		mov	WORD PTR [bp-2],OFFSET __int2vec	;vec2
+;|***         set_ivec( inter, vec1 + (int)( vec2 - vec1 ) * i, csseg() );
+; Line 89
+	*** 00007b	e8 00 00 		call	_csseg
+	*** 00007e	50 			push	ax
+	*** 00007f	8b 46 fe 		mov	ax,WORD PTR [bp-2]	;vec2
+	*** 000082	2b 46 fa 		sub	ax,WORD PTR [bp-6]	;vec1
+	*** 000085	f7 ee 			imul	si
+	*** 000087	03 46 fa 		add	ax,WORD PTR [bp-6]	;vec1
+	*** 00008a	50 			push	ax
+	*** 00008b	ff 76 04 		push	WORD PTR [bp+4]	;inter
+	*** 00008e	e8 00 00 		call	_set_ivec
+	*** 000091	83 c4 06 		add	sp,6
+;|*** 
+;|***         return( i );
+; Line 91
+	*** 000094	8b c6 			mov	ax,si
+	*** 000096	eb 00 			jmp	SHORT $EX130
+;|*** }
+; Line 92
+					$EX130:
+	*** 000098	5e 			pop	si
+	*** 000099	5f 			pop	di
+	*** 00009a	8b e5 			mov	sp,bp
+	*** 00009c	5d 			pop	bp
+	*** 00009d	c3 			ret	
+
+__intsetup	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** _intreset( i )
+;|*** int     i;
+; Line 97
+	PUBLIC	__intreset
+__intreset	PROC NEAR
+	*** 00009e	55 			push	bp
+	*** 00009f	8b ec 			mov	bp,sp
+	*** 0000a1	56 			push	si
+;|*** {
+; Line 98
+;	i = 4
+;|***         /*                                            */
+;|***         /*      Edit the index passed                 */
+;|***         /*                                            */
+;|*** 
+;|***         if ( ( i < 0 ) || ( i >= MAXINTS )
+;|***                 || ( _inttab[i].internum == 0 ) )
+; Line 104
+	*** 0000a2	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;i
+	*** 0000a6	7c 1a 			jl	$I148
+	*** 0000a8	83 7e 04 0a 		cmp	WORD PTR [bp+4],10	;i
+	*** 0000ac	7d 14 			jge	$I148
+	*** 0000ae	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;i
+	*** 0000b1	8b c3 			mov	ax,bx
+	*** 0000b3	d1 e3 			shl	bx,1
+	*** 0000b5	d1 e3 			shl	bx,1
+	*** 0000b7	03 d8 			add	bx,ax
+	*** 0000b9	d1 e3 			shl	bx,1
+	*** 0000bb	83 bf 08 00 00 		cmp	WORD PTR __inttab[bx+8],0
+	*** 0000c0	75 05 			jne	$I147
+					$I148:
+;|***                 return( -1 );
+; Line 105
+	*** 0000c2	b8 ff ff 		mov	ax,-1
+	*** 0000c5	eb 3b 			jmp	SHORT $EX146
+;|*** 
+;|*** 
+;|***         /*                                          */
+;|***         /*      Reset Vector.                       */
+;|***         /*                                          */
+;|*** 
+;|***         set_ivec( _inttab[i].internum - 1, _inttab[i].oldserv );
+; Line 112
+					$I147:
+	*** 0000c7	8b 46 04 		mov	ax,WORD PTR [bp+4]	;i
+	*** 0000ca	8b c8 			mov	cx,ax
+	*** 0000cc	d1 e0 			shl	ax,1
+	*** 0000ce	d1 e0 			shl	ax,1
+	*** 0000d0	03 c1 			add	ax,cx
+	*** 0000d2	d1 e0 			shl	ax,1
+	*** 0000d4	8b f0 			mov	si,ax
+	*** 0000d6	ff b4 06 00 		push	WORD PTR __inttab[si+6]
+	*** 0000da	ff b4 04 00 		push	WORD PTR __inttab[si+4]
+	*** 0000de	8b 84 08 00 		mov	ax,WORD PTR __inttab[si+8]
+	*** 0000e2	48 			dec	ax
+	*** 0000e3	50 			push	ax
+	*** 0000e4	e8 00 00 		call	_set_ivec
+	*** 0000e7	83 c4 06 		add	sp,6
+;|***         _inttab[i].internum = 0;
+; Line 113
+	*** 0000ea	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;i
+	*** 0000ed	8b c3 			mov	ax,bx
+	*** 0000ef	d1 e3 			shl	bx,1
+	*** 0000f1	d1 e3 			shl	bx,1
+	*** 0000f3	03 d8 			add	bx,ax
+	*** 0000f5	d1 e3 			shl	bx,1
+	*** 0000f7	c7 87 08 00 00 00 	mov	WORD PTR __inttab[bx+8],0
+;|*** 
+;|***         return( i );
+; Line 115
+	*** 0000fd	8b 46 04 		mov	ax,WORD PTR [bp+4]	;i
+	*** 000100	eb 00 			jmp	SHORT $EX146
+;|*** }
+; Line 116
+					$EX146:
+	*** 000102	5e 			pop	si
+	*** 000103	8b e5 			mov	sp,bp
+	*** 000105	5d 			pop	bp
+	*** 000106	c3 			ret	
+
+__intreset	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** _intterm()
+;|*** {
+; Line 121
+	PUBLIC	__intterm
+__intterm	PROC NEAR
+	*** 000107	55 			push	bp
+	*** 000108	8b ec 			mov	bp,sp
+	*** 00010a	83 ec 02 		sub	sp,2
+	*** 00010d	56 			push	si
+;	register si = i
+;|*** register int    i;
+;|*** 
+;|***         for ( i = MAXINTS - 1; i >= 0; --i )
+; Line 124
+	*** 00010e	be 09 00 		mov	si,9
+	*** 000111	eb 01 			jmp	SHORT $F152
+					$FC153:
+	*** 000113	4e 			dec	si
+					$F152:
+	*** 000114	0b f6 			or	si,si
+	*** 000116	7c 1c 			jl	$FB154
+;|***                 if ( _inttab[i].internum )
+; Line 125
+	*** 000118	8b de 			mov	bx,si
+	*** 00011a	8b c3 			mov	ax,bx
+	*** 00011c	d1 e3 			shl	bx,1
+	*** 00011e	d1 e3 			shl	bx,1
+	*** 000120	03 d8 			add	bx,ax
+	*** 000122	d1 e3 			shl	bx,1
+	*** 000124	83 bf 08 00 00 		cmp	WORD PTR __inttab[bx+8],0
+	*** 000129	74 07 			je	$I155
+;|***                         _intreset( i );
+; Line 126
+	*** 00012b	56 			push	si
+	*** 00012c	e8 6f ff 		call	__intreset
+	*** 00012f	83 c4 02 		add	sp,2
+;|*** }
+; Line 127
+					$I155:
+	*** 000132	eb df 			jmp	SHORT $FC153
+					$FB154:
+	*** 000134	5e 			pop	si
+	*** 000135	8b e5 			mov	sp,bp
+	*** 000137	5d 			pop	bp
+	*** 000138	c3 			ret	
+
+__intterm	ENDP
+	*** 000139	90 			nop	
+_TEXT	ENDS
+END

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Pretty pictures | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Pretty pictures" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<meta property="og:description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<link rel="canonical" href="/f15-se2/2024/06/07/pictures.html" />
+<meta property="og:url" content="/f15-se2/2024/06/07/pictures.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-06-07T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Pretty pictures" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2024-06-07T00:00:00+00:00","datePublished":"2024-06-07T00:00:00+00:00","description":"(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)","headline":"Pretty pictures","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2024/06/07/pictures.html"},"url":"/f15-se2/2024/06/07/pictures.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Pretty pictures</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2024-06-07T00:00:00+00:00" itemprop="datePublished">Jun 7, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><small>(<em>This post is part of a <a href="/category/f15-se2.html">series</a> on the subject of my hobby project, which is recreating the C source code for the 1989 game <a href="/f15-se2/2022/06/05/origins.html">F-15 Strike Eagle II</a> by reverse engineering the original binaries.</em>)</small></p>
+
+<p>As far as the code reconstruction is concerned, I’m stuck again. After completing several small routines, I encountered one which I can’t seem to write in a form that would match the original opcodes, due to a stray <code class="language-plaintext highlighter-rouge">jmp short</code> that I can’t replicate. It has happened before, so I shelved it and moved on, confident that I would likely get a bathroom epiphany sooner or later as has been the case thus far. I completed several more routines, then came upon one that I can’t make any sense of, again. It seems to have been compiled with optimizations turned on, and code motion came down hard on this one. Neither a <code class="language-plaintext highlighter-rouge">goto</code>-based mess which matches the layout of the instructions, nor a more reasonable (but reordered) implementation, nor cleaned up Ghidra-generated code did the trick this time.</p>
+
+<p>It’s time for a change of pace, so I’m going to write about something more fun than dry assembly instructions, namely the game assets, specifically the static images that are used for the briefing/debriefing screens, as well as some in-flight graphics. Those are the <code class="language-plaintext highlighter-rouge">.PIC</code> and <code class="language-plaintext highlighter-rouge">.SPR</code> files:</p>
+
+<pre>
+ninja@RYZEN:451.03$ ls *.pic *.spr
+1.pic        256rear.pic   adv.pic       dbicons.spr  hiscore.pic  libya.spr  persian.spr  title16.pic
+2.pic        256right.pic  armpiece.pic  death.pic    jp.spr       me.spr     promo.pic    title640.pic
+256left.pic  3.pic         ceurope.spr   desk.pic     labs.pic     medal.pic  rear.pic     vn.spr
+256pit.pic   4.pic         cockpit.pic   f15.spr      left.pic     ncape.spr  right.pic    wall.pic
+</pre>
+
+<p>Some of these files are duplicated because the game can run in multiple graphics modes. For the VGA/MCGA adapter, the 256-color variants are used for the in-game flight graphics (all intro/briefing/debriefing graphics is 16 color only even for VGA). For the inferior (CGA/MDA) display types, I think the 16 color images are used and automatically scaled down in colors on the go.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">1/2/3/4.pic</code> - not part of the actual game, they have to do with the slideshow demos included on the expansion disk. These seem to be using a different encoding scheme, but I don’t care about them really.</li>
+  <li><code class="language-plaintext highlighter-rouge">[256]left/[cock]pit/rear/right.pic</code> are the 16- and 256-color variants of the cockpit views; front, left, right and rear (with the pilot’s head visible).</li>
+  <li><code class="language-plaintext highlighter-rouge">adv.pic</code> - advertisement for other Microprose games displayed during the intro</li>
+  <li><code class="language-plaintext highlighter-rouge">title[16|640].pic</code> - the title screen, including the credits in two variants - the 320x200, 16 color one, and one in high resolution (640x350, 16 colors)</li>
+  <li><code class="language-plaintext highlighter-rouge">ceurope/jp/libya/me/ncape/persian/vn.spr</code> - the map screens used in the debriefing, where your flight route and destroyed targets are displayed.</li>
+  <li><code class="language-plaintext highlighter-rouge">dbicons.spr</code> - icons used in the debriefing for events that occured during the mission (enemy plane shot down, ground target destroyed, F-15 hit etc.)</li>
+  <li><code class="language-plaintext highlighter-rouge">death/desk/medal/promo.pic</code> - screens shown in the debriefing when the pilot has died, was moved to a desk job, got a medal or a rank upgrade</li>
+  <li><code class="language-plaintext highlighter-rouge">hiscore.pic</code> - the “World’s Greatest F15 Pilots” selection screen where you pick your pilot.</li>
+  <li><code class="language-plaintext highlighter-rouge">labs.pic</code> - the “MPS Labs” logo displayed during the intro</li>
+  <li><code class="language-plaintext highlighter-rouge">wall.pic</code> - the stationary background used to show the mission selection and briefing, with the military guy pointing to the menu items with his hand.</li>
+</ul>
+
+<p>That leaves us with two files that I think are the most interesting, namely <code class="language-plaintext highlighter-rouge">armpiece.pic</code> and <code class="language-plaintext highlighter-rouge">f15.spr</code>. The first is the different arm positions of the military guy used in the mission briefing, and interestingly also the icons with the medals etc. used on the pilot selection screen are placed here:</p>
+
+<p><img src="/images/armpiece.bmp" alt="armpiece.pic" class="center-image" /></p>
+
+<p>I haven’t seen some of the medals and the tombstone symbols used anywhere, guessing they are just leftovers from different things they were trying.</p>
+
+<p>The second file, <code class="language-plaintext highlighter-rouge">f15.spr</code> is even more interesting because it contains the 2D sprites used for the cockpit graphics:</p>
+
+<p><img src="/images/f15.png" alt="f15.spr" class="center-image" /></p>
+
+<p>I’m guessing the lines and dots pattern must be the compass heading tape at the top of the HUD, the climb ladder or something like that. There’s also the radar symbology for hostile planes, SAMs, etc. Several small icons are used for the in-game map display. The explosion sprite is overlaid on top of a 3D target view in one of the MFDs when that target is hit. The real mystery is what appears to be the top of the pilot’s helmet (which to my knowledge never changes appearance in-game), and the linear sprite below that. And a “C:&gt;” DOS prompt, what’s up with that? All in all, pretty neat!</p>
+
+<p>Now, I have mentioned before that I’ve seen some of the PIC decoding code (apparently written in assembly) in <code class="language-plaintext highlighter-rouge">START.EXE</code> before. It had a lot of bit shifting and didn’t make much sense at first glance, so I did not dwell on it much. Based on online research, I was suspecting the encoding scheme to involve RLE with LZW compression, but didn’t check that hypothesis. In any case, I’m still focusing on reconstructing the C code, with the porting of the assembly routines to be handled later (how, I’m still not sure just yet).</p>
+
+<p>So if I don’t know the decoding scheme, how am I able to look inside these images? Well, by cheating of course. The first image show by the game is the <code class="language-plaintext highlighter-rouge">labs.pic</code> Microprose logo, so if I rename a PIC/SPR file to that name and start the game, it will show me what’s inside and I can do a screen capture in DosBox. Sometimes, the colors will be off (especially for the 256 color images) because the game uses different palettes for some of the images, but not so much as to make the image unrecognizable.</p>
+
+<p>In an even more fortunate turn of events, a certain talented individual had become interested and taken it upon himself to decode the elusive PIC format, across its apparent multiple incarnations over the evolution span of Microprose games from that era. He was kind enough to also write down his experiences in doing so, and I highly recommend reading a series on it <a href="https://canadianavenger.io/2024/06/07/houston-weve-had-a-problem/">on his blog</a>. Better yet, this might lead to a functional encoder, letting us replace the images and do some basic modding of the game. Exciting times!</p>
+
+<p>What that will mean for the reconstruction project, I’m not yet sure. I’m not too tied to the idea of faithfully recreating the assembly routines if I don’t need to, so perhaps it will save me work from rewriting the PIC decoder mess into C. Or maybe I will need to do that anyway, who knows. In any case, I’m happy and grateful to CanadianAvenger for this effort, and excited to have gotten this insight into the actual game assets. It gives me a kick, and I can only imagine what it will be like when we can unpack and view the 3D models in high res… then replace them with better ones… Yowza!</p>
+
+<p>Now if I can only figure out how to get these goddamn assembly opcodes to match…</p>
+
+  </div><a class="u-url" href="/f15-se2/2024/06/07/pictures.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

@@ -1,0 +1,37 @@
+======================================================================
+--- Z3 Search for a Universal Hash Formula ---
+======================================================================
+
+[Step 1] Parsed 10 functions with enough variables to create constraints.
+
+[Step 2] Modeling a universal hash function with 14 unknown 16-bit constants.
+  Formula: hash(name) = (C_0*name[0]) + ... + (C_12*name[12]) + K
+
+[Step 3] Adding all ordering constraints from all functions to a single solver...
+  - Successfully added 40 constraints from 10 functions.
+
+[Step 4] Asking Z3 to find a single solution for all constraints simultaneously...
+
+======================================================================
+--- Final Z3 Solver Results ---
+======================================================================
+Status: SATISFIABLE ('sat')
+
+This is a monumental and unexpected result!
+Z3 has found a SINGLE universal formula that correctly orders the variables
+for ALL functions provided. The coefficients are:
+  442,
+  21084,
+  23155,
+  32544,
+  25342,
+  53457,
+  25247,
+  22126,
+  16324,
+  1559,
+  1209,
+  60769,
+  42496,
+  K    = 57873,
+,

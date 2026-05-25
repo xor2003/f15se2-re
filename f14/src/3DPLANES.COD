@@ -1,0 +1,325 @@
+;	Static Name Aliases
+;
+	TITLE   3DPLANES.C
+	NAME    3DPLANES
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+PUBLIC  _LIGHTS
+PUBLIC  _PLANEDETAIL
+PUBLIC  _WingRot
+PUBLIC  _HookDown
+PUBLIC  _HookRot
+PUBLIC  _slposx
+PUBLIC  _slposy
+PUBLIC  _pflashtbl
+EXTRN	__acrtused:ABS
+EXTRN	_abs:NEAR
+EXTRN	_labs:NEAR
+EXTRN	_Stack3DObject:NEAR
+_BSS      SEGMENT
+COMM NEAR	_PlaneAnimVals:	BYTE:	 64
+COMM NEAR	_ntmp:	BYTE:	 10
+EXTRN	_ViewX:DWORD
+EXTRN	_ViewY:DWORD
+EXTRN	_ViewZ:WORD
+_BSS      ENDS
+_DATA      SEGMENT
+_LIGHTS	DW	00H
+_PLANEDETAIL	DW	02H
+_WingRot	DW	02220H
+_HookDown	DW	00H
+_HookRot	DW	00H
+_slposx	DW	00H
+_slposy	DW	00H
+_pflashtbl	DW	0fbfbH
+	DW	09292H
+	DW	09393H
+	DW	09292H
+_DATA      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** //***************************************************************************
+;|*** // File: 3DPLANES.C
+;|*** //
+;|*** // Author: Mike McDonald
+;|*** //
+;|*** // Initial code by Sid Meier/Andy Hollis
+;|*** //
+;|*** // Description:  Process 3D planes and other single 3D objects
+;|*** //
+;|*** //***************************************************************************
+;|*** #include <dos.h>
+;|*** #include <stdlib.h>
+;|*** #include "Library.h"
+;|*** #include "world.h"
+;|*** #include "sdata.h"
+;|*** #include "cockpit.h"
+;|*** #include "F15defs.h"
+;|*** #include "sounds.h"
+;|*** #include "armt.h"
+;|*** #include "planeai.h"
+;|*** #include "proto.h"
+;|*** #include "3dobjdef.h"
+;|*** 
+;|*** extern  RPS     *Rp3D;
+;|*** extern 	RPS		*RpCRT;
+;|*** 
+;|*** extern  UBYTE   PlaneFlags[];
+;|*** extern  SWORD   AnimVals[];
+;|*** extern  int     O[3][3];
+;|*** 
+;|*** extern  int     OurHead,OurRoll,OurPitch;
+;|*** extern  UWORD   Alt;
+;|*** extern  long    ViewX,ViewY;
+;|*** extern  int     ViewZ;
+;|*** extern  long    PxLng,PyLng;
+;|*** extern  int     View;
+;|*** extern  int     sx,sy,sz;
+;|*** extern  COORD   chuteX,chuteY;
+;|*** extern  int     chuteZ,chuteDZ;
+;|*** extern  int     MinAlt;
+;|*** extern  int     THRUST;
+;|*** extern  int     Gees;
+;|*** extern	int		Knots;
+;|*** extern  int     detected;
+;|*** extern  int     Firing;
+;|*** extern	UWORD	*PalPtr3D;
+;|*** extern  int     LightsOn;
+;|*** extern	int		DESIGNATED;
+;|*** 
+;|*** extern   int   NOTEXTURE;
+;|*** 
+;|*** extern	int		DeckPlaneScale;
+;|*** extern 	int		PlaneScale;
+;|*** extern  UBYTE   mS1n,mS2n;
+;|*** extern int whichourcarr;
+;|*** extern int Fticks;
+;|*** 
+;|*** Shift3X3(int *M, int SHFT);
+;|*** 
+;|*** 
+;|*** #define	DEG		182
+;|*** 
+;|*** int PlaneAnimVals[32];
+;|*** int LIGHTS = 0;
+;|*** int	PLANEDETAIL=2;
+;|*** int WingRot=(48*DEG);
+;|*** extern int WingsReady;
+;|*** extern int PreparePlaneWings;
+;|*** int HookDown=0;
+;|*** int HookRot=0;
+;|*** int slposx=0;
+;|*** int slposy=0;
+;|*** 
+;|*** extern	int	GFLSH;
+;|*** int	pflashtbl[4]={251*256+251,146*256+146,147*256+147,146*256+146};
+;|*** 
+;|*** extern struct MissileData far *GetMissilePtr(int MissileNo);
+;|*** extern struct PlaneData far *GetPlanePtr(int PlaneNo);
+;|*** 
+;|*** extern long labs(long X);
+;|*** 
+;|*** //int Do3dObject(int Obj, long OX, long OY, UWORD OZ, int ID,int TYPE);
+;|*** 
+;|*** //***************************************************************************
+;|*** int Do3dObject(int Obj, long OX, long OY, UWORD OZ, int ID,int TYPE)
+;|*** {
+; Line 86
+	PUBLIC	_Do3dObject
+_Do3dObject	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+	*** 000003	83 ec 14 		sub	sp,20
+;	Obj = 4
+;	OX = 6
+;	OY = 10
+;	OZ = 14
+;	ID = 16
+;	TYPE = 18
+;	dx = -14
+;	dy = -18
+;	dz = -20
+;	t1 = -6
+;	t2 = -10
+;	SCL = -2
+;|***     long dx,dy;
+;|***     int dz;
+;|*** 	long t1;
+;|*** 	long t2;
+;|*** 
+;|*** 	int	SCL;
+;|*** 
+;|*** 
+;|***     dx = OX - ViewX;
+; Line 95
+	*** 000006	8b 46 06 		mov	ax,WORD PTR [bp+6]	;OX
+	*** 000009	8b 56 08 		mov	dx,WORD PTR [bp+8]
+	*** 00000c	2b 06 00 00 		sub	ax,WORD PTR _ViewX
+	*** 000010	1b 16 02 00 		sbb	dx,WORD PTR _ViewX+2
+	*** 000014	89 46 f2 		mov	WORD PTR [bp-14],ax	;dx
+	*** 000017	89 56 f4 		mov	WORD PTR [bp-12],dx
+;|***     dy = ViewY - (0x100000L-OY);
+; Line 96
+	*** 00001a	8b 46 0a 		mov	ax,WORD PTR [bp+10]	;OY
+	*** 00001d	8b 56 0c 		mov	dx,WORD PTR [bp+12]
+	*** 000020	03 06 00 00 		add	ax,WORD PTR _ViewY
+	*** 000024	13 16 02 00 		adc	dx,WORD PTR _ViewY+2
+	*** 000028	2d 00 00 		sub	ax,0
+	*** 00002b	83 da 10 		sbb	dx,16
+	*** 00002e	89 46 ee 		mov	WORD PTR [bp-18],ax	;dy
+	*** 000031	89 56 f0 		mov	WORD PTR [bp-16],dx
+;|***     dz = OZ - ViewZ;
+; Line 97
+	*** 000034	8b 46 0e 		mov	ax,WORD PTR [bp+14]	;OZ
+	*** 000037	2b 06 00 00 		sub	ax,_ViewZ
+	*** 00003b	89 46 ec 		mov	WORD PTR [bp-20],ax	;dz
+;|*** 
+;|*** 	if (abs(dz) > 0x3ffe) return (1);
+; Line 99
+	*** 00003e	50 			push	ax
+	*** 00003f	e8 00 00 		call	_abs
+	*** 000042	83 c4 02 		add	sp,2
+	*** 000045	3d fe 3f 		cmp	ax,16382
+	*** 000048	7e 08 			jle	$I1705
+					$L20004:
+	*** 00004a	b8 01 00 		mov	ax,1
+	*** 00004d	8b e5 			mov	sp,bp
+	*** 00004f	5d 			pop	bp
+	*** 000050	c3 			ret	
+	*** 000051	90 			nop	
+					$I1705:
+	*** 000052	ff 76 f0 		push	WORD PTR [bp-16]
+	*** 000055	ff 76 ee 		push	WORD PTR [bp-18]	;dy
+	*** 000058	e8 00 00 		call	_labs
+	*** 00005b	83 c4 04 		add	sp,4
+	*** 00005e	89 46 fa 		mov	WORD PTR [bp-6],ax	;t1
+	*** 000061	89 56 fc 		mov	WORD PTR [bp-4],dx
+;|*** 
+;|*** 
+;|*** 	t1 = labs(dy);
+;|*** 	if (t1>0x3fff) return(1);
+; Line 103
+	*** 000064	0b d2 			or	dx,dx
+	*** 000066	7c 07 			jl	$I1706
+	*** 000068	7f e0 			jg	$L20004
+	*** 00006a	3d ff 3f 		cmp	ax,16383
+	*** 00006d	77 db 			ja	$L20004
+					$I1706:
+	*** 00006f	ff 76 f4 		push	WORD PTR [bp-12]
+	*** 000072	ff 76 f2 		push	WORD PTR [bp-14]	;dx
+	*** 000075	e8 00 00 		call	_labs
+	*** 000078	83 c4 04 		add	sp,4
+	*** 00007b	89 46 fa 		mov	WORD PTR [bp-6],ax	;t1
+	*** 00007e	89 56 fc 		mov	WORD PTR [bp-4],dx
+;|*** 	t1 = labs(dx);
+;|*** 	if (t1>0x3fff) return(1);
+; Line 105
+	*** 000081	0b d2 			or	dx,dx
+	*** 000083	7c 07 			jl	$I1707
+	*** 000085	7f c3 			jg	$L20004
+	*** 000087	3d ff 3f 		cmp	ax,16383
+	*** 00008a	77 be 			ja	$L20004
+					$I1707:
+	*** 00008c	8b 46 12 		mov	ax,WORD PTR [bp+18]	;TYPE
+	*** 00008f	3d 32 00 		cmp	ax,50
+	*** 000092	74 14 			je	$SC1715
+	*** 000094	7f 1a 			jg	$L20002
+	*** 000096	3d 1e 00 		cmp	ax,30
+	*** 000099	74 05 			je	$SC1712
+	*** 00009b	3d 28 00 		cmp	ax,40
+	*** 00009e	75 21 			jne	$SD1719
+					$SC1712:
+;|*** 
+;|*** 
+;|*** 	switch(TYPE) {
+;|*** 		case PLANES_OBJ:
+;|*** 			SCL=40;
+; Line 110
+	*** 0000a0	c7 46 fe 28 00 		mov	WORD PTR [bp-2],40	;SCL
+;|*** 			break;
+; Line 111
+	*** 0000a5	eb 1f 			jmp	SHORT $SB1709
+	*** 0000a7	90 			nop	
+					$SC1715:
+;|*** 		case SHADOW_OBJ:
+;|*** 			SCL=40;
+;|*** 			break;
+;|*** 		case MISSILE_OBJ:
+;|*** 			SCL=4;
+;|*** 			break;
+;|*** 		case CHUTE_OBJ:
+;|*** 			SCL=30;
+; Line 119
+	*** 0000a8	c7 46 fe 1e 00 		mov	WORD PTR [bp-2],30	;SCL
+;|*** 		break;
+; Line 120
+	*** 0000ad	eb 17 			jmp	SHORT $SB1709
+	*** 0000af	90 			nop	
+					$L20002:
+	*** 0000b0	3d 3c 00 		cmp	ax,60
+	*** 0000b3	74 eb 			je	$SC1712
+	*** 0000b5	7f 0a 			jg	$SD1719
+	*** 0000b7	3d 37 00 		cmp	ax,55
+	*** 0000ba	7c 05 			jl	$SD1719
+	*** 0000bc	3d 38 00 		cmp	ax,56
+	*** 0000bf	7e e7 			jle	$SC1715
+					$SD1719:
+;|*** 			SCL=4;
+; Line 116
+	*** 0000c1	c7 46 fe 04 00 		mov	WORD PTR [bp-2],4	;SCL
+;|*** 			break;
+; Line 117
+					$SB1709:
+;|*** 		case CHUTE_OBJ:
+;|*** 			SCL=30;
+;|*** 		break;
+;|*** 		case CHAFF_OBJ:
+;|*** 		case FLARE_OBJ:
+;|*** 			SCL=30;
+;|*** 		break;
+;|*** 		case COOLF14_OBJ:
+;|*** 			SCL=40;
+;|*** 			break;
+;|*** 		case REG_BOAT_OBJ:
+;|*** 			SCL=4;
+;|*** 			break;
+;|*** 		default:
+;|*** 			SCL=4;
+;|*** 			break;
+;|*** 		}
+;|*** 	Stack3DObject(Obj, (int) dx, dz, (int) dy, ID, SCL,TYPE);
+; Line 135
+	*** 0000c6	ff 76 12 		push	WORD PTR [bp+18]	;TYPE
+	*** 0000c9	ff 76 fe 		push	WORD PTR [bp-2]	;SCL
+	*** 0000cc	ff 76 10 		push	WORD PTR [bp+16]	;ID
+	*** 0000cf	ff 76 ee 		push	WORD PTR [bp-18]	;dy
+	*** 0000d2	ff 76 ec 		push	WORD PTR [bp-20]	;dz
+	*** 0000d5	ff 76 f2 		push	WORD PTR [bp-14]	;dx
+	*** 0000d8	ff 76 04 		push	WORD PTR [bp+4]	;Obj
+	*** 0000db	e8 00 00 		call	_Stack3DObject
+	*** 0000de	83 c4 0e 		add	sp,14
+;|*** 
+;|*** }
+; Line 137
+	*** 0000e1	8b e5 			mov	sp,bp
+	*** 0000e3	5d 			pop	bp
+	*** 0000e4	c3 			ret	
+	*** 0000e5	90 			nop	
+
+_Do3dObject	ENDP
+_TEXT	ENDS
+END

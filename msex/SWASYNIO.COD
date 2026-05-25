@@ -1,0 +1,801 @@
+;	Static Name Aliases
+;
+;	$S269_lastkey	EQU	lastkey
+;	$S300_tickwait	EQU	tickwait
+;	$S327_first	EQU	first
+	TITLE   SWASYNIO.C
+	NAME    SWASYNIO
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+EXTRN	__acrtused:ABS
+EXTRN	_histmult:NEAR
+EXTRN	_dispmult:NEAR
+EXTRN	_movemult:NEAR
+EXTRN	_swgetc:NEAR
+EXTRN	_swflush:NEAR
+EXTRN	_commterm:NEAR
+EXTRN	_commin:NEAR
+EXTRN	_comminit:NEAR
+EXTRN	_clrprmpt:NEAR
+EXTRN	_puts:NEAR
+EXTRN	_commout:NEAR
+EXTRN	_ctlbreak:NEAR
+EXTRN	_initpln:NEAR
+EXTRN	_swend:NEAR
+EXTRN	_initplyr:NEAR
+EXTRN	_intsoff:NEAR
+EXTRN	_intson:NEAR
+EXTRN	_movmem:NEAR
+EXTRN	_player:WORD
+EXTRN	_swgames:BYTE
+EXTRN	_currgame:WORD
+EXTRN	_counttick:WORD
+EXTRN	_multbuff:WORD
+EXTRN	_oobjects:BYTE
+EXTRN	_explseed:WORD
+_DATA      SEGMENT
+$SG298	DB	'Time out on sychronization',  00H
+	ORG	$+3
+$SG323	DB	'Timeout during play',  00H
+	ORG	$+2
+$SG344	DB	'        Waiting for other player',  00H
+$SG347	DB	'Timeout during player assignment',  00H
+	ORG	$-90
+$S269_lastkey	DW	00H
+	ORG	$+20
+$S327_first	DW	01H
+_DATA      ENDS
+_BSS      SEGMENT
+$S300_tickwait	DW 01H DUP (?)
+_BSS      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** /*
+;|*** 
+;|***                         Copyright (C) 1984-2000 David L. Clark.
+;|*** 
+;|***                         All rights reserved except as specified in the
+;|***                         file license.txt.  Distribution of this file
+;|***                         without the license.txt file accompanying is
+;|***                         prohibited.
+;|*** 
+;|*** */
+;|*** 
+;|*** #define NULL     ((void *)0)
+;|*** #define FALSE    0
+;|*** #define TRUE     1
+;|*** #define NO       0
+;|*** #define YES      1
+;|*** #define FOREVER  for (;;)
+;|*** 
+;|*** int index(char *str,int c);
+;|*** int inportb(unsigned port);
+;|*** void movblock(unsigned int srcoff,unsigned int srcseg,
+;|***               unsigned int destoff,unsigned int destseg,
+;|***               unsigned int count);
+; Line 23
+;|*** /*
+;|***         swasynio -      SW asynchrounous communications I/O
+;|*** 
+;|***                         Copyright (C) 1984-2000 David L. Clark.
+;|*** 
+;|***                         All rights reserved except as specified in the
+;|***                         file license.txt.  Distribution of this file
+;|***                         without the license.txt file accompanying is
+;|***                         prohibited.
+;|*** 
+;|***                         Author: Dave Clark
+;|*** 
+;|***         Modification History:
+;|***                         85-04-03        Development
+;|***                         87-03-09        Microsoft compiler.
+;|***                         87-03-12        Allow asynch loopback for debugging.
+;|***                         96-12-26        Remove IMAGINET network card
+;|***                                           card address in "multaddr".
+;|*** */
+;|*** #include        "sw.h"
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** extern  int     player;                 /* Pointer to player's object       */
+;|*** extern  GAMES   swgames[], *currgame;   /* Game parameters and current game */
+;|*** extern  int     counttick, countmove;   /* Performance counters             */
+;|*** extern  MULTIO  *multbuff;              /* Communications buffer            */
+;|*** extern  OBJECTS oobjects[];             /* Original plane object description*/
+;|*** extern  int     dispmult(),             /*  Display and move functions      */
+;|***                 movemult();
+;|*** extern  unsigned explseed;              /* explosion seed                   */
+;|*** extern  int     multaddr;               /* port address override            */
+;|*** 
+;|*** static  int     lastkey = 0;            /*  Always behind one character     */
+;|*** 
+;|*** 
+;|*** static  synchronize()
+;|*** {
+; Line 39
+synchronize	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+	*** 000003	83 ec 04 		sub	sp,4
+	*** 000006	57 			push	di
+	*** 000007	56 			push	si
+;	register si = syncount
+;	register di = c
+;|*** register int     syncount;
+;|*** register int     c;
+;|*** 
+;|***         while ( commin() >= 0 );
+; Line 43
+					$FC276:
+	*** 000008	e8 00 00 		call	_commin
+	*** 00000b	0b c0 			or	ax,ax
+	*** 00000d	7c 02 			jl	$FB277
+	*** 00000f	eb f7 			jmp	SHORT $FC276
+					$FB277:
+;|***         syncount = 0;
+; Line 44
+	*** 000011	2b f6 			sub	si,si
+;|***         FOREVER {
+; Line 45
+					$FC279:
+;|***                 settimeout( 2 );
+; Line 46
+	*** 000013	b8 02 00 		mov	ax,2
+	*** 000016	50 			push	ax
+	*** 000017	e8 00 00 		call	settimeout
+	*** 00001a	83 c4 02 		add	sp,2
+;|***                 while ( !timeout() );
+; Line 47
+					$FC284:
+	*** 00001d	e8 00 00 		call	timeout
+	*** 000020	0b c0 			or	ax,ax
+	*** 000022	75 02 			jne	$FB285
+	*** 000024	eb f7 			jmp	SHORT $FC284
+					$FB285:
+;|***                 commout( K_ASYNACK );
+; Line 48
+	*** 000026	b8 40 00 		mov	ax,64
+	*** 000029	50 			push	ax
+	*** 00002a	e8 00 00 		call	_commout
+	*** 00002d	83 c4 02 		add	sp,2
+;|*** 
+;|***                 if ( ctlbreak() )
+; Line 50
+	*** 000030	e8 00 00 		call	_ctlbreak
+	*** 000033	0b c0 			or	ax,ax
+	*** 000035	74 0a 			je	$I288
+;|***                         swend( NULL, NO );
+; Line 51
+	*** 000037	2b c0 			sub	ax,ax
+	*** 000039	50 			push	ax
+	*** 00003a	50 			push	ax
+	*** 00003b	e8 00 00 		call	_swend
+	*** 00003e	83 c4 04 		add	sp,4
+;|*** 
+;|***                 if ( ( c = commin() ) < 0 )
+; Line 53
+					$I288:
+	*** 000041	e8 00 00 		call	_commin
+	*** 000044	8b f8 			mov	di,ax
+	*** 000046	0b ff 			or	di,di
+	*** 000048	7d 02 			jge	$I290
+;|***                         continue;
+; Line 54
+	*** 00004a	eb c7 			jmp	SHORT $FC279
+;|*** 
+;|***                 if ( c == K_ASYNACK ) {
+; Line 56
+					$I290:
+	*** 00004c	83 ff 40 		cmp	di,64
+	*** 00004f	75 0a 			jne	$I291
+;|***                         if ( ++syncount == 10 )
+; Line 57
+	*** 000051	46 			inc	si
+	*** 000052	83 fe 0a 		cmp	si,10
+	*** 000055	75 02 			jne	$I292
+;|***                                 break;
+; Line 58
+	*** 000057	eb 06 			jmp	SHORT $FB280
+;|***                         continue;
+; Line 59
+					$I292:
+	*** 000059	eb b8 			jmp	SHORT $FC279
+;|***                 }
+; Line 60
+;|***                 syncount = 0;
+; Line 61
+					$I291:
+	*** 00005b	2b f6 			sub	si,si
+;|***         }
+; Line 62
+	*** 00005d	eb b4 			jmp	SHORT $FC279
+					$FB280:
+;|***         commout( 0 );
+; Line 63
+	*** 00005f	2b c0 			sub	ax,ax
+	*** 000061	50 			push	ax
+	*** 000062	e8 00 00 		call	_commout
+	*** 000065	83 c4 02 		add	sp,2
+;|*** 
+;|***         FOREVER {
+; Line 65
+					$FC294:
+;|***                 if ( ( c = asynin() ) == -1 )
+; Line 66
+	*** 000068	e8 00 00 		call	asynin
+	*** 00006b	8b f8 			mov	di,ax
+	*** 00006d	40 			inc	ax
+	*** 00006e	75 0d 			jne	$I297
+;|***                         swend( "Time out on sychronization", NO );
+; Line 67
+	*** 000070	2b c0 			sub	ax,ax
+	*** 000072	50 			push	ax
+	*** 000073	b8 00 00 		mov	ax,OFFSET DGROUP:$SG298
+	*** 000076	50 			push	ax
+	*** 000077	e8 00 00 		call	_swend
+	*** 00007a	83 c4 04 		add	sp,4
+;|***                 if ( c != K_ASYNACK )
+; Line 68
+					$I297:
+	*** 00007d	83 ff 40 		cmp	di,64
+	*** 000080	74 02 			je	$I299
+;|***                         break;
+; Line 69
+	*** 000082	eb 02 			jmp	SHORT $FB295
+;|***         }
+; Line 70
+					$I299:
+	*** 000084	eb e2 			jmp	SHORT $FC294
+					$FB295:
+;|*** }
+; Line 71
+	*** 000086	5e 			pop	si
+	*** 000087	5f 			pop	di
+	*** 000088	8b e5 			mov	sp,bp
+	*** 00008a	5d 			pop	bp
+	*** 00008b	c3 			ret	
+
+synchronize	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static  tickwait;
+;|*** 
+;|*** 
+;|*** 
+;|*** static  settimeout( tick )
+;|*** int     tick;
+; Line 82
+settimeout	PROC NEAR
+	*** 00008c	55 			push	bp
+	*** 00008d	8b ec 			mov	bp,sp
+;|*** {
+; Line 83
+;	tick = 4
+;|***         intsoff();
+; Line 84
+	*** 00008f	e8 00 00 		call	_intsoff
+;|***         tickwait = tick;
+; Line 85
+	*** 000092	8b 46 04 		mov	ax,WORD PTR [bp+4]	;tick
+	*** 000095	a3 00 00 		mov	$S300_tickwait,ax
+;|***         counttick = 0;
+; Line 86
+	*** 000098	c7 06 00 00 00 00 	mov	WORD PTR _counttick,0
+;|***         intson();
+; Line 87
+	*** 00009e	e8 00 00 		call	_intson
+;|*** }
+; Line 88
+	*** 0000a1	8b e5 			mov	sp,bp
+	*** 0000a3	5d 			pop	bp
+	*** 0000a4	c3 			ret	
+
+settimeout	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static  timeout()
+;|*** {
+; Line 94
+timeout	PROC NEAR
+	*** 0000a5	55 			push	bp
+	*** 0000a6	8b ec 			mov	bp,sp
+;|***         return( tickwait < counttick );
+; Line 95
+	*** 0000a8	a1 00 00 		mov	ax,_counttick
+	*** 0000ab	39 06 00 00 		cmp	$S300_tickwait,ax
+	*** 0000af	7d 05 			jge	$L20000
+	*** 0000b1	b8 01 00 		mov	ax,1
+	*** 0000b4	eb 02 			jmp	SHORT $L20001
+					$L20000:
+	*** 0000b6	2b c0 			sub	ax,ax
+					$L20001:
+	*** 0000b8	eb 00 			jmp	SHORT $EX305
+;|*** }
+; Line 96
+					$EX305:
+	*** 0000ba	8b e5 			mov	sp,bp
+	*** 0000bc	5d 			pop	bp
+	*** 0000bd	c3 			ret	
+
+timeout	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static  asynin()
+;|*** {
+; Line 103
+asynin	PROC NEAR
+	*** 0000be	55 			push	bp
+	*** 0000bf	8b ec 			mov	bp,sp
+	*** 0000c1	83 ec 02 		sub	sp,2
+	*** 0000c4	56 			push	si
+;	register si = c
+;|*** register int     c;
+;|*** 
+;|***         settimeout( 180 );
+; Line 106
+	*** 0000c5	b8 b4 00 		mov	ax,180
+	*** 0000c8	50 			push	ax
+	*** 0000c9	e8 c0 ff 		call	settimeout
+	*** 0000cc	83 c4 02 		add	sp,2
+;|***         FOREVER {
+; Line 107
+					$FC309:
+;|***                 if ( ( c = commin() ) >= 0 )
+; Line 108
+	*** 0000cf	e8 00 00 		call	_commin
+	*** 0000d2	8b f0 			mov	si,ax
+	*** 0000d4	0b f6 			or	si,si
+	*** 0000d6	7c 02 			jl	$I311
+;|***                         return( c );
+; Line 109
+	*** 0000d8	eb 1f 			jmp	SHORT $EX306
+;|***                 if ( ctlbreak() )
+; Line 110
+					$I311:
+	*** 0000da	e8 00 00 		call	_ctlbreak
+	*** 0000dd	0b c0 			or	ax,ax
+	*** 0000df	74 0a 			je	$I312
+;|***                         swend( NULL, NO );
+; Line 111
+	*** 0000e1	2b c0 			sub	ax,ax
+	*** 0000e3	50 			push	ax
+	*** 0000e4	50 			push	ax
+	*** 0000e5	e8 00 00 		call	_swend
+	*** 0000e8	83 c4 04 		add	sp,4
+;|***                 if ( timeout() )
+; Line 112
+					$I312:
+	*** 0000eb	e8 b7 ff 		call	timeout
+	*** 0000ee	0b c0 			or	ax,ax
+	*** 0000f0	74 05 			je	$I313
+;|***                         return( -1 );
+; Line 113
+	*** 0000f2	b8 ff ff 		mov	ax,-1
+	*** 0000f5	eb 02 			jmp	SHORT $EX306
+;|***         }
+; Line 114
+					$I313:
+	*** 0000f7	eb d6 			jmp	SHORT $FC309
+;|*** }
+; Line 115
+					$EX306:
+	*** 0000f9	5e 			pop	si
+	*** 0000fa	8b e5 			mov	sp,bp
+	*** 0000fc	5d 			pop	bp
+	*** 0000fd	c3 			ret	
+
+asynin	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** asynget( ob )
+;|*** OBJECTS *ob;
+; Line 122
+	PUBLIC	_asynget
+_asynget	PROC NEAR
+	*** 0000fe	55 			push	bp
+	*** 0000ff	8b ec 			mov	bp,sp
+	*** 000101	83 ec 04 		sub	sp,4
+	*** 000104	57 			push	di
+	*** 000105	56 			push	si
+;|*** {
+; Line 123
+;	ob = 4
+;	register si = key
+;	register di = c
+;|*** register int     key;
+;|*** register int     c;
+;|*** 
+;|*** 
+;|***         if ( ob->ob_index == player ) {
+; Line 128
+	*** 000106	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;ob
+	*** 000109	a1 00 00 		mov	ax,_player
+	*** 00010c	39 47 38 		cmp	WORD PTR [bx+56],ax
+	*** 00010f	75 0c 			jne	$I319
+;|***                 key = lastkey;
+; Line 129
+	*** 000111	8b 36 1c 00 		mov	si,$S269_lastkey
+;|***                 lastkey = 0;
+; Line 130
+	*** 000115	c7 06 1c 00 00 00 	mov	WORD PTR $S269_lastkey,0
+;|***         } else {
+; Line 131
+	*** 00011b	eb 27 			jmp	SHORT $I320
+					$I319:
+;|***                 if ( ( ( key = asynin() ) < 0 )
+;|***                         || ( ( c = asynin() ) < 0 ) )
+; Line 133
+	*** 00011d	e8 9e ff 		call	asynin
+	*** 000120	8b f0 			mov	si,ax
+	*** 000122	0b f6 			or	si,si
+	*** 000124	7c 09 			jl	$I322
+	*** 000126	e8 95 ff 		call	asynin
+	*** 000129	8b f8 			mov	di,ax
+	*** 00012b	0b ff 			or	di,di
+	*** 00012d	7d 0d 			jge	$I321
+					$I322:
+;|***                         swend( "Timeout during play", NO );
+; Line 134
+	*** 00012f	2b c0 			sub	ax,ax
+	*** 000131	50 			push	ax
+	*** 000132	b8 1e 00 		mov	ax,OFFSET DGROUP:$SG323
+	*** 000135	50 			push	ax
+	*** 000136	e8 00 00 		call	_swend
+	*** 000139	83 c4 04 		add	sp,4
+;|***                 key = key | ( c << 8 );
+; Line 135
+					$I321:
+	*** 00013c	8b c7 			mov	ax,di
+	*** 00013e	b1 08 			mov	cl,8
+	*** 000140	d3 e0 			shl	ax,cl
+	*** 000142	0b f0 			or	si,ax
+;|***         }
+; Line 136
+					$I320:
+;|***         return( histmult( ob->ob_index, key ) );
+; Line 137
+	*** 000144	56 			push	si
+	*** 000145	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;ob
+	*** 000148	ff 77 38 		push	WORD PTR [bx+56]
+	*** 00014b	e8 00 00 		call	_histmult
+	*** 00014e	83 c4 04 		add	sp,4
+	*** 000151	eb 00 			jmp	SHORT $EX316
+;|*** }
+; Line 138
+					$EX316:
+	*** 000153	5e 			pop	si
+	*** 000154	5f 			pop	di
+	*** 000155	8b e5 			mov	sp,bp
+	*** 000157	5d 			pop	bp
+	*** 000158	c3 			ret	
+
+_asynget	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** asynput()
+;|*** {
+; Line 144
+	PUBLIC	_asynput
+_asynput	PROC NEAR
+	*** 000159	55 			push	bp
+	*** 00015a	8b ec 			mov	bp,sp
+;|*** static  BOOL    first = TRUE;
+;|*** 
+;|*** 
+;|***         if  ( first )
+; Line 148
+	*** 00015c	83 3e 32 00 00 		cmp	WORD PTR $S327_first,0
+	*** 000161	74 08 			je	$I328
+;|***                 first = FALSE;
+; Line 149
+	*** 000163	c7 06 32 00 00 00 	mov	WORD PTR $S327_first,0
+;|***         else
+; Line 150
+	*** 000169	eb 06 			jmp	SHORT $I329
+					$I328:
+;|***                 lastkey = swgetc();
+; Line 151
+	*** 00016b	e8 00 00 		call	_swgetc
+	*** 00016e	a3 1c 00 		mov	$S269_lastkey,ax
+					$I329:
+;|***         swflush();
+; Line 152
+	*** 000171	e8 00 00 		call	_swflush
+;|*** 
+;|***         commout( lastkey & 0x00FF );
+; Line 154
+	*** 000174	a0 1c 00 		mov	al,BYTE PTR $S269_lastkey
+	*** 000177	2a e4 			sub	ah,ah
+	*** 000179	50 			push	ax
+	*** 00017a	e8 00 00 		call	_commout
+	*** 00017d	83 c4 02 		add	sp,2
+;|***         commout( lastkey >> 8 );
+; Line 155
+	*** 000180	a1 1c 00 		mov	ax,$S269_lastkey
+	*** 000183	b1 08 			mov	cl,8
+	*** 000185	d3 f8 			sar	ax,cl
+	*** 000187	50 			push	ax
+	*** 000188	e8 00 00 		call	_commout
+	*** 00018b	83 c4 02 		add	sp,2
+;|*** }
+; Line 156
+	*** 00018e	8b e5 			mov	sp,bp
+	*** 000190	5d 			pop	bp
+	*** 000191	c3 			ret	
+
+_asynput	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** char    *asynclos( update )
+;|*** BOOL    update;
+; Line 163
+	PUBLIC	_asynclos
+_asynclos	PROC NEAR
+	*** 000192	55 			push	bp
+	*** 000193	8b ec 			mov	bp,sp
+;|*** {
+; Line 164
+;	update = 4
+;|***         commterm();
+; Line 165
+	*** 000195	e8 00 00 		call	_commterm
+;|***         return( NULL );
+; Line 166
+	*** 000198	2b c0 			sub	ax,ax
+	*** 00019a	eb 00 			jmp	SHORT $EX334
+;|*** }
+; Line 167
+					$EX334:
+	*** 00019c	8b e5 			mov	sp,bp
+	*** 00019e	5d 			pop	bp
+	*** 00019f	c3 			ret	
+
+_asynclos	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** init1asy()
+;|*** {
+; Line 173
+	PUBLIC	_init1asy
+_init1asy	PROC NEAR
+	*** 0001a0	55 			push	bp
+	*** 0001a1	8b ec 			mov	bp,sp
+	*** 0001a3	83 ec 06 		sub	sp,6
+	*** 0001a6	57 			push	di
+	*** 0001a7	56 			push	si
+;	seed = -2
+;	register si = c1
+;	register di = c2
+;|*** unsigned          seed;
+;|*** register int      c1, c2;
+;|*** 
+;|***         comminit();
+; Line 177
+	*** 0001a8	e8 00 00 		call	_comminit
+;|***         clrprmpt();
+; Line 178
+	*** 0001ab	e8 00 00 		call	_clrprmpt
+;|***         puts( "        Waiting for other player" );
+; Line 179
+	*** 0001ae	b8 34 00 		mov	ax,OFFSET DGROUP:$SG344
+	*** 0001b1	50 			push	ax
+	*** 0001b2	e8 00 00 		call	_puts
+	*** 0001b5	83 c4 02 		add	sp,2
+;|***         synchronize();
+; Line 180
+	*** 0001b8	e8 45 fe 		call	synchronize
+;|*** 
+;|***         commout( explseed & 0x00FF );
+; Line 182
+	*** 0001bb	a0 00 00 		mov	al,BYTE PTR _explseed
+	*** 0001be	2a e4 			sub	ah,ah
+	*** 0001c0	50 			push	ax
+	*** 0001c1	e8 00 00 		call	_commout
+	*** 0001c4	83 c4 02 		add	sp,2
+;|***         commout( explseed >> 8 );
+; Line 183
+	*** 0001c7	a1 00 00 		mov	ax,_explseed
+	*** 0001ca	b1 08 			mov	cl,8
+	*** 0001cc	d3 e8 			shr	ax,cl
+	*** 0001ce	50 			push	ax
+	*** 0001cf	e8 00 00 		call	_commout
+	*** 0001d2	83 c4 02 		add	sp,2
+;|***         if ( ( ( c1 = asynin() ) < 0 )
+;|***                 || ( ( c2 = asynin() ) < 0 ) )
+; Line 185
+	*** 0001d5	e8 e6 fe 		call	asynin
+	*** 0001d8	8b f0 			mov	si,ax
+	*** 0001da	0b f6 			or	si,si
+	*** 0001dc	7c 09 			jl	$I346
+	*** 0001de	e8 dd fe 		call	asynin
+	*** 0001e1	8b f8 			mov	di,ax
+	*** 0001e3	0b ff 			or	di,di
+	*** 0001e5	7d 0d 			jge	$I345
+					$I346:
+;|***                 swend( "Timeout during player assignment", NO );
+; Line 186
+	*** 0001e7	2b c0 			sub	ax,ax
+	*** 0001e9	50 			push	ax
+	*** 0001ea	b8 55 00 		mov	ax,OFFSET DGROUP:$SG347
+	*** 0001ed	50 			push	ax
+	*** 0001ee	e8 00 00 		call	_swend
+	*** 0001f1	83 c4 04 		add	sp,4
+;|***         seed = c1 | ( c2 << 8 );
+; Line 187
+					$I345:
+	*** 0001f4	8b c7 			mov	ax,di
+	*** 0001f6	b1 08 			mov	cl,8
+	*** 0001f8	d3 e0 			shl	ax,cl
+	*** 0001fa	0b c6 			or	ax,si
+	*** 0001fc	89 46 fe 		mov	WORD PTR [bp-2],ax	;seed
+;|***         if ( player = ( seed > explseed ) )
+; Line 188
+	*** 0001ff	a1 00 00 		mov	ax,_explseed
+	*** 000202	39 46 fe 		cmp	WORD PTR [bp-2],ax	;seed
+	*** 000205	76 05 			jbe	$L20002
+	*** 000207	b8 01 00 		mov	ax,1
+	*** 00020a	eb 02 			jmp	SHORT $L20003
+					$L20002:
+	*** 00020c	2b c0 			sub	ax,ax
+					$L20003:
+	*** 00020e	a3 00 00 		mov	_player,ax
+	*** 000211	0b c0 			or	ax,ax
+	*** 000213	74 06 			je	$I348
+;|***                 explseed = seed;
+; Line 189
+	*** 000215	8b 46 fe 		mov	ax,WORD PTR [bp-2]	;seed
+	*** 000218	a3 00 00 		mov	_explseed,ax
+;|*** 
+;|***         currgame = &swgames[0];
+; Line 191
+					$I348:
+	*** 00021b	c7 06 00 00 00 00 	mov	WORD PTR _currgame,OFFSET _swgames
+;|***         multbuff->mu_numplyr = multbuff->mu_maxplyr = 2;
+; Line 192
+	*** 000221	8b 1e 00 00 		mov	bx,_multbuff
+	*** 000225	b8 02 00 		mov	ax,2
+	*** 000228	89 07 			mov	WORD PTR [bx],ax
+	*** 00022a	8b 1e 00 00 		mov	bx,_multbuff
+	*** 00022e	89 47 02 		mov	WORD PTR [bx+2],ax
+;|*** }
+; Line 193
+	*** 000231	5e 			pop	si
+	*** 000232	5f 			pop	di
+	*** 000233	8b e5 			mov	sp,bp
+	*** 000235	5d 			pop	bp
+	*** 000236	c3 			ret	
+
+_init1asy	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** init2asy()
+;|*** {
+; Line 198
+	PUBLIC	_init2asy
+_init2asy	PROC NEAR
+	*** 000237	55 			push	bp
+	*** 000238	8b ec 			mov	bp,sp
+	*** 00023a	83 ec 02 		sub	sp,2
+	*** 00023d	56 			push	si
+;	register si = ob
+;|*** register OBJECTS *ob;
+;|*** OBJECTS          *initpln();
+;|*** 
+;|***         if ( !player )
+; Line 202
+	*** 00023e	83 3e 00 00 00 		cmp	WORD PTR _player,0
+	*** 000243	75 09 			jne	$I353
+;|***                 initplyr( NULL );
+; Line 203
+	*** 000245	2b c0 			sub	ax,ax
+	*** 000247	50 			push	ax
+	*** 000248	e8 00 00 		call	_initplyr
+	*** 00024b	83 c4 02 		add	sp,2
+;|*** 
+;|***         ob = initpln( NULL );
+; Line 205
+					$I353:
+	*** 00024e	2b c0 			sub	ax,ax
+	*** 000250	50 			push	ax
+	*** 000251	e8 00 00 		call	_initpln
+	*** 000254	83 c4 02 		add	sp,2
+	*** 000257	8b f0 			mov	si,ax
+;|***         ob->ob_drawf = dispmult;
+; Line 206
+	*** 000259	c7 44 44 00 00 		mov	WORD PTR [si+68],OFFSET _dispmult
+;|***         ob->ob_movef = movemult;
+; Line 207
+	*** 00025e	c7 44 46 00 00 		mov	WORD PTR [si+70],OFFSET _movemult
+;|***         ob->ob_clr = ob->ob_index % 2 + 1;
+; Line 208
+	*** 000263	8b 44 38 		mov	ax,WORD PTR [si+56]
+	*** 000266	99 			cwd	
+	*** 000267	b9 02 00 		mov	cx,2
+	*** 00026a	f7 f9 			idiv	cx
+	*** 00026c	42 			inc	dx
+	*** 00026d	89 54 2a 		mov	WORD PTR [si+42],dx
+;|***         ob->ob_owner = ob;
+; Line 209
+	*** 000270	89 74 20 		mov	WORD PTR [si+32],si
+;|***         ob->ob_state = FLYING;
+; Line 210
+	*** 000273	c7 04 01 00 		mov	WORD PTR [si],1
+;|***         movmem( ob, &oobjects[ob->ob_index], sizeof( OBJECTS ) );
+; Line 211
+	*** 000277	b8 76 00 		mov	ax,118
+	*** 00027a	50 			push	ax
+	*** 00027b	f7 6c 38 		imul	WORD PTR [si+56]
+	*** 00027e	05 00 00 		add	ax,OFFSET _oobjects
+	*** 000281	50 			push	ax
+	*** 000282	56 			push	si
+	*** 000283	e8 00 00 		call	_movmem
+	*** 000286	83 c4 06 		add	sp,6
+;|*** 
+;|***         if ( player )
+; Line 213
+	*** 000289	83 3e 00 00 00 		cmp	WORD PTR _player,0
+	*** 00028e	74 09 			je	$I355
+;|***                 initplyr( NULL );
+; Line 214
+	*** 000290	2b c0 			sub	ax,ax
+	*** 000292	50 			push	ax
+	*** 000293	e8 00 00 		call	_initplyr
+	*** 000296	83 c4 02 		add	sp,2
+;|*** 
+;|***         commout( 0 );
+; Line 216
+					$I355:
+	*** 000299	2b c0 			sub	ax,ax
+	*** 00029b	50 			push	ax
+	*** 00029c	e8 00 00 		call	_commout
+	*** 00029f	83 c4 02 		add	sp,2
+;|***         commout( 0 );
+; Line 217
+	*** 0002a2	2b c0 			sub	ax,ax
+	*** 0002a4	50 			push	ax
+	*** 0002a5	e8 00 00 		call	_commout
+	*** 0002a8	83 c4 02 		add	sp,2
+;|*** }
+; Line 218
+	*** 0002ab	5e 			pop	si
+	*** 0002ac	8b e5 			mov	sp,bp
+	*** 0002ae	5d 			pop	bp
+	*** 0002af	c3 			ret	
+
+_init2asy	ENDP
+_TEXT	ENDS
+END

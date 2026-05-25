@@ -1,0 +1,886 @@
+;	Static Name Aliases
+;
+	TITLE   TEST.C
+	NAME    TEST
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+EXTRN	__acrtused:ABS
+EXTRN	_my_trace:NEAR
+EXTRN	_my_fartrace:NEAR
+EXTRN	_printf:NEAR
+EXTRN	_vprintf:NEAR
+EXTRN	_exit:NEAR
+_DATA      SEGMENT
+$SG392	DB	0aH, 'Assertion failed on line %d: ',  00H
+$SG395	DB	'Testing Comm structure layout: ',  00H
+$SG396	DB	'offsetof(struct GameComm, gfxOvlName) == COMM_GFXOVL_NAME_OF'
+	DB	'FSET (%d != %d)',  0aH,  00H
+$SG397	DB	'offsetof(struct GameComm, sndOvlName) == COMM_SNDOVL_NAME_OF'
+	DB	'FSET (%d != %d)',  0aH,  00H
+$SG398	DB	'offsetof(struct GameComm, gfxOvlAddr) == COMM_GFXOVL_ADDR_OF'
+	DB	'FSET (%d != %d)',  0aH,  00H
+$SG399	DB	'offsetof(struct GameComm, sndOvlAddr) == COMM_SNDOVL_ADDR_OF'
+	DB	'FSET (%d != %d)',  0aH,  00H
+$SG400	DB	'offsetof(struct GameComm, miscOvlAddr) == COMM_MISCOVL_ADDR_'
+	DB	'OFFSET (%d != %d)',  0aH,  00H
+$SG401	DB	'offsetof(struct GameComm, gfxInitResult) == COMM_GFXINIT_RES'
+	DB	'ULT_OFFSET (%d != %d)',  0aH,  00H
+$SG402	DB	'offsetof(struct GameComm, setup1) == COMM_SETUP1_OFFSET (%d '
+	DB	'!= %d)',  0aH,  00H
+$SG403	DB	'offsetof(struct GameComm, setupMono) == COMM_SETUP_MONOCHROM'
+	DB	'E_OFFSET (%d != %d)',  0aH,  00H
+$SG404	DB	'offsetof(struct GameComm, setupDone) == COMM_SETUP_DONE_OFFS'
+	DB	'ET (%d != %d)',  0aH,  00H
+$SG405	DB	'offsetof(struct GameComm, unk2) == COMM_UNK2_OFFSET (%d != %'
+	DB	'd)',  0aH,  00H
+$SG406	DB	'offsetof(struct GameComm, setup2) == COMM_SETUP2_OFFSET (%d '
+	DB	'!= %d)',  0aH,  00H
+$SG407	DB	'offsetof(struct GameComm, unk3) == COMM_UNK3_OFFSET (%d != %'
+	DB	'd)',  0aH,  00H
+$SG408	DB	'offsetof(struct GameComm, gfxModeChar) == COMM_SETUP_GFXMODE'
+	DB	'_OFFSET (%d != %d)',  0aH,  00H
+$SG409	DB	'offsetof(struct GameComm, setupDetail) == COMM_SETUP_DETAIL_'
+	DB	'OFFSET (%d != %d)',  0aH,  00H
+$SG410	DB	'offsetof(struct GameComm, unk7) == COMM_UNK7_OFFSET (%d != %'
+	DB	'd)',  0aH,  00H
+$SG411	DB	'offsetof(struct GameComm, unk8) == COMM_UNK8_OFFSET (%d != %'
+	DB	'd)',  0aH,  00H
+$SG412	DB	'offsetof(struct GameComm, joyData) == COMM_SETUP_JOYDATA_OFF'
+	DB	'SET (%d != %d)',  0aH,  00H
+$SG413	DB	'offsetof(struct GameComm, setupT) == COMM_SETUP_SWITCHT_OFFS'
+	DB	'ET (%d != %d)',  0aH,  00H
+$SG414	DB	'offsetof(struct GameComm, setupUseJoy) == COMM_SETUP_USEJOY_'
+	DB	'OFFSET (%d != %d)',  0aH,  00H
+$SG415	DB	'offsetof(struct GameComm, gfxModeNum) == COMM_GFXMODENUM_OFF'
+	DB	'SET (%d != %d)',  0aH,  00H
+$SG416	DB	'OK',  0aH,  00H
+$SG419	DB	'Testing Game structure layout: ',  00H
+$SG420	DB	'offsetof(struct Game, pilotIdx) == GAME_PILOTIDX_OFFSET (%d '
+	DB	'!= %d)',  0aH,  00H
+$SG421	DB	'offsetof(struct Game, pilotName) == GAME_PILOTNAME_OFFSET (%'
+	DB	'd != %d)',  0aH,  00H
+$SG422	DB	'offsetof(struct Game, unk2) == GAME_UNK2_OFFSET (%d != %d)',  0aH
+	DB	00H
+$SG423	DB	'offsetof(struct Game, unk3) == GAME_UNK3_OFFSET (%d != %d)',  0aH
+	DB	00H
+$SG424	DB	'offsetof(struct Game, lastScore) == GAME_LASTSCORE_OFFSET (%'
+	DB	'd != %d)',  0aH,  00H
+$SG425	DB	'offsetof(struct Game, flag2) == GAME_START_FLAG2_OFFSET (%d '
+	DB	'!= %d)',  0aH,  00H
+$SG426	DB	'offsetof(struct Game, totalScore) == GAME_TOTALSCORE_OFFSET '
+	DB	'(%d != %d)',  0aH,  00H
+$SG427	DB	'offsetof(struct Game, theater) == GAME_START_THEATER (%d != '
+	DB	'%d)',  0aH,  00H
+$SG428	DB	'offsetof(struct Game, flag4) == GAME_FLAG4_OFFSET (%d != %d)'
+	DB	0aH,  00H
+$SG429	DB	'offsetof(struct Game, flag3) == GAME_FLAG3_OFFSET (%d != %d)'
+	DB	0aH,  00H
+$SG430	DB	'offsetof(struct Game, difficulty) == GAME_START_DIFFICULTY ('
+	DB	'%d != %d)',  0aH,  00H
+$SG431	DB	'offsetof(struct Game, rand) == GAME_RAND_OFFSET (%d != %d)',  0aH
+	DB	00H
+$SG432	DB	'offsetof(struct Game, unk1) == GAME_UNK1_OFFSET (%d != %d)',  0aH
+	DB	00H
+$SG433	DB	'offsetof(struct Game, flag1) == GAME_START_FLAG1_OFFSET (%d '
+	DB	'!= %d)',  0aH,  00H
+$SG434	DB	'OK',  0aH,  00H
+$SG437	DB	'Testing various structs: ',  00H
+$SG438	DB	'sizeof(struct Buf4Item) == BUF4ITEMSIZE (%d != %d)',  0aH,  00H
+$SG439	DB	'sizeof(struct Buf6Item) == BUF6ITEMSIZE (%d != %d)',  0aH,  00H
+$SG440	DB	'sizeof(struct Target) == TARGETSIZE (%d != %d)',  0aH,  00H
+$SG441	DB	'sizeof(struct struc_9) == STRUC9SIZE (%d != %d)',  0aH,  00H
+$SG442	DB	'sizeof(struct struc_10) == STRUC10SIZE (%d != %d)',  0aH,  00H
+$SG443	DB	'sizeof(struct Pilot) == HALLFAME_RECORDSZ (%d != %d)',  0aH,  00H
+$SG444	DB	'sizeof(struct Plane) == PLANESIZE (%d != %d)',  0aH,  00H
+$SG445	DB	'sizeof(struct TerrainUnk) == TERRAINUNKSIZE (%d != %d)',  0aH
+	DB	00H
+$SG446	DB	'OK',  0aH,  00H
+$SG450	DB	'Foobar a = %d, b = %d, c = %d',  00H
+$SG454	DB	'Testing trace functions: ',  00H
+$SG457	DB	'OK',  0aH,  00H
+$SG460	DB	'Running F15 SE2 unit test application',  0aH,  00H
+_DATA      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** #include <stdio.h>
+;|*** #include <stdarg.h>
+;|*** 
+;|*** #include "comm.h"
+;|*** #include "pointers.h"
+;|*** #include "struct.h"
+;|*** #include "debug.h"
+;|*** 
+;|*** void assert(int arg, int lineno, const char *msg, ...) {
+; Line 9
+	PUBLIC	_assert
+_assert	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+	*** 000003	83 ec 02 		sub	sp,2
+;	arg = 4
+;	lineno = 6
+;	msg = 8
+;	arg_ptr = -2
+;|***     va_list arg_ptr;
+;|*** 
+;|***     if (!arg) {
+; Line 12
+	*** 000006	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;arg
+	*** 00000a	75 2e 			jne	$I391
+;|***         va_start(arg_ptr, msg);
+; Line 13
+	*** 00000c	8d 46 0a 		lea	ax,WORD PTR [bp+10]
+	*** 00000f	89 46 fe 		mov	WORD PTR [bp-2],ax	;arg_ptr
+;|***         printf("\nAssertion failed on line %d: ", lineno);
+; Line 14
+	*** 000012	ff 76 06 		push	WORD PTR [bp+6]	;lineno
+	*** 000015	b8 00 00 		mov	ax,OFFSET DGROUP:$SG392
+	*** 000018	50 			push	ax
+	*** 000019	e8 00 00 		call	_printf
+	*** 00001c	83 c4 04 		add	sp,4
+;|***         vprintf(msg, arg_ptr);
+; Line 15
+	*** 00001f	ff 76 fe 		push	WORD PTR [bp-2]	;arg_ptr
+	*** 000022	ff 76 08 		push	WORD PTR [bp+8]	;msg
+	*** 000025	e8 00 00 		call	_vprintf
+	*** 000028	83 c4 04 		add	sp,4
+;|***         va_end(arg_ptr);
+; Line 16
+	*** 00002b	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;arg_ptr
+;|***         exit(1);
+; Line 17
+	*** 000030	b8 01 00 		mov	ax,1
+	*** 000033	50 			push	ax
+	*** 000034	e8 00 00 		call	_exit
+	*** 000037	83 c4 02 		add	sp,2
+;|***     }
+; Line 18
+;|*** }
+; Line 19
+					$I391:
+	*** 00003a	8b e5 			mov	sp,bp
+	*** 00003c	5d 			pop	bp
+	*** 00003d	c3 			ret	
+
+_assert	ENDP
+;|*** 
+;|*** #define ASSERT_EQ(a, b) assert(a == b, __LINE__, #a " == " #b " (%d != %d)\n", a, b)
+;|*** 
+;|*** void testComm() {
+; Line 23
+	PUBLIC	_testComm
+_testComm	PROC NEAR
+;|***     printf("Testing Comm structure layout: ");
+; Line 24
+	*** 00003e	b8 1f 00 		mov	ax,OFFSET DGROUP:$SG395
+	*** 000041	50 			push	ax
+	*** 000042	e8 00 00 		call	_printf
+	*** 000045	83 c4 02 		add	sp,2
+;|***     ASSERT_EQ(offsetof(struct GameComm, gfxOvlName), COMM_GFXOVL_NAME_OFFSET);
+; Line 25
+	*** 000048	2b c0 			sub	ax,ax
+	*** 00004a	50 			push	ax
+	*** 00004b	50 			push	ax
+	*** 00004c	b8 3f 00 		mov	ax,OFFSET DGROUP:$SG396
+	*** 00004f	50 			push	ax
+	*** 000050	b8 19 00 		mov	ax,25
+	*** 000053	50 			push	ax
+	*** 000054	b8 01 00 		mov	ax,1
+	*** 000057	50 			push	ax
+	*** 000058	e8 a5 ff 		call	_assert
+	*** 00005b	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, sndOvlName), COMM_SNDOVL_NAME_OFFSET);
+; Line 26
+	*** 00005e	b8 0d 00 		mov	ax,13
+	*** 000061	50 			push	ax
+	*** 000062	50 			push	ax
+	*** 000063	b8 8c 00 		mov	ax,OFFSET DGROUP:$SG397
+	*** 000066	50 			push	ax
+	*** 000067	b8 1a 00 		mov	ax,26
+	*** 00006a	50 			push	ax
+	*** 00006b	b8 01 00 		mov	ax,1
+	*** 00006e	50 			push	ax
+	*** 00006f	e8 8e ff 		call	_assert
+	*** 000072	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, gfxOvlAddr), COMM_GFXOVL_ADDR_OFFSET);
+; Line 27
+	*** 000075	b8 1a 00 		mov	ax,26
+	*** 000078	50 			push	ax
+	*** 000079	50 			push	ax
+	*** 00007a	b8 d9 00 		mov	ax,OFFSET DGROUP:$SG398
+	*** 00007d	50 			push	ax
+	*** 00007e	b8 1b 00 		mov	ax,27
+	*** 000081	50 			push	ax
+	*** 000082	b8 01 00 		mov	ax,1
+	*** 000085	50 			push	ax
+	*** 000086	e8 77 ff 		call	_assert
+	*** 000089	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, sndOvlAddr), COMM_SNDOVL_ADDR_OFFSET);
+; Line 28
+	*** 00008c	b8 1c 00 		mov	ax,28
+	*** 00008f	50 			push	ax
+	*** 000090	50 			push	ax
+	*** 000091	b8 26 01 		mov	ax,OFFSET DGROUP:$SG399
+	*** 000094	50 			push	ax
+	*** 000095	b8 1c 00 		mov	ax,28
+	*** 000098	50 			push	ax
+	*** 000099	b8 01 00 		mov	ax,1
+	*** 00009c	50 			push	ax
+	*** 00009d	e8 60 ff 		call	_assert
+	*** 0000a0	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, miscOvlAddr), COMM_MISCOVL_ADDR_OFFSET);
+; Line 29
+	*** 0000a3	b8 1e 00 		mov	ax,30
+	*** 0000a6	50 			push	ax
+	*** 0000a7	50 			push	ax
+	*** 0000a8	b8 73 01 		mov	ax,OFFSET DGROUP:$SG400
+	*** 0000ab	50 			push	ax
+	*** 0000ac	b8 1d 00 		mov	ax,29
+	*** 0000af	50 			push	ax
+	*** 0000b0	b8 01 00 		mov	ax,1
+	*** 0000b3	50 			push	ax
+	*** 0000b4	e8 49 ff 		call	_assert
+	*** 0000b7	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, gfxInitResult), COMM_GFXINIT_RESULT_OFFSET);
+; Line 30
+	*** 0000ba	b8 20 00 		mov	ax,32
+	*** 0000bd	50 			push	ax
+	*** 0000be	50 			push	ax
+	*** 0000bf	b8 c2 01 		mov	ax,OFFSET DGROUP:$SG401
+	*** 0000c2	50 			push	ax
+	*** 0000c3	b8 1e 00 		mov	ax,30
+	*** 0000c6	50 			push	ax
+	*** 0000c7	b8 01 00 		mov	ax,1
+	*** 0000ca	50 			push	ax
+	*** 0000cb	e8 32 ff 		call	_assert
+	*** 0000ce	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, setup1), COMM_SETUP1_OFFSET);
+; Line 31
+	*** 0000d1	b8 22 00 		mov	ax,34
+	*** 0000d4	50 			push	ax
+	*** 0000d5	50 			push	ax
+	*** 0000d6	b8 15 02 		mov	ax,OFFSET DGROUP:$SG402
+	*** 0000d9	50 			push	ax
+	*** 0000da	b8 1f 00 		mov	ax,31
+	*** 0000dd	50 			push	ax
+	*** 0000de	b8 01 00 		mov	ax,1
+	*** 0000e1	50 			push	ax
+	*** 0000e2	e8 1b ff 		call	_assert
+	*** 0000e5	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, setupMono), COMM_SETUP_MONOCHROME_OFFSET);
+; Line 32
+	*** 0000e8	b8 24 00 		mov	ax,36
+	*** 0000eb	50 			push	ax
+	*** 0000ec	50 			push	ax
+	*** 0000ed	b8 59 02 		mov	ax,OFFSET DGROUP:$SG403
+	*** 0000f0	50 			push	ax
+	*** 0000f1	b8 20 00 		mov	ax,32
+	*** 0000f4	50 			push	ax
+	*** 0000f5	b8 01 00 		mov	ax,1
+	*** 0000f8	50 			push	ax
+	*** 0000f9	e8 04 ff 		call	_assert
+	*** 0000fc	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, setupDone), COMM_SETUP_DONE_OFFSET);
+; Line 33
+	*** 0000ff	b8 26 00 		mov	ax,38
+	*** 000102	50 			push	ax
+	*** 000103	50 			push	ax
+	*** 000104	b8 aa 02 		mov	ax,OFFSET DGROUP:$SG404
+	*** 000107	50 			push	ax
+	*** 000108	b8 21 00 		mov	ax,33
+	*** 00010b	50 			push	ax
+	*** 00010c	b8 01 00 		mov	ax,1
+	*** 00010f	50 			push	ax
+	*** 000110	e8 ed fe 		call	_assert
+	*** 000113	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, unk2), COMM_UNK2_OFFSET);
+; Line 34
+	*** 000116	b8 28 00 		mov	ax,40
+	*** 000119	50 			push	ax
+	*** 00011a	50 			push	ax
+	*** 00011b	b8 f5 02 		mov	ax,OFFSET DGROUP:$SG405
+	*** 00011e	50 			push	ax
+	*** 00011f	b8 22 00 		mov	ax,34
+	*** 000122	50 			push	ax
+	*** 000123	b8 01 00 		mov	ax,1
+	*** 000126	50 			push	ax
+	*** 000127	e8 d6 fe 		call	_assert
+	*** 00012a	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, setup2), COMM_SETUP2_OFFSET);
+; Line 35
+	*** 00012d	b8 2a 00 		mov	ax,42
+	*** 000130	50 			push	ax
+	*** 000131	50 			push	ax
+	*** 000132	b8 35 03 		mov	ax,OFFSET DGROUP:$SG406
+	*** 000135	50 			push	ax
+	*** 000136	b8 23 00 		mov	ax,35
+	*** 000139	50 			push	ax
+	*** 00013a	b8 01 00 		mov	ax,1
+	*** 00013d	50 			push	ax
+	*** 00013e	e8 bf fe 		call	_assert
+	*** 000141	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, unk3), COMM_UNK3_OFFSET);
+; Line 36
+	*** 000144	b8 2c 00 		mov	ax,44
+	*** 000147	50 			push	ax
+	*** 000148	50 			push	ax
+	*** 000149	b8 79 03 		mov	ax,OFFSET DGROUP:$SG407
+	*** 00014c	50 			push	ax
+	*** 00014d	b8 24 00 		mov	ax,36
+	*** 000150	50 			push	ax
+	*** 000151	b8 01 00 		mov	ax,1
+	*** 000154	50 			push	ax
+	*** 000155	e8 a8 fe 		call	_assert
+	*** 000158	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, gfxModeChar), COMM_SETUP_GFXMODE_OFFSET);
+; Line 37
+	*** 00015b	b8 30 00 		mov	ax,48
+	*** 00015e	50 			push	ax
+	*** 00015f	50 			push	ax
+	*** 000160	b8 b9 03 		mov	ax,OFFSET DGROUP:$SG408
+	*** 000163	50 			push	ax
+	*** 000164	b8 25 00 		mov	ax,37
+	*** 000167	50 			push	ax
+	*** 000168	b8 01 00 		mov	ax,1
+	*** 00016b	50 			push	ax
+	*** 00016c	e8 91 fe 		call	_assert
+	*** 00016f	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, setupDetail), COMM_SETUP_DETAIL_OFFSET);
+; Line 38
+	*** 000172	b8 32 00 		mov	ax,50
+	*** 000175	50 			push	ax
+	*** 000176	50 			push	ax
+	*** 000177	b8 09 04 		mov	ax,OFFSET DGROUP:$SG409
+	*** 00017a	50 			push	ax
+	*** 00017b	b8 26 00 		mov	ax,38
+	*** 00017e	50 			push	ax
+	*** 00017f	b8 01 00 		mov	ax,1
+	*** 000182	50 			push	ax
+	*** 000183	e8 7a fe 		call	_assert
+	*** 000186	83 c4 0a 		add	sp,10
+;|*** 
+;|***     ASSERT_EQ(offsetof(struct GameComm, unk7), COMM_UNK7_OFFSET);
+; Line 40
+	*** 000189	b8 38 00 		mov	ax,56
+	*** 00018c	50 			push	ax
+	*** 00018d	50 			push	ax
+	*** 00018e	b8 58 04 		mov	ax,OFFSET DGROUP:$SG410
+	*** 000191	50 			push	ax
+	*** 000192	b8 28 00 		mov	ax,40
+	*** 000195	50 			push	ax
+	*** 000196	b8 01 00 		mov	ax,1
+	*** 000199	50 			push	ax
+	*** 00019a	e8 63 fe 		call	_assert
+	*** 00019d	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, unk8), COMM_UNK8_OFFSET);
+; Line 41
+	*** 0001a0	b8 40 00 		mov	ax,64
+	*** 0001a3	50 			push	ax
+	*** 0001a4	50 			push	ax
+	*** 0001a5	b8 98 04 		mov	ax,OFFSET DGROUP:$SG411
+	*** 0001a8	50 			push	ax
+	*** 0001a9	b8 29 00 		mov	ax,41
+	*** 0001ac	50 			push	ax
+	*** 0001ad	b8 01 00 		mov	ax,1
+	*** 0001b0	50 			push	ax
+	*** 0001b1	e8 4c fe 		call	_assert
+	*** 0001b4	83 c4 0a 		add	sp,10
+;|*** 
+;|***     ASSERT_EQ(offsetof(struct GameComm, joyData), COMM_SETUP_JOYDATA_OFFSET);
+; Line 43
+	*** 0001b7	b8 48 00 		mov	ax,72
+	*** 0001ba	50 			push	ax
+	*** 0001bb	50 			push	ax
+	*** 0001bc	b8 d8 04 		mov	ax,OFFSET DGROUP:$SG412
+	*** 0001bf	50 			push	ax
+	*** 0001c0	b8 2b 00 		mov	ax,43
+	*** 0001c3	50 			push	ax
+	*** 0001c4	b8 01 00 		mov	ax,1
+	*** 0001c7	50 			push	ax
+	*** 0001c8	e8 35 fe 		call	_assert
+	*** 0001cb	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, setupT), COMM_SETUP_SWITCHT_OFFSET);
+; Line 44
+	*** 0001ce	b8 70 00 		mov	ax,112
+	*** 0001d1	50 			push	ax
+	*** 0001d2	50 			push	ax
+	*** 0001d3	b8 24 05 		mov	ax,OFFSET DGROUP:$SG413
+	*** 0001d6	50 			push	ax
+	*** 0001d7	b8 2c 00 		mov	ax,44
+	*** 0001da	50 			push	ax
+	*** 0001db	b8 01 00 		mov	ax,1
+	*** 0001de	50 			push	ax
+	*** 0001df	e8 1e fe 		call	_assert
+	*** 0001e2	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, setupUseJoy), COMM_SETUP_USEJOY_OFFSET);
+; Line 45
+	*** 0001e5	b8 72 00 		mov	ax,114
+	*** 0001e8	50 			push	ax
+	*** 0001e9	50 			push	ax
+	*** 0001ea	b8 6f 05 		mov	ax,OFFSET DGROUP:$SG414
+	*** 0001ed	50 			push	ax
+	*** 0001ee	b8 2d 00 		mov	ax,45
+	*** 0001f1	50 			push	ax
+	*** 0001f2	b8 01 00 		mov	ax,1
+	*** 0001f5	50 			push	ax
+	*** 0001f6	e8 07 fe 		call	_assert
+	*** 0001f9	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct GameComm, gfxModeNum), COMM_GFXMODENUM_OFFSET);
+; Line 46
+	*** 0001fc	b8 78 00 		mov	ax,120
+	*** 0001ff	50 			push	ax
+	*** 000200	50 			push	ax
+	*** 000201	b8 be 05 		mov	ax,OFFSET DGROUP:$SG415
+	*** 000204	50 			push	ax
+	*** 000205	b8 2e 00 		mov	ax,46
+	*** 000208	50 			push	ax
+	*** 000209	b8 01 00 		mov	ax,1
+	*** 00020c	50 			push	ax
+	*** 00020d	e8 f0 fd 		call	_assert
+	*** 000210	83 c4 0a 		add	sp,10
+;|***     printf("OK\n");
+; Line 47
+	*** 000213	b8 0a 06 		mov	ax,OFFSET DGROUP:$SG416
+	*** 000216	50 			push	ax
+	*** 000217	e8 00 00 		call	_printf
+	*** 00021a	83 c4 02 		add	sp,2
+;|*** }
+; Line 48
+	*** 00021d	c3 			ret	
+
+_testComm	ENDP
+;|*** 
+;|*** void testGame() {
+; Line 50
+	PUBLIC	_testGame
+_testGame	PROC NEAR
+;|***     printf("Testing Game structure layout: ");
+; Line 51
+	*** 00021e	b8 0e 06 		mov	ax,OFFSET DGROUP:$SG419
+	*** 000221	50 			push	ax
+	*** 000222	e8 00 00 		call	_printf
+	*** 000225	83 c4 02 		add	sp,2
+;|***     ASSERT_EQ(offsetof(struct Game, pilotIdx), GAME_PILOTIDX_OFFSET);
+; Line 52
+	*** 000228	2b c0 			sub	ax,ax
+	*** 00022a	50 			push	ax
+	*** 00022b	50 			push	ax
+	*** 00022c	b8 2e 06 		mov	ax,OFFSET DGROUP:$SG420
+	*** 00022f	50 			push	ax
+	*** 000230	b8 34 00 		mov	ax,52
+	*** 000233	50 			push	ax
+	*** 000234	b8 01 00 		mov	ax,1
+	*** 000237	50 			push	ax
+	*** 000238	e8 c5 fd 		call	_assert
+	*** 00023b	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct Game, pilotName), GAME_PILOTNAME_OFFSET);
+; Line 53
+	*** 00023e	b8 02 00 		mov	ax,2
+	*** 000241	50 			push	ax
+	*** 000242	50 			push	ax
+	*** 000243	b8 72 06 		mov	ax,OFFSET DGROUP:$SG421
+	*** 000246	50 			push	ax
+	*** 000247	b8 35 00 		mov	ax,53
+	*** 00024a	50 			push	ax
+	*** 00024b	b8 01 00 		mov	ax,1
+	*** 00024e	50 			push	ax
+	*** 00024f	e8 ae fd 		call	_assert
+	*** 000252	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct Game, unk2), GAME_UNK2_OFFSET);
+; Line 54
+	*** 000255	b8 20 00 		mov	ax,32
+	*** 000258	50 			push	ax
+	*** 000259	50 			push	ax
+	*** 00025a	b8 b8 06 		mov	ax,OFFSET DGROUP:$SG422
+	*** 00025d	50 			push	ax
+	*** 00025e	b8 36 00 		mov	ax,54
+	*** 000261	50 			push	ax
+	*** 000262	b8 01 00 		mov	ax,1
+	*** 000265	50 			push	ax
+	*** 000266	e8 97 fd 		call	_assert
+	*** 000269	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct Game, unk3), GAME_UNK3_OFFSET);
+; Line 55
+	*** 00026c	b8 22 00 		mov	ax,34
+	*** 00026f	50 			push	ax
+	*** 000270	50 			push	ax
+	*** 000271	b8 f4 06 		mov	ax,OFFSET DGROUP:$SG423
+	*** 000274	50 			push	ax
+	*** 000275	b8 37 00 		mov	ax,55
+	*** 000278	50 			push	ax
+	*** 000279	b8 01 00 		mov	ax,1
+	*** 00027c	50 			push	ax
+	*** 00027d	e8 80 fd 		call	_assert
+	*** 000280	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct Game, lastScore), GAME_LASTSCORE_OFFSET);
+; Line 56
+	*** 000283	b8 2e 00 		mov	ax,46
+	*** 000286	50 			push	ax
+	*** 000287	50 			push	ax
+	*** 000288	b8 30 07 		mov	ax,OFFSET DGROUP:$SG424
+	*** 00028b	50 			push	ax
+	*** 00028c	b8 38 00 		mov	ax,56
+	*** 00028f	50 			push	ax
+	*** 000290	b8 01 00 		mov	ax,1
+	*** 000293	50 			push	ax
+	*** 000294	e8 69 fd 		call	_assert
+	*** 000297	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct Game, flag2), GAME_START_FLAG2_OFFSET);
+; Line 57
+	*** 00029a	b8 30 00 		mov	ax,48
+	*** 00029d	50 			push	ax
+	*** 00029e	50 			push	ax
+	*** 00029f	b8 76 07 		mov	ax,OFFSET DGROUP:$SG425
+	*** 0002a2	50 			push	ax
+	*** 0002a3	b8 39 00 		mov	ax,57
+	*** 0002a6	50 			push	ax
+	*** 0002a7	b8 01 00 		mov	ax,1
+	*** 0002aa	50 			push	ax
+	*** 0002ab	e8 52 fd 		call	_assert
+	*** 0002ae	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct Game, totalScore), GAME_TOTALSCORE_OFFSET);
+; Line 58
+	*** 0002b1	b8 32 00 		mov	ax,50
+	*** 0002b4	50 			push	ax
+	*** 0002b5	50 			push	ax
+	*** 0002b6	b8 ba 07 		mov	ax,OFFSET DGROUP:$SG426
+	*** 0002b9	50 			push	ax
+	*** 0002ba	b8 3a 00 		mov	ax,58
+	*** 0002bd	50 			push	ax
+	*** 0002be	b8 01 00 		mov	ax,1
+	*** 0002c1	50 			push	ax
+	*** 0002c2	e8 3b fd 		call	_assert
+	*** 0002c5	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct Game, theater), GAME_START_THEATER);
+; Line 59
+	*** 0002c8	b8 38 00 		mov	ax,56
+	*** 0002cb	50 			push	ax
+	*** 0002cc	50 			push	ax
+	*** 0002cd	b8 02 08 		mov	ax,OFFSET DGROUP:$SG427
+	*** 0002d0	50 			push	ax
+	*** 0002d1	b8 3b 00 		mov	ax,59
+	*** 0002d4	50 			push	ax
+	*** 0002d5	b8 01 00 		mov	ax,1
+	*** 0002d8	50 			push	ax
+	*** 0002d9	e8 24 fd 		call	_assert
+	*** 0002dc	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct Game, flag4), GAME_FLAG4_OFFSET);
+; Line 60
+	*** 0002df	b8 3a 00 		mov	ax,58
+	*** 0002e2	50 			push	ax
+	*** 0002e3	50 			push	ax
+	*** 0002e4	b8 43 08 		mov	ax,OFFSET DGROUP:$SG428
+	*** 0002e7	50 			push	ax
+	*** 0002e8	b8 3c 00 		mov	ax,60
+	*** 0002eb	50 			push	ax
+	*** 0002ec	b8 01 00 		mov	ax,1
+	*** 0002ef	50 			push	ax
+	*** 0002f0	e8 0d fd 		call	_assert
+	*** 0002f3	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct Game, flag3), GAME_FLAG3_OFFSET);
+; Line 61
+	*** 0002f6	b8 3c 00 		mov	ax,60
+	*** 0002f9	50 			push	ax
+	*** 0002fa	50 			push	ax
+	*** 0002fb	b8 81 08 		mov	ax,OFFSET DGROUP:$SG429
+	*** 0002fe	50 			push	ax
+	*** 0002ff	b8 3d 00 		mov	ax,61
+	*** 000302	50 			push	ax
+	*** 000303	b8 01 00 		mov	ax,1
+	*** 000306	50 			push	ax
+	*** 000307	e8 f6 fc 		call	_assert
+	*** 00030a	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct Game, difficulty), GAME_START_DIFFICULTY);
+; Line 62
+	*** 00030d	b8 3e 00 		mov	ax,62
+	*** 000310	50 			push	ax
+	*** 000311	50 			push	ax
+	*** 000312	b8 bf 08 		mov	ax,OFFSET DGROUP:$SG430
+	*** 000315	50 			push	ax
+	*** 000316	b8 3e 00 		mov	ax,62
+	*** 000319	50 			push	ax
+	*** 00031a	b8 01 00 		mov	ax,1
+	*** 00031d	50 			push	ax
+	*** 00031e	e8 df fc 		call	_assert
+	*** 000321	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct Game, rand), GAME_RAND_OFFSET);
+; Line 63
+	*** 000324	b8 42 00 		mov	ax,66
+	*** 000327	50 			push	ax
+	*** 000328	50 			push	ax
+	*** 000329	b8 06 09 		mov	ax,OFFSET DGROUP:$SG431
+	*** 00032c	50 			push	ax
+	*** 00032d	b8 3f 00 		mov	ax,63
+	*** 000330	50 			push	ax
+	*** 000331	b8 01 00 		mov	ax,1
+	*** 000334	50 			push	ax
+	*** 000335	e8 c8 fc 		call	_assert
+	*** 000338	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct Game, unk1), GAME_UNK1_OFFSET);
+; Line 64
+	*** 00033b	b8 44 00 		mov	ax,68
+	*** 00033e	50 			push	ax
+	*** 00033f	50 			push	ax
+	*** 000340	b8 42 09 		mov	ax,OFFSET DGROUP:$SG432
+	*** 000343	50 			push	ax
+	*** 000344	b8 40 00 		mov	ax,64
+	*** 000347	50 			push	ax
+	*** 000348	b8 01 00 		mov	ax,1
+	*** 00034b	50 			push	ax
+	*** 00034c	e8 b1 fc 		call	_assert
+	*** 00034f	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(offsetof(struct Game, flag1), GAME_START_FLAG1_OFFSET);
+; Line 65
+	*** 000352	b8 4e 00 		mov	ax,78
+	*** 000355	50 			push	ax
+	*** 000356	50 			push	ax
+	*** 000357	b8 7e 09 		mov	ax,OFFSET DGROUP:$SG433
+	*** 00035a	50 			push	ax
+	*** 00035b	b8 41 00 		mov	ax,65
+	*** 00035e	50 			push	ax
+	*** 00035f	b8 01 00 		mov	ax,1
+	*** 000362	50 			push	ax
+	*** 000363	e8 9a fc 		call	_assert
+	*** 000366	83 c4 0a 		add	sp,10
+;|***     printf("OK\n");
+; Line 66
+	*** 000369	b8 c2 09 		mov	ax,OFFSET DGROUP:$SG434
+	*** 00036c	50 			push	ax
+	*** 00036d	e8 00 00 		call	_printf
+	*** 000370	83 c4 02 		add	sp,2
+;|*** }
+; Line 67
+	*** 000373	c3 			ret	
+
+_testGame	ENDP
+;|*** 
+;|*** void testStruct() {
+; Line 69
+	PUBLIC	_testStruct
+_testStruct	PROC NEAR
+;|***     printf("Testing various structs: ");
+; Line 70
+	*** 000374	b8 c6 09 		mov	ax,OFFSET DGROUP:$SG437
+	*** 000377	50 			push	ax
+	*** 000378	e8 00 00 		call	_printf
+	*** 00037b	83 c4 02 		add	sp,2
+;|***     ASSERT_EQ(sizeof(struct Buf4Item), BUF4ITEMSIZE);
+; Line 71
+	*** 00037e	b8 10 00 		mov	ax,16
+	*** 000381	50 			push	ax
+	*** 000382	50 			push	ax
+	*** 000383	b8 e0 09 		mov	ax,OFFSET DGROUP:$SG438
+	*** 000386	50 			push	ax
+	*** 000387	b8 47 00 		mov	ax,71
+	*** 00038a	50 			push	ax
+	*** 00038b	b8 01 00 		mov	ax,1
+	*** 00038e	50 			push	ax
+	*** 00038f	e8 6e fc 		call	_assert
+	*** 000392	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(sizeof(struct Buf6Item), BUF6ITEMSIZE);
+; Line 72
+	*** 000395	b8 24 00 		mov	ax,36
+	*** 000398	50 			push	ax
+	*** 000399	50 			push	ax
+	*** 00039a	b8 14 0a 		mov	ax,OFFSET DGROUP:$SG439
+	*** 00039d	50 			push	ax
+	*** 00039e	b8 48 00 		mov	ax,72
+	*** 0003a1	50 			push	ax
+	*** 0003a2	b8 01 00 		mov	ax,1
+	*** 0003a5	50 			push	ax
+	*** 0003a6	e8 57 fc 		call	_assert
+	*** 0003a9	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(sizeof(struct Target), TARGETSIZE);
+; Line 73
+	*** 0003ac	b8 12 00 		mov	ax,18
+	*** 0003af	50 			push	ax
+	*** 0003b0	50 			push	ax
+	*** 0003b1	b8 48 0a 		mov	ax,OFFSET DGROUP:$SG440
+	*** 0003b4	50 			push	ax
+	*** 0003b5	b8 49 00 		mov	ax,73
+	*** 0003b8	50 			push	ax
+	*** 0003b9	b8 01 00 		mov	ax,1
+	*** 0003bc	50 			push	ax
+	*** 0003bd	e8 40 fc 		call	_assert
+	*** 0003c0	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(sizeof(struct struc_9), STRUC9SIZE);
+; Line 74
+	*** 0003c3	b8 0c 00 		mov	ax,12
+	*** 0003c6	50 			push	ax
+	*** 0003c7	50 			push	ax
+	*** 0003c8	b8 78 0a 		mov	ax,OFFSET DGROUP:$SG441
+	*** 0003cb	50 			push	ax
+	*** 0003cc	b8 4a 00 		mov	ax,74
+	*** 0003cf	50 			push	ax
+	*** 0003d0	b8 01 00 		mov	ax,1
+	*** 0003d3	50 			push	ax
+	*** 0003d4	e8 29 fc 		call	_assert
+	*** 0003d7	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(sizeof(struct struc_10), STRUC10SIZE);
+; Line 75
+	*** 0003da	b8 04 00 		mov	ax,4
+	*** 0003dd	50 			push	ax
+	*** 0003de	50 			push	ax
+	*** 0003df	b8 a9 0a 		mov	ax,OFFSET DGROUP:$SG442
+	*** 0003e2	50 			push	ax
+	*** 0003e3	b8 4b 00 		mov	ax,75
+	*** 0003e6	50 			push	ax
+	*** 0003e7	b8 01 00 		mov	ax,1
+	*** 0003ea	50 			push	ax
+	*** 0003eb	e8 12 fc 		call	_assert
+	*** 0003ee	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(sizeof(struct Pilot), HALLFAME_RECORDSZ);
+; Line 76
+	*** 0003f1	b8 20 00 		mov	ax,32
+	*** 0003f4	50 			push	ax
+	*** 0003f5	50 			push	ax
+	*** 0003f6	b8 dc 0a 		mov	ax,OFFSET DGROUP:$SG443
+	*** 0003f9	50 			push	ax
+	*** 0003fa	b8 4c 00 		mov	ax,76
+	*** 0003fd	50 			push	ax
+	*** 0003fe	b8 01 00 		mov	ax,1
+	*** 000401	50 			push	ax
+	*** 000402	e8 fb fb 		call	_assert
+	*** 000405	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(sizeof(struct Plane), PLANESIZE);
+; Line 77
+	*** 000408	b8 20 00 		mov	ax,32
+	*** 00040b	50 			push	ax
+	*** 00040c	50 			push	ax
+	*** 00040d	b8 12 0b 		mov	ax,OFFSET DGROUP:$SG444
+	*** 000410	50 			push	ax
+	*** 000411	b8 4d 00 		mov	ax,77
+	*** 000414	50 			push	ax
+	*** 000415	b8 01 00 		mov	ax,1
+	*** 000418	50 			push	ax
+	*** 000419	e8 e4 fb 		call	_assert
+	*** 00041c	83 c4 0a 		add	sp,10
+;|***     ASSERT_EQ(sizeof(struct TerrainUnk), TERRAINUNKSIZE);
+; Line 78
+	*** 00041f	b8 40 00 		mov	ax,64
+	*** 000422	50 			push	ax
+	*** 000423	50 			push	ax
+	*** 000424	b8 40 0b 		mov	ax,OFFSET DGROUP:$SG445
+	*** 000427	50 			push	ax
+	*** 000428	b8 4e 00 		mov	ax,78
+	*** 00042b	50 			push	ax
+	*** 00042c	b8 01 00 		mov	ax,1
+	*** 00042f	50 			push	ax
+	*** 000430	e8 cd fb 		call	_assert
+	*** 000433	83 c4 0a 		add	sp,10
+;|***     printf("OK\n");
+; Line 79
+	*** 000436	b8 78 0b 		mov	ax,OFFSET DGROUP:$SG446
+	*** 000439	50 			push	ax
+	*** 00043a	e8 00 00 		call	_printf
+	*** 00043d	83 c4 02 		add	sp,2
+;|*** }
+; Line 80
+	*** 000440	c3 			ret	
+	*** 000441	90 			nop	
+
+_testStruct	ENDP
+;|*** 
+;|*** void testTrace() {
+; Line 82
+	PUBLIC	_testTrace
+_testTrace	PROC NEAR
+	*** 000442	55 			push	bp
+	*** 000443	8b ec 			mov	bp,sp
+	*** 000445	83 ec 08 		sub	sp,8
+;	str = -8
+;	a = -2
+;	b = -4
+;	c = -6
+;|***     const char *str = "Foobar a = %d, b = %d, c = %d";
+; Line 83
+	*** 000448	c7 46 f8 7c 0b 		mov	WORD PTR [bp-8],OFFSET DGROUP:$SG450	;str
+;|***     int a=1,b=2,c=3;
+; Line 84
+	*** 00044d	c7 46 fe 01 00 		mov	WORD PTR [bp-2],1	;a
+	*** 000452	c7 46 fc 02 00 		mov	WORD PTR [bp-4],2	;b
+	*** 000457	c7 46 fa 03 00 		mov	WORD PTR [bp-6],3	;c
+;|***     printf("Testing trace functions: ");
+; Line 85
+	*** 00045c	b8 9a 0b 		mov	ax,OFFSET DGROUP:$SG454
+	*** 00045f	50 			push	ax
+	*** 000460	e8 00 00 		call	_printf
+	*** 000463	83 c4 02 		add	sp,2
+;|***     my_trace(str, a, b, c);
+; Line 86
+	*** 000466	ff 76 fa 		push	WORD PTR [bp-6]	;c
+	*** 000469	ff 76 fc 		push	WORD PTR [bp-4]	;b
+	*** 00046c	ff 76 fe 		push	WORD PTR [bp-2]	;a
+	*** 00046f	ff 76 f8 		push	WORD PTR [bp-8]	;str
+	*** 000472	e8 00 00 		call	_my_trace
+	*** 000475	83 c4 08 		add	sp,8
+;|***     my_fartrace((const char FAR*)str, a, b, c);
+; Line 87
+	*** 000478	ff 76 fa 		push	WORD PTR [bp-6]	;c
+	*** 00047b	ff 76 fc 		push	WORD PTR [bp-4]	;b
+	*** 00047e	ff 76 fe 		push	WORD PTR [bp-2]	;a
+	*** 000481	1e 			push	ds
+	*** 000482	ff 76 f8 		push	WORD PTR [bp-8]	;str
+	*** 000485	e8 00 00 		call	_my_fartrace
+	*** 000488	83 c4 0a 		add	sp,10
+;|***     printf("OK\n");
+; Line 88
+	*** 00048b	b8 b4 0b 		mov	ax,OFFSET DGROUP:$SG457
+	*** 00048e	50 			push	ax
+	*** 00048f	e8 00 00 		call	_printf
+	*** 000492	83 c4 02 		add	sp,2
+;|*** }
+; Line 89
+	*** 000495	8b e5 			mov	sp,bp
+	*** 000497	5d 			pop	bp
+	*** 000498	c3 			ret	
+	*** 000499	90 			nop	
+
+_testTrace	ENDP
+;|*** 
+;|*** int main() {
+; Line 91
+	PUBLIC	_main
+_main	PROC NEAR
+;|***     printf("Running F15 SE2 unit test application\n");
+; Line 92
+	*** 00049a	b8 b8 0b 		mov	ax,OFFSET DGROUP:$SG460
+	*** 00049d	50 			push	ax
+	*** 00049e	e8 00 00 		call	_printf
+	*** 0004a1	83 c4 02 		add	sp,2
+;|***     testComm();
+; Line 93
+	*** 0004a4	e8 97 fb 		call	_testComm
+;|***     testGame();
+; Line 94
+	*** 0004a7	e8 74 fd 		call	_testGame
+;|***     testStruct();
+; Line 95
+	*** 0004aa	e8 c7 fe 		call	_testStruct
+;|***     testTrace();
+; Line 96
+	*** 0004ad	e8 92 ff 		call	_testTrace
+;|***     return 0;
+; Line 97
+	*** 0004b0	2b c0 			sub	ax,ax
+	*** 0004b2	c3 			ret	
+	*** 0004b3	90 			nop	
+
+_main	ENDP
+_TEXT	ENDS
+END
+;|*** }

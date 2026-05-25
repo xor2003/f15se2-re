@@ -1,0 +1,2750 @@
+UASM v2.56, Jan 10 2025, Masm-compatible assembler.
+
+src/start4.asm
+                                DOSSEG
+                                .8086
+                                .MODEL SMALL
+
+ = 9                            DOS_PRINT_STR	 = 9
+ = 10                           DOS_ERROR_RMDIR	 = 10h
+ = 25                           DOS_SET_IRQH	 = 25h
+ = 48                           DOS_ALLOC_MEM	 = 48h
+ = 8                            IRQ_PIT		 = 8
+ = 10                           IRQ_VIDEO	 = 10h
+ = 16                           IRQ_KBD		 = 16h
+ = 1A                           IRQ_TIME	 = 1Ah
+ = 1B                           IRQ_CBREAK	 = 1Bh
+ = 20                           HALLFAME_RECORDSZ  = 20h
+ = 21                           IRQ_DOS		 = 21h
+ = 40                           PORT_PIT_TIME0	 = 40h
+ = 43                           PORT_PIT_CNTRL	 = 43h
+ = C7                           SCREEN_MAXY	 = 0C7h
+ = 13F                          SCREEN_MAXX	 = 13Fh
+ = 463                          BDA_CRTC	 = 463h
+ = 1E                           OVL_HDR_SIZE1	 = 1Eh
+ = 20                           OVL_HDR_SIZE2	 = 20h
+ = 1C                           OVL_HDR_FIRSTIDX  = 1Ch
+ = 22                           OVL_HDR_SLOTCOUNT  = 22h
+ = 24                           OVL_HDR_FIRSTPTR  = 24h
+ = 18                           OVL_HDR_CODESEG	 = 18h
+ = 200                          FILE_READBUF_SIZE  = 200h
+ = CDE                          STACK_JOYDATA	 = 0CDEh
+
+                                IFDEF DEBUG
+                                ELSE
+                                    trace MACRO msg,v1,v2,v3,v4,v5
+ >                                  ENDM
+
+                                    regtrace MACRO
+ >                                  ENDM
+                                ENDIF
+
+                                EXTRN _gfx_jump_38_getPageBuf:FAR
+                                EXTRN _gfx_jump_3b_clearBuf:FAR
+                                EXTRN _gfx_jump_33_fillRow:FAR
+                                EXTRN _gfx_jump_35:FAR
+                                EXTRN _gfx_jump_0_alloc:FAR
+                                EXTRN _gfx_jump_10_getCurBuf:FAR
+                                EXTRN _gfx_jump_0d_setCurBuf:FAR
+                                EXTRN _gfx_jump_20_setVal:FAR
+                                EXTRN _gfx_jump_28:FAR
+                                EXTRN _gfx_jump_22:FAR
+                                EXTRN _gfx_jump_51_null:FAR
+                                EXTRN _gfx_jump_0f_getBufPtr:FAR
+                                EXTRN _gfx_jump_1f:FAR
+                                EXTRN _audio_jump_6b:FAR
+                                EXTRN _gfx_jump_3a_getRowOffset:FAR
+                                EXTRN _gfx_jump_34_fillRow:FAR
+                                EXTRN _gfx_jump_36_null:FAR
+                                EXTRN _audio_jump_6c:FAR
+                                EXTRN _word_172AE:WORD
+                                EXTRN _word_172B8:WORD
+                                EXTRN _word_172A4:WORD
+                                EXTRN _word_172A6:WORD
+                                EXTRN _timerHandlerInstalled:BYTE
+                                EXTRN _word_172AA:WORD
+                                EXTRN _byte_172A2:BYTE
+                                EXTRN _byte_172B0:BYTE
+                                EXTRN _byte_172B7:BYTE
+                                EXTRN _word_172AC:WORD
+                                EXTRN _word_172BA:WORD
+                                EXTRN _word_172B5:WORD
+                                EXTRN _word_172B1:WORD
+                                EXTRN _word_172B3:WORD
+                                EXTRN _word_172A8:WORD
+                                EXTRN _timerCounter2: BYTE
+                                EXTRN _timerCounter3:BYTE
+                                EXTRN _timerCounter:BYTE
+                                EXTRN _timerCounter4:BYTE
+                                EXTRN _searchFCB:BYTE
+                                EXTRN _readFromFilePtr:WORD
+                                EXTRN _tmpFileHandle:WORD
+                                EXTRN _tmpPageIndex:WORD
+                                EXTRN _rowOffset:WORD
+                                EXTRN _word_1737E:WORD
+                                EXTRN _ovlInsaneFlag:BYTE
+                                EXTRN _aAlloc1M:BYTE
+                                EXTRN _ovlParCnt:WORD
+                                EXTRN _aDosLied:BYTE
+                                EXTRN _ovlSeg1:WORD
+                                EXTRN _ovlSeg2:WORD
+                                EXTRN _ovlParBlock:WORD
+                                EXTRN _aFileNFound:BYTE
+                                EXTRN _aEnoughMem:BYTE
+                                EXTRN _aOvlFail:BYTE
+                                EXTRN _aOvlOvrrun:BYTE
+                                EXTRN _aOvlShrink:BYTE 
+                                EXTRN _word_1786A:WORD
+                                EXTRN _word_1786C:WORD
+                                EXTRN _word_17868:WORD
+                                EXTRN _word_17866:WORD
+                                EXTRN _byte_17A2F:BYTE
+                                EXTRN _byte_17877:BYTE
+                                EXTRN _word_17BEB:WORD
+                                EXTRN _word_17BED:WORD
+                                EXTRN _byte_19ADB:BYTE
+                                EXTRN _word_1786F:WORD
+                                EXTRN _word_17873:WORD
+                                EXTRN _word_17871:WORD
+                                EXTRN _word_17875:WORD
+                                EXTRN _word_17BF1:WORD
+                                EXTRN _word_17BF5:WORD
+                                EXTRN _byte_17BF0:BYTE
+                                EXTRN _word_17BF3:WORD
+                                EXTRN _word_17BF7:WORD
+                                EXTRN _word_17BF9:WORD
+                                EXTRN _word_17BFB:WORD
+                                EXTRN _origCBreakSeg:WORD
+                                EXTRN _origCBreakOfs:WORD
+                                EXTRN _cbreakHit:BYTE
+                                EXTRN _aFileNotFound:BYTE
+                                EXTRN _aNoFileBuffersAvailable:BYTE
+                                EXTRN _aOpenError:BYTE
+                                EXTRN _fileReadPos:WORD
+                                EXTRN _fileReadBuf:BYTE
+                                EXTRN _aReadError:BYTE
+                                EXTRN _errorCodeStr:WORD
+                                EXTRN _row:WORD
+                                EXTRN _screenBufSize:WORD
+                                EXTRN _picDecodedRowBuf:BYTE
+                                EXTRN _picWorkData:BYTE
+                                EXTRN _readBufEndPtr:WORD
+                                EXTRN _picFileWord:WORD
+                                EXTRN _picRemainingBitCount:BYTE
+                                EXTRN _picByte:BYTE
+                                EXTRN _picTmp9BitCount:BYTE
+                                EXTRN _picFileReadBufEnd:WORD
+                                EXTRN _picDecodeDictionary:WORD
+                                EXTRN _picDecodeIncrement:BYTE
+                                EXTRN _picRowLength:WORD
+                                EXTRN _picWorkDataPtr:WORD
+                                EXTRN _picNumberDictSlots:WORD
+                                EXTRN _picLookupResult:BYTE
+                                EXTRN _picProcessFlag0_1:BYTE
+                                EXTRN _picByteUnsignedFlag:BYTE
+                                EXTRN _dictionaryIndex:BYTE
+                                EXTRN _picSlotCounter:WORD
+                                EXTRN _word_17858:WORD
+                                EXTRN _word_17856:WORD
+                                EXTRN _word_1783E:WORD
+                                EXTRN _word_1782E:WORD
+                                EXTRN _word_17846:WORD
+                                EXTRN _word_17836:WORD
+                                EXTRN _word_1784E:WORD
+                                EXTRN _noJoy80:BYTE
+                                EXTRN _diskTransferArea:BYTE
+                                EXTRN _byte_172C6:BYTE
+                                EXTRN _aFileClosingError:BYTE
+                                EXTRN _aWriteError:BYTE
+
+                                PUBLIC _mystrcat
+                                PUBLIC _showPicFile
+                                PUBLIC _copyJoystickData
+                                PUBLIC _restoreTimerIrqHandler
+                                PUBLIC _intDispatch
+                                PUBLIC _mystrcpy
+                                PUBLIC _installCBreakHandler
+                                PUBLIC _dos_alloc
+                                PUBLIC _loadOverlay
+                                PUBLIC _mystrlen
+                                PUBLIC _dos_printstring
+                                PUBLIC _clearRect
+                                PUBLIC _restoreCbreakHandler
+                                PUBLIC _setTimerIrqHandler
+                                PUBLIC _getTimeOfDay
+                                PUBLIC _decodePic
+                                PUBLIC _nearmemset
+                                PUBLIC _openFile
+                                PUBLIC _picBlit
+                                PUBLIC _setupOverlaySlots
+                                PUBLIC _sub_16A7F
+                                PUBLIC _doFcbSearch
+                                PUBLIC _doNothing2
+                                PUBLIC _sub_12DEA
+                                PUBLIC _fileClose
+
+                                ;startCode1 segment word public 'CODE' ;startCode1 segment byte public 'CODE'
+                                .CODE
+
+00000000  726567733A2061783D    regstr db 'regs: ax=%04X bx=%04X cx=%04X dx=%04X si=%04X di=%04X ds=%04X es=%04X',0
+
+00000046  AD000000              timerIrqAddr	dd timerIrqHandler
+0000004A  0000                  word_12983	dw 0
+
+0000004C                        _doNothing2 proc near
+0000004C  C3                        retn
+0000004D                        _doNothing2 endp
+
+0000004D                        nullsub_1 proc near
+0000004D  C3                        retn
+0000004E                        nullsub_1 endp
+
+                                ; ------------------------------startCode1:0x185a------------------------------
+0000004E                        _setTimerIrqHandler proc near
+0000004E  C70600000100              mov _word_172AE, 1
+00000054  C70600000100              mov _word_172B8, 1
+0000005A  C70600000000              mov _word_172A4, 0
+00000060  C70600000000              mov _word_172A6, 0
+00000066  E83101                    call sub_119D4
+00000069  B435                      mov ah, 35h
+0000006B  B008                      mov al, 8
+0000006D  CD21                      int 21h ;DOS - 2+ - GET INTERRUPT VECTOR
+0000006F  2E891E0F01                mov word ptr cs:timerIsrPtr+1, bx
+00000074  2E8C061101                mov word ptr cs:timerIsrPtr+3, es
+00000079  1E                        push ds
+0000007A  B425                      mov ah, DOS_SET_IRQH
+0000007C  B008                      mov al, 8
+0000007E  2EC5164600                lds dx, cs:timerIrqAddr
+00000083  CD21                      int 21h ;DOS - SET INTERRUPT VECTOR
+00000085  1F                        pop ds
+00000086  C606000001                mov _timerHandlerInstalled, 1
+0000008B  C3                        retn
+0000008C                        _setTimerIrqHandler endp
+                                ; ------------------------------startCode1:0x1897------------------------------
+                                ; ------------------------------startCode1:0x1898------------------------------
+0000008C                        _restoreTimerIrqHandler proc near
+0000008C  B036                      mov al, 110110b
+0000008E  E643                      out PORT_PIT_CNTRL, al ;prepare PIT
+00000090  EB00                      jmp short $+2
+00000092  32C0                      xor al, al
+00000094  E640                      out PORT_PIT_TIME0, al ;send LSB of timer count
+00000096  EB00                      jmp short $+2
+00000098  E640                      out PORT_PIT_TIME0, al ;send MSB
+0000009A  1E                        push ds
+0000009B  B425                      mov ah, DOS_SET_IRQH
+0000009D  B008                      mov al, IRQ_PIT
+0000009F  2EC5160F01                lds dx, dword ptr cs:timerIsrPtr+1
+000000A4  CD21                      int 21h ;DOS - SET INTERRUPT VECTOR
+000000A6  1F                        pop ds
+000000A7  C606000000                mov _timerHandlerInstalled, 0
+000000AC  C3                        retn
+000000AD                        _restoreTimerIrqHandler endp
+                                ; ------------------------------startCode1:0x18b8------------------------------
+                                ; ------------------------------startCode1:0x18e7------------------------------
+000000AD                        timerIrqHandler proc far
+000000AD  FB                        sti
+000000AE  50                        push ax
+000000AF  53                        push bx
+000000B0  51                        push cx
+000000B1  52                        push dx
+000000B2  56                        push si
+000000B3  57                        push di
+000000B4  55                        push bp
+000000B5  1E                        push ds
+000000B6  06                        push es
+000000B7  B80000                    mov ax, DGROUP
+000000BA  8ED8                      mov ds, ax
+000000BC  A10000                    mov ax, _word_172AA
+000000BF  01060000                  add _word_172A4, ax
+000000C3  8316000000                adc _word_172A6, 0
+000000C8  FF0E0000                  dec _word_172B8
+000000CC  7511                      jnz short loc_11919
+000000CE  A10000                    mov ax, _word_172AE
+000000D1  A30000                    mov _word_172B8, ax
+000000D4  E83C00                    call sub_1194D
+000000D7  C606000000                mov _byte_172A2, 0
+000000DC  E8AC01                    call increaseTimerCounters
+000000DF                        loc_11919:
+000000DF  833E000001                cmp _word_172AE, 1
+000000E4  7405                      jz short loc_11925
+000000E6  9A00000000                call far ptr _audio_jump_6c
+000000EB                        loc_11925:
+000000EB  833E000000                cmp _word_172A6, 0
+000000F0  750E                      jnz short loc_1193A
+000000F2  B020                      mov al, 20h
+000000F4  E620                      out 20h, al ;Interrupt controller, 8259A.
+000000F6  07                        pop es
+000000F7  1F                        pop ds
+000000F8  5D                        pop bp
+000000F9  5F                        pop di
+000000FA  5E                        pop si
+000000FB  5A                        pop dx
+000000FC  59                        pop cx
+000000FD  5B                        pop bx
+000000FE  58                        pop ax
+000000FF                            iret
+00000100                        loc_1193A:
+00000100  FF0E0000                  dec _word_172A6
+00000104  07                        pop es
+00000105  1F                        pop ds
+00000106  5D                        pop bp
+00000107  5F                        pop di
+00000108  5E                        pop si
+00000109  5A                        pop dx
+0000010A  59                        pop cx
+0000010B  5B                        pop bx
+0000010C  58                        pop ax
+0000010D  FA                        cli
+0000010E                        timerIsrPtr:
+0000010E  EA                        db 0EAh ;jmp far ptr 0:0
+0000010F  00000000                  dd 0
+00000113                        timerIrqHandler endp
+                                ; ------------------------------startCode1:0x1948------------------------------
+                                ; ------------------------------startCode1:0x194d------------------------------
+00000113                        sub_1194D proc near
+00000113  FE0E0000                  dec _byte_172B0
+00000117  757F                      jnz short loc_119D2
+00000119  C606000014                mov _byte_172B0, 14h
+0000011E  803E000000                cmp _byte_172B7, 0
+00000123  7441                      jz short loc_119A0
+00000125  32DB                      xor bl, bl
+00000127  33C9                      xor cx, cx
+00000129  8EC1                      mov es, cx
+0000012B  268B166304                mov dx, es:BDA_CRTC
+00000130  83C206                    add dx, 6
+00000133  81FABA03                  cmp dx, 3BAh
+00000137  7414                      jz short loc_11987
+00000139                        loc_11973:
+00000139  FA                        cli
+0000013A  EC                        in al, dx
+0000013B  A808                      test al, 8
+0000013D  7527                      jnz short loc_119A0
+0000013F  FB                        sti
+00000140  2401                      and al, 1
+00000142  3AC3                      cmp al, bl
+00000144  74F3                      jz short loc_11973
+00000146  80F301                    xor bl, 1
+00000149  E2EE                      loop loc_11973
+0000014B  EB12                      jmp short loc_11999
+0000014D                        loc_11987:
+0000014D  FA                        cli
+0000014E  EC                        in al, dx
+0000014F  A880                      test al, 80h
+00000151  7413                      jz short loc_119A0
+00000153  FB                        sti
+00000154  2401                      and al, 1
+00000156  3AC3                      cmp al, bl
+00000158  74DF                      jz short loc_11973
+0000015A  80F301                    xor bl, 1
+0000015D  E2EE                      loop loc_11987
+0000015F                        loc_11999:
+0000015F  C606000000                mov _byte_172B7, 0
+00000164  EB32                      jmp short loc_119D2
+00000166                        loc_119A0:
+00000166  8B160000                  mov dx, _word_172AA
+0000016A  3B160000                  cmp dx, _word_172A8
+0000016E  7408                      jz short loc_119B2
+00000170  8B160000                  mov dx, _word_172A8
+00000174  89160000                  mov _word_172AA, dx
+00000178                        loc_119B2:
+00000178  B036                      mov al, 36h
+0000017A  E643                      out 43h, al ;Timer 8253-5 (AT: 8254.2).
+0000017C  EB00                      jmp short $+2
+0000017E  8AC2                      mov al, dl
+00000180  E640                      out 40h, al ;Timer 8253-5 (AT: 8254.2).
+00000182  EB00                      jmp short $+2
+00000184  8AC6                      mov al, dh
+00000186  E640                      out 40h, al ;Timer 8253-5 (AT: 8254.2).
+00000188  FF060000                  inc _word_172AC
+0000018C  F7D9                      neg cx
+0000018E  890E0000                  mov _word_172BA, cx
+00000192  7404                      jz short loc_119D2
+00000194  FF060000                  inc _word_172B8
+00000198                        loc_119D2:
+00000198  FB                        sti
+00000199  C3                        retn
+0000019A                        sub_1194D endp
+                                ; ------------------------------startCode1:0x19d3------------------------------
+                                ; ------------------------------startCode1:0x19d4------------------------------
+0000019A                        sub_119D4 proc near
+0000019A  9C                        pushf
+0000019B  FA                        cli
+0000019C  C606000001                mov _byte_172B0, 1
+000001A1  33C0                      xor ax, ax
+000001A3  C606000001                mov _byte_172B7, 1
+000001A8  A30000                    mov _word_172B3, ax
+000001AB  A30000                    mov _word_172B5, ax
+000001AE  E87E00                    call sub_11A69
+000001B1  8BD8                      mov bx, ax
+000001B3  B91000                    mov cx, 10h
+000001B6                        loc_119F0:
+000001B6  53                        push bx
+000001B7  E87500                    call sub_11A69
+000001BA  5B                        pop bx
+000001BB  2BD8                      sub bx, ax
+000001BD  011E0000                  add _word_172B3, bx
+000001C1  8316000000                adc _word_172B5, 0
+000001C6  8BD8                      mov bx, ax
+000001C8  E2EC                      loop loc_119F0
+000001CA  A10000                    mov ax, _word_172B3
+000001CD  8B160000                  mov dx, _word_172B5
+000001D1  01060000                  add _word_172A4, ax
+000001D5  11160000                  adc _word_172A6, dx
+000001D9  B91000                    mov cx, 10h
+000001DC  F7F1                      div cx
+000001DE  D1E8                      shr ax, 1
+000001E0  A30000                    mov _word_172B3, ax
+000001E3  8BD8                      mov bx, ax
+000001E5  D1EB                      shr bx, 1
+000001E7  D1EB                      shr bx, 1
+000001E9  D1EB                      shr bx, 1
+000001EB  D1EB                      shr bx, 1
+000001ED  03C3                      add ax, bx
+000001EF  33D2                      xor dx, dx
+000001F1  BB890F                    mov bx, 0F89h
+000001F4  F7F3                      div bx
+000001F6  3D                        db 3Dh ;cmp ax, 4
+000001F7  0400                      dw 4
+000001F9  7208                      jb short loc_11A3D
+000001FB  3D                        db 3Dh ;cmp ax, 6
+000001FC  0600                      dw 6
+000001FE  7703                      ja short loc_11A3D
+00000200  EB0F                      jmp short loc_11A4B
+00000202  90                        nop
+00000203                        loc_11A3D:
+00000203  C606000000                mov _byte_172B7, 0
+00000208  C7060000AE4D              mov _word_172B3, 4DAEh
+0000020E  B80500                    mov ax, 5
+00000211                        loc_11A4B:
+00000211  A30000                    mov _word_172B1, ax
+00000214  833E000001                cmp _word_172AE, 1
+00000219  7403                      jz short loc_11A58
+0000021B  A30000                    mov _word_172AE, ax
+0000021E                        loc_11A58:
+0000021E  A10000                    mov ax, _word_172B3
+00000221  33D2                      xor dx, dx
+00000223  F7360000                  div _word_172AE
+00000227  A30000                    mov _word_172AA, ax
+0000022A  A30000                    mov _word_172A8, ax
+0000022D  9D                        popf
+0000022E  C3                        retn
+0000022F                        sub_119D4 endp
+                                ; ------------------------------startCode1:0x1a68------------------------------
+                                ; ------------------------------startCode1:0x1a69------------------------------
+0000022F                        sub_11A69 proc near
+0000022F  9C                        pushf
+00000230  FA                        cli
+00000231  33C0                      xor ax, ax
+00000233  8EC0                      mov es, ax
+00000235  268B166304                mov dx, es:463h
+0000023A  83C206                    add dx, 6
+0000023D  81FABA03                  cmp dx, 3BAh
+00000241  7417                      jz short loc_11A94
+00000243  33DB                      xor bx, bx
+00000245                        loc_11A7F:
+00000245  4B                        dec bx
+00000246  7438                      jz short loc_11ABA
+00000248  EC                        in al, dx
+00000249  A808                      test al, 8
+0000024B  75F8                      jnz short loc_11A7F
+0000024D  33DB                      xor bx, bx
+0000024F                        loc_11A89:
+0000024F  4B                        dec bx
+00000250  742E                      jz short loc_11ABA
+00000252  EC                        in al, dx
+00000253  A808                      test al, 8
+00000255  74F8                      jz short loc_11A89
+00000257  EB15                      jmp short loc_11AA8
+00000259  90                        nop
+0000025A                        loc_11A94:
+0000025A  33DB                      xor bx, bx
+0000025C                        loc_11A96:
+0000025C  4B                        dec bx
+0000025D  7421                      jz short loc_11ABA
+0000025F  EC                        in al, dx
+00000260  A880                      test al, 80h
+00000262  74F8                      jz short loc_11A96
+00000264  33DB                      xor bx, bx
+00000266                        loc_11AA0:
+00000266  4B                        dec bx
+00000267  7417                      jz short loc_11ABA
+00000269  EC                        in al, dx
+0000026A  A880                      test al, 80h
+0000026C  75F8                      jnz short loc_11AA0
+0000026E                        loc_11AA8:
+0000026E  B000                      mov al, 0
+00000270  E643                      out 43h, al ;Timer 8253-5 (AT: 8254.2).
+00000272  EB00                      jmp short $+2
+00000274  E440                      in al, 40h ;Timer 8253-5 (AT: 8254.2).
+00000276  EB00                      jmp short $+2
+00000278  8AD8                      mov bl, al
+0000027A  E440                      in al, 40h ;Timer 8253-5 (AT: 8254.2).
+0000027C  EB00                      jmp short $+2
+0000027E  8AF8                      mov bh, al
+00000280                        loc_11ABA:
+00000280  8BC3                      mov ax, bx
+00000282  9D                        popf
+00000283  C3                        retn
+00000284                        sub_11A69 endp
+                                ; ------------------------------startCode1:0x1abd------------------------------
+                                ; ------------------------------startCode1:0x1abe------------------------------
+00000284                        _getTimeOfDay proc near
+00000284  32E4                      xor ah, ah
+00000286  CD1A                      int 1Ah ;CLOCK - GET TIME OF DAY
+00000288  8BC2                      mov ax, dx
+0000028A  C3                        retn
+0000028B                        _getTimeOfDay endp
+                                ; ------------------------------startCode1:0x1ac4------------------------------
+                                ; ------------------------------startCode1:0x1ac5------------------------------
+0000028B                        increaseTimerCounters proc near
+0000028B  FE060000                  inc _timerCounter2
+0000028F  FE060000                  inc _timerCounter3
+00000293  FE060000                  inc _timerCounter
+00000297  FE060000                  inc _timerCounter4
+0000029B  9A00000000                call far ptr _audio_jump_6b
+000002A0  C3                        retn
+000002A1                        increaseTimerCounters endp
+                                ; ------------------------------startCode1:0x1ada------------------------------
+                                ; ------------------------------startCode1:0x1adc------------------------------
+000002A1                        _doFcbSearch proc near
+000002A1  B41A                      mov ah, 1Ah
+000002A3  BA0000                    mov dx, offset _diskTransferArea
+000002A6  CD21                      int 21h ;DOS - SET DISK TRANSFER AREA ADDRESS
+000002A8  B411                      mov ah, 11h
+000002AA  BA0000                    mov dx, offset _searchFCB
+000002AD  CD21                      int 21h ;DOS - SEARCH FIRST USING FCB
+000002AF  0AC0                      or al, al
+000002B1  7514                      jnz short locret_11B02
+000002B3  32E4                      xor ah, ah
+000002B5  BBFFFF                    mov bx, 0FFFFh
+000002B8                        loc_11AF3:
+000002B8  43                        inc bx
+000002B9  8A870000                  mov al, _byte_172C6[bx]
+000002BD  0AC0                      or al, al
+000002BF  7406                      jz short locret_11B02
+000002C1  2A870800                  sub al, (_diskTransferArea+8)[bx]
+000002C5  74F1                      jz short loc_11AF3
+000002C7                        locret_11B02:
+000002C7  C3                        retn
+000002C8                        _doFcbSearch endp
+                                ; ------------------------------startCode1:0x1b02------------------------------
+                                ; ------------------------------startCode1:0x1b03------------------------------
+000002C8                        _picBlit proc near
+ = 4                                arg_0 = word ptr 4
+ = 6                                unk = word ptr 6
+000002C8  55                        push bp
+000002C9  8BEC                      mov bp, sp
+000002CB  57                        push di
+000002CC  56                        push si
+000002CD  06                        push es
+000002CE  55                        push bp
+000002CF  B82509                    mov ax, offset read512FromFileIntoBuf
+000002D2  A30000                    mov _readFromFilePtr, ax
+000002D5  8B4604                    mov ax, [bp+arg_0]
+000002D8  A30000                    mov _tmpFileHandle, ax
+000002DB  8B4606                    mov ax, [bp+unk]
+000002DE  A30000                    mov _tmpPageIndex, ax
+000002E1  8B360000                  mov si, _tmpPageIndex
+000002E5                        loc_11B20:
+000002E5  9A00000000                call far ptr _gfx_jump_38_getPageBuf
+000002EA  9A00000000                call far ptr _gfx_jump_3b_clearBuf ;zeroes out 32000 bytes
+000002EF  C70600000000              mov _word_1737E, 0
+000002F5  C70600000000              mov _rowOffset, 0
+000002FB                        loc_11B36:
+000002FB  8B3E0000                  mov di, _word_1737E
+000002FF  D1E7                      shl di, 1
+00000301  E8FE08                    call decodePicRow
+00000304  8B3E0000                  mov di, _rowOffset
+00000308  BD0000                    mov bp, offset _picDecodedRowBuf
+0000030B                        loc_11B46:
+0000030B  8B1E0000                  mov bx, _word_1737E
+0000030F  9A00000000                call far ptr _gfx_jump_33_fillRow
+00000314  8B3E0000                  mov di, _rowOffset
+00000318  9A00000000                call far ptr _gfx_jump_35
+0000031D  FF060000                  inc _word_1737E
+00000321  8306000028                add _rowOffset, 28h
+00000326  813E0000BC02              cmp _word_1737E, 2BCh
+0000032C  75CD                      jnz short loc_11B36
+0000032E  5D                        pop bp
+0000032F  07                        pop es
+00000330  5E                        pop si
+00000331  5F                        pop di
+00000332  8BE5                      mov sp, bp
+00000334  5D                        pop bp
+00000335                        locret_11B70:
+00000335  C3                        retn
+00000336                        _picBlit endp
+                                ; ------------------------------startCode1:0x1b70------------------------------
+                                ; ------------------------------startCode1:0x26b0------------------------------
+00000336                        _mystrcpy proc near
+ = 4                                arg_0 = word ptr 4
+ = 6                                source = word ptr 6
+00000336  55                        push bp
+00000337  8BEC                      mov bp, sp
+00000339  56                        push si
+0000033A                        loc_126B4:
+0000033A  8B5E04                    mov bx, [bp+arg_0]
+0000033D  FF4604                    inc [bp+arg_0]
+00000340  8B7606                    mov si, [bp+source]
+00000343  FF4606                    inc [bp+source]
+00000346  8A04                      mov al, [si]
+00000348  8807                      mov [bx], al
+0000034A  0AC0                      or al, al
+0000034C  75EC                      jnz short loc_126B4
+0000034E  5E                        pop si
+0000034F  5D                        pop bp
+00000350  C3                        retn
+00000351                        _mystrcpy endp
+                                ; ------------------------------startCode1:0x26ca------------------------------
+                                ; ------------------------------startCode1:0x26fd------------------------------
+00000351                        _mystrlen proc near
+ = 4                                arg_0 = word ptr 4
+00000351  55                        push bp
+00000352  8BEC                      mov bp, sp
+00000354  8B4604                    mov ax, [bp+arg_0]
+00000357                        loc_12703:
+00000357  8B5E04                    mov bx, [bp+arg_0]
+0000035A  FF4604                    inc [bp+arg_0]
+0000035D  803F00                    cmp byte ptr [bx], 0
+00000360  75F5                      jnz short loc_12703
+00000362                        loc_1270E:
+00000362  8B5E04                    mov bx, [bp+arg_0]
+00000365  2BC3                      sub ax, bx
+00000367  F7D0                      not ax
+00000369  8BE5                      mov sp, bp
+0000036B  5D                        pop bp
+0000036C  C3                        retn
+0000036D                        _mystrlen endp
+                                ; ------------------------------startCode1:0x2718------------------------------
+                                ; ------------------------------startCode1:0x2719------------------------------
+0000036D                        _mystrcat proc near
+ = 4                                string = word ptr 4
+ = 6                                source = word ptr 6
+0000036D  55                        push bp
+0000036E  8BEC                      mov bp, sp
+00000370  56                        push si
+00000371                        loc_1271D:
+00000371  8B5E04                    mov bx, [bp+string]
+00000374  803F00                    cmp byte ptr [bx], 0 ;look for \0 in string
+00000377  740B                      jz short foundEnd
+00000379  FF4604                    inc [bp+string]
+0000037C  EBF3                      jmp short loc_1271D
+0000037E                        appendNext:
+0000037E  FF4604                    inc [bp+string]
+00000381  8B5E04                    mov bx, [bp+string]
+00000384                        foundEnd:
+00000384  8B7606                    mov si, [bp+source]
+00000387  FF4606                    inc [bp+source]
+0000038A  8A04                      mov al, [si]
+0000038C  8807                      mov [bx], al
+0000038E  0AC0                      or al, al
+00000390  75EC                      jnz short appendNext
+00000392  5E                        pop si
+00000393  5D                        pop bp
+00000394  C3                        retn
+00000395                        _mystrcat endp
+                                ; ------------------------------startCode1:0x2740------------------------------
+                                ; ------------------------------startCode1:0x2764------------------------------
+00000395                        _nearmemset proc near
+ = 4                                arg_0 = word ptr 4
+ = 6                                count = word ptr 6
+ = 8                                arg_4 = word ptr 8
+00000395  55                        push bp
+00000396  8BEC                      mov bp, sp
+00000398  57                        push di
+00000399  8CD8                      mov ax, ds
+0000039B  8EC0                      mov es, ax
+0000039D  8A4606                    mov al, byte ptr [bp+count]
+000003A0  8B7E04                    mov di, [bp+arg_0]
+000003A3  8B4E08                    mov cx, [bp+arg_4]
+000003A6  F3AA                      rep stosb
+000003A8  5F                        pop di
+000003A9  5D                        pop bp
+000003AA  C3                        retn
+000003AB                        _nearmemset endp
+                                ; ------------------------------startCode1:0x2779------------------------------
+                                ; ------------------------------startCode1:0x27f5------------------------------
+000003AB                        _intDispatch proc near
+ = 4                                arg_0 = word ptr 4
+ = 6                                outregs = word ptr 6
+ = 8                                arg_4 = word ptr 8
+000003AB  55                        push bp
+000003AC  8BEC                      mov bp, sp
+000003AE  56                        push si
+000003AF  57                        push di
+000003B0                        loc_127FA:
+000003B0  50                        push ax
+000003B1  53                        push bx
+000003B2  51                        push cx
+000003B3  52                        push dx
+000003B4                        loc_127FE: ;load registers with values for int call
+000003B4  8B7E06                    mov di, [bp+outregs]
+000003B7  8B05                      mov ax, [di]
+000003B9                        loc_12803:
+000003B9  8B5D02                    mov bx, [di+2]
+000003BC  8B4D04                    mov cx, [di+4]
+000003BF                        loc_12809:
+000003BF  8B5506                    mov dx, [di+6]
+000003C2                        loc_1280C:
+000003C2  837E0410                  cmp [bp+arg_0], IRQ_VIDEO
+000003C6  7415                      jz short loc_12827
+000003C8                        loc_12812:
+000003C8  837E0421                  cmp [bp+arg_0], IRQ_DOS
+000003CC  7414                      jz short loc_1282C
+000003CE  837E0416                  cmp [bp+arg_0], IRQ_KBD
+000003D2  7413                      jz short loc_12831
+000003D4  837E041A                  cmp [bp+arg_0], IRQ_TIME
+000003D8  7412                      jz short loc_12836
+000003DA  EB15                      jmp short loc_1283B
+000003DC  90                        nop
+000003DD                        loc_12827:
+000003DD  CD10                      int 10h ;- VIDEO -
+000003DF  EB17                      jmp short loc_12842
+000003E1  90                        nop
+000003E2                        loc_1282C:
+000003E2  CD21                      int 21h ;DOS -
+000003E4  EB12                      jmp short loc_12842
+000003E6  90                        nop
+000003E7                        loc_12831:
+000003E7  CD16                      int 16h ;KEYBOARD -
+000003E9  EB0D                      jmp short loc_12842
+000003EB  90                        nop
+000003EC                        loc_12836:
+000003EC  CD1A                      int 1Ah ;system time
+000003EE  EB08                      jmp short loc_12842
+000003F0  90                        nop
+000003F1                        loc_1283B:
+000003F1  2BC0                      sub ax, ax
+000003F3  F7D0                      not ax
+000003F5  EB0F                      jmp short loc_12850
+000003F7  90                        nop
+000003F8                        loc_12842:
+000003F8  8B7E08                    mov di, [bp+arg_4]
+000003FB  8905                      mov [di], ax
+000003FD  895D02                    mov [di+2], bx
+00000400  894D04                    mov [di+4], cx
+00000403  895506                    mov [di+6], dx
+00000406                        loc_12850:
+00000406  5A                        pop dx
+00000407  59                        pop cx
+00000408  5B                        pop bx
+00000409  58                        pop ax
+0000040A  5F                        pop di
+0000040B  5E                        pop si
+0000040C  8BE5                      mov sp, bp
+0000040E  5D                        pop bp
+0000040F  C3                        retn
+00000410                        _intDispatch endp
+                                ; ------------------------------startCode1:0x2859------------------------------
+                                ; ------------------------------startCode1:0x2977------------------------------
+00000410                        _dos_printstring proc near
+ = 4                                arg_0 = word ptr 4
+00000410  55                        push bp
+00000411  8BEC                      mov bp, sp
+00000413  B409                      mov ah, DOS_PRINT_STR
+00000415  8B5604                    mov dx, [bp+arg_0]
+00000418  CD21                      int 21h ;DOS - PRINT STRING
+0000041A  5D                        pop bp
+0000041B  C3                        retn
+0000041C                        _dos_printstring endp
+                                ; ------------------------------startCode1:0x2982------------------------------
+                                ; ------------------------------startCode1:0x2985------------------------------
+0000041C                        _loadOverlay proc near
+ = 4                                arg_0 = word ptr 4
+ = 6                                filename = word ptr 6
+0000041C  55                        push bp
+0000041D                        loc_12986:
+0000041D  8BEC                      mov bp, sp
+0000041F  57                        push di
+00000420  56                        push si
+00000421  06                        push es
+00000422  1E                        push ds
+00000423  55                        push bp
+00000424  8B5604                    mov dx, [bp+arg_0]
+00000427  C606000000                mov _ovlInsaneFlag, 0
+0000042C  EB06                      jmp short loc_1299D
+0000042E  90                        nop
+0000042F  C606000001                mov _ovlInsaneFlag, 1
+00000434                        loc_1299D:
+00000434  B80000                    mov ax, DGROUP
+00000437  8EC0                      mov es, ax
+00000439  52                        push dx
+0000043A  B448                      mov ah, 48h
+0000043C  BBFFFF                    mov bx, 0FFFFh
+0000043F  CD21                      int 21h ;DOS - 2+ - ALLOCATE MEMORY
+00000441  720A                      jb short loc_129B6
+00000443  BA0000                    mov dx, offset _aAlloc1M ;"Allocated 1Mb of space????$"
+00000446  B409                      mov ah, 9
+00000448  CD21                      int 21h ;DOS - PRINT STRING
+0000044A  E9CD00                    jmp loc_12A83
+0000044D                        loc_129B6:
+0000044D  B448                      mov ah, 48h
+0000044F  81EB0004                  sub bx, 400h
+00000453  891E0000                  mov _ovlParCnt, bx
+00000457  CD21                      int 21h ;DOS - 2+ - ALLOCATE MEMORY
+00000459  730A                      jnb short loc_129CE
+0000045B  BA0000                    mov dx, offset _aDosLied ;"MS-DOS lied to us about how much memory"...
+0000045E  B409                      mov ah, 9
+00000460  CD21                      int 21h ;DOS - PRINT STRING
+00000462  E9B500                    jmp loc_12A83
+00000465                        loc_129CE:
+00000465  A30000                    mov _ovlSeg1, ax
+00000468  A30000                    mov _ovlParBlock, ax
+0000046B  A30000                    mov _ovlSeg2, ax
+0000046E  BB0000                    mov bx, offset _ovlParBlock
+00000471  B8034B                    mov ax, 4B03h
+00000474  5A                        pop dx
+00000475  2E89264A00                mov cs:word_12983, sp
+0000047A  CD21                      int 21h ;DOS - 2+ - LOAD OR EXECUTE (EXEC)
+0000047C  7328                      jnb short loc_12A0F
+0000047E  3D                        db 3Dh ;cmp ax, 2
+0000047F  0200                      dw 2
+00000481  750A                      jnz short loc_129F6
+00000483  BA0000                    mov dx, offset _aFileNFound ;"Filename not found$"
+00000486  B409                      mov ah, 9
+00000488  CD21                      int 21h ;DOS - PRINT STRING
+0000048A  E98D00                    jmp loc_12A83
+0000048D                        loc_129F6:
+0000048D  3D                        db 3Dh ;cmp ax, 8
+0000048E  0800                      dw 8
+00000490  750A                      jnz short loc_12A05
+00000492  BA0000                    mov dx, offset _aEnoughMem ;"Not enough memory to load file$"
+00000495  B409                      mov ah, 9
+00000497  CD21                      int 21h ;DOS - PRINT STRING
+00000499  EB7F                      jmp short loc_12A83
+0000049B  90                        nop
+0000049C                        loc_12A05:
+0000049C  BA0000                    mov dx, offset _aOvlFail ;"Overlay load failed for some reason$"
+0000049F  B409                      mov ah, 9
+000004A1  CD21                      int 21h ;DOS - PRINT STRING
+000004A3  EB75                      jmp short loc_12A83
+000004A5  90                        nop
+000004A6                        loc_12A0F:
+000004A6  2E8B264A00                mov sp, cs:word_12983
+000004AB  B80000                    mov ax, DGROUP
+000004AE  8ED0                      mov ss, ax
+000004B0  8ED8                      mov ds, ax
+000004B2  8EC0                      mov es, ax
+000004B4  A10000                    mov ax, _ovlSeg1
+000004B7  8EC0                      mov es, ax
+000004B9  BF1E00                    mov di, OVL_HDR_SIZE1
+000004BC  268B1D                    mov bx, es:[di]
+000004BF  D1EB                      shr bx, 1
+000004C1  D1EB                      shr bx, 1
+000004C3  D1EB                      shr bx, 1
+000004C5  D1EB                      shr bx, 1
+000004C7  BF2000                    mov di, OVL_HDR_SIZE2
+000004CA  268B0D                    mov cx, es:[di]
+000004CD  D1E9                      shr cx, 1
+000004CF  D1E9                      shr cx, 1
+000004D1  D1E9                      shr cx, 1
+000004D3  D1E9                      shr cx, 1
+000004D5  03D9                      add bx, cx
+000004D7  3B1E0000                  cmp bx, _ovlParCnt
+000004DB  760A                      jbe short loc_12A50
+000004DD  BA0000                    mov dx, offset _aOvlOvrrun ;"Overlay has overrun allocated memory$"
+000004E0  B409                      mov ah, 9
+000004E2  CD21                      int 21h ;DOS - PRINT STRING
+000004E4  EB34                      jmp short loc_12A83
+000004E6  90                        nop
+000004E7                        loc_12A50:
+000004E7  83C308                    add bx, 8
+000004EA  B44A                      mov ah, 4Ah
+000004EC  8B0E0000                  mov cx, _ovlSeg1
+000004F0  8EC1                      mov es, cx
+000004F2  CD21                      int 21h ;DOS - 2+ - ADJUST MEMORY BLOCK SIZE (SETBLOCK)
+000004F4  730A                      jnb short loc_12A69
+000004F6  BA0000                    mov dx, offset _aOvlShrink ;"Unable to shrink overlay memory allocat"...
+000004F9  B409                      mov ah, 9
+000004FB  CD21                      int 21h ;DOS - PRINT STRING
+000004FD  EB1B                      jmp short loc_12A83
+000004FF  90                        nop
+00000500                        loc_12A69:
+00000500  B80000                    mov ax, DGROUP
+00000503  8ED8                      mov ds, ax
+00000505  8EC0                      mov es, ax
+00000507  A10000                    mov ax, _ovlSeg1
+0000050A  803E000000                cmp _ovlInsaneFlag, 0
+0000050F  7508                      jnz short locret_12A82
+00000511  5D                        pop bp
+00000512  1F                        pop ds
+00000513  07                        pop es
+00000514  5E                        pop si
+00000515  5F                        pop di
+00000516  8BE5                      mov sp, bp
+00000518  5D                        pop bp
+00000519                        locret_12A82:
+00000519  C3                        retn
+0000051A                        loc_12A83:
+0000051A  B8004C                    mov ax, 4C00h
+0000051D  CD21                      int 21h ;DOS - 2+ - QUIT WITH EXIT CODE (EXIT)
+0000051F                        _loadOverlay endp ;AL = exit code
+                                ; ------------------------------startCode1:0x2a86------------------------------
+                                ; ------------------------------startCode1:0x2a88------------------------------
+0000051F                        _setupOverlaySlots proc near
+ = 4                                arg_0 = word ptr 4
+ = 6                                ovlSegment = word ptr 6
+0000051F  55                        push bp
+00000520  8BEC                      mov bp, sp
+00000522  57                        push di
+00000523  56                        push si
+00000524  06                        push es
+00000525  1E                        push ds
+00000526  55                        push bp
+00000527  8B5604                    mov dx, [bp+arg_0]
+0000052A  C606000000                mov _ovlInsaneFlag, 0
+0000052F  EB06                      jmp short ovlSane
+00000531  90                        nop
+00000532  C606000001                mov _ovlInsaneFlag, 1
+00000537                        ovlSane:
+00000537  8EC2                      mov es, dx
+00000539  BB0000                    mov bx, offset _gfx_jump_0_alloc
+0000053C  BF1C00                    mov di, OVL_HDR_FIRSTIDX
+0000053F  268B05                    mov ax, es:[di]
+00000542  B205                      mov dl, 5
+00000544  F6E2                      mul dl ;ax = al*dl
+00000546  03D8                      add bx, ax ;bx = address of first slot in jump table
+00000548  BF2200                    mov di, OVL_HDR_SLOTCOUNT
+0000054B  268B0D                    mov cx, es:[di]
+0000054E  BE2400                    mov si, OVL_HDR_FIRSTPTR
+00000551  BF1800                    mov di, OVL_HDR_CODESEG
+00000554  268B3D                    mov di, es:[di]
+00000557                        writeSlots:
+00000557  268B04                    mov ax, es:[si]
+0000055A  894701                    mov [bx+1], ax
+0000055D  897F03                    mov [bx+3], di
+00000560  83C602                    add si, 2 ;next word in jump offset array
+00000563  83C305                    add bx, 5 ;next slot in jump table (5 bytes each)
+00000566  E2EF                      loop writeSlots
+00000568  803E000000                cmp _ovlInsaneFlag, 0
+0000056D  7508                      jnz short sos_exit
+0000056F  5D                        pop bp
+00000570  1F                        pop ds
+00000571  07                        pop es
+00000572  5E                        pop si
+00000573  5F                        pop di
+00000574  8BE5                      mov sp, bp
+00000576  5D                        pop bp
+00000577                        sos_exit:
+00000577  C3                        retn
+00000578                        _setupOverlaySlots endp
+                                ; ------------------------------startCode1:0x2ae0------------------------------
+00000578  636C65617252656374    msg14 db 'clearRect(): buf 0x%x %d %d %d %d',0
+0000059A  636C65617252656374    msg15 db 'clearRect(): destination 0x%x',0
+                                ; ------------------------------startCode1:0x2bba------------------------------
+000005B8                        _clearRect proc near
+ = 4                                buf = word ptr 4
+ = 6                                maxy = word ptr 6
+ = 8                                y = word ptr 8
+ = A                                maxx = word ptr 0Ah
+ = C                                arg_8 = word ptr 0Ch
+000005B8  55                        push bp
+000005B9  8BEC                      mov bp, sp
+000005BB  57                        push di
+000005BC  56                        push si
+000005BD  55                        push bp
+000005BE  1E                        push ds
+000005BF  07                        pop es
+000005C0  9A00000000                call _gfx_jump_10_getCurBuf
+000005C5  50                        push ax
+000005C6  8B5E04                    mov bx, [bp+buf]
+000005C9  8B07                      mov ax, [bx]
+000005CB  9A00000000                call _gfx_jump_0d_setCurBuf
+000005D0  8A6706                    mov ah, [bx+6]
+000005D3  9A00000000                call _gfx_jump_20_setVal ;saves value of ah to gfx data
+000005D8  E87C00                    call sub_12C75
+000005DB  8B460A                    mov ax, [bp+maxx]
+000005DE  2B4606                    sub ax, [bp+maxy]
+000005E1  A30000                    mov _word_1786A, ax
+000005E4  8B460C                    mov ax, [bp+arg_8]
+000005E7  2B4608                    sub ax, [bp+y]
+000005EA  40                        inc ax
+000005EB  A30000                    mov _word_1786C, ax
+000005EE  8B4E0C                    mov cx, [bp+arg_8]
+000005F1  8B7608                    mov si, [bp+y]
+000005F4  89360000                  mov _word_17868, si
+000005F8  890E0000                  mov _word_17BED, cx
+000005FC  89360000                  mov _word_17BEB, si
+00000600  2BCE                      sub cx, si
+00000602  41                        inc cx
+00000603  8D3E0000                  lea di, _byte_17877
+00000607  D1E6                      shl si, 1
+00000609  03FE                      add di, si
+0000060B  8B4606                    mov ax, [bp+maxy]
+0000060E  A30000                    mov _word_17866, ax
+00000611  8BD1                      mov dx, cx
+00000613  F3AB                      rep stosw
+00000615  8BCA                      mov cx, dx
+00000617  8D3E0000                  lea di, _byte_17A2F
+0000061B  03FE                      add di, si
+0000061D  8B460A                    mov ax, [bp+maxx]
+00000620  F3AB                      rep stosw
+00000622  BB0000                    mov bx, offset _byte_17877
+00000625  A10000                    mov ax, _word_17BEB
+00000628  8B0E0000                  mov cx, _word_17BED
+0000062C  9A00000000                call far ptr _gfx_jump_28
+00000631  9A00000000                call far ptr _gfx_jump_22
+00000636  A10000                    mov ax, _word_17866
+00000639  8B1E0000                  mov bx, _word_17868
+0000063D  8B0E0000                  mov cx, _word_1786A
+00000641  8B160000                  mov dx, _word_1786C
+00000645  9A00000000                call _gfx_jump_51_null
+0000064A  58                        pop ax
+0000064B  9A00000000                call _gfx_jump_0f_getBufPtr
+00000650  5D                        pop bp
+00000651  5E                        pop si
+00000652  5F                        pop di
+00000653  8BE5                      mov sp, bp
+00000655  5D                        pop bp
+00000656  C3                        retn
+00000657                        _clearRect endp
+                                ; ------------------------------startCode1:0x2c58------------------------------
+                                ; ------------------------------startCode1:0x2c75------------------------------
+00000657                        sub_12C75 proc near
+00000657  8B3E0000                  mov di, _word_17BEB
+0000065B  0BFF                      or di, di
+0000065D  7828                      js short locret_12CA5
+0000065F  8B0E0000                  mov cx, _word_17BED
+00000663  41                        inc cx
+00000664  2BCF                      sub cx, di
+00000666  D1E7                      shl di, 1
+00000668  8BD9                      mov bx, cx
+0000066A  8BD7                      mov dx, di
+0000066C  81C70000                  add di, offset _byte_17877
+00000670  B8FFFF                    mov ax, 0FFFFh
+00000673  F3AB                      rep stosw
+00000675  A30000                    mov _word_17BEB, ax
+00000678  8BCB                      mov cx, bx
+0000067A  8BFA                      mov di, dx
+0000067C  81C70000                  add di, offset _byte_17A2F
+00000680  2BC0                      sub ax, ax
+00000682  F3AB                      rep stosw
+00000684  A30000                    mov _word_17BED, ax
+00000687                        locret_12CA5:
+00000687  C3                        retn
+00000688                        sub_12C75 endp
+                                ; ------------------------------startCode1:0x2ca5------------------------------
+                                ; ------------------------------startCode1:0x2dea------------------------------
+00000688                        _sub_12DEA proc near
+00000688  55                        push bp
+00000689  56                        push si
+0000068A  57                        push di
+0000068B  06                        push es
+0000068C  E80500                    call sub_12DF6
+0000068F  07                        pop es
+00000690  5F                        pop di
+00000691  5E                        pop si
+00000692  5D                        pop bp
+00000693  C3                        retn
+00000694                        _sub_12DEA endp
+                                ; ------------------------------startCode1:0x2df5------------------------------
+                                ; ------------------------------startCode1:0x2df6------------------------------
+00000694                        sub_12DF6 proc near
+ = 10A1                             arg_109F = word ptr 10A1h
+00000694  2BC0                      sub ax, ax
+00000696  8EC0                      mov es, ax
+00000698  26FF360000                push word ptr es:0
+0000069D  8D060000                  lea ax, _byte_19ADB
+000006A1  26A30000                  mov es:0, ax
+000006A5  1E                        push ds
+000006A6  07                        pop es
+000006A7  EB5B                      jmp short loc_12E66
+000006A9  90                        nop
+000006AA                        loc_12E0C:
+000006AA  2BC0                      sub ax, ax
+000006AC  8EC0                      mov es, ax
+000006AE  268F060000                pop word ptr es:0
+000006B3  1E                        push ds
+000006B4  07                        pop es
+000006B5  A10000                    mov ax, _word_1786F
+000006B8  8B1E0000                  mov bx, _word_17873
+000006BC  8B0E0000                  mov cx, _word_17871
+000006C0  8B160000                  mov dx, _word_17875
+000006C4  9A00000000                call _gfx_jump_1f
+000006C9  F8                        clc
+000006CA  C3                        retn
+000006CB                        loc_12E2D:
+000006CB  2BC0                      sub ax, ax
+000006CD  8EC0                      mov es, ax
+000006CF  268F060000                pop word ptr es:0
+000006D4  1E                        push ds
+000006D5  07                        pop es
+000006D6  F9                        stc
+000006D7  C3                        retn
+000006D8                        loc_12E3A:
+000006D8  F5                        cmc
+000006D9  D1DA                      rcr dx, 1
+000006DB  89160000                  mov _word_17BF1, dx
+000006DF  D1FA                      sar dx, 1
+000006E1  89160000                  mov _word_17BF5, dx
+000006E5  8BD7                      mov dx, di
+000006E7  2BD5                      sub dx, bp
+000006E9  7106                      jno short loc_12E53
+000006EB  F5                        cmc
+000006EC  D1DA                      rcr dx, 1
+000006EE  EB6F                      jmp short loc_12EC1
+000006F0  90                        nop
+000006F1                        loc_12E53:
+000006F1  D1FA                      sar dx, 1
+000006F3  EB6A                      jmp short loc_12EC1
+000006F5  90                        nop
+000006F6                        loc_12E58:
+000006F6  F5                        cmc
+000006F7  D1DA                      rcr dx, 1
+000006F9  D13E0000                  sar _word_17BF1, 1
+000006FD  D13E0000                  sar _word_17BF5, 1
+00000701  EB5C                      jmp short loc_12EC1
+00000703  90                        nop
+00000704                        loc_12E66:
+00000704  8B0E0000                  mov cx, _word_1786F
+00000708  8B160000                  mov dx, _word_17873
+0000070C  8B360000                  mov si, _word_17871
+00000710  8B3E0000                  mov di, _word_17875
+00000714  8BD9                      mov bx, cx
+00000716  8BEA                      mov bp, dx
+00000718  E8ED00                    call sub_12F6A
+0000071B  A20000                    mov _byte_17BF0, al
+0000071E  8BDE                      mov bx, si
+00000720  8BEF                      mov bp, di
+00000722  E8E300                    call sub_12F6A
+00000725  751A                      jnz short loc_12EA3
+00000727  803E000000                cmp _byte_17BF0, 0
+0000072C  7503                      jnz short loc_12E93
+0000072E  E979FF                    jmp loc_12E0C
+00000731                        loc_12E93:
+00000731  87CE                      xchg cx, si
+00000733  87D7                      xchg dx, di
+00000735  86060000                  xchg al, _byte_17BF0
+00000739  890E0000                  mov _word_1786F, cx
+0000073D  89160000                  mov _word_17873, dx
+00000741                        loc_12EA3:
+00000741  84060000                  test _byte_17BF0, al
+00000745  7584                      jnz short loc_12E2D
+00000747  8BEA                      mov bp, dx
+00000749  8BD6                      mov dx, si
+0000074B  2BD1                      sub dx, cx
+0000074D  7089                      jo short loc_12E3A
+0000074F  89160000                  mov _word_17BF1, dx
+00000753  D1FA                      sar dx, 1
+00000755  89160000                  mov _word_17BF5, dx
+00000759  8BD7                      mov dx, di
+0000075B  2BD5                      sub dx, bp
+0000075D  7097                      jo short loc_12E58
+0000075F                        loc_12EC1:
+0000075F  89160000                  mov _word_17BF3, dx
+00000763  D1FA                      sar dx, 1
+00000765  89160000                  mov _word_17BF7, dx
+00000769                        loc_12ECB:
+00000769  A809                      test al, 9
+0000076B  7438                      jz short loc_12F07
+0000076D  2BDB                      sub bx, bx
+0000076F  0BF6                      or si, si
+00000771  7804                      js short loc_12ED9
+00000773  8B1E0000                  mov bx, _word_17BF9
+00000777                        loc_12ED9:
+00000777  8BC3                      mov ax, bx
+00000779  2BC1                      sub ax, cx
+0000077B  F72E0000                  imul _word_17BF3
+0000077F  53                        push bx
+00000780  8BDA                      mov bx, dx
+00000782  F73E0000                  idiv _word_17BF1
+00000786  8ADF                      mov bl, bh
+00000788  321E0100                  xor bl, byte ptr _word_17BF1+1
+0000078C  7903                      jns short loc_12EF3
+0000078E  F7DA                      neg dx
+00000790  48                        dec ax
+00000791                        loc_12EF3:
+00000791  2B160000                  sub dx, _word_17BF5
+00000795  32F7                      xor dh, bh
+00000797  7801                      js short loc_12EFC
+00000799  40                        inc ax
+0000079A                        loc_12EFC:
+0000079A  5B                        pop bx
+0000079B  03C5                      add ax, bp
+0000079D  780E                      js short loc_12F0F
+0000079F  3B060000                  cmp ax, _word_17BFB
+000007A3  7E39                      jle short loc_12F40
+000007A5                        loc_12F07:
+000007A5  8B1E0000                  mov bx, _word_17BFB
+000007A9  3BFB                      cmp di, bx
+000007AB  7F02                      jg short loc_12F11
+000007AD                        loc_12F0F:
+000007AD  2BDB                      sub bx, bx
+000007AF                        loc_12F11:
+000007AF  8BC3                      mov ax, bx
+000007B1  2BC5                      sub ax, bp
+000007B3  F72E0000                  imul _word_17BF1
+000007B7  53                        push bx
+000007B8  8BDA                      mov bx, dx
+000007BA  F73E0000                  idiv _word_17BF3
+000007BE  8ADF                      mov bl, bh
+000007C0  321E0100                  xor bl, byte ptr _word_17BF3+1
+000007C4  7903                      jns short loc_12F2B
+000007C6  F7DA                      neg dx
+000007C8  48                        dec ax
+000007C9                        loc_12F2B:
+000007C9  2B160000                  sub dx, _word_17BF7
+000007CD  32F7                      xor dh, bh
+000007CF  7801                      js short loc_12F34
+000007D1  40                        inc ax
+000007D2                        loc_12F34:
+000007D2  5B                        pop bx
+000007D3  03C1                      add ax, cx
+000007D5  7818                      js short loc_12F51
+000007D7  3B060000                  cmp ax, _word_17BF9
+000007DB  7F12                      jg short loc_12F51
+000007DD  93                        xchg ax, bx
+000007DE                        loc_12F40:
+000007DE  803E000000                cmp _byte_17BF0, 0
+000007E3  750D                      jnz short loc_12F54
+000007E5  A30000                    mov _word_17875, ax
+000007E8  891E0000                  mov _word_17871, bx
+000007EC  E9BBFE                    jmp loc_12E0C
+000007EF                        loc_12F51:
+000007EF  E9D9FE                    jmp loc_12E2D
+000007F2                        loc_12F54:
+000007F2  A30000                    mov _word_17873, ax
+000007F5  891E0000                  mov _word_1786F, bx
+000007F9  87CE                      xchg cx, si
+000007FB  87EF                      xchg bp, di
+000007FD  A00000                    mov al, _byte_17BF0
+00000800  C606000000                mov _byte_17BF0, 0
+00000805  E961FF                    jmp loc_12ECB
+00000808                        sub_12DF6 endp
+                                ; ------------------------------startCode1:0x2f67------------------------------
+                                ; ------------------------------startCode1:0x2f6a------------------------------
+00000808                        sub_12F6A proc near
+00000808  B00F                      mov al, 0Fh
+0000080A  0BDB                      or bx, bx
+0000080C  7802                      js short loc_12F72
+0000080E  24F7                      and al, 0F7h
+00000810                        loc_12F72:
+00000810  3B1E0000                  cmp bx, _word_17BF9
+00000814  7F02                      jg short loc_12F7A
+00000816  24FE                      and al, 0FEh
+00000818                        loc_12F7A:
+00000818  0BED                      or bp, bp
+0000081A  7802                      js short loc_12F80
+0000081C  24FB                      and al, 0FBh
+0000081E                        loc_12F80:
+0000081E  3B2E0000                  cmp bp, _word_17BFB
+00000822  7F02                      jg short loc_12F88
+00000824  24FD                      and al, 0FDh
+00000826                        loc_12F88:
+00000826  0AC0                      or al, al
+00000828  C3                        retn
+00000829                        sub_12F6A endp
+                                ; ------------------------------startCode1:0x2f8a------------------------------
+                                ; ------------------------------startCode1:0x2fac------------------------------
+00000829                        _installCBreakHandler proc near
+00000829  56                        push si
+0000082A  57                        push di
+0000082B  52                        push dx
+0000082C  1E                        push ds
+0000082D  BE6C00                    mov si, IRQ_CBREAK*4
+00000830  E82A00                    call getInterruptHandler
+00000833  891E0000                  mov _origCBreakOfs, bx
+00000837  A30000                    mov _origCBreakSeg, ax
+0000083A  B80000                    mov ax, seg _TEXT
+0000083D  BA6908                    mov dx, offset cbreakHandler
+00000840  8ED8                      mov ds, ax
+00000842  B81B25                    mov ax, 251Bh ;1B - cbreak interrupt
+00000845  CD21                      int 21h ;DOS - SET INTERRUPT VECTOR
+00000847  1F                        pop ds
+00000848  5A                        pop dx
+00000849  5F                        pop di
+0000084A  5E                        pop si
+0000084B  C3                        retn
+0000084C                        _installCBreakHandler endp
+                                ; ------------------------------startCode1:0x2fce------------------------------
+                                ; ------------------------------startCode1:0x2fcf------------------------------
+0000084C                        _restoreCbreakHandler proc near
+0000084C  1E                        push ds
+0000084D  A10000                    mov ax, _origCBreakSeg
+00000850  8B160000                  mov dx, _origCBreakOfs
+00000854  8ED8                      mov ds, ax
+00000856  B81B25                    mov ax, 251Bh
+00000859  CD21                      int 21h ;DOS - SET INTERRUPT VECTOR
+0000085B  1F                        pop ds
+0000085C  C3                        retn
+0000085D                        _restoreCbreakHandler endp
+                                ; ------------------------------startCode1:0x2fdf------------------------------
+                                ; ------------------------------startCode1:0x2fe0------------------------------
+0000085D                        getInterruptHandler proc near
+0000085D  1E                        push ds
+0000085E  33C0                      xor ax, ax
+00000860  8ED8                      mov ds, ax
+00000862  8B1C                      mov bx, [si]
+00000864  8B4402                    mov ax, [si+2]
+00000867  1F                        pop ds
+00000868  C3                        retn
+00000869                        getInterruptHandler endp
+                                ; ------------------------------startCode1:0x2feb------------------------------
+                                ; ------------------------------startCode1:0x2fec------------------------------
+00000869                        cbreakHandler proc far
+00000869  1E                        push ds
+0000086A  50                        push ax
+0000086B  B80000                    mov ax, DGROUP
+0000086E  8ED8                      mov ds, ax
+00000870  C6060000FF                mov _cbreakHit, 0FFh
+00000875  58                        pop ax
+00000876  1F                        pop ds
+00000877                            iret
+00000878                        cbreakHandler endp
+                                ; ------------------------------startCode1:0x2ffa------------------------------
+                                ; ------------------------------startCode1:0x311a------------------------------
+00000878                        _openFile proc near
+ = 4                                arg_0 = word ptr 4
+ = 6                                mode = word ptr 6
+00000878  55                        push bp
+00000879  8BEC                      mov bp, sp
+0000087B  57                        push di
+0000087C  56                        push si
+0000087D  06                        push es
+0000087E  55                        push bp
+0000087F  B43D                      mov ah, 3Dh
+00000881  8A4606                    mov al, byte ptr [bp+mode]
+00000884  8CD3                      mov bx, ss
+00000886  8EDB                      mov ds, bx
+00000888  8B5604                    mov dx, [bp+arg_0]
+0000088B  CD21                      int 21h ;DOS - 2+ - OPEN DISK FILE WITH HANDLE
+0000088D  7332                      jnb short openSuccess
+0000088F  3D                        db 3Dh ;ax == 2: file not foundcmp ax, 2
+00000890  0200                      dw 2
+00000892  750C                      jnz short otherError ;error 03: path not found
+00000894                        fileNotFound:
+00000894  8B5E04                    mov bx, [bp+arg_0]
+00000897  B80000                    mov ax, offset _aFileNotFound ;":File not found$"
+0000089A  B9FFFF                    mov cx, 0FFFFh
+0000089D  E9D700                    jmp errorDescAndExit ;ax: pointer to error message
+000008A0                        otherError:
+000008A0  3D                        db 3Dh ;error 03: path not foundcmp ax, 3
+000008A1  0300                      dw 3
+000008A3  74EF                      jz short fileNotFound
+000008A5  3D                        db 3Dh ;error 04: too many open filescmp ax, 4
+000008A6  0400                      dw 4
+000008A8  750C                      jnz short stillOtherError
+000008AA  B9FFFF                    mov cx, 0FFFFh
+000008AD  8B5E04                    mov bx, [bp+arg_0]
+000008B0  B80000                    mov ax, offset _aNoFileBuffersAvailable ;":No file buffers available$"
+000008B3  E9C100                    jmp errorDescAndExit ;ax: pointer to error message
+000008B6                        stillOtherError:
+000008B6  8BC8                      mov cx, ax
+000008B8  B80000                    mov ax, offset _aOpenError ;":Open error $"
+000008BB  8B5E04                    mov bx, [bp+arg_0]
+000008BE  E9B600                    jmp errorDescAndExit ;ax: pointer to error message
+000008C1                        openSuccess:
+000008C1  C70600000002              mov _fileReadPos, 200h
+000008C7  5D                        pop bp
+000008C8  07                        pop es
+000008C9  5E                        pop si
+000008CA  5F                        pop di
+000008CB  8BE5                      mov sp, bp
+000008CD  5D                        pop bp
+000008CE  C3                        retn
+000008CF                        _openFile endp
+                                ; ------------------------------startCode1:0x3170------------------------------
+                                ; ------------------------------startCode1:0x31c8------------------------------
+000008CF                        _fileClose proc near
+ = 4                                arg_0 = word ptr 4
+ = 6                                handle = word ptr 6
+000008CF  55                        push bp
+000008D0  8BEC                      mov bp, sp
+000008D2  57                        push di
+000008D3  56                        push si
+000008D4  06                        push es
+000008D5  55                        push bp
+000008D6  B43E                      mov ah, 3Eh
+000008D8  8B5E04                    mov bx, [bp+arg_0]
+000008DB  CD21                      int 21h ;DOS - 2+ - CLOSE A FILE WITH HANDLE
+000008DD  7309                      jnb short loc_131E1
+000008DF  BA0000                    mov dx, offset _aFileClosingError
+000008E2  B9FFFF                    mov cx, 0FFFFh
+000008E5  E9AA00                    jmp errorAndExit
+000008E8                        loc_131E1:
+000008E8  5D                        pop bp
+000008E9  07                        pop es
+000008EA  5E                        pop si
+000008EB  5F                        pop di
+000008EC  8BE5                      mov sp, bp
+000008EE  5D                        pop bp
+000008EF  C3                        retn
+000008F0                        _fileClose endp
+                                ; ------------------------------startCode1:0x31e8------------------------------
+000008F0  52656164696E672066    msg12 db 'Reading from file handle %d',0
+0000090C  526561642073756363    msg13 db 'Read success, count %d',0
+00000923  0000                  charCount dw 0
+                                ; ------------------------------startCode1:0x326c------------------------------
+00000925                        read512FromFileIntoBuf proc near
+                                    ; trace msg12,_tmpFileHandle
+00000925  1E                        push ds
+00000926  B43F                      mov ah, 3Fh
+00000928  BB0000                    mov bx, DGROUP
+0000092B  8EDB                      mov ds, bx
+0000092D  8B1E0000                  mov bx, _tmpFileHandle
+00000931  B90002                    mov cx, 200h ;read 512 bytes at most (int returns number of chars
+00000934  BA0000                    mov dx, offset _fileReadBuf
+00000937  CD21                      int 21h ;DOS - 2+ - READ FROM FILE WITH HANDLE
+00000939  7309                      jnb short readSuccess
+0000093B  BA0000                    mov dx, offset _aReadError ;"Read error$"
+0000093E  B9FFFF                    mov cx, 0FFFFh
+00000941  EB4F                      jmp short errorAndExit
+00000943  90                        nop
+00000944                        readSuccess:
+                                    ; mov charCount,ax
+                                    ; trace msg13,charCount
+00000944  1F                        pop ds
+00000945  C3                        retn
+00000946                        read512FromFileIntoBuf endp
+                                ; ------------------------------startCode1:0x328c------------------------------
+                                ; ------------------------------startCode1:0x32a5------------------------------
+00000946                        sub_132A5 proc near
+ = 4                                arg_0 = word ptr 4
+ = 6                                arg_2 = word ptr 6
+ = 8                                arg_4 = word ptr 8
+ = A                                arg_6 = word ptr 0Ah
+ = C                                arg_8 = word ptr 0Ch
+00000946  55                        push bp
+00000947  8BEC                      mov bp, sp
+00000949  57                        push di
+0000094A  56                        push si
+0000094B  06                        push es
+0000094C  55                        push bp
+0000094D  1E                        push ds
+0000094E  B440                      mov ah, 40h
+00000950  8B5E0A                    mov bx, [bp+arg_6]
+00000953  8EDB                      mov ds, bx
+00000955  8B5E04                    mov bx, [bp+arg_0]
+00000958  8B4E06                    mov cx, [bp+arg_2]
+0000095B  8B5608                    mov dx, [bp+arg_4]
+0000095E  03560C                    add dx, [bp+arg_8]
+00000961  CD21                      int 21h ;DOS - 2+ - WRITE TO FILE WITH HANDLE
+00000963  1F                        pop ds
+00000964  7309                      jnb short loc_132CE
+00000966  BA0000                    mov dx, offset _aWriteError
+00000969  B9FFFF                    mov cx, 0FFFFh
+0000096C  EB24                      jmp short errorAndExit
+0000096E  90                        nop
+0000096F                        loc_132CE:
+0000096F  5D                        pop bp
+00000970  07                        pop es
+00000971  5E                        pop si
+00000972  5F                        pop di
+00000973  8BE5                      mov sp, bp
+00000975  5D                        pop bp
+00000976  C3                        retn
+00000977                        errorDescAndExit:
+00000977  50                        push ax ;ax: pointer to error message
+00000978  B80300                    mov ax, 3 ;mode 3: 80x25
+0000097B  CD10                      int 10h ;- VIDEO - SET VIDEO MODE
+0000097D  BF0000                    mov di, 0
+00000980                        findStringLength:
+00000980  803900                    cmp byte ptr [bx+di], 0 ;bx: string pointer, look for terminator
+00000983  7403                      jz short foundNull ;terminate with '$' instead
+00000985  47                        inc di
+00000986  EBF8                      jmp short findStringLength ;bx: string pointer, look for terminator
+00000988                        foundNull:
+00000988  C60124                    mov byte ptr [bx+di], 24h
+0000098B  8BD3                      mov dx, bx ;dx: pointer to filename
+0000098D  B409                      mov ah, 9
+0000098F  CD21                      int 21h ;DOS - PRINT STRING
+00000991  5A                        pop dx ;dx: pointer to error message
+00000992                        errorAndExit:
+00000992  B409                      mov ah, 9
+00000994  CD21                      int 21h ;DOS - PRINT STRING
+00000996  83F9FF                    cmp cx, 0FFFFh ;check for -1: error
+00000999  7413                      jz short exitToDos
+0000099B  83C130                    add cx, 30h
+0000099E  880E0000                  mov byte ptr _errorCodeStr, cl
+000009A2  C606010024                mov byte ptr _errorCodeStr+1, 24h
+000009A7  BA0000                    mov dx, offset _errorCodeStr
+000009AA  B409                      mov ah, 9
+000009AC  CD21                      int 21h ;DOS - PRINT STRING
+000009AE                        exitToDos:
+000009AE  B8004C                    mov ax, 4C00h
+000009B1  CD21                      int 21h ;DOS - 2+ - QUIT WITH EXIT CODE (EXIT)
+000009B3                        sub_132A5 endp ;AL = exit code
+                                ; ------------------------------startCode1:0x3310------------------------------
+
+000009B3  73686F775069634669    msg1 db 'showPicFile(): entering, handle %d pagenum %d',0
+000009E1  73686F775069634669    msg2 db 'showPicFile(): after gfx_3b_clearbuf, handle %d pageidx %d',0
+00000A1C  73686F775069634669    msg3 db 'showPicFile(): after fillrow',0
+00000A39  73686F775069634669    msg4 db 'showPicFile(): exiting',0
+00000A50  73686F775069634669    msg5 db 'showPicFile(): gfx_35 returned',0
+00000A6F  73686F775069634669    msg6 db 'showPicFile(): ---row %u, rowOffset 0x%x',0
+00000A98  73686F775069634669    msg8 db 'showPicFile(): before loop, screenBufSize = 0x%x',0
+
+                                ; ------------------------------startCode1:0x33d0------------------------------
+00000AC9                        _showPicFile proc near
+ = 4                                handle = word ptr 4
+ = 6                                pageNum = word ptr 6
+                                    ; 28da:492a
+00000AC9  55                        push bp
+00000ACA  8BEC                      mov bp, sp
+00000ACC  57                        push di
+00000ACD  56                        push si
+00000ACE  06                        push es
+00000ACF  55                        push bp
+                                IFDEF PICDEBUG
+                                ENDIF
+00000AD0  B82509                    mov ax, offset read512FromFileIntoBuf
+00000AD3  A30000                    mov _readFromFilePtr, ax
+00000AD6  8B4604                    mov ax, [bp+handle]
+00000AD9  A30000                    mov _tmpFileHandle, ax
+00000ADC  8B4606                    mov ax, [bp+pageNum]
+00000ADF  A30000                    mov _tmpPageIndex, ax
+00000AE2  E868F5                    call nullsub_1
+00000AE5  8B360000                  mov si, _tmpPageIndex
+                                    ; get either vmem addr or allocated page buffer into es
+00000AE9  9A00000000                call far ptr _gfx_jump_38_getPageBuf 
+00000AEE  9A00000000                call far ptr _gfx_jump_3b_clearBuf ;zeroes out 32000 bytes
+                                IFDEF PICDEBUG    
+                                ENDIF
+00000AF3  C70600000000              mov _row, 0
+00000AF9  C706000000FA              mov _screenBufSize, 0FA00h
+                                IFDEF PICDEBUG
+                                ENDIF
+00000AFF                        nextRow:
+00000AFF  8B3E0000                  mov di, _row ;argument for gfx slot
+00000B03  9A00000000                call far ptr _gfx_jump_3a_getRowOffset ;returned in ax
+00000B08  A30000                    mov _rowOffset, ax
+                                IFDEF PICDEBUG
+                                ENDIF
+00000B0B  E8F400                    call decodePicRow
+00000B0E  8B3E0000                  mov di, _rowOffset
+00000B12  BD0000                    mov bp, offset _picDecodedRowBuf ;source for memcpy
+00000B15  8B1E0000                  mov bx, _row
+00000B19  9A00000000                call far ptr _gfx_jump_33_fillRow ;destination: es:di (gfx page:rowOffset)
+                                IFDEF PICDEBUG
+                                ENDIF
+00000B1E  8B3E0000                  mov di, _rowOffset
+00000B22  9A00000000                call far ptr _gfx_jump_35
+                                IFDEF PICDEBUG    
+                                ENDIF
+00000B27  FF060000                  inc _row
+00000B2B  812E00004001              sub _screenBufSize, 320
+00000B31  75CC                      jnz short nextRow ;argument for gfx slot
+                                IFDEF PICDEBUG
+                                ENDIF
+00000B33  5D                        pop bp
+00000B34  07                        pop es
+00000B35  5E                        pop si
+00000B36  5F                        pop di
+00000B37  8BE5                      mov sp, bp
+00000B39  5D                        pop bp
+00000B3A  C3                        retn
+00000B3B                        _showPicFile endp
+                                ; ------------------------------startCode1:0x3441------------------------------
+                                ; ------------------------------startCode1:0x351e------------------------------
+00000B3B                        _decodePic proc near
+ = 4                                handle = word ptr 4
+ = 6                                buffer = word ptr 6
+00000B3B  55                        push bp
+00000B3C  8BEC                      mov bp, sp
+00000B3E  57                        push di
+00000B3F  56                        push si
+00000B40  06                        push es
+00000B41  55                        push bp
+00000B42  B82509                    mov ax, offset read512FromFileIntoBuf
+00000B45  A30000                    mov _readFromFilePtr, ax
+00000B48  8B4604                    mov ax, [bp+handle]
+00000B4B  A30000                    mov _tmpFileHandle, ax
+00000B4E  8B4606                    mov ax, [bp+buffer]
+00000B51  8EC0                      mov es, ax
+00000B53  9A00000000                call far ptr _gfx_jump_3b_clearBuf ;zeroes out 32000 bytes
+00000B58  E8F2F4                    call nullsub_1
+00000B5B  C70600000000              mov _row, 0
+00000B61  C706000000FA              mov _screenBufSize, 0FA00h
+00000B67                        loc_1354A:
+00000B67  8B3E0000                  mov di, _row
+00000B6B  9A00000000                call far ptr _gfx_jump_3a_getRowOffset ;returned in ax
+00000B70  A30000                    mov _rowOffset, ax
+00000B73  E88C00                    call decodePicRow
+00000B76  8B3E0000                  mov di, _rowOffset
+00000B7A  BD0000                    mov bp, offset _picDecodedRowBuf
+00000B7D  8B1E0000                  mov bx, _row
+00000B81  9A00000000                call far ptr _gfx_jump_34_fillRow
+00000B86  8B3E0000                  mov di, _rowOffset
+00000B8A  9A00000000                call far ptr _gfx_jump_36_null
+00000B8F  FF060000                  inc _row
+00000B93  812E00004001              sub _screenBufSize, 320
+00000B99  75CC                      jnz short loc_1354A
+00000B9B  5D                        pop bp
+00000B9C  07                        pop es
+00000B9D  5E                        pop si
+00000B9E  5F                        pop di
+00000B9F  8BE5                      mov sp, bp
+00000BA1  5D                        pop bp
+00000BA2  C3                        retn
+00000BA3                        _decodePic endp
+                                ; ------------------------------startCode1:0x3585------------------------------
+
+00000BA3  6465636F6465506963    msg9 db 'decodePicRow(): finished making dict',0
+00000BC8  6465636F6465506963    msg10 db 'decodePicRow(): after doPicDecode',0
+00000BEA  6465636F6465506963    msg11 db 'decodePicRow(): exiting',0
+
+                                ; ------------------------------startCode1:0x3588------------------------------
+00000C02                        decodePicRow proc near
+00000C02  06                        push es
+00000C03  1E                        push ds
+00000C04  07                        pop es
+00000C05  FC                        cld
+00000C06  8B360000                  mov si, _fileReadPos
+00000C0A  81C60000                  add si, offset _fileReadBuf
+00000C0E  D1EF                      shr di, 1 ;di: row /2?
+00000C10  7503                      jnz short rowNonZero
+                                    ; otherwise (row zero), initialize dictionary for decode?
+00000C12  E81700                    call picReadDataAndMakeDict
+                                IFDEF PICDEBUG
+                                ENDIF
+00000C15                        rowNonZero:
+00000C15  B94001                    mov cx, 320
+00000C18  890E0000                  mov _picRowLength, cx
+00000C1C  BF0000                    mov di, offset _picDecodedRowBuf
+00000C1F  E88700                    call doPicDecode
+                                IFDEF PICDEBUG
+                                ENDIF
+00000C22  81EE0000                  sub si, offset _fileReadBuf
+00000C26  89360000                  mov _fileReadPos, si ;reset buf ptr to beginning
+00000C2A  07                        pop es
+                                IFDEF PICDEBUG
+                                ENDIF
+00000C2B  C3                        retn
+00000C2C                        decodePicRow endp
+                                ; ------------------------------startCode1:0x35b1------------------------------
+                                ; ------------------------------startCode1:0x35b2------------------------------
+00000C2C                        picReadDataAndMakeDict proc near
+00000C2C  B80000                    mov ax, offset _fileReadBuf
+00000C2F  050002                    add ax, FILE_READBUF_SIZE
+00000C32  A30000                    mov _readBufEndPtr, ax
+00000C35  B80000                    mov ax, offset _picWorkData
+00000C38  A30000                    mov _picWorkDataPtr, ax
+00000C3B  C606000000                mov _picProcessFlag0_1, 0
+00000C40  C606000000                mov _picLookupResult, 0
+                                    ; si: index to unprocessed data? if not at end then don't read more?
+00000C45  3B360000                  cmp si, _readBufEndPtr 
+00000C49  720D                      jb short siBelowBufEnd ;otherwise (at end) read more data into buffer
+00000C4B  53                        push bx
+00000C4C  51                        push cx
+00000C4D  52                        push dx
+00000C4E  FF160000                  call _readFromFilePtr ;read from file into static buffer
+00000C52  5A                        pop dx
+00000C53  59                        pop cx
+00000C54  5B                        pop bx
+00000C55  BE0000                    mov si, offset _fileReadBuf ;reseat si to buffer start
+00000C58                        siBelowBufEnd:
+00000C58  AD                        lodsw ;ds:si -> ax
+00000C59  A30000                    mov _picFileWord, ax
+00000C5C  C606000008                mov _picRemainingBitCount, 8
+00000C61  C606000001                mov _picByteUnsignedFlag, 1
+00000C66  0AC0                      or al, al ;update flags based on al contents
+                                    ; check if symbol has sign bit set: literal or LZW sequence?
+00000C68  7906                      jns short picByteUnsigned 
+00000C6A  FE0E0000                  dec _picByteUnsignedFlag ;byte has sign set, clear flag
+00000C6E  F6D8                      neg al
+00000C70                        picByteUnsigned:
+00000C70  A20000                    mov _picByte, al ;continues to next routine
+00000C73                        picReadDataAndMakeDict endp
+                                ; ------------------------------startCode1:0x35f6------------------------------
+                                ; ------------------------------startCode1:0x35f9------------------------------
+00000C73                        picMakeDict proc near
+00000C73  C606000009                mov _picTmp9BitCount, 9
+00000C78  C7060000FF01              mov _picFileReadBufEnd, 1FFh
+00000C7E  BA0001                    mov dx, 256
+00000C81  89160000                  mov _picNumberDictSlots, dx
+00000C85  B8FFFF                    mov ax, 0FFFFh
+00000C88  33DB                      xor bx, bx
+00000C8A  B90008                    mov cx, 2048
+00000C8D                        fillFF:
+00000C8D  89870000                  mov _picDecodeDictionary[bx], ax ;make a pattern of ff ff 00, ff ff 00, ...
+00000C91  83C303                    add bx, 3
+00000C94  E2F7                      loop fillFF ;make a pattern of ff ff 00, ff ff 00, ...
+00000C96  B000                      mov al, 0
+00000C98  33DB                      xor bx, bx
+00000C9A  B90001                    mov cx, 256
+00000C9D                        fillSubsequentValues:
+00000C9D  88870000                  mov _picDecodeIncrement[bx], al
+00000CA1  FEC0                      inc al
+00000CA3  83C303                    add bx, 3
+00000CA6  E2F5                      loop fillSubsequentValues ;put 01, 02, 03... in the gaps between the ff's
+00000CA8  C3                        retn
+00000CA9                        picMakeDict endp
+                                ; ------------------------------startCode1:0x362e------------------------------
+                                ; ------------------------------startCode1:0x362f------------------------------
+00000CA9                        doPicDecode proc near
+00000CA9  803E000000                cmp _picByteUnsignedFlag, 0
+00000CAE  7404                      jz short unsigned_loc_1363A
+00000CB0  D12E0000                  shr _picRowLength, 1 ;rowLength / 2, number of words
+00000CB4                        unsigned_loc_1363A:
+00000CB4  A10000                    mov ax, _picWorkDataPtr
+00000CB7  89260000                  mov _picWorkDataPtr, sp
+00000CBB  8BE0                      mov sp, ax
+00000CBD  8B160000                  mov dx, _picNumberDictSlots
+00000CC1                        lookupLoop:
+00000CC1  803E000000                cmp _picProcessFlag0_1, 0
+00000CC6  7521                      jnz short loc_1366F
+00000CC8  E85700                    call dictionaryLookup
+00000CCB                        dictionaryLookupResCheck: ;magic marker?
+00000CCB  3C90                      cmp al, 90h
+00000CCD  7406                      jz short lookupRes90
+00000CCF  A20000                    mov _picLookupResult, al
+00000CD2  EB1C                      jmp short lookupFound
+00000CD4  90                        nop
+00000CD5                        lookupRes90:
+00000CD5  E84A00                    call dictionaryLookup
+00000CD8  0AC0                      or al, al
+00000CDA  7508                      jnz short loc_1366A
+00000CDC  B090                      mov al, 90h
+00000CDE  A20000                    mov _picLookupResult, al
+00000CE1  EB0D                      jmp short lookupFound
+00000CE3  90                        nop
+00000CE4                        loc_1366A:
+00000CE4  FEC8                      dec al
+00000CE6  A20000                    mov _picProcessFlag0_1, al
+00000CE9                        loc_1366F:
+00000CE9  A00000                    mov al, _picLookupResult
+00000CEC  FE0E0000                  dec _picProcessFlag0_1
+00000CF0                        lookupFound:
+00000CF0  803E000000                cmp _picByteUnsignedFlag, 0
+00000CF5  7416                      jz short byteWasSigned ;store literal?
+00000CF7  8AE0                      mov ah, al
+00000CF9  240F                      and al, 0Fh ;what's the point?
+00000CFB  D0EC                      shr ah, 1 ;ah / 16, shift out lower nibble
+00000CFD  D0EC                      shr ah, 1
+00000CFF  D0EC                      shr ah, 1
+00000D01  D0EC                      shr ah, 1
+00000D03  AB                        stosw ;ax -> es:di, points to picDecodedBuf
+00000D04  FF0E0000                  dec _picRowLength ;count off words
+00000D08  75B7                      jnz short lookupLoop
+00000D0A  EB08                      jmp short rowDone
+00000D0C  90                        nop
+00000D0D                        byteWasSigned:
+00000D0D  AA                        stosb ;store literal?
+00000D0E  FF0E0000                  dec _picRowLength
+00000D12  75AD                      jnz short lookupLoop
+00000D14                        rowDone:
+00000D14  89160000                  mov _picNumberDictSlots, dx
+00000D18  A10000                    mov ax, _picWorkDataPtr
+00000D1B  89260000                  mov _picWorkDataPtr, sp
+00000D1F  8BE0                      mov sp, ax
+00000D21  C3                        retn
+00000D22                        doPicDecode endp
+                                ; ------------------------------startCode1:0x36a7------------------------------
+                                ; ------------------------------startCode1:0x36a8------------------------------
+00000D22                        dictionaryLookup proc near
+00000D22  5D                        pop bp ;pop caller return address
+00000D23  81FC0000                  cmp sp, offset _picWorkData ;make sure we have the work data buffer in sp
+00000D27  7403                      jz short workBufOk
+00000D29                        jumpOut:
+00000D29  58                        pop ax
+00000D2A  FFE5                      jmp bp ;synonym for retn
+00000D2C                        workBufOk:
+00000D2C  8B1E0000                  mov bx, _picFileWord
+00000D30  B110                      mov cl, 16 ;size of code word, 16 bits?
+00000D32  8A2E0000                  mov ch, _picRemainingBitCount
+00000D36  2ACD                      sub cl, ch ;subtract number of bits
+00000D38  D3EB                      shr bx, cl
+00000D3A  8ACD                      mov cl, ch ;remaining number of bits
+                                ; ------------------------------startCode1:0x36c2------------------------------
+00000D3C                        processLoop:
+00000D3C  3A0E0000                  cmp cl, _picTmp9BitCount
+00000D40  7D20                      jge short tooManyBits
+00000D42  3B360000                  cmp si, _readBufEndPtr ;check if read buffer empty
+00000D46  720D                      jb short skipFileRead
+00000D48  53                        push bx
+00000D49  51                        push cx
+00000D4A  52                        push dx
+00000D4B  FF160000                  call _readFromFilePtr
+00000D4F  5A                        pop dx
+00000D50  59                        pop cx
+00000D51  5B                        pop bx
+00000D52  BE0000                    mov si, offset _fileReadBuf ;reseat pointer to file beginning
+00000D55                        skipFileRead:
+00000D55  AD                        lodsw
+00000D56  A30000                    mov _picFileWord, ax
+00000D59  D3E0                      shl ax, cl ;shift the next word from the file by the remaining amount of bits
+00000D5B  0BD8                      or bx, ax
+00000D5D  80C110                    add cl, 16 ;add 16 bits to the counter
+                                ; ------------------------------startCode1:0x36e6------------------------------
+00000D60  EBDA                  jmp short processLoop
+00000D62                        tooManyBits:
+00000D62  2A0E0000                  sub cl, _picTmp9BitCount
+00000D66  880E0000                  mov _picRemainingBitCount, cl
+00000D6A  8BC3                      mov ax, bx
+00000D6C  23060000                  and ax, _picFileReadBufEnd
+00000D70  8BC8                      mov cx, ax
+00000D72  3BC2                      cmp ax, dx ;compare to the number of dictionary slots
+00000D74  7C0A                      jl short withinDictionary
+00000D76  8BCA                      mov cx, dx
+00000D78  A10000                    mov ax, _picSlotCounter
+00000D7B  8A1E0000                  mov bl, _dictionaryIndex
+00000D7F  53                        push bx
+00000D80                        withinDictionary:
+00000D80  8BD8                      mov bx, ax
+00000D82  03D8                      add bx, ax
+00000D84  03D8                      add bx, ax
+00000D86  8B870000                  mov ax, _picDecodeDictionary[bx] ;initially ffff
+00000D8A  40                        inc ax
+00000D8B  7408                      jz short dictValNull ;if ffff
+00000D8D  48                        dec ax
+00000D8E  8A9F0000                  mov bl, _picDecodeIncrement[bx]
+00000D92  53                        push bx
+00000D93  EBEB                      jmp short withinDictionary
+00000D95                        dictValNull:
+00000D95  8A870000                  mov al, _picDecodeIncrement[bx] ;al = 00..ff index from dictionary
+00000D99  A20000                    mov _dictionaryIndex, al
+00000D9C  50                        push ax
+00000D9D  8BDA                      mov bx, dx ;bx *= 3, past the dictionary?
+00000D9F  03DA                      add bx, dx
+00000DA1  03DA                      add bx, dx
+00000DA3  88870000                  mov _picDecodeIncrement[bx], al
+00000DA7  A10000                    mov ax, _picSlotCounter
+00000DAA  89870000                  mov _picDecodeDictionary[bx], ax
+00000DAE  42                        inc dx ;makes it go past the allocated 01..ff slots?
+00000DAF  3B160000                  cmp dx, _picFileReadBufEnd
+00000DB3  7E09                      jle short slotCountNotPastBufEnd
+00000DB5  FE060000                  inc _picTmp9BitCount
+00000DB9  F9                        stc
+00000DBA  D1160000                  rcl _picFileReadBufEnd, 1
+00000DBE                        slotCountNotPastBufEnd:
+00000DBE  A00000                    mov al, _picTmp9BitCount
+00000DC1  3A060000                  cmp al, _picByte
+00000DC5  7E03                      jle short done
+00000DC7  E8A9FE                    call picMakeDict ;looks like a dictionary for LZW decoding?
+00000DCA                        done:
+00000DCA  890E0000                  mov _picSlotCounter, cx
+00000DCE  E958FF                    jmp jumpOut ;jump out of routine?
+00000DD1                        dictionaryLookup endp
+                                ; ------------------------------startCode1:0x3754------------------------------
+                                ; ------------------------------startCode1:0x37b4------------------------------
+00000DD1                        _dos_alloc proc near
+ = 4                                arg_0 = word ptr 4
+ = 6                                sz = word ptr 6
+00000DD1  55                        push bp
+00000DD2  8BEC                      mov bp, sp
+00000DD4  57                        push di
+00000DD5  56                        push si
+00000DD6  06                        push es
+00000DD7  55                        push bp
+00000DD8  B448                      mov ah, DOS_ALLOC_MEM
+00000DDA  8B5E04                    mov bx, [bp+arg_0]
+00000DDD  D1EB                      shr bx, 1
+00000DDF  D1EB                      shr bx, 1
+00000DE1  D1EB                      shr bx, 1
+00000DE3  D1EB                      shr bx, 1
+00000DE5  F746040F00                test [bp+arg_0], 0Fh
+00000DEA  7401                      jz short loc_137D0
+00000DEC  43                        inc bx
+00000DED                        loc_137D0:
+00000DED  CD21                      int 21h ;DOS - 2+ - ALLOCATE MEMORY
+00000DEF  5D                        pop bp
+00000DF0  07                        pop es
+00000DF1  5E                        pop si
+00000DF2  5F                        pop di
+00000DF3  8BE5                      mov sp, bp
+00000DF5  5D                        pop bp
+00000DF6  C3                        retn
+00000DF7                        _dos_alloc endp
+                                ; ------------------------------startCode1:0x37d9------------------------------
+                                ; ------------------------------startCode2:0x2f------------------------------
+00000DF7                        _sub_16A7F proc far
+00000DF7  E81000                    call readJoyPort
+00000DFA                        loc_16A82:
+00000DFA  BB0000                    mov bx, 0
+00000DFD                        loc_16A85:
+00000DFD  E83700                    call sub_16ABF
+00000E00                        loc_16A88:
+00000E00  BB0100                    mov bx, 1
+00000E03                        loc_16A8B:
+00000E03  E83100                    call sub_16ABF
+00000E06                        loc_16A8E: ;sub_16ABF puts some value there
+00000E06  A10000                    mov ax, word ptr _noJoy80
+00000E09  CB                        retf
+00000E0A                        _sub_16A7F endp
+
+                                ;startCode2	segment	byte public 'CODE'
+                                ; ------------------------------startCode2:0x41------------------------------
+                                ; ------------------------------startCode2:0x42------------------------------
+00000E0A                        readJoyPort proc near
+00000E0A  55                        push bp
+00000E0B                        loc_16A93:
+00000E0B  33DB                      xor bx, bx
+00000E0D  33ED                      xor bp, bp
+00000E0F                        loc_16A97:
+00000E0F  B9FFFF                    mov cx, 0FFFFh
+00000E12                        loc_16A9A:
+00000E12  BA0102                    mov dx, 201h
+00000E15  FA                        cli
+00000E16                        loc_16A9E: ;Game I/O port
+00000E16  EE                        out dx, al ;bits 0-3: Coordinates (resistive, time-dependent inputs)
+00000E17  EB00                      jmp short $+2
+00000E19  EB00                      jmp short $+2
+00000E1B                        loc_16AA3:
+00000E1B  EC                        in al, dx ;Game I/O port
+00000E1C  2403                      and al, 3
+00000E1E  740C                      jz short loc_16AB4
+00000E20  D0E8                      shr al, 1
+00000E22  83D300                    adc bx, 0
+00000E25  D0E8                      shr al, 1
+00000E27                        loc_16AAF:
+00000E27  83D500                    adc bp, 0
+00000E2A  E2EF                      loop loc_16AA3
+00000E2C                        loc_16AB4:
+00000E2C  FB                        sti
+00000E2D  891E0000                  mov _word_17856, bx
+00000E31                        loc_16AB9:
+00000E31  892E0000                  mov _word_17858, bp
+00000E35                        loc_16ABD:
+00000E35  5D                        pop bp
+00000E36  C3                        retn
+00000E37                        readJoyPort endp
+                                ; ------------------------------startCode2:0x6e------------------------------
+                                ; ------------------------------startCode2:0x6f------------------------------
+00000E37                        sub_16ABF proc near
+00000E37  D1E3                      shl bx, 1
+00000E39                        loc_16AC1:
+00000E39  8B870000                  mov ax, _word_17856[bx]
+00000E3D  8BD0                      mov dx, ax
+00000E3F                        loc_16AC7:
+00000E3F  2B970000                  sub dx, _word_1783E[bx]
+00000E43  7207                      jb short loc_16AD4
+00000E45                        loc_16ACD:
+00000E45  7727                      ja short loc_16AF6
+00000E47                        loc_16ACF:
+00000E47  B480                      mov ah, 80h
+00000E49                        loc_16AD1:
+00000E49  EB41                      jmp short done_16B14
+00000E4B  90                        nop
+00000E4C                        loc_16AD4:
+00000E4C  F7DA                      neg dx
+00000E4E                        loc_16AD6:
+00000E4E  3B870000                  cmp ax, _word_1782E[bx]
+00000E52  770D                      ja short loc_16AE9
+00000E54                        loc_16ADC:
+00000E54  89870000                  mov _word_1782E[bx], ax
+00000E58                        loc_16AE0:
+00000E58  89970000                  mov _word_17846[bx], dx
+00000E5C  B400                      mov ah, 0
+00000E5E  EB2C                      jmp short done_16B14
+00000E60  90                        nop
+00000E61                        loc_16AE9:
+00000E61  33C0                      xor ax, ax
+00000E63  F7B70000                  div _word_17846[bx]
+00000E67                        loc_16AEF:
+00000E67  F7D0                      not ax
+00000E69  D1E8                      shr ax, 1
+00000E6B  EB1F                      jmp short done_16B14
+00000E6D  90                        nop
+00000E6E                        loc_16AF6:
+00000E6E  3B870000                  cmp ax, _word_17836[bx]
+00000E72  720D                      jb short loc_16B09
+00000E74                        loc_16AFC:
+00000E74  89870000                  mov _word_17836[bx], ax
+00000E78  89970000                  mov _word_1784E[bx], dx
+00000E7C                        loc_16B04:
+00000E7C  B4FF                      mov ah, 0FFh
+00000E7E  EB0C                      jmp short done_16B14
+00000E80  90                        nop
+00000E81                        loc_16B09:
+00000E81  33C0                      xor ax, ax
+00000E83  F7B70000                  div _word_1784E[bx]
+00000E87                        loc_16B0F:
+00000E87  D1E8                      shr ax, 1
+00000E89  80C480                    add ah, 80h
+00000E8C                        done_16B14:
+00000E8C  D1EB                      shr bx, 1
+00000E8E                        loc_16B16:
+00000E8E  88A70000                  mov _noJoy80[bx], ah
+00000E92  C3                        retn
+00000E93                        sub_16ABF endp
+                                ; ------------------------------startCode2:0xca------------------------------
+                                ; ------------------------------startCode2:0xdf------------------------------
+00000E93                        _copyJoystickData proc far
+00000E93  8BDC                      mov bx, sp ;stack pointer to bx
+00000E95  56                        push si
+00000E96                        loc_16B32:
+00000E96  57                        push di
+00000E97  1E                        push ds
+00000E98  06                        push es
+00000E99  C57704                    lds si, [bx+4] ;take far pointer argument off the stack, set as source
+00000E9C  BFDE0C                    mov di, STACK_JOYDATA
+00000E9F                        loc_16B3B:
+00000E9F  16                        push ss
+00000EA0  07                        pop es
+00000EA1  B91400                    mov cx, 14h
+00000EA4  F3A5                      rep movsw ;copy 20 bytes from argument address to ss:cde
+00000EA6  07                        pop es
+00000EA7  1F                        pop ds
+00000EA8  5F                        pop di
+00000EA9  5E                        pop si
+00000EAA  CB                        retf
+00000EAB                        _copyJoystickData endp
+                                ; ------------------------------startCode2:0xf6------------------------------
+
+
+                                ;startCode1 ends
+
+
+
+
+                                end
+
+
+Macros:
+
+                N a m e                 Type
+
+@CatStr  . . . . . . . . . . . .        Func
+@Environ . . . . . . . . . . . .        Func
+@InStr . . . . . . . . . . . . .        Func
+@SizeStr . . . . . . . . . . . .        Func
+@SubStr  . . . . . . . . . . . .        Func
+ALIGNADDR  . . . . . . . . . . .        Proc
+ASDOUBLE . . . . . . . . . . . .        Func
+ASFLOAT  . . . . . . . . . . . .        Func
+COMINTERFACE . . . . . . . . . .        Proc
+CSTR . . . . . . . . . . . . . .        Func
+CVIRTUAL . . . . . . . . . . . .        Proc
+ENDCOMINTERFACE  . . . . . . . .        Proc
+ENDMETHODS . . . . . . . . . . .        Proc
+EXPAND_PREFIX  . . . . . . . . .        Func
+FP10 . . . . . . . . . . . . . .        Func
+FP4  . . . . . . . . . . . . . .        Func
+FP8  . . . . . . . . . . . . . .        Func
+GETMASK128 . . . . . . . . . . .        Proc
+LOADMSD  . . . . . . . . . . . .        Proc
+LOADMSS  . . . . . . . . . . . .        Proc
+LOADPS . . . . . . . . . . . . .        Proc
+LOADSS . . . . . . . . . . . . .        Proc
+MEMALLOC . . . . . . . . . . . .        Proc
+MEMFREE  . . . . . . . . . . . .        Proc
+MOV128 . . . . . . . . . . . . .        Proc
+MOV64  . . . . . . . . . . . . .        Proc
+MOVXMMR128 . . . . . . . . . . .        Proc
+NOTMASK128 . . . . . . . . . . .        Proc
+R4P  . . . . . . . . . . . . . .        Func
+R8P  . . . . . . . . . . . . . .        Func
+REPARG . . . . . . . . . . . . .        Func
+RV . . . . . . . . . . . . . . .        Func
+SHIFTLEFT128 . . . . . . . . . .        Proc
+SHIFTRIGHT128  . . . . . . . . .        Proc
+SLXMMR . . . . . . . . . . . . .        Proc
+SRXMMR . . . . . . . . . . . . .        Proc
+UINVOKE  . . . . . . . . . . . .        Func
+WSTR . . . . . . . . . . . . . .        Func
+_V . . . . . . . . . . . . . . .        Func
+_VINVOKE . . . . . . . . . . . .        Proc
+arginvoke  . . . . . . . . . . .        Func
+regtrace . . . . . . . . . . . .        Proc
+trace  . . . . . . . . . . . . .        Proc
+
+
+Structures and Unions:
+
+                N a m e                 Size/Ofs   Type
+
+__m128 . . . . . . . . . . . . .              10
+  f32  . . . . . . . . . . . . .               0   __m128f
+  i8 . . . . . . . . . . . . . .               0   __m128b
+  i16  . . . . . . . . . . . . .               0   __m128w
+  i32  . . . . . . . . . . . . .               0   __m128i
+  d64  . . . . . . . . . . . . .               0   __m128d
+  q64  . . . . . . . . . . . . .               0   __m128q
+__m128b  . . . . . . . . . . . .              10
+  b0 . . . . . . . . . . . . . .               0   Byte
+  b1 . . . . . . . . . . . . . .               1   Byte
+  b2 . . . . . . . . . . . . . .               2   Byte
+  b3 . . . . . . . . . . . . . .               3   Byte
+  b4 . . . . . . . . . . . . . .               4   Byte
+  b5 . . . . . . . . . . . . . .               5   Byte
+  b6 . . . . . . . . . . . . . .               6   Byte
+  b7 . . . . . . . . . . . . . .               7   Byte
+  b8 . . . . . . . . . . . . . .               8   Byte
+  b9 . . . . . . . . . . . . . .               9   Byte
+  b10  . . . . . . . . . . . . .               A   Byte
+  b11  . . . . . . . . . . . . .               B   Byte
+  b12  . . . . . . . . . . . . .               C   Byte
+  b13  . . . . . . . . . . . . .               D   Byte
+  b14  . . . . . . . . . . . . .               E   Byte
+  b15  . . . . . . . . . . . . .               F   Byte
+__m128d  . . . . . . . . . . . .              10
+  d0 . . . . . . . . . . . . . .               0   
+  d1 . . . . . . . . . . . . . .               8   
+__m128f  . . . . . . . . . . . .              10
+  f0 . . . . . . . . . . . . . .               0   
+  f1 . . . . . . . . . . . . . .               4   
+  f2 . . . . . . . . . . . . . .               8   
+  f3 . . . . . . . . . . . . . .               C   
+__m128i  . . . . . . . . . . . .              10
+  i0 . . . . . . . . . . . . . .               0   DWord
+  i1 . . . . . . . . . . . . . .               4   DWord
+  i2 . . . . . . . . . . . . . .               8   DWord
+  i3 . . . . . . . . . . . . . .               C   DWord
+__m128q  . . . . . . . . . . . .              10
+  q0 . . . . . . . . . . . . . .               0   QWord
+  q1 . . . . . . . . . . . . . .               8   QWord
+__m128w  . . . . . . . . . . . .              10
+  w0 . . . . . . . . . . . . . .               0   Word
+  w1 . . . . . . . . . . . . . .               2   Word
+  w2 . . . . . . . . . . . . . .               4   Word
+  w3 . . . . . . . . . . . . . .               6   Word
+  w4 . . . . . . . . . . . . . .               8   Word
+  w5 . . . . . . . . . . . . . .               A   Word
+  w6 . . . . . . . . . . . . . .               C   Word
+  w7 . . . . . . . . . . . . . .               E   Word
+__m256 . . . . . . . . . . . . .              20
+  f32  . . . . . . . . . . . . .               0   __m256f
+  i8 . . . . . . . . . . . . . .               0   __m256b
+  i16  . . . . . . . . . . . . .               0   __m256w
+  i32  . . . . . . . . . . . . .               0   __m256i
+  d64  . . . . . . . . . . . . .               0   __m256d
+  q64  . . . . . . . . . . . . .               0   __m256q
+__m256b  . . . . . . . . . . . .              20
+  b0 . . . . . . . . . . . . . .               0   Byte
+  b1 . . . . . . . . . . . . . .               1   Byte
+  b2 . . . . . . . . . . . . . .               2   Byte
+  b3 . . . . . . . . . . . . . .               3   Byte
+  b4 . . . . . . . . . . . . . .               4   Byte
+  b5 . . . . . . . . . . . . . .               5   Byte
+  b6 . . . . . . . . . . . . . .               6   Byte
+  b7 . . . . . . . . . . . . . .               7   Byte
+  b8 . . . . . . . . . . . . . .               8   Byte
+  b9 . . . . . . . . . . . . . .               9   Byte
+  b10  . . . . . . . . . . . . .               A   Byte
+  b11  . . . . . . . . . . . . .               B   Byte
+  b12  . . . . . . . . . . . . .               C   Byte
+  b13  . . . . . . . . . . . . .               D   Byte
+  b14  . . . . . . . . . . . . .               E   Byte
+  b15  . . . . . . . . . . . . .               F   Byte
+  b16  . . . . . . . . . . . . .              10   Byte
+  b17  . . . . . . . . . . . . .              11   Byte
+  b18  . . . . . . . . . . . . .              12   Byte
+  b19  . . . . . . . . . . . . .              13   Byte
+  b20  . . . . . . . . . . . . .              14   Byte
+  b21  . . . . . . . . . . . . .              15   Byte
+  b22  . . . . . . . . . . . . .              16   Byte
+  b23  . . . . . . . . . . . . .              17   Byte
+  b24  . . . . . . . . . . . . .              18   Byte
+  b25  . . . . . . . . . . . . .              19   Byte
+  b26  . . . . . . . . . . . . .              1A   Byte
+  b27  . . . . . . . . . . . . .              1B   Byte
+  b28  . . . . . . . . . . . . .              1C   Byte
+  b29  . . . . . . . . . . . . .              1D   Byte
+  b30  . . . . . . . . . . . . .              1E   Byte
+  b31  . . . . . . . . . . . . .              1F   Byte
+__m256d  . . . . . . . . . . . .              20
+  d0 . . . . . . . . . . . . . .               0   
+  d1 . . . . . . . . . . . . . .               8   
+  d2 . . . . . . . . . . . . . .              10   
+  d3 . . . . . . . . . . . . . .              18   
+__m256f  . . . . . . . . . . . .              20
+  f0 . . . . . . . . . . . . . .               0   
+  f1 . . . . . . . . . . . . . .               4   
+  f2 . . . . . . . . . . . . . .               8   
+  f3 . . . . . . . . . . . . . .               C   
+  f4 . . . . . . . . . . . . . .              10   
+  f5 . . . . . . . . . . . . . .              14   
+  f6 . . . . . . . . . . . . . .              18   
+  f7 . . . . . . . . . . . . . .              1C   
+__m256i  . . . . . . . . . . . .              20
+  i0 . . . . . . . . . . . . . .               0   DWord
+  i1 . . . . . . . . . . . . . .               4   DWord
+  i2 . . . . . . . . . . . . . .               8   DWord
+  i3 . . . . . . . . . . . . . .               C   DWord
+  i4 . . . . . . . . . . . . . .              10   DWord
+  i5 . . . . . . . . . . . . . .              14   DWord
+  i6 . . . . . . . . . . . . . .              18   DWord
+  i7 . . . . . . . . . . . . . .              1C   DWord
+__m256q  . . . . . . . . . . . .              20
+  q0 . . . . . . . . . . . . . .               0   QWord
+  q1 . . . . . . . . . . . . . .               8   QWord
+  q2 . . . . . . . . . . . . . .              10   QWord
+  q3 . . . . . . . . . . . . . .              18   QWord
+__m256w  . . . . . . . . . . . .              20
+  w0 . . . . . . . . . . . . . .               0   Word
+  w1 . . . . . . . . . . . . . .               2   Word
+  w2 . . . . . . . . . . . . . .               4   Word
+  w3 . . . . . . . . . . . . . .               6   Word
+  w4 . . . . . . . . . . . . . .               8   Word
+  w5 . . . . . . . . . . . . . .               A   Word
+  w6 . . . . . . . . . . . . . .               C   Word
+  w7 . . . . . . . . . . . . . .               E   Word
+  w8 . . . . . . . . . . . . . .              10   Word
+  w9 . . . . . . . . . . . . . .              12   Word
+  w10  . . . . . . . . . . . . .              14   Word
+  w11  . . . . . . . . . . . . .              16   Word
+  w12  . . . . . . . . . . . . .              18   Word
+  w13  . . . . . . . . . . . . .              1A   Word
+  w14  . . . . . . . . . . . . .              1C   Word
+  w15  . . . . . . . . . . . . .              1E   Word
+__m512 . . . . . . . . . . . . .              40
+  f32  . . . . . . . . . . . . .               0   __m512f
+  i8 . . . . . . . . . . . . . .               0   __m512b
+  i16  . . . . . . . . . . . . .               0   __m512w
+  i32  . . . . . . . . . . . . .               0   __m512i
+  d64  . . . . . . . . . . . . .               0   __m512d
+  q64  . . . . . . . . . . . . .               0   __m512q
+__m512b  . . . . . . . . . . . .              40
+  b0 . . . . . . . . . . . . . .               0   Byte
+  b1 . . . . . . . . . . . . . .               1   Byte
+  b2 . . . . . . . . . . . . . .               2   Byte
+  b3 . . . . . . . . . . . . . .               3   Byte
+  b4 . . . . . . . . . . . . . .               4   Byte
+  b5 . . . . . . . . . . . . . .               5   Byte
+  b6 . . . . . . . . . . . . . .               6   Byte
+  b7 . . . . . . . . . . . . . .               7   Byte
+  b8 . . . . . . . . . . . . . .               8   Byte
+  b9 . . . . . . . . . . . . . .               9   Byte
+  b10  . . . . . . . . . . . . .               A   Byte
+  b11  . . . . . . . . . . . . .               B   Byte
+  b12  . . . . . . . . . . . . .               C   Byte
+  b13  . . . . . . . . . . . . .               D   Byte
+  b14  . . . . . . . . . . . . .               E   Byte
+  b15  . . . . . . . . . . . . .               F   Byte
+  b16  . . . . . . . . . . . . .              10   Byte
+  b17  . . . . . . . . . . . . .              11   Byte
+  b18  . . . . . . . . . . . . .              12   Byte
+  b19  . . . . . . . . . . . . .              13   Byte
+  b20  . . . . . . . . . . . . .              14   Byte
+  b21  . . . . . . . . . . . . .              15   Byte
+  b22  . . . . . . . . . . . . .              16   Byte
+  b23  . . . . . . . . . . . . .              17   Byte
+  b24  . . . . . . . . . . . . .              18   Byte
+  b25  . . . . . . . . . . . . .              19   Byte
+  b26  . . . . . . . . . . . . .              1A   Byte
+  b27  . . . . . . . . . . . . .              1B   Byte
+  b28  . . . . . . . . . . . . .              1C   Byte
+  b29  . . . . . . . . . . . . .              1D   Byte
+  b30  . . . . . . . . . . . . .              1E   Byte
+  b31  . . . . . . . . . . . . .              1F   Byte
+  b32  . . . . . . . . . . . . .              20   Byte
+  b33  . . . . . . . . . . . . .              21   Byte
+  b34  . . . . . . . . . . . . .              22   Byte
+  b35  . . . . . . . . . . . . .              23   Byte
+  b36  . . . . . . . . . . . . .              24   Byte
+  b37  . . . . . . . . . . . . .              25   Byte
+  b38  . . . . . . . . . . . . .              26   Byte
+  b39  . . . . . . . . . . . . .              27   Byte
+  b40  . . . . . . . . . . . . .              28   Byte
+  b41  . . . . . . . . . . . . .              29   Byte
+  b42  . . . . . . . . . . . . .              2A   Byte
+  b43  . . . . . . . . . . . . .              2B   Byte
+  b44  . . . . . . . . . . . . .              2C   Byte
+  b45  . . . . . . . . . . . . .              2D   Byte
+  b46  . . . . . . . . . . . . .              2E   Byte
+  b47  . . . . . . . . . . . . .              2F   Byte
+  b48  . . . . . . . . . . . . .              30   Byte
+  b49  . . . . . . . . . . . . .              31   Byte
+  b50  . . . . . . . . . . . . .              32   Byte
+  b51  . . . . . . . . . . . . .              33   Byte
+  b52  . . . . . . . . . . . . .              34   Byte
+  b53  . . . . . . . . . . . . .              35   Byte
+  b54  . . . . . . . . . . . . .              36   Byte
+  b55  . . . . . . . . . . . . .              37   Byte
+  b56  . . . . . . . . . . . . .              38   Byte
+  b57  . . . . . . . . . . . . .              39   Byte
+  b58  . . . . . . . . . . . . .              3A   Byte
+  b59  . . . . . . . . . . . . .              3B   Byte
+  b60  . . . . . . . . . . . . .              3C   Byte
+  b61  . . . . . . . . . . . . .              3D   Byte
+  b62  . . . . . . . . . . . . .              3E   Byte
+  b63  . . . . . . . . . . . . .              3F   Byte
+__m512d  . . . . . . . . . . . .              40
+  d0 . . . . . . . . . . . . . .               0   
+  d1 . . . . . . . . . . . . . .               8   
+  d2 . . . . . . . . . . . . . .              10   
+  d3 . . . . . . . . . . . . . .              18   
+  d4 . . . . . . . . . . . . . .              20   
+  d5 . . . . . . . . . . . . . .              28   
+  d6 . . . . . . . . . . . . . .              30   
+  d7 . . . . . . . . . . . . . .              38   
+__m512f  . . . . . . . . . . . .              40
+  f0 . . . . . . . . . . . . . .               0   
+  f1 . . . . . . . . . . . . . .               4   
+  f2 . . . . . . . . . . . . . .               8   
+  f3 . . . . . . . . . . . . . .               C   
+  f4 . . . . . . . . . . . . . .              10   
+  f5 . . . . . . . . . . . . . .              14   
+  f6 . . . . . . . . . . . . . .              18   
+  f7 . . . . . . . . . . . . . .              1C   
+  f8 . . . . . . . . . . . . . .              20   
+  f9 . . . . . . . . . . . . . .              24   
+  f10  . . . . . . . . . . . . .              28   
+  f11  . . . . . . . . . . . . .              2C   
+  f12  . . . . . . . . . . . . .              30   
+  f13  . . . . . . . . . . . . .              34   
+  f14  . . . . . . . . . . . . .              38   
+  f15  . . . . . . . . . . . . .              3C   
+__m512i  . . . . . . . . . . . .              40
+  i0 . . . . . . . . . . . . . .               0   DWord
+  i1 . . . . . . . . . . . . . .               4   DWord
+  i2 . . . . . . . . . . . . . .               8   DWord
+  i3 . . . . . . . . . . . . . .               C   DWord
+  i4 . . . . . . . . . . . . . .              10   DWord
+  i5 . . . . . . . . . . . . . .              14   DWord
+  i6 . . . . . . . . . . . . . .              18   DWord
+  i7 . . . . . . . . . . . . . .              1C   DWord
+  i8 . . . . . . . . . . . . . .              20   DWord
+  i9 . . . . . . . . . . . . . .              24   DWord
+  i10  . . . . . . . . . . . . .              28   DWord
+  i11  . . . . . . . . . . . . .              2C   DWord
+  i12  . . . . . . . . . . . . .              30   DWord
+  i13  . . . . . . . . . . . . .              34   DWord
+  i14  . . . . . . . . . . . . .              38   DWord
+  i15  . . . . . . . . . . . . .              3C   DWord
+__m512q  . . . . . . . . . . . .              40
+  q0 . . . . . . . . . . . . . .               0   QWord
+  q1 . . . . . . . . . . . . . .               8   QWord
+  q2 . . . . . . . . . . . . . .              10   QWord
+  q3 . . . . . . . . . . . . . .              18   QWord
+  q4 . . . . . . . . . . . . . .              20   QWord
+  q5 . . . . . . . . . . . . . .              28   QWord
+  q6 . . . . . . . . . . . . . .              30   QWord
+  q7 . . . . . . . . . . . . . .              38   QWord
+__m512w  . . . . . . . . . . . .              40
+  w0 . . . . . . . . . . . . . .               0   Word
+  w1 . . . . . . . . . . . . . .               2   Word
+  w2 . . . . . . . . . . . . . .               4   Word
+  w3 . . . . . . . . . . . . . .               6   Word
+  w4 . . . . . . . . . . . . . .               8   Word
+  w5 . . . . . . . . . . . . . .               A   Word
+  w6 . . . . . . . . . . . . . .               C   Word
+  w7 . . . . . . . . . . . . . .               E   Word
+  w8 . . . . . . . . . . . . . .              10   Word
+  w9 . . . . . . . . . . . . . .              12   Word
+  w10  . . . . . . . . . . . . .              14   Word
+  w11  . . . . . . . . . . . . .              16   Word
+  w12  . . . . . . . . . . . . .              18   Word
+  w13  . . . . . . . . . . . . .              1A   Word
+  w14  . . . . . . . . . . . . .              1C   Word
+  w15  . . . . . . . . . . . . .              1E   Word
+  w16  . . . . . . . . . . . . .              20   Word
+  w17  . . . . . . . . . . . . .              22   Word
+  w18  . . . . . . . . . . . . .              24   Word
+  w19  . . . . . . . . . . . . .              26   Word
+  w20  . . . . . . . . . . . . .              28   Word
+  w21  . . . . . . . . . . . . .              2A   Word
+  w22  . . . . . . . . . . . . .              2C   Word
+  w23  . . . . . . . . . . . . .              2E   Word
+  w24  . . . . . . . . . . . . .              30   Word
+  w25  . . . . . . . . . . . . .              32   Word
+  w26  . . . . . . . . . . . . .              34   Word
+  w27  . . . . . . . . . . . . .              36   Word
+  w28  . . . . . . . . . . . . .              38   Word
+  w29  . . . . . . . . . . . . .              3A   Word
+  w30  . . . . . . . . . . . . .              3C   Word
+  w31  . . . . . . . . . . . . .              3E   Word
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+_TEXT  . . . . . . . . . . . . .        16 Bit   0EAB     Word    Public  'CODE'
+DGROUP . . . . . . . . . . . . .        GROUP
+_DATA  . . . . . . . . . . . . .        16 Bit   0000     Word    Public  'DATA'
+
+
+Procedures, parameters and locals:
+
+                N a m e                 Type     Value    Segment  Length
+
+_clearRect . . . . . . . . . . .        P Near   05B8     _TEXT    009F Public   
+_copyJoystickData  . . . . . . .        P Far    0E93     _TEXT    0018 Public   
+_decodePic . . . . . . . . . . .        P Near   0B3B     _TEXT    0068 Public   
+_doFcbSearch . . . . . . . . . .        P Near   02A1     _TEXT    0027 Public   
+_doNothing2  . . . . . . . . . .        P Near   004C     _TEXT    0001 Public   
+_dos_alloc . . . . . . . . . . .        P Near   0DD1     _TEXT    0026 Public   
+_dos_printstring . . . . . . . .        P Near   0410     _TEXT    000C Public   
+_fileClose . . . . . . . . . . .        P Near   08CF     _TEXT    0021 Public   
+_getTimeOfDay  . . . . . . . . .        P Near   0284     _TEXT    0007 Public   
+_installCBreakHandler  . . . . .        P Near   0829     _TEXT    0023 Public   
+_intDispatch . . . . . . . . . .        P Near   03AB     _TEXT    0065 Public   
+_loadOverlay . . . . . . . . . .        P Near   041C     _TEXT    0103 Public   
+_mystrcat  . . . . . . . . . . .        P Near   036D     _TEXT    0028 Public   
+_mystrcpy  . . . . . . . . . . .        P Near   0336     _TEXT    001B Public   
+_mystrlen  . . . . . . . . . . .        P Near   0351     _TEXT    001C Public   
+_nearmemset  . . . . . . . . . .        P Near   0395     _TEXT    0016 Public   
+_openFile  . . . . . . . . . . .        P Near   0878     _TEXT    0057 Public   
+_picBlit . . . . . . . . . . . .        P Near   02C8     _TEXT    006E Public   
+_restoreCbreakHandler  . . . . .        P Near   084C     _TEXT    0011 Public   
+_restoreTimerIrqHandler  . . . .        P Near   008C     _TEXT    0021 Public   
+_setTimerIrqHandler  . . . . . .        P Near   004E     _TEXT    003E Public   
+_setupOverlaySlots . . . . . . .        P Near   051F     _TEXT    0059 Public   
+_showPicFile . . . . . . . . . .        P Near   0AC9     _TEXT    0072 Public   
+_sub_12DEA . . . . . . . . . . .        P Near   0688     _TEXT    000C Public   
+_sub_16A7F . . . . . . . . . . .        P Far    0DF7     _TEXT    0013 Public   
+cbreakHandler  . . . . . . . . .        P Far    0869     _TEXT    000F Private  
+decodePicRow . . . . . . . . . .        P Near   0C02     _TEXT    002A Private  
+dictionaryLookup . . . . . . . .        P Near   0D22     _TEXT    00AF Private  
+doPicDecode  . . . . . . . . . .        P Near   0CA9     _TEXT    0079 Private  
+getInterruptHandler  . . . . . .        P Near   085D     _TEXT    000C Private  
+increaseTimerCounters  . . . . .        P Near   028B     _TEXT    0016 Private  
+nullsub_1  . . . . . . . . . . .        P Near   004D     _TEXT    0001 Private  
+picMakeDict  . . . . . . . . . .        P Near   0C73     _TEXT    0036 Private  
+picReadDataAndMakeDict . . . . .        P Near   0C2C     _TEXT    0047 Private  
+read512FromFileIntoBuf . . . . .        P Near   0925     _TEXT    0021 Private  
+readJoyPort  . . . . . . . . . .        P Near   0E0A     _TEXT    002D Private  
+sub_1194D  . . . . . . . . . . .        P Near   0113     _TEXT    0087 Private  
+sub_119D4  . . . . . . . . . . .        P Near   019A     _TEXT    0095 Private  
+sub_11A69  . . . . . . . . . . .        P Near   022F     _TEXT    0055 Private  
+sub_12C75  . . . . . . . . . . .        P Near   0657     _TEXT    0031 Private  
+sub_12DF6  . . . . . . . . . . .        P Near   0694     _TEXT    0174 Private  
+sub_12F6A  . . . . . . . . . . .        P Near   0808     _TEXT    0021 Private  
+sub_132A5  . . . . . . . . . . .        P Near   0946     _TEXT    006D Private  
+sub_16ABF  . . . . . . . . . . .        P Near   0E37     _TEXT    005C Private  
+timerIrqHandler  . . . . . . . .        P Far    00AD     _TEXT    0066 Private  
+
+
+Symbols:
+
+                N a m e                 Type       Value     Attr
+
+@CodeSize  . . . . . . . . . . .        Number             0h 
+@DataSize  . . . . . . . . . . .        Number             0h 
+@Interface . . . . . . . . . . .        Number             0h 
+@Model . . . . . . . . . . . . .        Number             2h 
+@code  . . . . . . . . . . . . .        Text   _TEXT
+@data  . . . . . . . . . . . . .        Text   DGROUP
+@stack . . . . . . . . . . . . .        Text   DGROUP
+BDA_CRTC . . . . . . . . . . . .        Number           463h 
+DOS_ALLOC_MEM  . . . . . . . . .        Number            48h 
+DOS_ERROR_RMDIR  . . . . . . . .        Number            10h 
+DOS_PRINT_STR  . . . . . . . . .        Number             9h 
+DOS_SET_IRQH . . . . . . . . . .        Number            25h 
+FILE_READBUF_SIZE  . . . . . . .        Number           200h 
+HALLFAME_RECORDSZ  . . . . . . .        Number            20h 
+IRQ_CBREAK . . . . . . . . . . .        Number            1Bh 
+IRQ_DOS  . . . . . . . . . . . .        Number            21h 
+IRQ_KBD  . . . . . . . . . . . .        Number            16h 
+IRQ_PIT  . . . . . . . . . . . .        Number             8h 
+IRQ_TIME . . . . . . . . . . . .        Number            1Ah 
+IRQ_VIDEO  . . . . . . . . . . .        Number            10h 
+OVL_HDR_CODESEG  . . . . . . . .        Number            18h 
+OVL_HDR_FIRSTIDX . . . . . . . .        Number            1Ch 
+OVL_HDR_FIRSTPTR . . . . . . . .        Number            24h 
+OVL_HDR_SIZE1  . . . . . . . . .        Number            1Eh 
+OVL_HDR_SIZE2  . . . . . . . . .        Number            20h 
+OVL_HDR_SLOTCOUNT  . . . . . . .        Number            22h 
+PORT_PIT_CNTRL . . . . . . . . .        Number            43h 
+PORT_PIT_TIME0 . . . . . . . . .        Number            40h 
+SCREEN_MAXX  . . . . . . . . . .        Number           13Fh 
+SCREEN_MAXY  . . . . . . . . . .        Number            C7h 
+STACK_JOYDATA  . . . . . . . . .        Number           CDEh 
+_aAlloc1M  . . . . . . . . . . .        Byte               0h External 
+_aDosLied  . . . . . . . . . . .        Byte               0h External 
+_aEnoughMem  . . . . . . . . . .        Byte               0h External 
+_aFileClosingError . . . . . . .        Byte               0h External 
+_aFileNFound . . . . . . . . . .        Byte               0h External 
+_aFileNotFound . . . . . . . . .        Byte               0h External 
+_aNoFileBuffersAvailable . . . .        Byte               0h External 
+_aOpenError  . . . . . . . . . .        Byte               0h External 
+_aOvlFail  . . . . . . . . . . .        Byte               0h External 
+_aOvlOvrrun  . . . . . . . . . .        Byte               0h External 
+_aOvlShrink  . . . . . . . . . .        Byte               0h External 
+_aReadError  . . . . . . . . . .        Byte               0h External 
+_aWriteError . . . . . . . . . .        Byte               0h External 
+_audio_jump_6b . . . . . . . . .        L Far16            0h External 
+_audio_jump_6c . . . . . . . . .        L Far16            0h External 
+_byte_172A2  . . . . . . . . . .        Byte               0h External 
+_byte_172B0  . . . . . . . . . .        Byte               0h External 
+_byte_172B7  . . . . . . . . . .        Byte               0h External 
+_byte_172C6  . . . . . . . . . .        Byte               0h External 
+_byte_17877  . . . . . . . . . .        Byte               0h External 
+_byte_17A2F  . . . . . . . . . .        Byte               0h External 
+_byte_17BF0  . . . . . . . . . .        Byte               0h External 
+_byte_19ADB  . . . . . . . . . .        Byte               0h External 
+_cbreakHit . . . . . . . . . . .        Byte               0h External 
+_dictionaryIndex . . . . . . . .        Byte               0h External 
+_diskTransferArea  . . . . . . .        Byte               0h External 
+_errorCodeStr  . . . . . . . . .        Word               0h External 
+_fileReadBuf . . . . . . . . . .        Byte               0h External 
+_fileReadPos . . . . . . . . . .        Word               0h External 
+_gfx_jump_0_alloc  . . . . . . .        L Far16            0h External 
+_gfx_jump_0d_setCurBuf . . . . .        L Far16            0h External 
+_gfx_jump_0f_getBufPtr . . . . .        L Far16            0h External 
+_gfx_jump_10_getCurBuf . . . . .        L Far16            0h External 
+_gfx_jump_1f . . . . . . . . . .        L Far16            0h External 
+_gfx_jump_20_setVal  . . . . . .        L Far16            0h External 
+_gfx_jump_22 . . . . . . . . . .        L Far16            0h External 
+_gfx_jump_28 . . . . . . . . . .        L Far16            0h External 
+_gfx_jump_33_fillRow . . . . . .        L Far16            0h External 
+_gfx_jump_34_fillRow . . . . . .        L Far16            0h External 
+_gfx_jump_35 . . . . . . . . . .        L Far16            0h External 
+_gfx_jump_36_null  . . . . . . .        L Far16            0h External 
+_gfx_jump_38_getPageBuf  . . . .        L Far16            0h External 
+_gfx_jump_3a_getRowOffset  . . .        L Far16            0h External 
+_gfx_jump_3b_clearBuf  . . . . .        L Far16            0h External 
+_gfx_jump_51_null  . . . . . . .        L Far16            0h External 
+_noJoy80 . . . . . . . . . . . .        Byte               0h External 
+_origCBreakOfs . . . . . . . . .        Word               0h External 
+_origCBreakSeg . . . . . . . . .        Word               0h External 
+_ovlInsaneFlag . . . . . . . . .        Byte               0h External 
+_ovlParBlock . . . . . . . . . .        Word               0h External 
+_ovlParCnt . . . . . . . . . . .        Word               0h External 
+_ovlSeg1 . . . . . . . . . . . .        Word               0h External 
+_ovlSeg2 . . . . . . . . . . . .        Word               0h External 
+_picByte . . . . . . . . . . . .        Byte               0h External 
+_picByteUnsignedFlag . . . . . .        Byte               0h External 
+_picDecodeDictionary . . . . . .        Word               0h External 
+_picDecodeIncrement  . . . . . .        Byte               0h External 
+_picDecodedRowBuf  . . . . . . .        Byte               0h External 
+_picFileReadBufEnd . . . . . . .        Word               0h External 
+_picFileWord . . . . . . . . . .        Word               0h External 
+_picLookupResult . . . . . . . .        Byte               0h External 
+_picNumberDictSlots  . . . . . .        Word               0h External 
+_picProcessFlag0_1 . . . . . . .        Byte               0h External 
+_picRemainingBitCount  . . . . .        Byte               0h External 
+_picRowLength  . . . . . . . . .        Word               0h External 
+_picSlotCounter  . . . . . . . .        Word               0h External 
+_picTmp9BitCount . . . . . . . .        Byte               0h External 
+_picWorkData . . . . . . . . . .        Byte               0h External 
+_picWorkDataPtr  . . . . . . . .        Word               0h External 
+_readBufEndPtr . . . . . . . . .        Word               0h External 
+_readFromFilePtr . . . . . . . .        Word               0h External 
+_row . . . . . . . . . . . . . .        Word               0h External 
+_rowOffset . . . . . . . . . . .        Word               0h External 
+_screenBufSize . . . . . . . . .        Word               0h External 
+_searchFCB . . . . . . . . . . .        Byte               0h External 
+_timerCounter  . . . . . . . . .        Byte               0h External 
+_timerCounter2 . . . . . . . . .        Byte               0h External 
+_timerCounter3 . . . . . . . . .        Byte               0h External 
+_timerCounter4 . . . . . . . . .        Byte               0h External 
+_timerHandlerInstalled . . . . .        Byte               0h External 
+_tmpFileHandle . . . . . . . . .        Word               0h External 
+_tmpPageIndex  . . . . . . . . .        Word               0h External 
+_word_172A4  . . . . . . . . . .        Word               0h External 
+_word_172A6  . . . . . . . . . .        Word               0h External 
+_word_172A8  . . . . . . . . . .        Word               0h External 
+_word_172AA  . . . . . . . . . .        Word               0h External 
+_word_172AC  . . . . . . . . . .        Word               0h External 
+_word_172AE  . . . . . . . . . .        Word               0h External 
+_word_172B1  . . . . . . . . . .        Word               0h External 
+_word_172B3  . . . . . . . . . .        Word               0h External 
+_word_172B5  . . . . . . . . . .        Word               0h External 
+_word_172B8  . . . . . . . . . .        Word               0h External 
+_word_172BA  . . . . . . . . . .        Word               0h External 
+_word_1737E  . . . . . . . . . .        Word               0h External 
+_word_1782E  . . . . . . . . . .        Word               0h External 
+_word_17836  . . . . . . . . . .        Word               0h External 
+_word_1783E  . . . . . . . . . .        Word               0h External 
+_word_17846  . . . . . . . . . .        Word               0h External 
+_word_1784E  . . . . . . . . . .        Word               0h External 
+_word_17856  . . . . . . . . . .        Word               0h External 
+_word_17858  . . . . . . . . . .        Word               0h External 
+_word_17866  . . . . . . . . . .        Word               0h External 
+_word_17868  . . . . . . . . . .        Word               0h External 
+_word_1786A  . . . . . . . . . .        Word               0h External 
+_word_1786C  . . . . . . . . . .        Word               0h External 
+_word_1786F  . . . . . . . . . .        Word               0h External 
+_word_17871  . . . . . . . . . .        Word               0h External 
+_word_17873  . . . . . . . . . .        Word               0h External 
+_word_17875  . . . . . . . . . .        Word               0h External 
+_word_17BEB  . . . . . . . . . .        Word               0h External 
+_word_17BED  . . . . . . . . . .        Word               0h External 
+_word_17BF1  . . . . . . . . . .        Word               0h External 
+_word_17BF3  . . . . . . . . . .        Word               0h External 
+_word_17BF5  . . . . . . . . . .        Word               0h External 
+_word_17BF7  . . . . . . . . . .        Word               0h External 
+_word_17BF9  . . . . . . . . . .        Word               0h External 
+_word_17BFB  . . . . . . . . . .        Word               0h External 
+appendNext . . . . . . . . . . .        L Near           37Eh _TEXT 
+arg_0  . . . . . . . . . . . . .        Word               4h 
+arg_109F . . . . . . . . . . . .        Word            10A1h 
+arg_2  . . . . . . . . . . . . .        Word               6h 
+arg_4  . . . . . . . . . . . . .        Word               8h 
+arg_6  . . . . . . . . . . . . .        Word               Ah 
+arg_8  . . . . . . . . . . . . .        Word               Ch 
+buf  . . . . . . . . . . . . . .        Word               4h 
+buffer . . . . . . . . . . . . .        Word               6h 
+byteWasSigned  . . . . . . . . .        L Near           D0Dh _TEXT 
+charCount  . . . . . . . . . . .        Word             923h _TEXT 
+count  . . . . . . . . . . . . .        Word               6h 
+dictValNull  . . . . . . . . . .        L Near           D95h _TEXT 
+dictionaryLookupResCheck . . . .        L Near           CCBh _TEXT 
+done . . . . . . . . . . . . . .        L Near           DCAh _TEXT 
+done_16B14 . . . . . . . . . . .        L Near           E8Ch _TEXT 
+errorAndExit . . . . . . . . . .        L Near           992h _TEXT 
+errorDescAndExit . . . . . . . .        L Near           977h _TEXT 
+exitToDos  . . . . . . . . . . .        L Near           9AEh _TEXT 
+fileNotFound . . . . . . . . . .        L Near           894h _TEXT 
+filename . . . . . . . . . . . .        Word               6h 
+fillFF . . . . . . . . . . . . .        L Near           C8Dh _TEXT 
+fillSubsequentValues . . . . . .        L Near           C9Dh _TEXT 
+findStringLength . . . . . . . .        L Near           980h _TEXT 
+foundEnd . . . . . . . . . . . .        L Near           384h _TEXT 
+foundNull  . . . . . . . . . . .        L Near           988h _TEXT 
+handle . . . . . . . . . . . . .        Word               4h 
+jumpOut  . . . . . . . . . . . .        L Near           D29h _TEXT 
+loc_11919  . . . . . . . . . . .        L Near            DFh _TEXT 
+loc_11925  . . . . . . . . . . .        L Near            EBh _TEXT 
+loc_1193A  . . . . . . . . . . .        L Near           100h _TEXT 
+loc_11973  . . . . . . . . . . .        L Near           139h _TEXT 
+loc_11987  . . . . . . . . . . .        L Near           14Dh _TEXT 
+loc_11999  . . . . . . . . . . .        L Near           15Fh _TEXT 
+loc_119A0  . . . . . . . . . . .        L Near           166h _TEXT 
+loc_119B2  . . . . . . . . . . .        L Near           178h _TEXT 
+loc_119D2  . . . . . . . . . . .        L Near           198h _TEXT 
+loc_119F0  . . . . . . . . . . .        L Near           1B6h _TEXT 
+loc_11A3D  . . . . . . . . . . .        L Near           203h _TEXT 
+loc_11A4B  . . . . . . . . . . .        L Near           211h _TEXT 
+loc_11A58  . . . . . . . . . . .        L Near           21Eh _TEXT 
+loc_11A7F  . . . . . . . . . . .        L Near           245h _TEXT 
+loc_11A89  . . . . . . . . . . .        L Near           24Fh _TEXT 
+loc_11A94  . . . . . . . . . . .        L Near           25Ah _TEXT 
+loc_11A96  . . . . . . . . . . .        L Near           25Ch _TEXT 
+loc_11AA0  . . . . . . . . . . .        L Near           266h _TEXT 
+loc_11AA8  . . . . . . . . . . .        L Near           26Eh _TEXT 
+loc_11ABA  . . . . . . . . . . .        L Near           280h _TEXT 
+loc_11AF3  . . . . . . . . . . .        L Near           2B8h _TEXT 
+loc_11B20  . . . . . . . . . . .        L Near           2E5h _TEXT 
+loc_11B36  . . . . . . . . . . .        L Near           2FBh _TEXT 
+loc_11B46  . . . . . . . . . . .        L Near           30Bh _TEXT 
+loc_126B4  . . . . . . . . . . .        L Near           33Ah _TEXT 
+loc_12703  . . . . . . . . . . .        L Near           357h _TEXT 
+loc_1270E  . . . . . . . . . . .        L Near           362h _TEXT 
+loc_1271D  . . . . . . . . . . .        L Near           371h _TEXT 
+loc_127FA  . . . . . . . . . . .        L Near           3B0h _TEXT 
+loc_127FE  . . . . . . . . . . .        L Near           3B4h _TEXT 
+loc_12803  . . . . . . . . . . .        L Near           3B9h _TEXT 
+loc_12809  . . . . . . . . . . .        L Near           3BFh _TEXT 
+loc_1280C  . . . . . . . . . . .        L Near           3C2h _TEXT 
+loc_12812  . . . . . . . . . . .        L Near           3C8h _TEXT 
+loc_12827  . . . . . . . . . . .        L Near           3DDh _TEXT 
+loc_1282C  . . . . . . . . . . .        L Near           3E2h _TEXT 
+loc_12831  . . . . . . . . . . .        L Near           3E7h _TEXT 
+loc_12836  . . . . . . . . . . .        L Near           3ECh _TEXT 
+loc_1283B  . . . . . . . . . . .        L Near           3F1h _TEXT 
+loc_12842  . . . . . . . . . . .        L Near           3F8h _TEXT 
+loc_12850  . . . . . . . . . . .        L Near           406h _TEXT 
+loc_12986  . . . . . . . . . . .        L Near           41Dh _TEXT 
+loc_1299D  . . . . . . . . . . .        L Near           434h _TEXT 
+loc_129B6  . . . . . . . . . . .        L Near           44Dh _TEXT 
+loc_129CE  . . . . . . . . . . .        L Near           465h _TEXT 
+loc_129F6  . . . . . . . . . . .        L Near           48Dh _TEXT 
+loc_12A05  . . . . . . . . . . .        L Near           49Ch _TEXT 
+loc_12A0F  . . . . . . . . . . .        L Near           4A6h _TEXT 
+loc_12A50  . . . . . . . . . . .        L Near           4E7h _TEXT 
+loc_12A69  . . . . . . . . . . .        L Near           500h _TEXT 
+loc_12A83  . . . . . . . . . . .        L Near           51Ah _TEXT 
+loc_12E0C  . . . . . . . . . . .        L Near           6AAh _TEXT 
+loc_12E2D  . . . . . . . . . . .        L Near           6CBh _TEXT 
+loc_12E3A  . . . . . . . . . . .        L Near           6D8h _TEXT 
+loc_12E53  . . . . . . . . . . .        L Near           6F1h _TEXT 
+loc_12E58  . . . . . . . . . . .        L Near           6F6h _TEXT 
+loc_12E66  . . . . . . . . . . .        L Near           704h _TEXT 
+loc_12E93  . . . . . . . . . . .        L Near           731h _TEXT 
+loc_12EA3  . . . . . . . . . . .        L Near           741h _TEXT 
+loc_12EC1  . . . . . . . . . . .        L Near           75Fh _TEXT 
+loc_12ECB  . . . . . . . . . . .        L Near           769h _TEXT 
+loc_12ED9  . . . . . . . . . . .        L Near           777h _TEXT 
+loc_12EF3  . . . . . . . . . . .        L Near           791h _TEXT 
+loc_12EFC  . . . . . . . . . . .        L Near           79Ah _TEXT 
+loc_12F07  . . . . . . . . . . .        L Near           7A5h _TEXT 
+loc_12F0F  . . . . . . . . . . .        L Near           7ADh _TEXT 
+loc_12F11  . . . . . . . . . . .        L Near           7AFh _TEXT 
+loc_12F2B  . . . . . . . . . . .        L Near           7C9h _TEXT 
+loc_12F34  . . . . . . . . . . .        L Near           7D2h _TEXT 
+loc_12F40  . . . . . . . . . . .        L Near           7DEh _TEXT 
+loc_12F51  . . . . . . . . . . .        L Near           7EFh _TEXT 
+loc_12F54  . . . . . . . . . . .        L Near           7F2h _TEXT 
+loc_12F72  . . . . . . . . . . .        L Near           810h _TEXT 
+loc_12F7A  . . . . . . . . . . .        L Near           818h _TEXT 
+loc_12F80  . . . . . . . . . . .        L Near           81Eh _TEXT 
+loc_12F88  . . . . . . . . . . .        L Near           826h _TEXT 
+loc_131E1  . . . . . . . . . . .        L Near           8E8h _TEXT 
+loc_132CE  . . . . . . . . . . .        L Near           96Fh _TEXT 
+loc_1354A  . . . . . . . . . . .        L Near           B67h _TEXT 
+loc_1366A  . . . . . . . . . . .        L Near           CE4h _TEXT 
+loc_1366F  . . . . . . . . . . .        L Near           CE9h _TEXT 
+loc_137D0  . . . . . . . . . . .        L Near           DEDh _TEXT 
+loc_16A82  . . . . . . . . . . .        L Near           DFAh _TEXT 
+loc_16A85  . . . . . . . . . . .        L Near           DFDh _TEXT 
+loc_16A88  . . . . . . . . . . .        L Near           E00h _TEXT 
+loc_16A8B  . . . . . . . . . . .        L Near           E03h _TEXT 
+loc_16A8E  . . . . . . . . . . .        L Near           E06h _TEXT 
+loc_16A93  . . . . . . . . . . .        L Near           E0Bh _TEXT 
+loc_16A97  . . . . . . . . . . .        L Near           E0Fh _TEXT 
+loc_16A9A  . . . . . . . . . . .        L Near           E12h _TEXT 
+loc_16A9E  . . . . . . . . . . .        L Near           E16h _TEXT 
+loc_16AA3  . . . . . . . . . . .        L Near           E1Bh _TEXT 
+loc_16AAF  . . . . . . . . . . .        L Near           E27h _TEXT 
+loc_16AB4  . . . . . . . . . . .        L Near           E2Ch _TEXT 
+loc_16AB9  . . . . . . . . . . .        L Near           E31h _TEXT 
+loc_16ABD  . . . . . . . . . . .        L Near           E35h _TEXT 
+loc_16AC1  . . . . . . . . . . .        L Near           E39h _TEXT 
+loc_16AC7  . . . . . . . . . . .        L Near           E3Fh _TEXT 
+loc_16ACD  . . . . . . . . . . .        L Near           E45h _TEXT 
+loc_16ACF  . . . . . . . . . . .        L Near           E47h _TEXT 
+loc_16AD1  . . . . . . . . . . .        L Near           E49h _TEXT 
+loc_16AD4  . . . . . . . . . . .        L Near           E4Ch _TEXT 
+loc_16AD6  . . . . . . . . . . .        L Near           E4Eh _TEXT 
+loc_16ADC  . . . . . . . . . . .        L Near           E54h _TEXT 
+loc_16AE0  . . . . . . . . . . .        L Near           E58h _TEXT 
+loc_16AE9  . . . . . . . . . . .        L Near           E61h _TEXT 
+loc_16AEF  . . . . . . . . . . .        L Near           E67h _TEXT 
+loc_16AF6  . . . . . . . . . . .        L Near           E6Eh _TEXT 
+loc_16AFC  . . . . . . . . . . .        L Near           E74h _TEXT 
+loc_16B04  . . . . . . . . . . .        L Near           E7Ch _TEXT 
+loc_16B09  . . . . . . . . . . .        L Near           E81h _TEXT 
+loc_16B0F  . . . . . . . . . . .        L Near           E87h _TEXT 
+loc_16B16  . . . . . . . . . . .        L Near           E8Eh _TEXT 
+loc_16B32  . . . . . . . . . . .        L Near           E96h _TEXT 
+loc_16B3B  . . . . . . . . . . .        L Near           E9Fh _TEXT 
+locret_11B02 . . . . . . . . . .        L Near           2C7h _TEXT 
+locret_11B70 . . . . . . . . . .        L Near           335h _TEXT 
+locret_12A82 . . . . . . . . . .        L Near           519h _TEXT 
+locret_12CA5 . . . . . . . . . .        L Near           687h _TEXT 
+lookupFound  . . . . . . . . . .        L Near           CF0h _TEXT 
+lookupLoop . . . . . . . . . . .        L Near           CC1h _TEXT 
+lookupRes90  . . . . . . . . . .        L Near           CD5h _TEXT 
+maxx . . . . . . . . . . . . . .        Word               Ah 
+maxy . . . . . . . . . . . . . .        Word               6h 
+mode . . . . . . . . . . . . . .        Word               6h 
+msg1 . . . . . . . . . . . . . .        Byte[46]         9B3h _TEXT 
+msg10  . . . . . . . . . . . . .        Byte[34]         BC8h _TEXT 
+msg11  . . . . . . . . . . . . .        Byte[24]         BEAh _TEXT 
+msg12  . . . . . . . . . . . . .        Byte[28]         8F0h _TEXT 
+msg13  . . . . . . . . . . . . .        Byte[23]         90Ch _TEXT 
+msg14  . . . . . . . . . . . . .        Byte[34]         578h _TEXT 
+msg15  . . . . . . . . . . . . .        Byte[30]         59Ah _TEXT 
+msg2 . . . . . . . . . . . . . .        Byte[59]         9E1h _TEXT 
+msg3 . . . . . . . . . . . . . .        Byte[29]         A1Ch _TEXT 
+msg4 . . . . . . . . . . . . . .        Byte[23]         A39h _TEXT 
+msg5 . . . . . . . . . . . . . .        Byte[31]         A50h _TEXT 
+msg6 . . . . . . . . . . . . . .        Byte[41]         A6Fh _TEXT 
+msg8 . . . . . . . . . . . . . .        Byte[49]         A98h _TEXT 
+msg9 . . . . . . . . . . . . . .        Byte[37]         BA3h _TEXT 
+nextRow  . . . . . . . . . . . .        L Near           AFFh _TEXT 
+openSuccess  . . . . . . . . . .        L Near           8C1h _TEXT 
+otherError . . . . . . . . . . .        L Near           8A0h _TEXT 
+outregs  . . . . . . . . . . . .        Word               6h 
+ovlSane  . . . . . . . . . . . .        L Near           537h _TEXT 
+ovlSegment . . . . . . . . . . .        Word               6h 
+pageNum  . . . . . . . . . . . .        Word               6h 
+picByteUnsigned  . . . . . . . .        L Near           C70h _TEXT 
+processLoop  . . . . . . . . . .        L Near           D3Ch _TEXT 
+readSuccess  . . . . . . . . . .        L Near           944h _TEXT 
+regstr . . . . . . . . . . . . .        Byte[70]           0h _TEXT 
+rowDone  . . . . . . . . . . . .        L Near           D14h _TEXT 
+rowNonZero . . . . . . . . . . .        L Near           C15h _TEXT 
+siBelowBufEnd  . . . . . . . . .        L Near           C58h _TEXT 
+skipFileRead . . . . . . . . . .        L Near           D55h _TEXT 
+slotCountNotPastBufEnd . . . . .        L Near           DBEh _TEXT 
+sos_exit . . . . . . . . . . . .        L Near           577h _TEXT 
+source . . . . . . . . . . . . .        Word               6h 
+stillOtherError  . . . . . . . .        L Near           8B6h _TEXT 
+string . . . . . . . . . . . . .        Word               4h 
+sz . . . . . . . . . . . . . . .        Word               6h 
+timerIrqAddr . . . . . . . . . .        DWord             46h _TEXT 
+timerIsrPtr  . . . . . . . . . .        L Near           10Eh _TEXT 
+tooManyBits  . . . . . . . . . .        L Near           D62h _TEXT 
+unk  . . . . . . . . . . . . . .        Word               6h 
+unsigned_loc_1363A . . . . . . .        L Near           CB4h _TEXT 
+withinDictionary . . . . . . . .        L Near           D80h _TEXT 
+word_12983 . . . . . . . . . . .        Word              4Ah _TEXT 
+workBufOk  . . . . . . . . . . .        L Near           D2Ch _TEXT 
+writeSlots . . . . . . . . . . .        L Near           557h _TEXT 
+y  . . . . . . . . . . . . . . .        Word               8h 
+
+src/start4.asm: 2056 lines, 2 passes, 96289 ms, 0 warnings, 0 errors

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>More delinking fun | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="More delinking fun" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(…continued from Part 1)" />
+<meta property="og:description" content="(…continued from Part 1)" />
+<link rel="canonical" href="/f15-se2/2024/01/07/unlink2.html" />
+<meta property="og:url" content="/f15-se2/2024/01/07/unlink2.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-01-07T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="More delinking fun" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2024-01-07T00:00:00+00:00","datePublished":"2024-01-07T00:00:00+00:00","description":"(…continued from Part 1)","headline":"More delinking fun","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2024/01/07/unlink2.html"},"url":"/f15-se2/2024/01/07/unlink2.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">More delinking fun</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2024-01-07T00:00:00+00:00" itemprop="datePublished">Jan 7, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>(…continued from  <a href="/f15-se2/2023/12/30/unlink.html">Part 1</a>)</p>
+
+<p>If there’s anything life has taught me, it’s got to be that <a href="https://retrocomputing.stackexchange.com/questions/28248/why-does-my-mz-executables-bss-inflate-by-1-5kb-after-linking-fopen-with-msc">submitting a question</a> publically is a surefire way of figuring out the answer myself within an hour or so… unless it actually takes a couple months.</p>
+
+<p>For context, I am trying to find parts of the game’s data segment which can be attributed to linking in the Microsoft C library. In the first part, I figured out initialized data as the easier task, but was left stumped with the layout of the uninitialized (BSS) data section, which contains a little over 1500 bytes of unaccounted-for data:</p>
+
+<pre>
+dseg:0346                 db 0FFh
+dseg:0347                 db 0FFh
+dseg:0348                 db 0FFh 🟢 libc initialized data ends here, BSS begins
+dseg:0349                 db 407h dup(   ?)       ; what is this?
+dseg:0750 word_11CD0      dw ?                    ; my program's data
+dseg:0752 word_11CD2      dw ?                    ; 
+dseg:0754                 db 20Ch dup(   ?)       ; what is this?
+dseg:0754 dseg            ends
+</pre>
+
+<p>I started approaching this with the idea I had at the end of the previous part - removing all the libc function references from my experiment and readding them one by one, to figure out what makes these mysterious areas appear and narrow down where they are coming from. Soon enough, I had my culprit - any of the file I/O-related functions such as <code class="language-plaintext highlighter-rouge">fopen</code>/<code class="language-plaintext highlighter-rouge">fread</code>/<code class="language-plaintext highlighter-rouge">fflush</code>/… would result in these appearing. It looks like it might be some buffer area related to file I/O? Makes a lot of sense, but what doesn’t is that there were <strong>no references</strong> to these areas from the libc code. I looked over the code of all libc functions in a minimal executable file reproducing this result (just the startup code and <code class="language-plaintext highlighter-rouge">main()</code> calling <code class="language-plaintext highlighter-rouge">fflush()</code>), paying special attention to immediate values which could be offsets into the BSS – no luck. The only reference same from the startup code:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">seg000:</span><span class="err">0064</span> <span class="nf">start</span>           <span class="nv">proc</span> <span class="nv">near</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nl">seg000:</span><span class="err">00</span><span class="nf">C9</span>                 <span class="nv">assume</span> <span class="nb">es</span><span class="p">:</span><span class="nb">ds</span><span class="nv">eg</span>
+<span class="nl">seg000:</span><span class="err">00</span><span class="nf">C9</span>                 <span class="nb">cl</span><span class="nv">d</span>
+<span class="nl">seg000:</span><span class="err">00</span><span class="nf">CA</span>                 <span class="nv">mov</span>     <span class="nb">di</span><span class="p">,</span> <span class="mh">349h</span> <span class="c1">; beginning of BSS area</span>
+<span class="nl">seg000:</span><span class="err">00</span><span class="nf">CD</span>                 <span class="nv">mov</span>     <span class="nb">cx</span><span class="p">,</span> <span class="mh">960h</span> <span class="c1">; data segment end</span>
+<span class="nl">seg000:</span><span class="err">00</span><span class="nf">D0</span>                 <span class="nv">sub</span>     <span class="nb">cx</span><span class="p">,</span> <span class="nb">di</span>   <span class="c1">; _end - _edata = BSS size</span>
+<span class="nl">seg000:</span><span class="err">00</span><span class="nf">D2</span>                 <span class="nv">xor</span>     <span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nl">seg000:</span><span class="err">00</span><span class="nf">D4</span>                 <span class="nv">rep</span> <span class="nv">stosb</span>        <span class="c1">; zero out the BSS</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span></code></pre></figure>
+
+<p>This code performs zeroing out of the BSS before control passes to <code class="language-plaintext highlighter-rouge">main()</code>. But there was no code using the BSS!</p>
+
+<p>I started opening the individual object files for file I/O routines extracted (using objconv) from the <code class="language-plaintext highlighter-rouge">slibce.lib</code> library like <code class="language-plaintext highlighter-rouge">fflush.obj</code>, <code class="language-plaintext highlighter-rouge">fopen.obj</code> etc. in IDA, hoping to find some BSS data inside. No such luck. Where is this crap coming from?!</p>
+
+<p>Then I get an idea. I was using the <code class="language-plaintext highlighter-rouge">/M</code> switch to the linker this whole time, which creates a human readable “map file” of the linked executable. Let’s look inside:</p>
+
+<pre>
+Start  Stop   Length Name                   Class
+ 00000H 0157DH 0157EH _TEXT                  CODE
+ 0157EH 0157EH 00000H C_ETEXT                ENDCODE
+ 01580H 015C1H 00042H NULL                   BEGDATA
+ 015C2H 017DFH 0021EH _DATA                  DATA
+ 017E0H 017EDH 0000EH CDATA                  DATA
+ 017EEH 017EEH 00000H XIFB                   DATA
+ [...]
+ 017F0H 017F0H 00000H CONST                  CONST
+ [...]
+ 018CAH 018CAH 00000H _BSS                   BSS
+ 018CAH 018CAH 00000H XOB                    BSS
+ 018CAH 018CAH 00000H XO                     BSS
+ 018CAH 018CAH 00000H XOE                    BSS
+ 018D0H 01ED3H 00604H c_common               BSS
+ 01EE0H 026DFH 00800H STACK                  STACK
+
+ Origin   Group
+ 0158:0   DGROUP
+
+  Address         Publics by Name
+
+ 0158:0250       STKHQQ
+ 0000:0788       _abs
+ 0158:0050       _barfoo
+ 0000:14BA       _brkctl
+ 0000:0E3E       _close
+ 0158:034A       _edata
+ 0158:0960       _end
+ [..]
+</pre>
+
+<p>This is surprising. I was expecting all my uninitialized data to be part of the <code class="language-plaintext highlighter-rouge">_BSS</code> segment, meanwhile it looks like the bulk (0x604 == 1540 bytes) lies in <code class="language-plaintext highlighter-rouge">c_common</code>, and the size of <code class="language-plaintext highlighter-rouge">_BSS</code> is actually zero. It takes a web search into some long <a href="https://www.pcjs.org/documents/books/mspl13/msdos/encyclopedia/section2/">forgotten corners</a> of the Web to figure out what <code class="language-plaintext highlighter-rouge">c_common</code> is:</p>
+
+<blockquote>
+  <p>LINK also generates default segments into which it places communal variables declared in COMDEF records.<br />
+Near communal variables are placed in one paragraph-aligned public segment named <strong>c_common</strong>, with class name BSS<br />
+(block storage space) and group DGROUP. Far communal variables are placed in a paragraph-aligned segment named FAR_BSS,<br />
+with class name FAR_BSS.</p>
+</blockquote>
+
+<p>An <a href="https://www.pcjs.org/documents/books/mspl13/masm/qaprog/">another search</a> defines “communal variables”:</p>
+
+<blockquote>
+  <p>Communal variables are uninitialized variables that are both public and external. They are often declared in include files.<br />
+(…)
+C variables declared outside functions (except static variables) are communal unless explicitly initialized; they are the same as assembly-language communal variables.</p>
+</blockquote>
+
+<p>OK, so we are looking for communal variables, but where are they? The smoking gun is hidden further in the map file, where all the public symbols are listed (“Publics by Name”). It seems like the data segment is represented by the segment prefix of <code class="language-plaintext highlighter-rouge">158</code> in the map file, so let’s take a look at it while introducing some ordering:</p>
+
+<pre>
+ninja@dell:eaglestrike$ cat build-f15-se2/HELLO.MAP | grep 158: | sort -u
+ 0158:0   DGROUP
+ 0158:0042       _foobar
+ 0158:0050       _barfoo
+ 0158:0052       _foobaz
+ 0158:0062       __asizds
+ 0158:0064       __atopsp
+ 0158:0066       __aexit_rtn
+ 0158:0068       __abrktb
+ 0158:00B8       __abrkp
+ [...]
+ 0158:034A       _edata
+ 0158:0350       __bufout
+ 0158:0550       __bufin
+ 0158:0750       _x
+ 0158:0752       _y
+ 0158:0754       __buferr
+ 0158:0960       _end
+</pre>
+
+<p>Gotcha! <code class="language-plaintext highlighter-rouge">_edata</code> is a handy tag assigned by the linker to the location where the initialized data ends, so it seems my troublemakers are named <code class="language-plaintext highlighter-rouge">__bufout</code>, <code class="language-plaintext highlighter-rouge">__bufin</code> and <code class="language-plaintext highlighter-rouge">__buferr</code> (<code class="language-plaintext highlighter-rouge">x</code> and <code class="language-plaintext highlighter-rouge">y</code> are sentinel values from my code, which I wrote in Part 1). Whare did y’all come from?</p>
+
+<pre>
+ninja@dell:slibce$ for f in *.obj; do echo "==== $f"; dmpobj $f | grep bufout; done
+[...]
+==== _file.obj
+    3 - '__bufout' Type 0, NEAR, Size:00000200h
+==== _flsbuf.obj
+    5 - '__bufout' Type:0
+[...]
+</pre>
+
+<p>Looks like these came from the object file <code class="language-plaintext highlighter-rouge">_file.obj</code>, so let’s inspect it:</p>
+
+<pre>
+ninja@dell:slibce$ dmpobj _file.obj
+[...]
+COMDEF(b0) recnum:13, offset:000000b0h, len:002ah, chksum:f7h(f7)
+    2 - '__bufin' Type 0, NEAR, Size:00000200h
+    3 - '__bufout' Type 0, NEAR, Size:00000200h
+    4 - '__buferr' Type 0, NEAR, Size:00000200h
+[...]
+</pre>
+
+<p>Three buffers of size 0x200 make 0x600, i.e. 1536 bytes. Now I smell blood. But how come I couldn’t find any references to these? No code is using it, and without having some reference to grab onto, I will not be able to locate their equivalent locations in the actual game executable. This time, the key lies in the other object file that references this symbol, <code class="language-plaintext highlighter-rouge">_flsbuf.obj</code>. I open it in IDA:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">_TEXT:</span><span class="err">0010</span> <span class="nf">__flsbuf</span>        <span class="nv">proc</span> <span class="nv">near</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nl">_TEXT:</span><span class="err">00</span><span class="nf">A8</span>                 <span class="nv">jnz</span>     <span class="nv">short</span> <span class="nv">loc_100E0</span>
+<span class="nl">_TEXT:</span><span class="err">00</span><span class="nf">AA</span>                 <span class="nv">mov</span>     <span class="nb">ax</span><span class="p">,</span> <span class="nv">offset</span> <span class="nv">__bufout</span>
+<span class="nl">_TEXT:</span><span class="err">00</span><span class="nf">AD</span>                 <span class="nv">jmp</span>     <span class="nv">short</span> <span class="nv">loc_100E3</span>
+<span class="nl">_TEXT:</span><span class="err">00</span><span class="nf">AF</span>                 <span class="nb">al</span><span class="nv">ign</span> <span class="mi">2</span>
+<span class="nl">_TEXT:</span><span class="err">00</span><span class="nf">B0</span> <span class="nv">loc_100E0</span><span class="p">:</span>
+<span class="nl">_TEXT:</span><span class="err">00</span><span class="nf">B0</span>                 <span class="nv">mov</span>     <span class="nb">ax</span><span class="p">,</span> <span class="nv">offset</span> <span class="nv">__buferr</span></code></pre></figure>
+
+<p>My minimal example does not have <code class="language-plaintext highlighter-rouge">__flsbuf</code>. But when I add all the other libc functions that the game is using, it is also pulled in by the linker. Apparently, these three buffer areas are placed in the executable by the linker <em>even if nothing is referencing them</em>! Damn, those old linkers sure acted weird. I could not find references to the problematic areas because I was looking at a minimal example which had the data, but not the code using the data, which I thought was not possible. But now I can locate <code class="language-plaintext highlighter-rouge">__bufout</code> and <code class="language-plaintext highlighter-rouge">__buferr</code> by looking at this specific location in <code class="language-plaintext highlighter-rouge">__flsbuf</code>. That still leaves <code class="language-plaintext highlighter-rouge">__bufin</code> though.</p>
+
+<pre>
+ninja@dell:slibce$ for f in *.obj; do echo "==== $f"; dmpobj $f | grep bufin; done
+[...]
+==== _file.obj
+    2 - '__bufin' Type 0, NEAR, Size:00000200h
+</pre>
+
+<p>This symbol is only referenced in <code class="language-plaintext highlighter-rouge">_file.obj</code>, so let’s open it in IDA again:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">_DATA:</span><span class="err">0000</span> <span class="c1">; FILE _iob[]</span>
+<span class="nl">_DATA:</span><span class="err">0000</span> <span class="nf">__iob</span>           <span class="nv">dw</span> <span class="nv">offset</span> <span class="nv">__bufin</span>
+<span class="nl">_DATA:</span><span class="err">0002</span>                 <span class="nf">align</span> <span class="mi">4</span>
+<span class="nl">_DATA:</span><span class="err">0004</span>                 <span class="kd">dw</span> <span class="nv">offset</span> <span class="nv">__bufin</span>
+<span class="nl">_DATA:</span><span class="err">0006</span>                 <span class="kd">db</span>    <span class="mi">1</span>
+<span class="nl">_DATA:</span><span class="err">0007</span>                 <span class="kd">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">0008</span>                 <span class="kd">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">0009</span>                 <span class="kd">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">000</span><span class="nf">A</span>                 <span class="nv">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">000</span><span class="nf">B</span>                 <span class="nv">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">000</span><span class="nf">C</span>                 <span class="nv">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">000</span><span class="nf">D</span>                 <span class="nv">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">000</span><span class="nf">E</span>                 <span class="nv">db</span>    <span class="mi">2</span>
+<span class="nl">_DATA:</span><span class="err">000</span><span class="nf">F</span>                 <span class="nv">db</span>    <span class="mi">1</span>
+<span class="nl">_DATA:</span><span class="err">0010</span>                 <span class="kd">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">0011</span>                 <span class="kd">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">0012</span>                 <span class="kd">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">0013</span>                 <span class="kd">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">0014</span>                 <span class="kd">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">0015</span>                 <span class="kd">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">0016</span>                 <span class="kd">db</span>    <span class="mi">2</span>
+<span class="nl">_DATA:</span><span class="err">0017</span>                 <span class="kd">db</span>    <span class="mi">2</span>
+<span class="nl">_DATA:</span><span class="err">0018</span>                 <span class="kd">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">0019</span>                 <span class="kd">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">001</span><span class="nf">A</span>                 <span class="nv">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">001</span><span class="nf">B</span>                 <span class="nv">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">001</span><span class="nf">C</span>                 <span class="nv">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">001</span><span class="nf">D</span>                 <span class="nv">db</span>    <span class="mi">0</span>
+<span class="nl">_DATA:</span><span class="err">001</span><span class="nf">E</span>                 <span class="nv">db</span>  <span class="mh">84h</span> <span class="c1">; you will be useful</span></code></pre></figure>
+
+<p>By searching for the value of 0x84 in the executable’s initialized data section, then going back counting the bytes, I can locate the offset containing the pointer to <code class="language-plaintext highlighter-rouge">__bufin</code>. Now it all comes together beautifully:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">dseg:</span><span class="err">0346</span>                 <span class="kd">db</span> <span class="mh">0FFh</span>
+<span class="nl">dseg:</span><span class="err">0347</span>                 <span class="kd">db</span> <span class="mh">0FFh</span>
+<span class="nl">dseg:</span><span class="err">0348</span>                 <span class="kd">db</span> <span class="mh">0FFh</span>
+<span class="nl">dseg:</span><span class="err">0349</span>                 <span class="kd">db</span>    <span class="nv">?</span> <span class="c1">; probably alignment</span>
+<span class="nl">dseg:</span><span class="err">034</span><span class="nf">A</span> <span class="nv">bss_start</span>       <span class="nv">db</span>    <span class="nv">?</span> <span class="c1">; crt0 data     ; DATA XREF: start+66</span>
+<span class="nl">dseg:</span><span class="err">034</span><span class="nf">B</span>                 <span class="nv">db</span>    <span class="nv">?</span> <span class="c1">;</span>
+<span class="nl">dseg:</span><span class="err">034</span><span class="nf">C</span>                 <span class="nv">db</span>    <span class="nv">?</span> <span class="c1">;</span>
+<span class="nl">dseg:</span><span class="err">034</span><span class="nf">D</span>                 <span class="nv">db</span>    <span class="nv">?</span> <span class="c1">;</span>
+<span class="nl">dseg:</span><span class="err">034</span><span class="nf">E</span>                 <span class="nv">db</span>    <span class="nv">?</span> <span class="c1">;</span>
+<span class="nl">dseg:</span><span class="err">034</span><span class="nf">F</span>                 <span class="nv">db</span>    <span class="nv">?</span> <span class="c1">;</span>
+<span class="nl">dseg:</span><span class="err">0350</span> <span class="nf">bufout</span>          <span class="nv">db</span> <span class="mh">200h</span> <span class="nv">dup</span><span class="p">(</span>   <span class="nv">?</span><span class="p">)</span>       <span class="c1">; DATA XREF: __flsbuf+9A</span>
+<span class="nl">dseg:</span><span class="err">0550</span> <span class="nf">bufin</span>           <span class="nv">db</span> <span class="mh">200h</span> <span class="nv">dup</span><span class="p">(</span>   <span class="nv">?</span><span class="p">)</span>       <span class="c1">; DATA XREF: dseg:012E</span>
+<span class="nl">dseg:</span><span class="err">0750</span> <span class="nf">word_11CD0</span>      <span class="nv">dw</span> <span class="nv">?</span>                    <span class="c1">; x</span>
+<span class="nl">dseg:</span><span class="err">0752</span> <span class="nf">word_11CD2</span>      <span class="nv">dw</span> <span class="nv">?</span>                    <span class="c1">; y</span>
+<span class="nl">dseg:</span><span class="err">0754</span> <span class="nf">buferr</span>          <span class="nv">db</span> <span class="mh">200h</span> <span class="nv">dup</span><span class="p">(</span>   <span class="nv">?</span><span class="p">)</span>       <span class="c1">; DATA XREF: __flsbuf:loc_10BBA</span>
+<span class="nl">dseg:</span><span class="err">0954</span>                 <span class="kd">db</span>    <span class="nv">?</span> <span class="c1">; probably more alignment to end on paragraph boundary</span>
+<span class="nl">dseg:</span><span class="err">0955</span>                 <span class="kd">db</span>    <span class="nv">?</span>
+<span class="nl">dseg:</span><span class="err">0956</span>                 <span class="kd">db</span>    <span class="nv">?</span>
+<span class="nl">dseg:</span><span class="err">0957</span>                 <span class="kd">db</span>    <span class="nv">?</span>
+<span class="nl">dseg:</span><span class="err">0958</span>                 <span class="kd">db</span>    <span class="nv">?</span>
+<span class="nl">dseg:</span><span class="err">0959</span>                 <span class="kd">db</span>    <span class="nv">?</span>
+<span class="nl">dseg:</span><span class="err">095</span><span class="nf">A</span>                 <span class="nv">db</span>    <span class="nv">?</span>
+<span class="nl">dseg:</span><span class="err">095</span><span class="nf">B</span>                 <span class="nv">db</span>    <span class="nv">?</span>
+<span class="nl">dseg:</span><span class="err">095</span><span class="nf">C</span>                 <span class="nv">db</span>    <span class="nv">?</span>
+<span class="nl">dseg:</span><span class="err">095</span><span class="nf">D</span>                 <span class="nv">db</span>    <span class="nv">?</span>
+<span class="nl">dseg:</span><span class="err">095</span><span class="nf">E</span>                 <span class="nv">db</span>    <span class="nv">?</span>
+<span class="nl">dseg:</span><span class="err">095</span><span class="nf">F</span>                 <span class="nv">db</span>    <span class="nv">?</span>
+<span class="nl">dseg:</span><span class="err">095</span><span class="nf">F</span> <span class="nb">ds</span><span class="nv">eg</span>            <span class="nv">ends</span></code></pre></figure>
+
+<p>It was trivial to find the corresponding areas in the game’s executable by examining the equivalent telltale locations. I now have all the data regions introduced by libc identified and marked in the disassembly. It may not be much, but it’s always an extra piece of information and a necessary step if I ever aim for a near-perfect recreation (I’ll explain why a fully perfect one is not feasible another time). If it ever comes to that, this post will have a Part 3, but I’m pretty satisfied with what I got right now.</p>
+
+<p>If that’s the good news, the bad news has got to be that I’m officially out of excuses to continue the reconstruction of a nasty game routine that ostensibly has to do with mission generation, consists of multiple nested loops and conditions, with an occasional <code class="language-plaintext highlighter-rouge">goto</code> sprinkled in, and nothing it does makes sense on the surface - just reading and writing of random-looking numeric data all over the place. But I’ll figure it out. Some day.</p>
+
+  </div><a class="u-url" href="/f15-se2/2024/01/07/unlink2.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

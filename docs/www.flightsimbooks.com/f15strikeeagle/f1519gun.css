@@ -1,0 +1,320 @@
+.body
+{
+    font-family: "bookman old style",serif;
+}       
+.p
+{
+    font-family: "bookman old style",serif;
+    font-size: 100%;
+    margin-top: .6em;
+    margin-bottom: .6em;
+    text-indent: 2em;
+    text-align: justify;
+}
+
+.pt
+{
+    font-family: "bookman old style",serif;
+    font-size: 100%;
+    margin-top: .6em;
+    margin-bottom: .6em;
+    text-indent: 1em;
+    text-align: justify;
+}
+
+.pt2
+{
+    font-family: "bookman old style",serif;
+    font-size: 100%;
+    text-indent: 1em;
+    text-align: justify;
+}
+
+
+.p1
+{
+    font-family: "bookman old style",serif;
+    font-size: 100%;
+    margin-top: .1em;
+    margin-bottom: .6em;
+    text-align: justify;
+}
+.p2
+{
+    font-family: "bookman old style",serif;
+    font-size: 100%;
+    margin-top: .1em;
+    margin-left: 4em;
+    text-indent: 3em;
+    margin-bottom: .6em;
+    text-align: justify;
+}
+.p3
+{
+    font-family: "bookman old style",serif;
+    font-size: 100%;
+    margin-top: .1em;
+    margin-left: 2.5em;
+    margin-bottom: .6em;
+    text-align: justify;
+}
+.p4
+{
+    font-family: "bookman old style",serif;
+    font-size: 100%;
+    margin-top: .1em;
+    margin-left: 1.5em;
+    margin-bottom: .6em;
+    text-indent: 3em;
+    text-align: justify;
+}
+.p5
+{
+    font-family: "bookman old style",serif;
+    font-size: 100%;
+    margin-top: .1em;
+    margin-left: 2.5em;
+    margin-bottom: .6em;
+    text-indent: 4em;
+    text-align: justify;
+}
+.p6
+{
+    font-family: "bookman old style",serif;
+    font-size: 95%;
+    margin-top: .1em;
+    margin-left: 2.5em;
+    margin-bottom: .6em;
+    text-align: justify;
+}
+.p7
+{
+    font-family: "bookman old style",serif;
+    font-size: 96%;
+    margin-top: .1em;
+    margin-left: 4em;
+    margin-bottom: .6em;
+    text-align: justify;
+}
+
+.pc
+{
+    font-family: "bookman old style",serif;
+    font-size: 100%;
+    margin-top: .1em;
+    margin-bottom: .6em;
+    text-align: center;
+}
+
+.p9
+{
+    font-family: "bookman old style",serif;
+    font-size: 100%;
+    margin-top: .6em;
+    margin-bottom: .6em;
+    text-indent: 2em;
+    text-align: center;
+}
+.p10
+{
+    font-family: "bookman old style",serif;
+    font-size: 85%;
+    margin-top: .6em;
+    margin-bottom: .6em;
+    text-indent: 2em;
+    text-align: center;
+}
+.h1
+{
+    font-family: "helvetica",serif;
+    font-size: 180%;
+    margin-top: 2em;
+    margin-bottom: .8em;
+    text-align: center;
+}
+
+.h2
+{
+    font-family: "helvetica",serif;
+    font-size: 180%;
+    margin-top: 2.5em;
+    margin-bottom: .8em;
+    text-align: center;
+}
+
+
+.h3
+{
+    font-family: "helvetica",serif;
+    font-size: 140%;
+    text-align: left;
+    margin-top: 2em;
+}
+
+
+.h4
+{
+    font-family: "helvetica",serif;
+    font-size: 110%;
+    text-align: left;
+}
+
+.ul
+{
+    font-family: "bookman old style",serif;
+    margin-top: .3em;
+    margin-bottom: .3em;
+    margin-left: 1em;
+    text-indent: -1em;
+}
+
+.ol
+{
+    font-family: "bookman old style",serif;
+    margin-top: .3em;
+    margin-bottom: .3em;
+    margin-left: 1em;
+    text-indent: -1em;
+}
+
+.ol2
+{
+    font-family: "bookman old style",serif;
+    margin-top: .3em;
+    margin-bottom: .3em;
+    margin-left: 7em;
+    text-indent: -6em;
+    text-align: justify;
+}
+
+.ol3
+{
+    font-family: "bookman old style",serif;
+    margin-top: .3em;
+    margin-bottom: .3em;
+    margin-left: 4em;
+    text-indent: -1.4em;
+    text-align: justify;
+}
+.ol4
+{
+    font-family: "bookman old style",serif;
+    margin-top: .3em;
+    margin-bottom: .3em;
+    margin-left: 2.5em;
+    text-indent: -6m;
+    text-align: justify;
+}
+.ol5
+{
+    font-family: "bookman old style",serif;
+    margin-top: .3em;
+    margin-bottom: .3em;
+    margin-left: 1.5em;
+    text-indent: -6m;
+    text-align: justify;
+}
+
+
+
+.bib
+{
+    font-family: "bookman old style",serif;
+    margin-top: .3em;
+    margin-bottom: .3em;
+    margin-left: 1em;
+    text-indent: -1em;
+    text-align: justify;
+}
+
+.bordert
+{
+    border-top: solid .01em black;
+}
+.borderb
+{
+    border-bottom: solid .01em black;
+}
+.borderlrtb
+{
+    border-left: solid .01em black;
+    border-right: solid .01em black;
+    border-top: solid .01em black;
+    border-bottom: solid .01em black;
+}
+.borderl
+{
+    border-left: solid .01em black;
+}
+.borderrt
+{
+    border-top: solid .01em black;
+    border-right: solid .01em black;
+}
+.borderlt
+{
+    border-top: solid .01em black;
+    border-left: solid .01em black;
+}
+.borderr
+{
+    border-right: solid .01em black;
+}
+.borderlb
+{
+    border-left: solid .01em black;
+    border-bottom: solid .01em black;
+}
+.borderrb
+{
+    border-right: solid .01em black;
+    border-bottom: solid .01em black;
+}
+
+.table
+{
+    font-family: "bookman old style",serif;
+    font-size: .9em;
+    margin-top: .4em;
+    margin-bottom: .4em;
+    margin-left: 0.5em;
+    margin-right: 5.5em;
+}
+
+.tealtable, .tealtable TD, .tealtable TH
+{
+background-color:#E8E8E8;
+color:black;
+font-family: "bookman old style",serif;
+}
+
+.t1
+{
+    font-family: "bookman old style",serif;
+    font-size: .9em;
+    margin-top: .4em;
+    margin-bottom: .4em;
+    margin-left: 2.5em;
+    margin-right: 5.5em;
+}
+.right
+{
+    font-family: "bookman old style",serif;
+    font-size: .9em;
+    margin-top: .4em;
+    margin-bottom: .4em;
+    margin-left: 45em;
+}
+
+.t2
+{
+    font-family: "bookman old style",serif;
+    font-size: 95%;
+    
+}
+.t3
+{
+    font-family: "bookman old style",serif;
+    font-size: 95%;
+    text-align: justify;
+}

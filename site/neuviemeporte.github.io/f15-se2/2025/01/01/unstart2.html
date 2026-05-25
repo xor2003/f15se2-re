@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>The thing won’t START, Part 2 | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="The thing won’t START, Part 2" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(…continued from Part 1)" />
+<meta property="og:description" content="(…continued from Part 1)" />
+<link rel="canonical" href="/f15-se2/2025/01/01/unstart2.html" />
+<meta property="og:url" content="/f15-se2/2025/01/01/unstart2.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2025-01-01T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="The thing won’t START, Part 2" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2025-01-01T00:00:00+00:00","datePublished":"2025-01-01T00:00:00+00:00","description":"(…continued from Part 1)","headline":"The thing won’t START, Part 2","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2025/01/01/unstart2.html"},"url":"/f15-se2/2025/01/01/unstart2.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">The thing won&#39;t START, Part 2</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2025-01-01T00:00:00+00:00" itemprop="datePublished">Jan 1, 2025
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>(…continued from  <a href="/f15-se2/2024/12/31/unstart.html">Part 1</a>)</p>
+
+<p>In some ways, I think keeping this journal was one of the better decisions on this project. Never was one for talking to a rubber duck, but somehow putting thoughts to words gives me a better view of the overall picture, and keeping a record of all the stuff I did doesn’t hurt either; I already found myself going back to old posts to remind myself of how or why I used to do something in the past. But the best part has to be that writing brings out new ideas whenever I’m stuck. So it was this time. No sooner than ink had dried on my previous post, I already had a bunch of new ideas on how to proceed, and by New Year’s Day I had the recreation running.</p>
+
+<p>There have been a bunch of pretty surprising coincidences involved in this bug that made it act wacky, so read below on how I managed to track it down and resolve it.</p>
+
+<h1 id="introspection">Introspection</h1>
+
+<p>The problem I was having with the freezing executable is that the log output was confusing. Sometimes it would appear to be trimmed. Sometimes there was more of it, sometimes just a little. The code seemed to be working slowly, but delta measurements showed little to no delay between the lines. In essence, trying to look at the game’s behaviour through the logs just caused more confusion, leading me to question my logging framework.</p>
+
+<p>Then I realized that the confusion could be eliminated if I wasn’t looking at the output through the logfile after the fact, but directly on the terminal as it was happening. Then I could visually see how long stuff was taking. Of course, the game switches to graphical mode which screws up the text display, but I have the source code now, so I can just comment it out temporarily. So that’s what I ended up doing.</p>
+
+<p><img src="/images/start-row0.png" alt="logs on row 0" class="center-image" />
+<img src="/images/start-row2.png" alt="logs on row 2" class="center-image" /></p>
+
+<p>Seeing the game that was a black box up until recently now spill its guts all over the console is pretty neat, I think. In any case, as seen from the first screen, the game pauses immediately after entering the decoding loop for row zero, and it appears to be waiting for input! When I pressed the Enter key, you can see it progressed up to row 2, before stopping on input again. What is going on here?</p>
+
+<h1 id="why-is-it-waiting-for-keyboard">Why is it waiting for keyboard?</h1>
+
+<p>I figured since it is trying to get input from the console, it probably must be invoking interrupt 16 at some point, so I placed an interrupt breakpoint with <code class="language-plaintext highlighter-rouge">bpint 16</code> in Dosbox. Sure enough, it fired:</p>
+
+<p><img src="/images/start-int16.png" alt="breaking on int 16 in debugger" class="center-image" /></p>
+
+<p>Looking at the contents of the stack in the data overview pane, I can see the address of the segment where I know the executable was loaded (<code class="language-plaintext highlighter-rouge">0x28DA</code>), along with the offset <code class="language-plaintext highlighter-rouge">0x4839</code>. That is the function which invoked the interrupt. By pointing the code overview to that address, and searching for the instructions in my assembly file, I soon had my culprit:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">read512FromFileIntoBuf</span> <span class="nv">proc</span> <span class="nv">near</span>
+    <span class="nf">push</span> <span class="nb">ds</span>
+    <span class="nf">mov</span> <span class="nb">ah</span><span class="p">,</span> <span class="mh">3Fh</span>
+    <span class="nf">mov</span> <span class="nb">bx</span><span class="p">,</span> <span class="ow">seg</span> <span class="nv">startData</span>
+    <span class="nf">mov</span> <span class="nb">ds</span><span class="p">,</span> <span class="nb">bx</span>
+    <span class="nf">mov</span> <span class="nb">bx</span><span class="p">,</span> <span class="nv">_tmpFileHandle</span> <span class="c1">; device/file handle to use is passes in a global variable</span>
+    <span class="nf">mov</span> <span class="nb">cx</span><span class="p">,</span> <span class="mh">200h</span> <span class="c1">;read 512 bytes at most (int 21 returns number of chars)</span>
+    <span class="nf">mov</span> <span class="nb">dx</span><span class="p">,</span> <span class="nv">offset</span> <span class="nv">_fileReadBuf</span>
+    <span class="nf">int</span> <span class="mh">21h</span> <span class="c1">;DOS - 2+ - READ FROM FILE WITH HANDLE</span>
+    <span class="nf">jnb</span> <span class="nv">short</span> <span class="nv">readSuccess</span>
+    <span class="nf">mov</span> <span class="nb">dx</span><span class="p">,</span> <span class="nv">offset</span> <span class="nv">_aReadError</span> <span class="c1">;"Read error$"</span>
+    <span class="nf">mov</span> <span class="nb">cx</span><span class="p">,</span> <span class="mh">0FFFFh</span>
+    <span class="nf">jmp</span> <span class="nv">short</span> <span class="nv">errorAndExit</span>
+    <span class="nf">nop</span>
+<span class="nl">readSuccess:</span>
+    <span class="nf">pop</span> <span class="nb">ds</span>
+    <span class="nf">retn</span>
+<span class="nf">read512FromFileIntoBuf</span> <span class="nv">endp</span></code></pre></figure>
+
+<p>It does not appear to be calling <code class="language-plaintext highlighter-rouge">int 16</code> directly, but it does try to read from a file. I placed a breakpoint on this routine, and sure enough, the value that it uses for the file handle is zero, meaning it’s reading from <code class="language-plaintext highlighter-rouge">stdin</code> - mystery solved. Presumably, the <code class="language-plaintext highlighter-rouge">int 21</code> handler invokes the keyboard interrupt when it sees that the device to act upon is the standard input.</p>
+
+<h1 id="ok-but-why-isnt-it-reading-the-pic-file">Ok, but why isn’t it reading the PIC file?</h1>
+
+<p>This routine is used by <code class="language-plaintext highlighter-rouge">showPicFile</code> which I was instrumenting with logs before, albeit indirectly; it sets a pointer to the read routine along with the destination buffer and the file handle, then some other routine invokes <code class="language-plaintext highlighter-rouge">read512FromFileIntoBuf</code> through the pointer:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">_showPicFile</span> <span class="nv">proc</span> <span class="nv">near</span>
+    <span class="nf">handle</span> <span class="err">=</span> <span class="kt">word</span> <span class="nv">ptr</span> <span class="mi">4</span>
+    <span class="nf">pageNum</span> <span class="err">=</span> <span class="kt">word</span> <span class="nv">ptr</span> <span class="mi">6</span>
+    <span class="nf">push</span> <span class="nb">bp</span>
+    <span class="nf">mov</span> <span class="nb">bp</span><span class="p">,</span> <span class="nb">sp</span>
+    <span class="nf">push</span> <span class="nb">di</span>
+    <span class="nf">push</span> <span class="nb">si</span>
+    <span class="nf">push</span> <span class="nb">es</span>
+    <span class="nf">push</span> <span class="nb">bp</span>
+    <span class="nf">trace</span> <span class="nv">msg1</span><span class="p">,</span><span class="nb">bp</span><span class="o">+</span><span class="mi">4</span><span class="p">,</span><span class="nb">bp</span><span class="o">+</span><span class="mi">6</span>
+    <span class="nf">mov</span> <span class="nb">ax</span><span class="p">,</span> <span class="nv">offset</span> <span class="nv">read512FromFileIntoBuf</span>
+    <span class="nf">mov</span> <span class="nv">_readFromFilePtr</span><span class="p">,</span> <span class="nb">ax</span>
+    <span class="nf">mov</span> <span class="nb">ax</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">handle</span><span class="p">]</span>
+    <span class="nf">mov</span> <span class="nv">_tmpFileHandle</span><span class="p">,</span> <span class="nb">ax</span>
+    <span class="c1">; ...</span></code></pre></figure>
+
+<p>I placed a break at the location and I could see that the value of the file handle was <code class="language-plaintext highlighter-rouge">7</code>. Yet when <code class="language-plaintext highlighter-rouge">read512...</code> is invoked, it reads the handle value as zero. I pointed the memory view window to the address and sure enough, it was zero in memory. Is somebody changing the value between its setting in <code class="language-plaintext highlighter-rouge">showPicFile</code> and its usage in <code class="language-plaintext highlighter-rouge">read512...</code>? I used a memory breakpoint (<code class="language-plaintext highlighter-rouge">bpm ds:16ba</code>) in the dosbox debugger, but no, the value did not change. So how come it’s 7 here and 0 over there? Then I noticed it. The data segment address was different.</p>
+
+<h1 id="problem-between-chair-and-keyboard">Problem between chair and keyboard</h1>
+
+<p>It was caused by the following lines in <code class="language-plaintext highlighter-rouge">read512...</code>:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm">    <span class="nf">mov</span> <span class="nb">bx</span><span class="p">,</span> <span class="ow">seg</span> <span class="nv">startData</span>
+    <span class="nf">mov</span> <span class="nb">ds</span><span class="p">,</span> <span class="nb">bx</span></code></pre></figure>
+
+<p>The routine is resetting the data segment, but it’s not the right data segment. At the top of this assembly file, I have what I though was a forward declaration for the data and BSS segments:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">DOSSEG</span>
+<span class="nf">.8086</span>
+<span class="nf">.MODEL</span> <span class="nv">SMALL</span>
+
+<span class="nf">startData</span> <span class="ow">seg</span><span class="nv">ment</span> <span class="kt">word</span> <span class="nv">public</span> <span class="s">'DATA'</span>
+<span class="nf">startData</span> <span class="nv">ends</span>
+<span class="nf">startBss</span> <span class="ow">seg</span><span class="nv">ment</span> <span class="kt">byte</span> <span class="nv">public</span> <span class="s">"BSS"</span>
+<span class="nf">startBss</span> <span class="nv">ends</span>
+
+<span class="nf">DGROUP</span> <span class="nv">GROUP</span> <span class="nv">startData</span><span class="p">,</span><span class="nv">startBss</span>
+<span class="nf">ASSUME</span> <span class="nb">DS</span><span class="p">:</span><span class="nv">DGROUP</span></code></pre></figure>
+
+<p>However, in the autogenerated assembly file that contains all the actual data, I switched over to the simplified/standard MASM segment declarations with <code class="language-plaintext highlighter-rouge">.DATA/.DATA?</code> and forgot about it. There is no such thing as <code class="language-plaintext highlighter-rouge">startData</code>, it’s just an empty segment that the assembler created, and it just happened to contain zeros at runtime, which got into the file handle, redirecting the read from the file to the standard input.</p>
+
+<h1 id="it-all-comes-together">It all comes together</h1>
+
+<p>The seemingly irrational behaviour of the bug was because I was logging to a file, and staring at a black screen in the emulator. Sometimes I was pressing keys which made the row processing routine advance further, sometimes not. There is also a bug in vanilla DosBox where if the emulator window gains focus, it will sometimes start sending bogus keyboard input into the window until you hit a key. That must have kicked in the time I saw the routine advance past row 70 in the logs. Also, the keys were coming in pretty fast, so there was never a time difference of more than 1 second. My time delta calculation was correct, when I was looking at it on the console and waiting a couple seconds between the keypresses, the printed delays were accurate.</p>
+
+<p>Whew. That one was pretty wild. Time to fix it.</p>
+
+<h1 id="will-it-start">Will it START?</h1>
+
+<p>I removed the unneeded segment declaration from the assembly file, and replaced any references to <code class="language-plaintext highlighter-rouge">startData</code> with <code class="language-plaintext highlighter-rouge">@data</code>, which is the automatic MASM equate for the data segment. Switched the logging routine to print to a file again, and restored the switch to graphical mode back the way it was. Then I fired it up.</p>
+
+<p><img src="/images/start-runs.png" alt="the executable running in the game" class="center-image" /></p>
+
+<p>I swear, I’ve never been so happy to see the game title screen before. It does not matter that it crashed upon reaching the pilot selection screen. For it to display the splash screen, a bunch of important things must be going right:</p>
+
+<ol>
+  <li>The overlay drivers are being set up correctly</li>
+  <li>The executable is healthy, able to call into C code, assembly code and the overlays plus return without issue</li>
+  <li>The different layout of the data segment is not preventing the game from working, meaning (most of) the data references were resolved correctly</li>
+</ol>
+
+<p>Better still, this validates my methodology with using <code class="language-plaintext highlighter-rouge">mzdiff</code> to compare the code while reconstructing it, proving that the approach is viable. Sometimes when I’m looking at the diagram in <a href="https://github.com/neuviemeporte/mzretools?tab=readme-ov-file#mzretools">the tools’ README</a>, it makes me think it’s too convoluted and ridiculous, but that’s just what it takes to dissect and put the game back together. Without the tooling, none of this would have been any simpler – all the arrows would just be going to the person shape, and I would have to do all of this stuff manually anyway.</p>
+
+<p>I must say I am pretty happy with my New Year’s present. Looking forward to getting the first part of the game fully running soon.</p>
+
+  </div><a class="u-url" href="/f15-se2/2025/01/01/unstart2.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

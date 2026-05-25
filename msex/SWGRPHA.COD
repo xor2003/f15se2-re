@@ -1,0 +1,2959 @@
+;	Static Name Aliases
+;
+;	$S268_dispoff	EQU	dispoff
+;	$S269_scrtype	EQU	scrtype
+;	$S270_grndsave	EQU	grndsave
+;	$S271_dispg	EQU	dispg
+;	$S272_drawpnt	EQU	drawpnt
+;	$S273_drawsym	EQU	drawsym
+;	$S274_palette	EQU	palette
+;	$S275_spcbirds	EQU	spcbirds
+;	$S529_videoram	EQU	videoram
+	TITLE   SWGRPHA.C
+	NAME    SWGRPHA
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+PUBLIC  _fill
+EXTRN	__acrtused:ABS
+EXTRN	_trap14:NEAR
+EXTRN	_movmem:NEAR
+EXTRN	_displx:WORD
+EXTRN	_disprx:WORD
+EXTRN	_dispdx:WORD
+EXTRN	_auxdisp:BYTE
+EXTRN	_ground:BYTE
+EXTRN	_dispinit:WORD
+EXTRN	_objtop:WORD
+EXTRN	_deltop:WORD
+EXTRN	_forcdisp:WORD
+EXTRN	_swbrdsym:DWORD
+EXTRN	_swplnsym:BYTE
+EXTRN	_swhitsym:BYTE
+EXTRN	_swbmbsym:BYTE
+EXTRN	_swtrgsym:BYTE
+EXTRN	_swwinsym:BYTE
+EXTRN	_swhtrsym:BYTE
+EXTRN	_swexpsym:BYTE
+EXTRN	_swflksym:BYTE
+EXTRN	_swbrdsym:DWORD
+EXTRN	_swoxsym:BYTE
+_DATA      SEGMENT
+$S274_palette	DW	00H
+	DW	037H
+	DW	0700H
+	DW	0777H
+	DW	00H
+	DW	00H
+	DW	00H
+	DW	070H
+	DW	00H
+	DW	0433H
+	DW	0420H
+	DW	0320H
+	DW	00H
+	DW	00H
+	DW	00H
+	DW	00H
+_fill	DB	00H
+	DB	03H
+	DB	03H
+	DB	03H
+	DB	0cH
+	DB	0fH
+	DB	0fH
+	DB	0fH
+	DB	0cH
+	DB	0fH
+	DB	0fH
+	DB	0fH
+	DB	0cH
+	DB	0fH
+	DB	0fH
+	DB	0fH
+	DB	030H
+	DB	033H
+	DB	033H
+	DB	033H
+	DB	03cH
+	DB	03fH
+	DB	03fH
+	DB	03fH
+	DB	03cH
+	DB	03fH
+	DB	03fH
+	DB	03fH
+	DB	03cH
+	DB	03fH
+	DB	03fH
+	DB	03fH
+	DB	030H
+	DB	033H
+	DB	033H
+	DB	033H
+	DB	03cH
+	DB	03fH
+	DB	03fH
+	DB	03fH
+	DB	03cH
+	DB	03fH
+	DB	03fH
+	DB	03fH
+	DB	03cH
+	DB	03fH
+	DB	03fH
+	DB	03fH
+	DB	030H
+	DB	033H
+	DB	033H
+	DB	033H
+	DB	03cH
+	DB	03fH
+	DB	03fH
+	DB	03fH
+	DB	03cH
+	DB	03fH
+	DB	03fH
+	DB	03fH
+	DB	03cH
+	DB	03fH
+	DB	03fH
+	DB	03fH
+	DB	0c0H
+	DB	0c3H
+	DB	0c3H
+	DB	0c3H
+	DB	0ccH
+	DB	0cfH
+	DB	0cfH
+	DB	0cfH
+	DB	0ccH
+	DB	0cfH
+	DB	0cfH
+	DB	0cfH
+	DB	0ccH
+	DB	0cfH
+	DB	0cfH
+	DB	0cfH
+	DB	0f0H
+	DB	0f3H
+	DB	0f3H
+	DB	0f3H
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0f0H
+	DB	0f3H
+	DB	0f3H
+	DB	0f3H
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0f0H
+	DB	0f3H
+	DB	0f3H
+	DB	0f3H
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0c0H
+	DB	0c3H
+	DB	0c3H
+	DB	0c3H
+	DB	0ccH
+	DB	0cfH
+	DB	0cfH
+	DB	0cfH
+	DB	0ccH
+	DB	0cfH
+	DB	0cfH
+	DB	0cfH
+	DB	0ccH
+	DB	0cfH
+	DB	0cfH
+	DB	0cfH
+	DB	0f0H
+	DB	0f3H
+	DB	0f3H
+	DB	0f3H
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0f0H
+	DB	0f3H
+	DB	0f3H
+	DB	0f3H
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0f0H
+	DB	0f3H
+	DB	0f3H
+	DB	0f3H
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0c0H
+	DB	0c3H
+	DB	0c3H
+	DB	0c3H
+	DB	0ccH
+	DB	0cfH
+	DB	0cfH
+	DB	0cfH
+	DB	0ccH
+	DB	0cfH
+	DB	0cfH
+	DB	0cfH
+	DB	0ccH
+	DB	0cfH
+	DB	0cfH
+	DB	0cfH
+	DB	0f0H
+	DB	0f3H
+	DB	0f3H
+	DB	0f3H
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0f0H
+	DB	0f3H
+	DB	0f3H
+	DB	0f3H
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0f0H
+	DB	0f3H
+	DB	0f3H
+	DB	0f3H
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+	DB	0fcH
+	DB	0ffH
+	DB	0ffH
+	DB	0ffH
+$S529_videoram	DW	00H
+_DATA      ENDS
+_BSS      SEGMENT
+$S268_dispoff	DW 01H DUP (?)
+	ORG	$+4
+$S269_scrtype	DW 01H DUP (?)
+	ORG	$+8
+$S270_grndsave	DW 0a0H DUP (?)
+$S271_dispg	DW 01H DUP (?)
+	ORG	$-336
+$S272_drawpnt	DW 01H DUP (?)
+$S273_drawsym	DW 01H DUP (?)
+	ORG	$+2
+$S275_spcbirds	DW 04H DUP (?)
+_BSS      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** /*
+;|*** 
+;|***                         Copyright (C) 1984-2000 David L. Clark.
+;|*** 
+;|***                         All rights reserved except as specified in the
+;|***                         file license.txt.  Distribution of this file
+;|***                         without the license.txt file accompanying is
+;|***                         prohibited.
+;|*** 
+;|*** */
+;|*** 
+;|*** #define NULL     ((void *)0)
+;|*** #define FALSE    0
+;|*** #define TRUE     1
+;|*** #define NO       0
+;|*** #define YES      1
+;|*** #define FOREVER  for (;;)
+;|*** 
+;|*** int index(char *str,int c);
+;|*** int inportb(unsigned port);
+;|*** void movblock(unsigned int srcoff,unsigned int srcseg,
+;|***               unsigned int destoff,unsigned int destseg,
+;|***               unsigned int count);
+; Line 23
+;|*** /*
+;|*** 
+;|***         swgrph   -      SW screen graphics
+;|*** 
+;|***                         Copyright (C) 1984-2000 David L. Clark.
+;|*** 
+;|***                         All rights reserved except as specified in the
+;|***                         file license.txt.  Distribution of this file
+;|***                         without the license.txt file accompanying is
+;|***                         prohibited.
+;|*** 
+;|***                         Author: Dave Clark
+;|*** 
+;|***         Modification History:
+;|***                         84-02-21        Development
+;|***                         84-06-13        PCjr Speed-up
+;|***                         85-11-05        Atari
+;|***                         87-03-09        Microsoft compiler.
+;|*** */
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** #include        "sw.h"
+;|*** 
+;|*** 
+;|*** 
+;|*** extern  int     displx, disprx;         /* Display left and right bounds    */
+;|*** extern  int     dispdx;                 /* Display shift                    */
+;|*** extern  char    auxdisp[];              /* Auxiliary display area           */
+;|*** extern  GRNDTYPE ground[];              /* Ground height by pixel           */
+;|*** extern  BOOL    dispinit;               /* Initalized display flag.         */
+;|*** extern  OBJECTS *objtop;                /* Top of object list               */
+;|*** extern  OBJECTS *deltop;                /* Newly deallocated objects list   */
+;|*** extern  int     forcdisp;               /* Force display of ground          */
+;|*** extern  long    trap14();               /* BIOS trap                        */
+;|*** 
+;|*** static  char    *dispoff;               /* Current display offset           */
+;|*** static  int     scrtype;                /* Screen type                      */
+;|*** static  GRNDTYPE grndsave[SCR_WDTH];    /* Saved ground buffer for last     */
+;|***                                         /*   last display                   */
+;|*** static  int     ( *dispg )();           /* display ground routine (mono,clr)*/
+;|*** static  int     ( *drawpnt )();         /* draw point routine               */
+;|*** static  int     ( *drawsym )();         /* draw symbol routine              */
+;|*** 
+;|*** static  int     palette[] = {   /* Colour palette                           */
+;|***         0x000,                  /*   0 = black    background                */
+;|***         0x037,                  /*   1 = blue     planes,targets,explosions */
+;|***         0x700,                  /*   2 = red      planes,targets,explosions */
+;|***         0x777,                  /*   3 = white    bullets                   */
+;|***         0x000,                  /*   4                                      */
+;|***         0x000,                  /*   5                                      */
+;|***         0x000,                  /*   6                                      */
+;|***         0x070,                  /*   7 = green    ground                    */
+;|***         0x000,                  /*   8                                      */
+;|***         0x433,                  /*   9 = tan      oxen, birds               */
+;|***         0x420,                  /*  10 = brown    oxen                      */
+;|***         0x320,                  /*  11 = brown    bottom of ground display  */
+;|***         0x000,                  /*  12                                      */
+;|***         0x000,                  /*  13                                      */
+;|***         0x000,                  /*  14                                      */
+;|***         0x000                   /*  15                                      */
+;|*** };
+;|*** 
+;|*** 
+;|*** 
+;|*** static  char    spcbirds[BIRDSYMS][BRDBYTES*2];   /* Special bird symbol    */
+;|***                                                   /* colour video maps      */
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** /*---------------------------------------------------------------------------
+;|*** 
+;|***         Main display loop.   Delete and display all visible objects.
+;|***         Delete any newly deleted objects
+;|*** 
+;|*** ---------------------------------------------------------------------------*/
+;|*** 
+;|*** 
+;|*** 
+;|*** swdisp()
+;|*** {
+; Line 83
+	PUBLIC	_swdisp
+_swdisp	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+	*** 000003	83 ec 02 		sub	sp,2
+	*** 000006	56 			push	si
+;	register si = ob
+;|*** register OBJECTS *ob;
+;|*** 
+;|***         setvdisp();
+; Line 86
+	*** 000007	e8 00 00 		call	_setvdisp
+;|***         for ( ob = objtop; ob; ob = ob->ob_next ) {
+; Line 87
+	*** 00000a	8b 36 00 00 		mov	si,_objtop
+	*** 00000e	eb 03 			jmp	SHORT $F280
+					$FC281:
+	*** 000010	8b 74 34 		mov	si,WORD PTR [si+52]
+					$F280:
+	*** 000013	0b f6 			or	si,si
+	*** 000015	75 03 			jne	$JCC21
+	*** 000017	e9 9d 00 		jmp	$FB282
+					$JCC21:
+;|***                 if ( ( !( ob->ob_delflg && ob->ob_drwflg ) )
+;|***                         || ( ob->ob_symhgt == 1 )
+;|***                         || ( ob->ob_oldsym != ob->ob_newsym )
+;|***                         || ( ob->ob_y != ob->ob_oldy )
+;|***                         || ( ( ob->ob_oldx + displx ) != ob->ob_x ) ) {
+; Line 92
+	*** 00001a	83 7c 40 00 		cmp	WORD PTR [si+64],0
+	*** 00001e	74 28 			je	$I284
+	*** 000020	83 7c 3e 00 		cmp	WORD PTR [si+62],0
+	*** 000024	74 22 			je	$I284
+	*** 000026	83 7c 22 01 		cmp	WORD PTR [si+34],1
+	*** 00002a	74 1c 			je	$I284
+	*** 00002c	8b 44 4e 		mov	ax,WORD PTR [si+78]
+	*** 00002f	39 44 42 		cmp	WORD PTR [si+66],ax
+	*** 000032	75 14 			jne	$I284
+	*** 000034	8b 44 3c 		mov	ax,WORD PTR [si+60]
+	*** 000037	39 44 04 		cmp	WORD PTR [si+4],ax
+	*** 00003a	75 0c 			jne	$I284
+	*** 00003c	8b 44 3a 		mov	ax,WORD PTR [si+58]
+	*** 00003f	03 06 00 00 		add	ax,_displx
+	*** 000043	3b 44 02 		cmp	ax,WORD PTR [si+2]
+	*** 000046	74 5f 			je	$I283
+					$I284:
+;|***                         if ( ob->ob_delflg )
+; Line 93
+	*** 000048	83 7c 40 00 		cmp	WORD PTR [si+64],0
+	*** 00004c	74 17 			je	$I285
+;|***                                 ( *drawsym )( ob, ob->ob_oldx, ob->ob_oldy,
+;|***                                               ob->ob_oldsym, ob->ob_clr, NULL );
+; Line 95
+	*** 00004e	2b c0 			sub	ax,ax
+	*** 000050	50 			push	ax
+	*** 000051	ff 74 2a 		push	WORD PTR [si+42]
+	*** 000054	ff 74 42 		push	WORD PTR [si+66]
+	*** 000057	ff 74 3c 		push	WORD PTR [si+60]
+	*** 00005a	ff 74 3a 		push	WORD PTR [si+58]
+	*** 00005d	56 			push	si
+	*** 00005e	ff 16 04 00 		call	WORD PTR $S273_drawsym
+	*** 000062	83 c4 0c 		add	sp,12
+;|***                         if ( !ob->ob_drwflg )
+; Line 96
+					$I285:
+	*** 000065	83 7c 3e 00 		cmp	WORD PTR [si+62],0
+	*** 000069	75 02 			jne	$I286
+;|***                                 continue;
+; Line 97
+	*** 00006b	eb a3 			jmp	SHORT $FC281
+;|***                         if ( ( ob->ob_x < displx ) || ( ob->ob_x > disprx ) ) {
+; Line 98
+					$I286:
+	*** 00006d	a1 00 00 		mov	ax,_displx
+	*** 000070	39 44 02 		cmp	WORD PTR [si+2],ax
+	*** 000073	7c 08 			jl	$I288
+	*** 000075	a1 00 00 		mov	ax,_disprx
+	*** 000078	39 44 02 		cmp	WORD PTR [si+2],ax
+	*** 00007b	7e 07 			jle	$I287
+					$I288:
+;|***                                 ob->ob_drwflg = 0;
+; Line 99
+	*** 00007d	c7 44 3e 00 00 		mov	WORD PTR [si+62],0
+;|***                                 continue;
+; Line 100
+	*** 000082	eb 8c 			jmp	SHORT $FC281
+;|***                         }
+; Line 101
+;|***                         ( *drawsym )( ob, ob->ob_oldx = ob->ob_x - displx,
+; Line 102
+					$I287:
+;|***                                       ob->ob_oldy = ob->ob_y,
+;|***                                       ob->ob_newsym,
+;|***                                       ob->ob_clr, NULL );
+; Line 105
+	*** 000084	2b c0 			sub	ax,ax
+	*** 000086	50 			push	ax
+	*** 000087	ff 74 2a 		push	WORD PTR [si+42]
+	*** 00008a	ff 74 4e 		push	WORD PTR [si+78]
+	*** 00008d	8b 44 04 		mov	ax,WORD PTR [si+4]
+	*** 000090	89 44 3c 		mov	WORD PTR [si+60],ax
+	*** 000093	50 			push	ax
+	*** 000094	8b 44 02 		mov	ax,WORD PTR [si+2]
+	*** 000097	2b 06 00 00 		sub	ax,_displx
+	*** 00009b	89 44 3a 		mov	WORD PTR [si+58],ax
+	*** 00009e	50 			push	ax
+	*** 00009f	56 			push	si
+	*** 0000a0	ff 16 04 00 		call	WORD PTR $S273_drawsym
+	*** 0000a4	83 c4 0c 		add	sp,12
+;|***                 }
+; Line 106
+;|***                 if ( ob->ob_drawf )
+; Line 107
+					$I283:
+	*** 0000a7	83 7c 44 00 		cmp	WORD PTR [si+68],0
+	*** 0000ab	74 07 			je	$I289
+;|***                         ( *( ob->ob_drawf ) )( ob );
+; Line 108
+	*** 0000ad	56 			push	si
+	*** 0000ae	ff 54 44 		call	WORD PTR [si+68]
+	*** 0000b1	83 c4 02 		add	sp,2
+;|***         }
+; Line 109
+					$I289:
+	*** 0000b4	e9 59 ff 		jmp	$FC281
+					$FB282:
+;|*** 
+;|***         for ( ob = deltop; ob; ob = ob->ob_next )
+; Line 111
+	*** 0000b7	8b 36 00 00 		mov	si,_deltop
+	*** 0000bb	eb 03 			jmp	SHORT $F290
+					$FC291:
+	*** 0000bd	8b 74 34 		mov	si,WORD PTR [si+52]
+					$F290:
+	*** 0000c0	0b f6 			or	si,si
+	*** 0000c2	74 1f 			je	$FB292
+;|***                 if ( ob->ob_delflg )
+; Line 112
+	*** 0000c4	83 7c 40 00 		cmp	WORD PTR [si+64],0
+	*** 0000c8	74 17 			je	$I293
+;|***                         ( *drawsym )( ob, ob->ob_oldx, ob->ob_oldy,
+;|***                                       ob->ob_oldsym, ob->ob_clr, NULL );
+; Line 114
+	*** 0000ca	2b c0 			sub	ax,ax
+	*** 0000cc	50 			push	ax
+	*** 0000cd	ff 74 2a 		push	WORD PTR [si+42]
+	*** 0000d0	ff 74 42 		push	WORD PTR [si+66]
+	*** 0000d3	ff 74 3c 		push	WORD PTR [si+60]
+	*** 0000d6	ff 74 3a 		push	WORD PTR [si+58]
+	*** 0000d9	56 			push	si
+	*** 0000da	ff 16 04 00 		call	WORD PTR $S273_drawsym
+	*** 0000de	83 c4 0c 		add	sp,12
+;|*** 
+;|***         dispgrnd();
+; Line 116
+					$I293:
+	*** 0000e1	eb da 			jmp	SHORT $FC291
+					$FB292:
+	*** 0000e3	e8 00 00 		call	dispgrnd
+;|***         dispinit = FALSE;
+; Line 117
+	*** 0000e6	c7 06 00 00 00 00 	mov	WORD PTR _dispinit,0
+;|***         forcdisp = FALSE;
+; Line 118
+	*** 0000ec	c7 06 00 00 00 00 	mov	WORD PTR _forcdisp,0
+;|*** }
+; Line 119
+	*** 0000f2	5e 			pop	si
+	*** 0000f3	8b e5 			mov	sp,bp
+	*** 0000f5	5d 			pop	bp
+	*** 0000f6	c3 			ret	
+
+_swdisp	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** /*---------------------------------------------------------------------------
+;|*** 
+;|***         Update display of ground.   Delete previous display of ground by
+;|***         XOR graphics.
+;|*** 
+;|***         Different routines are used to display/delete ground on colour
+;|***         or monochrome systems.
+;|*** 
+;|*** ---------------------------------------------------------------------------*/
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static  dispgrnd()
+;|*** {
+; Line 137
+dispgrnd	PROC NEAR
+	*** 0000f7	55 			push	bp
+	*** 0000f8	8b ec 			mov	bp,sp
+;|***         if ( !dispinit ) {
+; Line 138
+	*** 0000fa	83 3e 00 00 00 		cmp	WORD PTR _dispinit,0
+	*** 0000ff	75 1b 			jne	$I296
+;|***                 if ( !( dispdx || forcdisp ) )
+; Line 139
+	*** 000101	83 3e 00 00 00 		cmp	WORD PTR _dispdx,0
+	*** 000106	75 09 			jne	$I297
+	*** 000108	83 3e 00 00 00 		cmp	WORD PTR _forcdisp,0
+	*** 00010d	75 02 			jne	$I297
+;|***                         return;
+; Line 140
+	*** 00010f	eb 2e 			jmp	SHORT $EX295
+;|***                 ( *dispg )( grndsave );
+; Line 141
+					$I297:
+	*** 000111	b8 10 00 		mov	ax,OFFSET DGROUP:$S270_grndsave
+	*** 000114	50 			push	ax
+	*** 000115	ff 16 50 01 		call	WORD PTR $S271_dispg
+	*** 000119	83 c4 02 		add	sp,2
+;|***         }
+; Line 142
+;|***         movmem( ground + displx, grndsave, SCR_WDTH * sizeof( GRNDTYPE ) );
+; Line 143
+					$I296:
+	*** 00011c	b8 40 01 		mov	ax,320
+	*** 00011f	50 			push	ax
+	*** 000120	b8 10 00 		mov	ax,OFFSET DGROUP:$S270_grndsave
+	*** 000123	50 			push	ax
+	*** 000124	a1 00 00 		mov	ax,_displx
+	*** 000127	05 00 00 		add	ax,OFFSET _ground
+	*** 00012a	50 			push	ax
+	*** 00012b	e8 00 00 		call	_movmem
+	*** 00012e	83 c4 06 		add	sp,6
+;|***         ( *dispg )( ground + displx );
+; Line 144
+	*** 000131	a1 00 00 		mov	ax,_displx
+	*** 000134	05 00 00 		add	ax,OFFSET _ground
+	*** 000137	50 			push	ax
+	*** 000138	ff 16 50 01 		call	WORD PTR $S271_dispg
+	*** 00013c	83 c4 02 		add	sp,2
+;|*** }
+; Line 145
+					$EX295:
+	*** 00013f	8b e5 			mov	sp,bp
+	*** 000141	5d 			pop	bp
+	*** 000142	c3 			ret	
+
+dispgrnd	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static  dispgm( gptr )
+;|*** GRNDTYPE *gptr;
+; Line 151
+dispgm	PROC NEAR
+	*** 000143	55 			push	bp
+	*** 000144	8b ec 			mov	bp,sp
+	*** 000146	83 ec 0c 		sub	sp,12
+	*** 000149	57 			push	di
+	*** 00014a	56 			push	si
+;|*** {
+; Line 152
+;	gptr = 4
+;	register si = g
+;	gl = -4
+;	gc = -12
+;	register di = gmask
+;	i = -10
+;	sptr = -8
+;|*** register GRNDTYPE *g, gl, gc;
+;|*** register int      gmask, i;
+;|*** register char     *sptr;
+;|*** 
+;|***         i = SCR_WDTH;
+; Line 157
+	*** 00014b	c7 46 f6 40 01 		mov	WORD PTR [bp-10],320	;i
+;|***         gl = *( g = gptr );
+; Line 158
+	*** 000150	8b 76 04 		mov	si,WORD PTR [bp+4]	;gptr
+	*** 000153	8a 04 			mov	al,BYTE PTR [si]
+	*** 000155	88 46 fc 		mov	BYTE PTR [bp-4],al	;gl
+;|***         gmask = 0xC0;
+; Line 159
+	*** 000158	bf c0 00 		mov	di,192
+;|***         sptr = dispoff + ( SCR_HGHT - gl - 1 ) * 160;
+; Line 160
+	*** 00015b	2a e4 			sub	ah,ah
+	*** 00015d	2d c7 00 		sub	ax,199
+	*** 000160	f7 d8 			neg	ax
+	*** 000162	b9 a0 00 		mov	cx,160
+	*** 000165	f7 e1 			mul	cx
+	*** 000167	03 06 00 00 		add	ax,$S268_dispoff
+	*** 00016b	89 46 f8 		mov	WORD PTR [bp-8],ax	;sptr
+;|*** 
+;|***         while ( i-- ) {
+; Line 162
+					$FC308:
+	*** 00016e	8b 46 f6 		mov	ax,WORD PTR [bp-10]	;i
+	*** 000171	ff 4e f6 		dec	WORD PTR [bp-10]	;i
+	*** 000174	0b c0 			or	ax,ax
+	*** 000176	74 6c 			je	$FB309
+;|***                 if ( gl == ( gc = *g++ ) ) {
+; Line 163
+	*** 000178	ac 			lodsb
+	*** 000179	88 46 f4 		mov	BYTE PTR [bp-12],al	;gc
+	*** 00017c	3a 46 fc 		cmp	al,BYTE PTR [bp-4]	;gl
+	*** 00017f	75 0f 			jne	$I310
+;|***                         *sptr        ^= gmask;
+; Line 164
+	*** 000181	8b 5e f8 		mov	bx,WORD PTR [bp-8]	;sptr
+	*** 000184	8b c7 			mov	ax,di
+	*** 000186	30 07 			xor	BYTE PTR [bx],al
+;|***                         *( sptr+80 ) ^= gmask;
+; Line 165
+	*** 000188	8b 5e f8 		mov	bx,WORD PTR [bp-8]	;sptr
+	*** 00018b	30 47 50 		xor	BYTE PTR [bx+80],al
+;|***                 } else if ( gl < gc )
+; Line 166
+	*** 00018e	eb 44 			jmp	SHORT $I316
+					$I310:
+	*** 000190	8a 46 f4 		mov	al,BYTE PTR [bp-12]	;gc
+	*** 000193	38 46 fc 		cmp	BYTE PTR [bp-4],al	;gl
+	*** 000196	73 1f 			jae	$I312
+;|***                         do  {
+; Line 167
+					$D313:
+;|***                                 *( sptr-=160 ) ^= gmask;
+; Line 168
+	*** 000198	81 6e f8 a0 00 		sub	WORD PTR [bp-8],160	;sptr
+	*** 00019d	8b 5e f8 		mov	bx,WORD PTR [bp-8]	;sptr
+	*** 0001a0	8b c7 			mov	ax,di
+	*** 0001a2	30 07 			xor	BYTE PTR [bx],al
+;|***                                 *( sptr+80 )   ^= gmask;
+; Line 169
+	*** 0001a4	8b 5e f8 		mov	bx,WORD PTR [bp-8]	;sptr
+	*** 0001a7	30 47 50 		xor	BYTE PTR [bx+80],al
+;|***                         } while ( ++gl < gc );
+; Line 170
+	*** 0001aa	fe 46 fc 		inc	BYTE PTR [bp-4]	;gl
+	*** 0001ad	8a 46 f4 		mov	al,BYTE PTR [bp-12]	;gc
+	*** 0001b0	38 46 fc 		cmp	BYTE PTR [bp-4],al	;gl
+	*** 0001b3	72 e3 			jb	$D313
+;|***                 else
+; Line 171
+	*** 0001b5	eb 1d 			jmp	SHORT $I316
+					$I312:
+;|***                         do  {
+; Line 172
+;|***                                 *( sptr+=160 ) ^= gmask;
+; Line 173
+	*** 0001b7	81 46 f8 a0 00 		add	WORD PTR [bp-8],160	;sptr
+	*** 0001bc	8b 5e f8 		mov	bx,WORD PTR [bp-8]	;sptr
+	*** 0001bf	8b c7 			mov	ax,di
+	*** 0001c1	30 07 			xor	BYTE PTR [bx],al
+;|***                                 *( sptr-80 )   ^= gmask;
+; Line 174
+	*** 0001c3	8b 5e f8 		mov	bx,WORD PTR [bp-8]	;sptr
+	*** 0001c6	30 47 b0 		xor	BYTE PTR [bx-80],al
+;|***                         } while ( --gl > gc );
+; Line 175
+	*** 0001c9	fe 4e fc 		dec	BYTE PTR [bp-4]	;gl
+	*** 0001cc	8a 46 f4 		mov	al,BYTE PTR [bp-12]	;gc
+	*** 0001cf	38 46 fc 		cmp	BYTE PTR [bp-4],al	;gl
+	*** 0001d2	77 e3 			ja	$I312
+					$I316:
+;|*** 
+;|***                 if ( !( gmask >>= 2 ) ) {
+; Line 177
+	*** 0001d4	b1 02 			mov	cl,2
+	*** 0001d6	d3 ff 			sar	di,cl
+	*** 0001d8	0b ff 			or	di,di
+	*** 0001da	75 06 			jne	$I320
+;|***                         gmask = 0xC0;
+; Line 178
+	*** 0001dc	bf c0 00 		mov	di,192
+;|***                         ++sptr;
+; Line 179
+	*** 0001df	ff 46 f8 		inc	WORD PTR [bp-8]	;sptr
+;|***                 }
+; Line 180
+;|***         }
+; Line 181
+					$I320:
+	*** 0001e2	eb 8a 			jmp	SHORT $FC308
+					$FB309:
+;|*** }
+; Line 182
+	*** 0001e4	5e 			pop	si
+	*** 0001e5	5f 			pop	di
+	*** 0001e6	8b e5 			mov	sp,bp
+	*** 0001e8	5d 			pop	bp
+	*** 0001e9	c3 			ret	
+
+dispgm	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static  dispgc( gptr )
+;|*** GRNDTYPE *gptr;
+; Line 188
+dispgc	PROC NEAR
+	*** 0001ea	55 			push	bp
+	*** 0001eb	8b ec 			mov	bp,sp
+	*** 0001ed	83 ec 0c 		sub	sp,12
+	*** 0001f0	57 			push	di
+	*** 0001f1	56 			push	si
+;|*** {
+; Line 189
+;	gptr = 4
+;	register si = g
+;	gl = -4
+;	gc = -12
+;	register di = gmask
+;	i = -10
+;	sptr = -8
+;|*** register GRNDTYPE *g, gl, gc;
+;|*** register int      gmask, i;
+;|*** register char     *sptr;
+;|*** 
+;|***         i = SCR_WDTH;
+; Line 194
+	*** 0001f2	c7 46 f6 40 01 		mov	WORD PTR [bp-10],320	;i
+;|***         gl = *( g = gptr );
+; Line 195
+	*** 0001f7	8b 76 04 		mov	si,WORD PTR [bp+4]	;gptr
+	*** 0001fa	8a 04 			mov	al,BYTE PTR [si]
+	*** 0001fc	88 46 fc 		mov	BYTE PTR [bp-4],al	;gl
+;|***         gmask = 0x80;
+; Line 196
+	*** 0001ff	bf 80 00 		mov	di,128
+;|***         sptr = dispoff + ( SCR_HGHT - gl - 1 ) * 160;
+; Line 197
+	*** 000202	2a e4 			sub	ah,ah
+	*** 000204	2d c7 00 		sub	ax,199
+	*** 000207	f7 d8 			neg	ax
+	*** 000209	b9 a0 00 		mov	cx,160
+	*** 00020c	f7 e1 			mul	cx
+	*** 00020e	03 06 00 00 		add	ax,$S268_dispoff
+	*** 000212	89 46 f8 		mov	WORD PTR [bp-8],ax	;sptr
+;|*** 
+;|***         while ( i-- ) {
+; Line 199
+					$FC331:
+	*** 000215	8b 46 f6 		mov	ax,WORD PTR [bp-10]	;i
+	*** 000218	ff 4e f6 		dec	WORD PTR [bp-10]	;i
+	*** 00021b	0b c0 			or	ax,ax
+	*** 00021d	75 03 			jne	$JCC541
+	*** 00021f	e9 8c 00 		jmp	$FB332
+					$JCC541:
+;|***                 if ( gl == ( gc = *g++ ) ) {
+; Line 200
+	*** 000222	ac 			lodsb
+	*** 000223	88 46 f4 		mov	BYTE PTR [bp-12],al	;gc
+	*** 000226	3a 46 fc 		cmp	al,BYTE PTR [bp-4]	;gl
+	*** 000229	75 15 			jne	$I333
+;|***                         *sptr       ^= gmask;
+; Line 201
+	*** 00022b	8b 5e f8 		mov	bx,WORD PTR [bp-8]	;sptr
+	*** 00022e	8b c7 			mov	ax,di
+	*** 000230	30 07 			xor	BYTE PTR [bx],al
+;|***                         *( sptr+2 ) ^= gmask;
+; Line 202
+	*** 000232	8b 5e f8 		mov	bx,WORD PTR [bp-8]	;sptr
+	*** 000235	30 47 02 		xor	BYTE PTR [bx+2],al
+;|***                         *( sptr+4 ) ^= gmask;
+; Line 203
+	*** 000238	8b 5e f8 		mov	bx,WORD PTR [bp-8]	;sptr
+	*** 00023b	30 47 04 		xor	BYTE PTR [bx+4],al
+;|***                 } else if ( gl < gc )
+; Line 204
+	*** 00023e	eb 50 			jmp	SHORT $I339
+					$I333:
+	*** 000240	8a 46 f4 		mov	al,BYTE PTR [bp-12]	;gc
+	*** 000243	38 46 fc 		cmp	BYTE PTR [bp-4],al	;gl
+	*** 000246	73 25 			jae	$I335
+;|***                         do  {
+; Line 205
+					$D336:
+;|***                                 *( sptr-=160 ) ^= gmask;
+; Line 206
+	*** 000248	81 6e f8 a0 00 		sub	WORD PTR [bp-8],160	;sptr
+	*** 00024d	8b 5e f8 		mov	bx,WORD PTR [bp-8]	;sptr
+	*** 000250	8b c7 			mov	ax,di
+	*** 000252	30 07 			xor	BYTE PTR [bx],al
+;|***                                 *( sptr+2 )    ^= gmask;
+; Line 207
+	*** 000254	8b 5e f8 		mov	bx,WORD PTR [bp-8]	;sptr
+	*** 000257	30 47 02 		xor	BYTE PTR [bx+2],al
+;|***                                 *( sptr+4 )    ^= gmask;
+; Line 208
+	*** 00025a	8b 5e f8 		mov	bx,WORD PTR [bp-8]	;sptr
+	*** 00025d	30 47 04 		xor	BYTE PTR [bx+4],al
+;|***                         } while ( ++gl < gc );
+; Line 209
+	*** 000260	fe 46 fc 		inc	BYTE PTR [bp-4]	;gl
+	*** 000263	8a 46 f4 		mov	al,BYTE PTR [bp-12]	;gc
+	*** 000266	38 46 fc 		cmp	BYTE PTR [bp-4],al	;gl
+	*** 000269	72 dd 			jb	$D336
+;|***                 else
+; Line 210
+	*** 00026b	eb 23 			jmp	SHORT $I339
+					$I335:
+;|***                         do  {
+; Line 211
+;|***                                 *( sptr+=160 ) ^= gmask;
+; Line 212
+	*** 00026d	81 46 f8 a0 00 		add	WORD PTR [bp-8],160	;sptr
+	*** 000272	8b 5e f8 		mov	bx,WORD PTR [bp-8]	;sptr
+	*** 000275	8b c7 			mov	ax,di
+	*** 000277	30 07 			xor	BYTE PTR [bx],al
+;|***                                 *( sptr+2 )    ^= gmask;
+; Line 213
+	*** 000279	8b 5e f8 		mov	bx,WORD PTR [bp-8]	;sptr
+	*** 00027c	30 47 02 		xor	BYTE PTR [bx+2],al
+;|***                                 *( sptr+4 )    ^= gmask;
+; Line 214
+	*** 00027f	8b 5e f8 		mov	bx,WORD PTR [bp-8]	;sptr
+	*** 000282	30 47 04 		xor	BYTE PTR [bx+4],al
+;|***                         } while ( --gl > gc );
+; Line 215
+	*** 000285	fe 4e fc 		dec	BYTE PTR [bp-4]	;gl
+	*** 000288	8a 46 f4 		mov	al,BYTE PTR [bp-12]	;gc
+	*** 00028b	38 46 fc 		cmp	BYTE PTR [bp-4],al	;gl
+	*** 00028e	77 dd 			ja	$I335
+					$I339:
+;|*** 
+;|***                 if ( !( gmask >>= 1 ) ) {
+; Line 217
+	*** 000290	d1 ff 			sar	di,1
+	*** 000292	0b ff 			or	di,di
+	*** 000294	75 15 			jne	$I345
+;|***                         gmask = 0x80;
+; Line 218
+	*** 000296	bf 80 00 		mov	di,128
+;|***                         if ( (long) sptr & 1 )
+; Line 219
+	*** 000299	8b 46 f8 		mov	ax,WORD PTR [bp-8]	;sptr
+	*** 00029c	8c da 			mov	dx,ds
+	*** 00029e	a8 01 			test	al,1
+	*** 0002a0	74 06 			je	$I344
+;|***                                 sptr += 7;
+; Line 220
+	*** 0002a2	83 46 f8 07 		add	WORD PTR [bp-8],7	;sptr
+;|***                         else
+; Line 221
+	*** 0002a6	eb 03 			jmp	SHORT $I345
+					$I344:
+;|***                                 ++sptr;
+; Line 222
+	*** 0002a8	ff 46 f8 		inc	WORD PTR [bp-8]	;sptr
+					$I345:
+;|***                 }
+; Line 223
+;|***         }
+; Line 224
+	*** 0002ab	e9 67 ff 		jmp	$FC331
+					$FB332:
+;|*** }
+; Line 225
+	*** 0002ae	5e 			pop	si
+	*** 0002af	5f 			pop	di
+	*** 0002b0	8b e5 			mov	sp,bp
+	*** 0002b2	5d 			pop	bp
+	*** 0002b3	c3 			ret	
+
+dispgc	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** /*---------------------------------------------------------------------------
+;|*** 
+;|***         External display ground call for title screen processing.
+;|*** 
+;|*** ---------------------------------------------------------------------------*/
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** swground()
+;|*** {
+; Line 239
+	PUBLIC	_swground
+_swground	PROC NEAR
+	*** 0002b4	55 			push	bp
+	*** 0002b5	8b ec 			mov	bp,sp
+;|***         dispgrnd();
+; Line 240
+	*** 0002b7	e8 3d fe 		call	dispgrnd
+;|*** }
+; Line 241
+	*** 0002ba	8b e5 			mov	sp,bp
+	*** 0002bc	5d 			pop	bp
+	*** 0002bd	c3 			ret	
+
+_swground	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** /*---------------------------------------------------------------------------
+;|*** 
+;|***         Clear the collision detection portion of auxiliary video ram
+;|*** 
+;|*** ---------------------------------------------------------------------------*/
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** swclrcol()
+;|*** {
+; Line 255
+	PUBLIC	_swclrcol
+_swclrcol	PROC NEAR
+	*** 0002be	55 			push	bp
+	*** 0002bf	8b ec 			mov	bp,sp
+	*** 0002c1	83 ec 04 		sub	sp,4
+	*** 0002c4	57 			push	di
+	*** 0002c5	56 			push	si
+;	register si = sptr
+;	register di = l
+;|*** register long   *sptr;
+;|*** register int    l;
+;|*** 
+;|***         sptr = dispoff + ( SCR_HGHT - 1 ) * 160;
+; Line 259
+	*** 0002c6	8b 36 00 00 		mov	si,$S268_dispoff
+	*** 0002ca	81 c6 60 7c 		add	si,31840
+;|***         if ( scrtype == 2 )
+; Line 260
+	*** 0002ce	83 3e 06 00 02 		cmp	WORD PTR $S269_scrtype,2
+	*** 0002d3	75 25 			jne	$I352
+;|***                 for ( l = 32; l; --l ) {
+; Line 261
+	*** 0002d5	bf 20 00 		mov	di,32
+	*** 0002d8	eb 01 			jmp	SHORT $F353
+					$FC354:
+	*** 0002da	4f 			dec	di
+					$F353:
+	*** 0002db	0b ff 			or	di,di
+	*** 0002dd	74 19 			je	$FB355
+;|***                         *sptr = *( sptr + 1 ) = *( sptr + 2 ) = 0L;
+; Line 262
+	*** 0002df	2b c0 			sub	ax,ax
+	*** 0002e1	99 			cwd	
+	*** 0002e2	89 44 08 		mov	WORD PTR [si+8],ax
+	*** 0002e5	89 54 0a 		mov	WORD PTR [si+10],dx
+	*** 0002e8	89 44 04 		mov	WORD PTR [si+4],ax
+	*** 0002eb	89 54 06 		mov	WORD PTR [si+6],dx
+	*** 0002ee	89 04 			mov	WORD PTR [si],ax
+	*** 0002f0	89 54 02 		mov	WORD PTR [si+2],dx
+;|***                         sptr -= 20;
+; Line 263
+	*** 0002f3	83 ee 50 		sub	si,80
+;|***                 }
+; Line 264
+	*** 0002f6	eb e2 			jmp	SHORT $FC354
+					$FB355:
+;|***         else
+; Line 265
+	*** 0002f8	eb 36 			jmp	SHORT $FB359
+					$I352:
+;|***                 for ( l = 16; l; --l ) {
+; Line 266
+	*** 0002fa	bf 10 00 		mov	di,16
+	*** 0002fd	eb 01 			jmp	SHORT $F357
+					$FC358:
+	*** 0002ff	4f 			dec	di
+					$F357:
+	*** 000300	0b ff 			or	di,di
+	*** 000302	74 2c 			je	$FB359
+;|***                         *sptr = *( sptr + 1 ) = *( sptr + 2 ) = *( sptr + 3 )
+;|***                               = *( sptr + 4 ) = *( sptr + 5 ) = 0L;
+; Line 268
+	*** 000304	2b c0 			sub	ax,ax
+	*** 000306	99 			cwd	
+	*** 000307	89 44 14 		mov	WORD PTR [si+20],ax
+	*** 00030a	89 54 16 		mov	WORD PTR [si+22],dx
+	*** 00030d	89 44 10 		mov	WORD PTR [si+16],ax
+	*** 000310	89 54 12 		mov	WORD PTR [si+18],dx
+	*** 000313	89 44 0c 		mov	WORD PTR [si+12],ax
+	*** 000316	89 54 0e 		mov	WORD PTR [si+14],dx
+	*** 000319	89 44 08 		mov	WORD PTR [si+8],ax
+	*** 00031c	89 54 0a 		mov	WORD PTR [si+10],dx
+	*** 00031f	89 44 04 		mov	WORD PTR [si+4],ax
+	*** 000322	89 54 06 		mov	WORD PTR [si+6],dx
+	*** 000325	89 04 			mov	WORD PTR [si],ax
+	*** 000327	89 54 02 		mov	WORD PTR [si+2],dx
+;|***                         sptr -= 40;
+; Line 269
+	*** 00032a	81 ee a0 00 		sub	si,160
+;|***                 }
+; Line 270
+	*** 00032e	eb cf 			jmp	SHORT $FC358
+					$FB359:
+;|*** }
+; Line 271
+	*** 000330	5e 			pop	si
+	*** 000331	5f 			pop	di
+	*** 000332	8b e5 			mov	sp,bp
+	*** 000334	5d 			pop	bp
+	*** 000335	c3 			ret	
+
+_swclrcol	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** /*---------------------------------------------------------------------------
+;|*** 
+;|***         Display an object's current symbol at a specified screen location
+;|***         Collision detection may or may not be asked for.
+;|*** 
+;|***         Different routines are used to display symbols on colour or
+;|***         monochrome systems.
+;|*** 
+;|*** ---------------------------------------------------------------------------*/
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** swputsym( x, y, ob )
+;|*** int     x, y;
+; Line 289
+	PUBLIC	_swputsym
+_swputsym	PROC NEAR
+	*** 000336	55 			push	bp
+	*** 000337	8b ec 			mov	bp,sp
+;|*** OBJECTS *ob;
+;|*** {
+; Line 291
+;	x = 4
+;	y = 6
+;	ob = 8
+;|***         ( *drawsym )( ob, x, y, ob->ob_newsym, ob->ob_clr, NULL );
+; Line 292
+	*** 000339	2b c0 			sub	ax,ax
+	*** 00033b	50 			push	ax
+	*** 00033c	8b 5e 08 		mov	bx,WORD PTR [bp+8]	;ob
+	*** 00033f	ff 77 2a 		push	WORD PTR [bx+42]
+	*** 000342	ff 77 4e 		push	WORD PTR [bx+78]
+	*** 000345	ff 76 06 		push	WORD PTR [bp+6]	;y
+	*** 000348	ff 76 04 		push	WORD PTR [bp+4]	;x
+	*** 00034b	53 			push	bx
+	*** 00034c	ff 16 04 00 		call	WORD PTR $S273_drawsym
+	*** 000350	83 c4 0c 		add	sp,12
+;|*** }
+; Line 293
+	*** 000353	8b e5 			mov	sp,bp
+	*** 000355	5d 			pop	bp
+	*** 000356	c3 			ret	
+
+_swputsym	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** swputcol( x, y, ob )
+;|*** int     x, y;
+; Line 298
+	PUBLIC	_swputcol
+_swputcol	PROC NEAR
+	*** 000357	55 			push	bp
+	*** 000358	8b ec 			mov	bp,sp
+	*** 00035a	83 ec 02 		sub	sp,2
+;|*** OBJECTS *ob;
+;|*** {
+; Line 300
+;	x = 4
+;	y = 6
+;	ob = 8
+;	retcode = -2
+;|*** int     retcode = FALSE;
+; Line 301
+	*** 00035d	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;retcode
+;|*** 
+;|***         ( *drawsym )( ob, x, y, ob->ob_newsym, ob->ob_clr, &retcode );
+; Line 303
+	*** 000362	8d 46 fe 		lea	ax,WORD PTR [bp-2]	;retcode
+	*** 000365	50 			push	ax
+	*** 000366	8b 5e 08 		mov	bx,WORD PTR [bp+8]	;ob
+	*** 000369	ff 77 2a 		push	WORD PTR [bx+42]
+	*** 00036c	ff 77 4e 		push	WORD PTR [bx+78]
+	*** 00036f	ff 76 06 		push	WORD PTR [bp+6]	;y
+	*** 000372	ff 76 04 		push	WORD PTR [bp+4]	;x
+	*** 000375	53 			push	bx
+	*** 000376	ff 16 04 00 		call	WORD PTR $S273_drawsym
+	*** 00037a	83 c4 0c 		add	sp,12
+;|***         return( retcode );
+; Line 304
+	*** 00037d	8b 46 fe 		mov	ax,WORD PTR [bp-2]	;retcode
+	*** 000380	eb 00 			jmp	SHORT $EX369
+;|*** }
+; Line 305
+					$EX369:
+	*** 000382	8b e5 			mov	sp,bp
+	*** 000384	5d 			pop	bp
+	*** 000385	c3 			ret	
+
+_swputcol	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** char    fill[] = {
+;|*** 0x00,0x03,0x03,0x03,0x0C,0x0F,0x0F,0x0F,0x0C,0x0F,0x0F,0x0F,0x0C,0x0F,0x0F,0x0F,
+;|*** 0x30,0x33,0x33,0x33,0x3C,0x3F,0x3F,0x3F,0x3C,0x3F,0x3F,0x3F,0x3C,0x3F,0x3F,0x3F,
+;|*** 0x30,0x33,0x33,0x33,0x3C,0x3F,0x3F,0x3F,0x3C,0x3F,0x3F,0x3F,0x3C,0x3F,0x3F,0x3F,
+;|*** 0x30,0x33,0x33,0x33,0x3C,0x3F,0x3F,0x3F,0x3C,0x3F,0x3F,0x3F,0x3C,0x3F,0x3F,0x3F,
+;|*** 0xC0,0xC3,0xC3,0xC3,0xCC,0xCF,0xCF,0xCF,0xCC,0xCF,0xCF,0xCF,0xCC,0xCF,0xCF,0xCF,
+;|*** 0xF0,0xF3,0xF3,0xF3,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,
+;|*** 0xF0,0xF3,0xF3,0xF3,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,
+;|*** 0xF0,0xF3,0xF3,0xF3,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,
+;|*** 0xC0,0xC3,0xC3,0xC3,0xCC,0xCF,0xCF,0xCF,0xCC,0xCF,0xCF,0xCF,0xCC,0xCF,0xCF,0xCF,
+;|*** 0xF0,0xF3,0xF3,0xF3,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,
+;|*** 0xF0,0xF3,0xF3,0xF3,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,
+;|*** 0xF0,0xF3,0xF3,0xF3,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,
+;|*** 0xC0,0xC3,0xC3,0xC3,0xCC,0xCF,0xCF,0xCF,0xCC,0xCF,0xCF,0xCF,0xCC,0xCF,0xCF,0xCF,
+;|*** 0xF0,0xF3,0xF3,0xF3,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,
+;|*** 0xF0,0xF3,0xF3,0xF3,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,
+;|*** 0xF0,0xF3,0xF3,0xF3,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF,0xFC,0xFF,0xFF,0xFF
+;|*** };
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static  drawsm( ob, x, y, symbol, clr, retcode )
+;|*** OBJECTS *ob;
+; Line 333
+drawsm	PROC NEAR
+	*** 000386	55 			push	bp
+	*** 000387	8b ec 			mov	bp,sp
+	*** 000389	83 ec 1a 		sub	sp,26
+	*** 00038c	57 			push	di
+	*** 00038d	56 			push	si
+;|*** int     x, y, clr, *retcode;
+;|*** char    *symbol;
+;|*** {
+; Line 336
+;	c = -6
+;	cr = -10
+;	pc = -4
+;	rotr = -14
+;	rotl = -2
+;	wdth = -12
+;	wrap = -20
+;	n = -24
+;	ob = 4
+;	x = 6
+;	y = 8
+;	symbol = 10
+;	clr = 12
+;	retcode = 14
+;	register si = s
+;	register di = sptr
+;	sym = -16
+;	j = -22
+;|*** register char   *s, *sptr, *sym;
+;|*** register int    j, c, cr, pc;
+;|*** int             rotr, rotl, wdth, wrap, n;
+;|*** 
+;|***         if ( !( sym = symbol ) )
+; Line 341
+	*** 00038e	8b 46 0a 		mov	ax,WORD PTR [bp+10]	;symbol
+	*** 000391	89 46 f0 		mov	WORD PTR [bp-16],ax	;sym
+	*** 000394	0b c0 			or	ax,ax
+	*** 000396	75 03 			jne	$I392
+;|***                 return;
+; Line 342
+	*** 000398	e9 5c 01 		jmp	$FB399
+;|*** 
+;|***         if ( ( ob->ob_symhgt == 1 ) && ( ob->ob_symwdt == 1 ) ) {
+; Line 344
+					$I392:
+	*** 00039b	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;ob
+	*** 00039e	83 7f 22 01 		cmp	WORD PTR [bx+34],1
+	*** 0003a2	75 1b 			jne	$I393
+	*** 0003a4	83 7f 24 01 		cmp	WORD PTR [bx+36],1
+	*** 0003a8	75 15 			jne	$I393
+;|***                 drawpm( x, y, (int) sym, retcode );
+; Line 345
+	*** 0003aa	ff 76 0e 		push	WORD PTR [bp+14]	;retcode
+	*** 0003ad	ff 76 f0 		push	WORD PTR [bp-16]	;sym
+	*** 0003b0	ff 76 08 		push	WORD PTR [bp+8]	;y
+	*** 0003b3	ff 76 06 		push	WORD PTR [bp+6]	;x
+	*** 0003b6	e8 00 00 		call	_drawpm
+	*** 0003b9	83 c4 08 		add	sp,8
+;|***                 return;
+; Line 346
+	*** 0003bc	e9 38 01 		jmp	$FB399
+;|***         }
+; Line 347
+;|*** 
+;|***         rotr = ( x & 0x0003 ) << 1;
+; Line 349
+					$I393:
+	*** 0003bf	8b 46 06 		mov	ax,WORD PTR [bp+6]	;x
+	*** 0003c2	25 03 00 		and	ax,3
+	*** 0003c5	d1 e0 			shl	ax,1
+	*** 0003c7	89 46 f2 		mov	WORD PTR [bp-14],ax	;rotr
+;|***         rotl = 8 - rotr;
+; Line 350
+	*** 0003ca	b8 08 00 		mov	ax,8
+	*** 0003cd	2b 46 f2 		sub	ax,WORD PTR [bp-14]	;rotr
+	*** 0003d0	89 46 fe 		mov	WORD PTR [bp-2],ax	;rotl
+;|*** 
+;|***         if ( ( wrap = ( wdth = ob->ob_symwdt >> 2 )
+;|***                 - ( n = SCR_LINW - ( x >> 2 ) ) ) > 0 )
+; Line 353
+	*** 0003d3	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;ob
+	*** 0003d6	8b 47 24 		mov	ax,WORD PTR [bx+36]
+	*** 0003d9	d1 f8 			sar	ax,1
+	*** 0003db	d1 f8 			sar	ax,1
+	*** 0003dd	89 46 f4 		mov	WORD PTR [bp-12],ax	;wdth
+	*** 0003e0	8b 4e 06 		mov	cx,WORD PTR [bp+6]	;x
+	*** 0003e3	d1 f9 			sar	cx,1
+	*** 0003e5	d1 f9 			sar	cx,1
+	*** 0003e7	83 e9 50 		sub	cx,80
+	*** 0003ea	f7 d9 			neg	cx
+	*** 0003ec	89 4e e8 		mov	WORD PTR [bp-24],cx	;n
+	*** 0003ef	2b c1 			sub	ax,cx
+	*** 0003f1	89 46 ec 		mov	WORD PTR [bp-20],ax	;wrap
+	*** 0003f4	0b c0 			or	ax,ax
+	*** 0003f6	7e 05 			jle	$I395
+;|***                 wdth = n;
+; Line 354
+	*** 0003f8	8b c1 			mov	ax,cx
+	*** 0003fa	89 46 f4 		mov	WORD PTR [bp-12],ax	;wdth
+;|*** 
+;|***         if ( ( n = ob->ob_symhgt ) > ( y + 1 ) )
+; Line 356
+					$I395:
+	*** 0003fd	8b 46 08 		mov	ax,WORD PTR [bp+8]	;y
+	*** 000400	40 			inc	ax
+	*** 000401	89 46 e6 		mov	WORD PTR [bp-26],ax
+	*** 000404	8b 47 22 		mov	ax,WORD PTR [bx+34]
+	*** 000407	89 46 e8 		mov	WORD PTR [bp-24],ax	;n
+	*** 00040a	3b 46 e6 		cmp	ax,WORD PTR [bp-26]
+	*** 00040d	7e 06 			jle	$I396
+;|***                 n = y + 1;
+; Line 357
+	*** 00040f	8b 46 e6 		mov	ax,WORD PTR [bp-26]
+	*** 000412	89 46 e8 		mov	WORD PTR [bp-24],ax	;n
+;|***         sptr = dispoff + ( ( SCR_HGHT - y - 1 ) * 160 ) + ( x >> 2 );
+; Line 358
+					$I396:
+	*** 000415	b8 c7 00 		mov	ax,199
+	*** 000418	2b 46 08 		sub	ax,WORD PTR [bp+8]	;y
+	*** 00041b	b9 a0 00 		mov	cx,160
+	*** 00041e	f7 e9 			imul	cx
+	*** 000420	8b f8 			mov	di,ax
+	*** 000422	8b 46 06 		mov	ax,WORD PTR [bp+6]	;x
+	*** 000425	d1 f8 			sar	ax,1
+	*** 000427	d1 f8 			sar	ax,1
+	*** 000429	03 f8 			add	di,ax
+	*** 00042b	03 3e 00 00 		add	di,$S268_dispoff
+;|*** 
+;|***         while ( n-- ) {
+; Line 360
+					$FC398:
+	*** 00042f	8b 46 e8 		mov	ax,WORD PTR [bp-24]	;n
+	*** 000432	ff 4e e8 		dec	WORD PTR [bp-24]	;n
+	*** 000435	0b c0 			or	ax,ax
+	*** 000437	75 03 			jne	$JCC1079
+	*** 000439	e9 bb 00 		jmp	$FB399
+					$JCC1079:
+;|***                 s = sptr;
+; Line 361
+	*** 00043c	8b f7 			mov	si,di
+;|***                 j = wdth;
+; Line 362
+	*** 00043e	8b 46 f4 		mov	ax,WORD PTR [bp-12]	;wdth
+	*** 000441	89 46 ea 		mov	WORD PTR [bp-22],ax	;j
+;|***                 pc = 0;
+; Line 363
+	*** 000444	c7 46 fc 00 00 		mov	WORD PTR [bp-4],0	;pc
+;|***                 while ( j-- ) {
+; Line 364
+					$FC401:
+	*** 000449	8b 46 ea 		mov	ax,WORD PTR [bp-22]	;j
+	*** 00044c	ff 4e ea 		dec	WORD PTR [bp-22]	;j
+	*** 00044f	0b c0 			or	ax,ax
+	*** 000451	74 5f 			je	$FB402
+;|***                         cr = ( c = *sym++ ) << rotl;
+; Line 365
+	*** 000453	8b 5e f0 		mov	bx,WORD PTR [bp-16]	;sym
+	*** 000456	ff 46 f0 		inc	WORD PTR [bp-16]	;sym
+	*** 000459	8a 07 			mov	al,BYTE PTR [bx]
+	*** 00045b	98 			cbw	
+	*** 00045c	89 46 fa 		mov	WORD PTR [bp-6],ax	;c
+	*** 00045f	8a 4e fe 		mov	cl,BYTE PTR [bp-2]	;rotl
+	*** 000462	d3 e0 			shl	ax,cl
+	*** 000464	89 46 f6 		mov	WORD PTR [bp-10],ax	;cr
+;|***                         c = ( ( c & 0x00FF ) >> rotr ) | pc;
+; Line 366
+	*** 000467	8a 46 fa 		mov	al,BYTE PTR [bp-6]	;c
+	*** 00046a	2a e4 			sub	ah,ah
+	*** 00046c	8a 4e f2 		mov	cl,BYTE PTR [bp-14]	;rotr
+	*** 00046f	d3 e8 			shr	ax,cl
+	*** 000471	0b 46 fc 		or	ax,WORD PTR [bp-4]	;pc
+	*** 000474	89 46 fa 		mov	WORD PTR [bp-6],ax	;c
+;|***                         pc = cr;
+; Line 367
+	*** 000477	8b 46 f6 		mov	ax,WORD PTR [bp-10]	;cr
+	*** 00047a	89 46 fc 		mov	WORD PTR [bp-4],ax	;pc
+;|***                         if ( retcode && ( *s & fill[c & 0x00FF] ) ){
+; Line 368
+	*** 00047d	83 7e 0e 00 		cmp	WORD PTR [bp+14],0	;retcode
+	*** 000481	74 1f 			je	$I403
+	*** 000483	8a 04 			mov	al,BYTE PTR [si]
+	*** 000485	98 			cbw	
+	*** 000486	8a 5e fa 		mov	bl,BYTE PTR [bp-6]	;c
+	*** 000489	2a ff 			sub	bh,bh
+	*** 00048b	8b c8 			mov	cx,ax
+	*** 00048d	8a 87 20 00 		mov	al,BYTE PTR _fill[bx]
+	*** 000491	98 			cbw	
+	*** 000492	85 c1 			test	ax,cx
+	*** 000494	74 0c 			je	$I403
+;|***                                 *retcode = TRUE;
+; Line 369
+	*** 000496	8b 5e 0e 		mov	bx,WORD PTR [bp+14]	;retcode
+	*** 000499	c7 07 01 00 		mov	WORD PTR [bx],1
+;|***                                 retcode = 0;
+; Line 370
+	*** 00049d	c7 46 0e 00 00 		mov	WORD PTR [bp+14],0	;retcode
+;|***                         }
+; Line 371
+;|***                         *s ^= c;
+; Line 372
+					$I403:
+	*** 0004a2	8a 46 fa 		mov	al,BYTE PTR [bp-6]	;c
+	*** 0004a5	30 04 			xor	BYTE PTR [si],al
+;|***                         *((s++)+80) ^= c;
+; Line 373
+	*** 0004a7	8b de 			mov	bx,si
+	*** 0004a9	46 			inc	si
+	*** 0004aa	8a 46 fa 		mov	al,BYTE PTR [bp-6]	;c
+	*** 0004ad	30 47 50 		xor	BYTE PTR [bx+80],al
+;|***                 }
+; Line 374
+	*** 0004b0	eb 97 			jmp	SHORT $FC401
+					$FB402:
+;|***                 if ( wrap >= 0 )
+; Line 375
+	*** 0004b2	83 7e ec 00 		cmp	WORD PTR [bp-20],0	;wrap
+	*** 0004b6	7c 08 			jl	$I404
+;|***                         sym += wrap;
+; Line 376
+	*** 0004b8	8b 46 ec 		mov	ax,WORD PTR [bp-20]	;wrap
+	*** 0004bb	01 46 f0 		add	WORD PTR [bp-16],ax	;sym
+;|***                 else {
+; Line 377
+	*** 0004be	eb 30 			jmp	SHORT $I405
+					$I404:
+;|***                         if ( retcode && ( *s & fill[pc & 0x00FF ] ) ){
+; Line 378
+	*** 0004c0	83 7e 0e 00 		cmp	WORD PTR [bp+14],0	;retcode
+	*** 0004c4	74 1f 			je	$I406
+	*** 0004c6	8a 04 			mov	al,BYTE PTR [si]
+	*** 0004c8	98 			cbw	
+	*** 0004c9	8a 5e fc 		mov	bl,BYTE PTR [bp-4]	;pc
+	*** 0004cc	2a ff 			sub	bh,bh
+	*** 0004ce	8b c8 			mov	cx,ax
+	*** 0004d0	8a 87 20 00 		mov	al,BYTE PTR _fill[bx]
+	*** 0004d4	98 			cbw	
+	*** 0004d5	85 c1 			test	ax,cx
+	*** 0004d7	74 0c 			je	$I406
+;|***                                 *retcode = TRUE;
+; Line 379
+	*** 0004d9	8b 5e 0e 		mov	bx,WORD PTR [bp+14]	;retcode
+	*** 0004dc	c7 07 01 00 		mov	WORD PTR [bx],1
+;|***                                 retcode = 0;
+; Line 380
+	*** 0004e0	c7 46 0e 00 00 		mov	WORD PTR [bp+14],0	;retcode
+;|***                         }
+; Line 381
+;|***                         *s      ^= pc;
+; Line 382
+					$I406:
+	*** 0004e5	8a 46 fc 		mov	al,BYTE PTR [bp-4]	;pc
+	*** 0004e8	30 04 			xor	BYTE PTR [si],al
+;|***                         *(s+80) ^= pc;
+; Line 383
+	*** 0004ea	8a 46 fc 		mov	al,BYTE PTR [bp-4]	;pc
+	*** 0004ed	30 44 50 		xor	BYTE PTR [si+80],al
+;|***                 }
+; Line 384
+					$I405:
+;|***                 sptr += 160;
+; Line 385
+	*** 0004f0	81 c7 a0 00 		add	di,160
+;|***         }
+; Line 386
+	*** 0004f4	e9 38 ff 		jmp	$FC398
+					$FB399:
+;|*** }
+; Line 387
+	*** 0004f7	5e 			pop	si
+	*** 0004f8	5f 			pop	di
+	*** 0004f9	8b e5 			mov	sp,bp
+	*** 0004fb	5d 			pop	bp
+	*** 0004fc	c3 			ret	
+
+drawsm	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** static  drawsc( ob, x, y, symbol, clr, retcode )
+;|*** OBJECTS *ob;
+; Line 393
+drawsc	PROC NEAR
+	*** 0004fd	55 			push	bp
+	*** 0004fe	8b ec 			mov	bp,sp
+	*** 000500	83 ec 24 		sub	sp,36
+	*** 000503	57 			push	di
+	*** 000504	56 			push	si
+;|*** int     x, y, clr, *retcode;
+;|*** char    *symbol;
+;|*** {
+; Line 396
+;	ob = 4
+;	x = 6
+;	y = 8
+;	symbol = 10
+;	clr = 12
+;	retcode = 14
+;	register si = s
+;	register di = sptr
+;	sym = -26
+;	j = -32
+;	c1 = -12
+;	c2 = -18
+;	c = -6
+;	rotr = -22
+;	rotl = -2
+;	wdth = -20
+;	wrap = -30
+;	n = -34
+;	cr = -16
+;	pc1 = -10
+;	pc2 = -14
+;	invert = -24
+;	enhance1 = -4
+;|*** register char   *s, *sptr, *sym;
+;|*** register int    j, c1, c2, c;
+;|*** int             rotr, rotl, wdth, wrap, n;
+;|*** int             cr, pc1, pc2, invert, enhance1;
+;|*** extern  char    swbrdsym[BIRDSYMS][BRDBYTES];
+;|*** 
+;|***         if ( !( sym = symbol ) )
+; Line 403
+	*** 000505	8b 46 0a 		mov	ax,WORD PTR [bp+10]	;symbol
+	*** 000508	89 46 e6 		mov	WORD PTR [bp-26],ax	;sym
+	*** 00050b	0b c0 			or	ax,ax
+	*** 00050d	75 03 			jne	$I433
+;|***                 return;
+; Line 404
+	*** 00050f	e9 30 02 		jmp	$FB441
+;|*** 
+;|***         if ( ( ob->ob_symhgt == 1 ) && ( ob->ob_symwdt == 1 ) ) {
+; Line 406
+					$I433:
+	*** 000512	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;ob
+	*** 000515	83 7f 22 01 		cmp	WORD PTR [bx+34],1
+	*** 000519	75 1b 			jne	$I434
+	*** 00051b	83 7f 24 01 		cmp	WORD PTR [bx+36],1
+	*** 00051f	75 15 			jne	$I434
+;|***                 drawpc( x, y, (int) sym, retcode );
+; Line 407
+	*** 000521	ff 76 0e 		push	WORD PTR [bp+14]	;retcode
+	*** 000524	ff 76 e6 		push	WORD PTR [bp-26]	;sym
+	*** 000527	ff 76 08 		push	WORD PTR [bp+8]	;y
+	*** 00052a	ff 76 06 		push	WORD PTR [bp+6]	;x
+	*** 00052d	e8 00 00 		call	_drawpc
+	*** 000530	83 c4 08 		add	sp,8
+;|***                 return;
+; Line 408
+	*** 000533	e9 0c 02 		jmp	$FB441
+;|***         }
+; Line 409
+;|*** 
+;|***         rotr = x & 0x0007;
+; Line 411
+					$I434:
+	*** 000536	8b 46 06 		mov	ax,WORD PTR [bp+6]	;x
+	*** 000539	25 07 00 		and	ax,7
+	*** 00053c	89 46 ea 		mov	WORD PTR [bp-22],ax	;rotr
+;|***         rotl = 8 - rotr;
+; Line 412
+	*** 00053f	b8 08 00 		mov	ax,8
+	*** 000542	2b 46 ea 		sub	ax,WORD PTR [bp-22]	;rotr
+	*** 000545	89 46 fe 		mov	WORD PTR [bp-2],ax	;rotl
+;|*** 
+;|***         if ( ( wrap = ( wdth = ob->ob_symwdt >> 2 )
+;|***                 - ( n = SCR_LINW - ( x >> 2 ) ) ) > 0 )
+; Line 415
+	*** 000548	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;ob
+	*** 00054b	8b 47 24 		mov	ax,WORD PTR [bx+36]
+	*** 00054e	d1 f8 			sar	ax,1
+	*** 000550	d1 f8 			sar	ax,1
+	*** 000552	89 46 ec 		mov	WORD PTR [bp-20],ax	;wdth
+	*** 000555	8b 4e 06 		mov	cx,WORD PTR [bp+6]	;x
+	*** 000558	d1 f9 			sar	cx,1
+	*** 00055a	d1 f9 			sar	cx,1
+	*** 00055c	83 e9 50 		sub	cx,80
+	*** 00055f	f7 d9 			neg	cx
+	*** 000561	89 4e de 		mov	WORD PTR [bp-34],cx	;n
+	*** 000564	2b c1 			sub	ax,cx
+	*** 000566	89 46 e2 		mov	WORD PTR [bp-30],ax	;wrap
+	*** 000569	0b c0 			or	ax,ax
+	*** 00056b	7e 05 			jle	$I436
+;|***                 wdth = n;
+; Line 416
+	*** 00056d	8b c1 			mov	ax,cx
+	*** 00056f	89 46 ec 		mov	WORD PTR [bp-20],ax	;wdth
+;|*** 
+;|***         if ( ( n = ob->ob_symhgt ) > ( y + 1 ) )
+; Line 418
+					$I436:
+	*** 000572	8b 46 08 		mov	ax,WORD PTR [bp+8]	;y
+	*** 000575	40 			inc	ax
+	*** 000576	89 46 dc 		mov	WORD PTR [bp-36],ax
+	*** 000579	8b 47 22 		mov	ax,WORD PTR [bx+34]
+	*** 00057c	89 46 de 		mov	WORD PTR [bp-34],ax	;n
+	*** 00057f	3b 46 dc 		cmp	ax,WORD PTR [bp-36]
+	*** 000582	7e 06 			jle	$I437
+;|***                 n = y + 1;
+; Line 419
+	*** 000584	8b 46 dc 		mov	ax,WORD PTR [bp-36]
+	*** 000587	89 46 de 		mov	WORD PTR [bp-34],ax	;n
+;|***         sptr = dispoff + ( ( SCR_HGHT - y - 1 ) * 160 )
+; Line 420
+					$I437:
+;|***                        + ( ( x & 0xFFF0 ) >> 1 )
+;|***                        + ( ( x & 0x0008 ) >> 3 );
+; Line 422
+	*** 00058a	b8 c7 00 		mov	ax,199
+	*** 00058d	2b 46 08 		sub	ax,WORD PTR [bp+8]	;y
+	*** 000590	b9 a0 00 		mov	cx,160
+	*** 000593	f7 e9 			imul	cx
+	*** 000595	8b f8 			mov	di,ax
+	*** 000597	8b 46 06 		mov	ax,WORD PTR [bp+6]	;x
+	*** 00059a	24 f0 			and	al,240
+	*** 00059c	d1 e8 			shr	ax,1
+	*** 00059e	03 f8 			add	di,ax
+	*** 0005a0	8a 46 06 		mov	al,BYTE PTR [bp+6]	;x
+	*** 0005a3	2a e4 			sub	ah,ah
+	*** 0005a5	25 08 00 		and	ax,8
+	*** 0005a8	b1 03 			mov	cl,3
+	*** 0005aa	d3 e8 			shr	ax,cl
+	*** 0005ac	03 f8 			add	di,ax
+	*** 0005ae	03 3e 00 00 		add	di,$S268_dispoff
+;|*** 
+;|***         invert = ( clr & 0x0003 ) == 2 ? -1 : 0;
+; Line 424
+	*** 0005b2	8a 46 0c 		mov	al,BYTE PTR [bp+12]	;clr
+	*** 0005b5	22 c1 			and	al,cl
+	*** 0005b7	3c 02 			cmp	al,2
+	*** 0005b9	75 05 			jne	$L20000
+	*** 0005bb	b8 ff ff 		mov	ax,-1
+	*** 0005be	eb 02 			jmp	SHORT $L20001
+					$L20000:
+	*** 0005c0	2b c0 			sub	ax,ax
+					$L20001:
+	*** 0005c2	89 46 e8 		mov	WORD PTR [bp-24],ax	;invert
+;|***         enhance1 = ( ( ( j = ob->ob_type ) == FLOCK ) || ( j == BIRD )
+;|***                    || ( j == OX ) ) ? -1 : 0;
+; Line 426
+	*** 0005c5	8b 5e 04 		mov	bx,WORD PTR [bp+4]	;ob
+	*** 0005c8	8b 47 60 		mov	ax,WORD PTR [bx+96]
+	*** 0005cb	89 46 e0 		mov	WORD PTR [bp-32],ax	;j
+	*** 0005ce	3d 07 00 		cmp	ax,7
+	*** 0005d1	74 0a 			je	$L20004
+	*** 0005d3	3d 08 00 		cmp	ax,8
+	*** 0005d6	74 05 			je	$L20004
+	*** 0005d8	3d 09 00 		cmp	ax,9
+	*** 0005db	75 05 			jne	$L20002
+					$L20004:
+	*** 0005dd	b8 ff ff 		mov	ax,-1
+	*** 0005e0	eb 02 			jmp	SHORT $L20003
+					$L20002:
+	*** 0005e2	2b c0 			sub	ax,ax
+					$L20003:
+	*** 0005e4	89 46 fc 		mov	WORD PTR [bp-4],ax	;enhance1
+;|***         if ( j == BIRD )
+; Line 427
+	*** 0005e7	83 7e e0 08 		cmp	WORD PTR [bp-32],8	;j
+	*** 0005eb	75 0e 			jne	$I438
+;|***                 sym = (char *) spcbirds + ( ( sym - (char *) swbrdsym ) << 1 );
+; Line 428
+	*** 0005ed	8b 46 e6 		mov	ax,WORD PTR [bp-26]	;sym
+	*** 0005f0	2d 00 00 		sub	ax,OFFSET _swbrdsym
+	*** 0005f3	d1 e0 			shl	ax,1
+	*** 0005f5	05 08 00 		add	ax,OFFSET DGROUP:$S275_spcbirds
+	*** 0005f8	89 46 e6 		mov	WORD PTR [bp-26],ax	;sym
+;|*** 
+;|***         while ( n-- ) {
+; Line 430
+					$I438:
+	*** 0005fb	8b 46 de 		mov	ax,WORD PTR [bp-34]	;n
+	*** 0005fe	ff 4e de 		dec	WORD PTR [bp-34]	;n
+	*** 000601	0b c0 			or	ax,ax
+	*** 000603	75 03 			jne	$JCC1539
+	*** 000605	e9 3a 01 		jmp	$FB441
+					$JCC1539:
+;|***                 s = sptr;
+; Line 431
+	*** 000608	8b f7 			mov	si,di
+;|***                 j = wdth;
+; Line 432
+	*** 00060a	8b 46 ec 		mov	ax,WORD PTR [bp-20]	;wdth
+	*** 00060d	89 46 e0 		mov	WORD PTR [bp-32],ax	;j
+;|***                 pc1 = pc2 = 0;
+; Line 433
+	*** 000610	2b c0 			sub	ax,ax
+	*** 000612	89 46 f2 		mov	WORD PTR [bp-14],ax	;pc2
+	*** 000615	89 46 f6 		mov	WORD PTR [bp-10],ax	;pc1
+;|***                 while ( j-- ) {
+; Line 434
+					$FC443:
+	*** 000618	8b 46 e0 		mov	ax,WORD PTR [bp-32]	;j
+	*** 00061b	ff 4e e0 		dec	WORD PTR [bp-32]	;j
+	*** 00061e	0b c0 			or	ax,ax
+	*** 000620	75 03 			jne	$JCC1568
+	*** 000622	e9 c1 00 		jmp	$FB444
+					$JCC1568:
+;|***                         if ( j ) {
+; Line 435
+	*** 000625	83 7e e0 00 		cmp	WORD PTR [bp-32],0	;j
+	*** 000629	74 0a 			je	$I445
+;|***                                 c = 0xFF;
+; Line 436
+	*** 00062b	c7 46 fa ff 00 		mov	WORD PTR [bp-6],255	;c
+;|***                                 --j;
+; Line 437
+	*** 000630	ff 4e e0 		dec	WORD PTR [bp-32]	;j
+;|***                         } else
+; Line 438
+	*** 000633	eb 05 			jmp	SHORT $I446
+					$I445:
+;|***                                 c = 0xF0;
+; Line 439
+	*** 000635	c7 46 fa f0 00 		mov	WORD PTR [bp-6],240	;c
+					$I446:
+;|*** 
+;|***                         cr = ( c1 = *sym++ & c ) << rotl;
+; Line 441
+	*** 00063a	8b 5e e6 		mov	bx,WORD PTR [bp-26]	;sym
+	*** 00063d	ff 46 e6 		inc	WORD PTR [bp-26]	;sym
+	*** 000640	8a 07 			mov	al,BYTE PTR [bx]
+	*** 000642	98 			cbw	
+	*** 000643	23 46 fa 		and	ax,WORD PTR [bp-6]	;c
+	*** 000646	89 46 f4 		mov	WORD PTR [bp-12],ax	;c1
+	*** 000649	8a 4e fe 		mov	cl,BYTE PTR [bp-2]	;rotl
+	*** 00064c	d3 e0 			shl	ax,cl
+	*** 00064e	89 46 f0 		mov	WORD PTR [bp-16],ax	;cr
+;|***                         c1 = ( c1 >> rotr ) | pc1;
+; Line 442
+	*** 000651	8b 46 f4 		mov	ax,WORD PTR [bp-12]	;c1
+	*** 000654	8a 4e ea 		mov	cl,BYTE PTR [bp-22]	;rotr
+	*** 000657	d3 f8 			sar	ax,cl
+	*** 000659	0b 46 f6 		or	ax,WORD PTR [bp-10]	;pc1
+	*** 00065c	89 46 f4 		mov	WORD PTR [bp-12],ax	;c1
+;|***                         pc1 = cr;
+; Line 443
+	*** 00065f	8b 46 f0 		mov	ax,WORD PTR [bp-16]	;cr
+	*** 000662	89 46 f6 		mov	WORD PTR [bp-10],ax	;pc1
+;|***                         cr = ( c2 = *sym++ & c ) << rotl;
+; Line 444
+	*** 000665	8b 5e e6 		mov	bx,WORD PTR [bp-26]	;sym
+	*** 000668	ff 46 e6 		inc	WORD PTR [bp-26]	;sym
+	*** 00066b	8a 07 			mov	al,BYTE PTR [bx]
+	*** 00066d	98 			cbw	
+	*** 00066e	23 46 fa 		and	ax,WORD PTR [bp-6]	;c
+	*** 000671	89 46 ee 		mov	WORD PTR [bp-18],ax	;c2
+	*** 000674	8a 4e fe 		mov	cl,BYTE PTR [bp-2]	;rotl
+	*** 000677	d3 e0 			shl	ax,cl
+	*** 000679	89 46 f0 		mov	WORD PTR [bp-16],ax	;cr
+;|***                         c2 = ( c2 >> rotr ) | pc2;
+; Line 445
+	*** 00067c	8b 46 ee 		mov	ax,WORD PTR [bp-18]	;c2
+	*** 00067f	8a 4e ea 		mov	cl,BYTE PTR [bp-22]	;rotr
+	*** 000682	d3 f8 			sar	ax,cl
+	*** 000684	0b 46 f2 		or	ax,WORD PTR [bp-14]	;pc2
+	*** 000687	89 46 ee 		mov	WORD PTR [bp-18],ax	;c2
+;|***                         pc2 = cr;
+; Line 446
+	*** 00068a	8b 46 f0 		mov	ax,WORD PTR [bp-16]	;cr
+	*** 00068d	89 46 f2 		mov	WORD PTR [bp-14],ax	;pc2
+;|***                         c = c1 | c2;
+; Line 447
+	*** 000690	8b 46 f4 		mov	ax,WORD PTR [bp-12]	;c1
+	*** 000693	0b 46 ee 		or	ax,WORD PTR [bp-18]	;c2
+	*** 000696	89 46 fa 		mov	WORD PTR [bp-6],ax	;c
+;|*** 
+;|***                         if ( retcode
+;|***                                 && ( c & ( *s | *(s+2) ) & 0xFF ) ) {
+; Line 450
+	*** 000699	83 7e 0e 00 		cmp	WORD PTR [bp+14],0	;retcode
+	*** 00069d	74 16 			je	$I447
+	*** 00069f	8a 44 02 		mov	al,BYTE PTR [si+2]
+	*** 0006a2	0a 04 			or	al,BYTE PTR [si]
+	*** 0006a4	22 46 fa 		and	al,BYTE PTR [bp-6]	;c
+	*** 0006a7	74 0c 			je	$I447
+;|***                                 *retcode = TRUE;
+; Line 451
+	*** 0006a9	8b 5e 0e 		mov	bx,WORD PTR [bp+14]	;retcode
+	*** 0006ac	c7 07 01 00 		mov	WORD PTR [bx],1
+;|***                                 retcode = 0;
+; Line 452
+	*** 0006b0	c7 46 0e 00 00 		mov	WORD PTR [bp+14],0	;retcode
+;|***                         }
+; Line 453
+;|***                         *s     ^= c1 ^ ( c & invert );
+; Line 454
+					$I447:
+	*** 0006b5	8a 46 fa 		mov	al,BYTE PTR [bp-6]	;c
+	*** 0006b8	22 46 e8 		and	al,BYTE PTR [bp-24]	;invert
+	*** 0006bb	32 46 f4 		xor	al,BYTE PTR [bp-12]	;c1
+	*** 0006be	30 04 			xor	BYTE PTR [si],al
+;|***                         *(s+2) ^= c2 ^ ( c & invert );
+; Line 455
+	*** 0006c0	8a 46 fa 		mov	al,BYTE PTR [bp-6]	;c
+	*** 0006c3	22 46 e8 		and	al,BYTE PTR [bp-24]	;invert
+	*** 0006c6	32 46 ee 		xor	al,BYTE PTR [bp-18]	;c2
+	*** 0006c9	30 44 02 		xor	BYTE PTR [si+2],al
+;|***                         *(s+6) ^= c & enhance1;
+; Line 456
+	*** 0006cc	8a 46 fa 		mov	al,BYTE PTR [bp-6]	;c
+	*** 0006cf	22 46 fc 		and	al,BYTE PTR [bp-4]	;enhance1
+	*** 0006d2	30 44 06 		xor	BYTE PTR [si+6],al
+;|*** 
+;|***                         if ( (long) s & 1 )
+; Line 458
+	*** 0006d5	8b c6 			mov	ax,si
+	*** 0006d7	8c da 			mov	dx,ds
+	*** 0006d9	a8 01 			test	al,1
+	*** 0006db	74 05 			je	$I448
+;|***                                 s += 7;
+; Line 459
+	*** 0006dd	83 c6 07 		add	si,7
+;|***                         else
+; Line 460
+	*** 0006e0	eb 01 			jmp	SHORT $I449
+					$I448:
+;|***                                 ++s;
+; Line 461
+	*** 0006e2	46 			inc	si
+					$I449:
+;|***                 }
+; Line 462
+	*** 0006e3	e9 32 ff 		jmp	$FC443
+					$FB444:
+;|***                 if ( wrap >= 0 )
+; Line 463
+	*** 0006e6	83 7e e2 00 		cmp	WORD PTR [bp-30],0	;wrap
+	*** 0006ea	7c 0a 			jl	$I450
+;|***                         sym += wrap & 0xFFFE;
+; Line 464
+	*** 0006ec	8b 46 e2 		mov	ax,WORD PTR [bp-30]	;wrap
+	*** 0006ef	24 fe 			and	al,254
+	*** 0006f1	01 46 e6 		add	WORD PTR [bp-26],ax	;sym
+;|***                 else {
+; Line 465
+	*** 0006f4	eb 45 			jmp	SHORT $I451
+					$I450:
+;|***                         c = pc1 | pc2;
+; Line 466
+	*** 0006f6	8b 46 f6 		mov	ax,WORD PTR [bp-10]	;pc1
+	*** 0006f9	0b 46 f2 		or	ax,WORD PTR [bp-14]	;pc2
+	*** 0006fc	89 46 fa 		mov	WORD PTR [bp-6],ax	;c
+;|***                         if ( retcode
+;|***                                 && ( c & ( *s | *(s+2) ) & 0xFF ) ){
+; Line 468
+	*** 0006ff	83 7e 0e 00 		cmp	WORD PTR [bp+14],0	;retcode
+	*** 000703	74 16 			je	$I452
+	*** 000705	8a 44 02 		mov	al,BYTE PTR [si+2]
+	*** 000708	0a 04 			or	al,BYTE PTR [si]
+	*** 00070a	22 46 fa 		and	al,BYTE PTR [bp-6]	;c
+	*** 00070d	74 0c 			je	$I452
+;|***                                 *retcode = TRUE;
+; Line 469
+	*** 00070f	8b 5e 0e 		mov	bx,WORD PTR [bp+14]	;retcode
+	*** 000712	c7 07 01 00 		mov	WORD PTR [bx],1
+;|***                                 retcode = 0;
+; Line 470
+	*** 000716	c7 46 0e 00 00 		mov	WORD PTR [bp+14],0	;retcode
+;|***                         }
+; Line 471
+;|***                         *s     ^= pc1 ^ ( c & invert );
+; Line 472
+					$I452:
+	*** 00071b	8a 46 fa 		mov	al,BYTE PTR [bp-6]	;c
+	*** 00071e	22 46 e8 		and	al,BYTE PTR [bp-24]	;invert
+	*** 000721	32 46 f6 		xor	al,BYTE PTR [bp-10]	;pc1
+	*** 000724	30 04 			xor	BYTE PTR [si],al
+;|***                         *(s+2) ^= pc2 ^ ( c & invert );
+; Line 473
+	*** 000726	8a 46 fa 		mov	al,BYTE PTR [bp-6]	;c
+	*** 000729	22 46 e8 		and	al,BYTE PTR [bp-24]	;invert
+	*** 00072c	32 46 f2 		xor	al,BYTE PTR [bp-14]	;pc2
+	*** 00072f	30 44 02 		xor	BYTE PTR [si+2],al
+;|***                         *(s+6) ^= c & enhance1;
+; Line 474
+	*** 000732	8a 46 fa 		mov	al,BYTE PTR [bp-6]	;c
+	*** 000735	22 46 fc 		and	al,BYTE PTR [bp-4]	;enhance1
+	*** 000738	30 44 06 		xor	BYTE PTR [si+6],al
+;|***                 }
+; Line 475
+					$I451:
+;|***                 sptr += 160;
+; Line 476
+	*** 00073b	81 c7 a0 00 		add	di,160
+;|***         }
+; Line 477
+	*** 00073f	e9 b9 fe 		jmp	$I438
+					$FB441:
+;|*** }
+; Line 478
+	*** 000742	5e 			pop	si
+	*** 000743	5f 			pop	di
+	*** 000744	8b e5 			mov	sp,bp
+	*** 000746	5d 			pop	bp
+	*** 000747	c3 			ret	
+
+drawsc	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** /*---------------------------------------------------------------------------
+;|*** 
+;|***         External calls to display a point of a specified colour at a
+;|***         specified position.   The point request may or may not ask for
+;|***         collision detection by returning the old colour of the point.
+;|*** 
+;|***         Different routines are used to display points on colour or
+;|***         monochrome systems.
+;|*** 
+;|*** ---------------------------------------------------------------------------*/
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** swpntsym( x, y, clr )
+;|*** int     x, y, clr;
+; Line 497
+	PUBLIC	_swpntsym
+_swpntsym	PROC NEAR
+	*** 000748	55 			push	bp
+	*** 000749	8b ec 			mov	bp,sp
+;|*** {
+; Line 498
+;	x = 4
+;	y = 6
+;	clr = 8
+;|***         ( *drawpnt )( x, y, clr, NULL );
+; Line 499
+	*** 00074b	2b c0 			sub	ax,ax
+	*** 00074d	50 			push	ax
+	*** 00074e	ff 76 08 		push	WORD PTR [bp+8]	;clr
+	*** 000751	ff 76 06 		push	WORD PTR [bp+6]	;y
+	*** 000754	ff 76 04 		push	WORD PTR [bp+4]	;x
+	*** 000757	ff 16 02 00 		call	WORD PTR $S272_drawpnt
+	*** 00075b	83 c4 08 		add	sp,8
+;|*** }
+; Line 500
+	*** 00075e	8b e5 			mov	sp,bp
+	*** 000760	5d 			pop	bp
+	*** 000761	c3 			ret	
+
+_swpntsym	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** swpntcol( x, y, clr )
+;|*** int     x, y, clr;
+; Line 505
+	PUBLIC	_swpntcol
+_swpntcol	PROC NEAR
+	*** 000762	55 			push	bp
+	*** 000763	8b ec 			mov	bp,sp
+	*** 000765	83 ec 02 		sub	sp,2
+;|*** {
+; Line 506
+;	x = 4
+;	y = 6
+;	clr = 8
+;	oldclr = -2
+;|*** int     oldclr;
+;|*** 
+;|***         ( *drawpnt )( x, y, clr, &oldclr );
+; Line 509
+	*** 000768	8d 46 fe 		lea	ax,WORD PTR [bp-2]	;oldclr
+	*** 00076b	50 			push	ax
+	*** 00076c	ff 76 08 		push	WORD PTR [bp+8]	;clr
+	*** 00076f	ff 76 06 		push	WORD PTR [bp+6]	;y
+	*** 000772	ff 76 04 		push	WORD PTR [bp+4]	;x
+	*** 000775	ff 16 02 00 		call	WORD PTR $S272_drawpnt
+	*** 000779	83 c4 08 		add	sp,8
+;|***         return( oldclr );
+; Line 510
+	*** 00077c	8b 46 fe 		mov	ax,WORD PTR [bp-2]	;oldclr
+	*** 00077f	eb 00 			jmp	SHORT $EX462
+;|*** }
+; Line 511
+					$EX462:
+	*** 000781	8b e5 			mov	sp,bp
+	*** 000783	5d 			pop	bp
+	*** 000784	c3 			ret	
+
+_swpntcol	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** drawpc( x, y, clr, oldclr )
+;|*** int     x, y, clr, *oldclr;
+; Line 516
+	PUBLIC	_drawpc
+_drawpc	PROC NEAR
+	*** 000785	55 			push	bp
+	*** 000786	8b ec 			mov	bp,sp
+	*** 000788	83 ec 06 		sub	sp,6
+	*** 00078b	57 			push	di
+	*** 00078c	56 			push	si
+;|*** {
+; Line 517
+;	x = 4
+;	y = 6
+;	clr = 8
+;	oldclr = 10
+;	register si = c
+;	register di = mask
+;	sptr = -4
+;|*** register  int   c, mask;
+;|*** register  char  *sptr;
+;|*** 
+;|***         sptr = dispoff + ( ( SCR_HGHT - y - 1 ) * 160 )
+;|***                        + ( ( x & 0xFFF0 ) >> 1 )
+;|***                        + ( ( x & 0x0008 ) >> 3 );
+; Line 523
+	*** 00078d	b8 c7 00 		mov	ax,199
+	*** 000790	2b 46 06 		sub	ax,WORD PTR [bp+6]	;y
+	*** 000793	b9 a0 00 		mov	cx,160
+	*** 000796	f7 e9 			imul	cx
+	*** 000798	8a 56 04 		mov	dl,BYTE PTR [bp+4]	;x
+	*** 00079b	2a f6 			sub	dh,dh
+	*** 00079d	83 e2 08 		and	dx,8
+	*** 0007a0	b1 03 			mov	cl,3
+	*** 0007a2	d3 ea 			shr	dx,cl
+	*** 0007a4	03 d0 			add	dx,ax
+	*** 0007a6	8b 46 04 		mov	ax,WORD PTR [bp+4]	;x
+	*** 0007a9	24 f0 			and	al,240
+	*** 0007ab	d1 e8 			shr	ax,1
+	*** 0007ad	03 d0 			add	dx,ax
+	*** 0007af	03 16 00 00 		add	dx,$S268_dispoff
+	*** 0007b3	89 56 fc 		mov	WORD PTR [bp-4],dx	;sptr
+;|***         mask = 0x80 >> ( x &= 0x0007 );
+; Line 524
+	*** 0007b6	bf 80 00 		mov	di,128
+	*** 0007b9	83 66 04 07 		and	WORD PTR [bp+4],7	;x
+	*** 0007bd	8a 4e 04 		mov	cl,BYTE PTR [bp+4]	;x
+	*** 0007c0	d3 ff 			sar	di,cl
+;|*** 
+;|***         if ( oldclr ) {
+; Line 526
+	*** 0007c2	83 7e 0a 00 		cmp	WORD PTR [bp+10],0	;oldclr
+	*** 0007c6	74 3b 			je	$I472
+;|***                 c = ( *sptr & mask )
+;|***                         | ( ( *( sptr+2 ) & mask ) << 1 )
+;|***                         | ( ( *( sptr+4 ) & mask ) << 2 )
+;|***                         | ( ( *( sptr+6 ) & mask ) << 3 );
+; Line 530
+	*** 0007c8	8b da 			mov	bx,dx
+	*** 0007ca	8a 47 02 		mov	al,BYTE PTR [bx+2]
+	*** 0007cd	98 			cbw	
+	*** 0007ce	8b f0 			mov	si,ax
+	*** 0007d0	23 f7 			and	si,di
+	*** 0007d2	d1 e6 			shl	si,1
+	*** 0007d4	8a 47 04 		mov	al,BYTE PTR [bx+4]
+	*** 0007d7	98 			cbw	
+	*** 0007d8	23 c7 			and	ax,di
+	*** 0007da	d1 e0 			shl	ax,1
+	*** 0007dc	d1 e0 			shl	ax,1
+	*** 0007de	0b f0 			or	si,ax
+	*** 0007e0	8a 47 06 		mov	al,BYTE PTR [bx+6]
+	*** 0007e3	98 			cbw	
+	*** 0007e4	23 c7 			and	ax,di
+	*** 0007e6	b1 03 			mov	cl,3
+	*** 0007e8	d3 e0 			shl	ax,cl
+	*** 0007ea	0b f0 			or	si,ax
+	*** 0007ec	8a 07 			mov	al,BYTE PTR [bx]
+	*** 0007ee	98 			cbw	
+	*** 0007ef	23 c7 			and	ax,di
+	*** 0007f1	0b f0 			or	si,ax
+;|***                 *oldclr = ( c >> ( 7 - x ) ) & 0x00FF;
+; Line 531
+	*** 0007f3	8b 5e 0a 		mov	bx,WORD PTR [bp+10]	;oldclr
+	*** 0007f6	8b c6 			mov	ax,si
+	*** 0007f8	b1 07 			mov	cl,7
+	*** 0007fa	2a 4e 04 		sub	cl,BYTE PTR [bp+4]	;x
+	*** 0007fd	d3 f8 			sar	ax,cl
+	*** 0007ff	2a e4 			sub	ah,ah
+	*** 000801	89 07 			mov	WORD PTR [bx],ax
+;|***         }
+; Line 532
+;|*** 
+;|***         c = clr << ( 7 - x );
+; Line 534
+					$I472:
+	*** 000803	8b 76 08 		mov	si,WORD PTR [bp+8]	;clr
+	*** 000806	b1 07 			mov	cl,7
+	*** 000808	2a 4e 04 		sub	cl,BYTE PTR [bp+4]	;x
+	*** 00080b	d3 e6 			shl	si,cl
+;|***         if ( clr & 0x0080 ) {
+; Line 535
+	*** 00080d	f6 46 08 80 		test	BYTE PTR [bp+8],128	;clr
+	*** 000811	74 39 			je	$I473
+;|***                 *sptr       ^= ( mask & c );
+; Line 536
+	*** 000813	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 000816	8b c7 			mov	ax,di
+	*** 000818	8b ce 			mov	cx,si
+	*** 00081a	22 c1 			and	al,cl
+	*** 00081c	30 07 			xor	BYTE PTR [bx],al
+;|***                 *( sptr+2 ) ^= ( mask & ( c >> 1 ) );
+; Line 537
+	*** 00081e	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 000821	8b c6 			mov	ax,si
+	*** 000823	d1 f8 			sar	ax,1
+	*** 000825	8b cf 			mov	cx,di
+	*** 000827	22 c1 			and	al,cl
+	*** 000829	30 47 02 		xor	BYTE PTR [bx+2],al
+;|***                 *( sptr+4 ) ^= ( mask & ( c >> 2 ) );
+; Line 538
+	*** 00082c	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 00082f	8b c6 			mov	ax,si
+	*** 000831	d1 f8 			sar	ax,1
+	*** 000833	d1 f8 			sar	ax,1
+	*** 000835	22 c1 			and	al,cl
+	*** 000837	30 47 04 		xor	BYTE PTR [bx+4],al
+;|***                 *( sptr+6 ) ^= ( mask & ( c >> 3 ) );
+; Line 539
+	*** 00083a	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 00083d	8b c6 			mov	ax,si
+	*** 00083f	b1 03 			mov	cl,3
+	*** 000841	d3 f8 			sar	ax,cl
+	*** 000843	8b cf 			mov	cx,di
+	*** 000845	22 c1 			and	al,cl
+	*** 000847	30 47 06 		xor	BYTE PTR [bx+6],al
+;|***         } else {
+; Line 540
+	*** 00084a	eb 56 			jmp	SHORT $I474
+					$I473:
+;|***                 mask = ~mask;
+; Line 541
+	*** 00084c	8b c7 			mov	ax,di
+	*** 00084e	f7 d0 			not	ax
+	*** 000850	8b f8 			mov	di,ax
+;|***                 *sptr       &= mask;
+; Line 542
+	*** 000852	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 000855	20 07 			and	BYTE PTR [bx],al
+;|***                 *( sptr+2 ) &= mask;
+; Line 543
+	*** 000857	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 00085a	20 47 02 		and	BYTE PTR [bx+2],al
+;|***                 *( sptr+4 ) &= mask;
+; Line 544
+	*** 00085d	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 000860	20 47 04 		and	BYTE PTR [bx+4],al
+;|***                 *( sptr+6 ) &= mask;
+; Line 545
+	*** 000863	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 000866	20 47 06 		and	BYTE PTR [bx+6],al
+;|*** 
+;|***                 mask = ~mask;
+; Line 547
+	*** 000869	f7 d0 			not	ax
+	*** 00086b	8b f8 			mov	di,ax
+;|***                 *sptr       |= ( mask & c );
+; Line 548
+	*** 00086d	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 000870	8b ce 			mov	cx,si
+	*** 000872	22 c1 			and	al,cl
+	*** 000874	08 07 			or	BYTE PTR [bx],al
+;|***                 *( sptr+2 ) |= ( mask & ( c >> 1 ) );
+; Line 549
+	*** 000876	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 000879	8b c6 			mov	ax,si
+	*** 00087b	d1 f8 			sar	ax,1
+	*** 00087d	8b cf 			mov	cx,di
+	*** 00087f	22 c1 			and	al,cl
+	*** 000881	08 47 02 		or	BYTE PTR [bx+2],al
+;|***                 *( sptr+4 ) |= ( mask & ( c >> 2 ) );
+; Line 550
+	*** 000884	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 000887	8b c6 			mov	ax,si
+	*** 000889	d1 f8 			sar	ax,1
+	*** 00088b	d1 f8 			sar	ax,1
+	*** 00088d	22 c1 			and	al,cl
+	*** 00088f	08 47 04 		or	BYTE PTR [bx+4],al
+;|***                 *( sptr+6 ) |= ( mask & ( c >> 3 ) );
+; Line 551
+	*** 000892	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 000895	8b c6 			mov	ax,si
+	*** 000897	b1 03 			mov	cl,3
+	*** 000899	d3 f8 			sar	ax,cl
+	*** 00089b	8b cf 			mov	cx,di
+	*** 00089d	22 c1 			and	al,cl
+	*** 00089f	08 47 06 		or	BYTE PTR [bx+6],al
+;|***         }
+; Line 552
+					$I474:
+;|*** }
+; Line 553
+	*** 0008a2	5e 			pop	si
+	*** 0008a3	5f 			pop	di
+	*** 0008a4	8b e5 			mov	sp,bp
+	*** 0008a6	5d 			pop	bp
+	*** 0008a7	c3 			ret	
+
+_drawpc	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** drawpm( x, y, clr, oldclr )
+;|*** int     x, y, clr, *oldclr;
+; Line 560
+	PUBLIC	_drawpm
+_drawpm	PROC NEAR
+	*** 0008a8	55 			push	bp
+	*** 0008a9	8b ec 			mov	bp,sp
+	*** 0008ab	83 ec 08 		sub	sp,8
+	*** 0008ae	57 			push	di
+	*** 0008af	56 			push	si
+;|*** {
+; Line 561
+;	x = 4
+;	y = 6
+;	clr = 8
+;	oldclr = 10
+;	register si = c
+;	register di = mask
+;	sptr = -4
+;|*** register  int   c, mask;
+;|*** register  char  *sptr;
+;|*** 
+;|***         sptr = dispoff + ( ( SCR_HGHT - y - 1 ) * 160 ) + ( x >> 2 );
+; Line 565
+	*** 0008b0	b8 c7 00 		mov	ax,199
+	*** 0008b3	2b 46 06 		sub	ax,WORD PTR [bp+6]	;y
+	*** 0008b6	b9 a0 00 		mov	cx,160
+	*** 0008b9	f7 e9 			imul	cx
+	*** 0008bb	8b 4e 04 		mov	cx,WORD PTR [bp+4]	;x
+	*** 0008be	d1 f9 			sar	cx,1
+	*** 0008c0	d1 f9 			sar	cx,1
+	*** 0008c2	03 c1 			add	ax,cx
+	*** 0008c4	03 06 00 00 		add	ax,$S268_dispoff
+	*** 0008c8	89 46 fc 		mov	WORD PTR [bp-4],ax	;sptr
+;|***         mask = 0xC0 >> ( x = ( x & 0x0003 ) << 1 );
+; Line 566
+	*** 0008cb	bf c0 00 		mov	di,192
+	*** 0008ce	8b 4e 04 		mov	cx,WORD PTR [bp+4]	;x
+	*** 0008d1	83 e1 03 		and	cx,3
+	*** 0008d4	d1 e1 			shl	cx,1
+	*** 0008d6	89 4e 04 		mov	WORD PTR [bp+4],cx	;x
+	*** 0008d9	d3 ff 			sar	di,cl
+;|*** 
+;|***         if ( oldclr )
+; Line 568
+	*** 0008db	83 7e 0a 00 		cmp	WORD PTR [bp+10],0	;oldclr
+	*** 0008df	74 15 			je	$I483
+;|***                 *oldclr = ( ( *sptr & mask ) >> ( 6 - x ) ) & 0x00FF;
+; Line 569
+	*** 0008e1	8b d8 			mov	bx,ax
+	*** 0008e3	8a 07 			mov	al,BYTE PTR [bx]
+	*** 0008e5	98 			cbw	
+	*** 0008e6	23 c7 			and	ax,di
+	*** 0008e8	b1 06 			mov	cl,6
+	*** 0008ea	2a 4e 04 		sub	cl,BYTE PTR [bp+4]	;x
+	*** 0008ed	d3 f8 			sar	ax,cl
+	*** 0008ef	2a e4 			sub	ah,ah
+	*** 0008f1	8b 5e 0a 		mov	bx,WORD PTR [bp+10]	;oldclr
+	*** 0008f4	89 07 			mov	WORD PTR [bx],ax
+;|*** 
+;|***         c = clr << ( 6 - x );
+; Line 571
+					$I483:
+	*** 0008f6	8b 76 08 		mov	si,WORD PTR [bp+8]	;clr
+	*** 0008f9	b1 06 			mov	cl,6
+	*** 0008fb	2a 4e 04 		sub	cl,BYTE PTR [bp+4]	;x
+	*** 0008fe	d3 e6 			shl	si,cl
+;|***         if ( clr & 0x0080 ) {
+; Line 572
+	*** 000900	f6 46 08 80 		test	BYTE PTR [bp+8],128	;clr
+	*** 000904	74 19 			je	$I484
+;|***                 *sptr        ^= ( mask & c );
+; Line 573
+	*** 000906	8b c7 			mov	ax,di
+	*** 000908	8b ce 			mov	cx,si
+	*** 00090a	22 c1 			and	al,cl
+	*** 00090c	88 46 f8 		mov	BYTE PTR [bp-8],al
+	*** 00090f	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 000912	30 07 			xor	BYTE PTR [bx],al
+;|***                 *( sptr+80 ) ^= ( mask & c );
+; Line 574
+	*** 000914	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 000917	8a 46 f8 		mov	al,BYTE PTR [bp-8]
+	*** 00091a	30 47 50 		xor	BYTE PTR [bx+80],al
+;|***         } else {
+; Line 575
+	*** 00091d	eb 2a 			jmp	SHORT $I485
+					$I484:
+;|***                 *sptr        &= ~mask;
+; Line 576
+	*** 00091f	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 000922	8b c7 			mov	ax,di
+	*** 000924	f7 d0 			not	ax
+	*** 000926	20 07 			and	BYTE PTR [bx],al
+;|***                 *( sptr+80 ) &= ~mask;
+; Line 577
+	*** 000928	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 00092b	8b c7 			mov	ax,di
+	*** 00092d	f7 d0 			not	ax
+	*** 00092f	20 47 50 		and	BYTE PTR [bx+80],al
+;|***                 *sptr        |= ( mask & c );
+; Line 578
+	*** 000932	8b c7 			mov	ax,di
+	*** 000934	8b ce 			mov	cx,si
+	*** 000936	22 c1 			and	al,cl
+	*** 000938	88 46 f8 		mov	BYTE PTR [bp-8],al
+	*** 00093b	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 00093e	08 07 			or	BYTE PTR [bx],al
+;|***                 *( sptr+80 ) |= ( mask & c );
+; Line 579
+	*** 000940	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;sptr
+	*** 000943	8a 46 f8 		mov	al,BYTE PTR [bp-8]
+	*** 000946	08 47 50 		or	BYTE PTR [bx+80],al
+;|***         }
+; Line 580
+					$I485:
+;|*** }
+; Line 581
+	*** 000949	5e 			pop	si
+	*** 00094a	5f 			pop	di
+	*** 00094b	8b e5 			mov	sp,bp
+	*** 00094d	5d 			pop	bp
+	*** 00094e	c3 			ret	
+
+_drawpm	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** /*---------------------------------------------------------------------------
+;|*** 
+;|***         Get/set the current screen resolution.  The resolution is never
+;|***         changed on a monochrome system.  Low-res 16 colour is used on
+;|***         colour systems, (equivalent to IBM type 4), except in debugging
+;|***         instances where high-res 4 colour is used. (equivalent to IBM type 6)
+;|*** 
+;|***         On colour systems, the pixel map for each symbol is converted to
+;|***         optomize video ram updates.  The bit pattern abcdefghijklmnop is
+;|***         converted to bdfhjlnpacegikmo for all words of all symbols.
+;|*** ---------------------------------------------------------------------------*/
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** get_type()
+;|*** {
+; Line 602
+	PUBLIC	_get_type
+_get_type	PROC NEAR
+	*** 00094f	55 			push	bp
+	*** 000950	8b ec 			mov	bp,sp
+;|***         return( scrtype = trap14( 4 ) );
+; Line 603
+	*** 000952	b8 04 00 		mov	ax,4
+	*** 000955	50 			push	ax
+	*** 000956	e8 00 00 		call	_trap14
+	*** 000959	83 c4 02 		add	sp,2
+	*** 00095c	a3 06 00 		mov	$S269_scrtype,ax
+	*** 00095f	eb 00 			jmp	SHORT $EX487
+;|*** }
+; Line 604
+					$EX487:
+	*** 000961	8b e5 			mov	sp,bp
+	*** 000963	5d 			pop	bp
+	*** 000964	c3 			ret	
+
+_get_type	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** set_type( type )
+;|*** int     type;
+; Line 609
+	PUBLIC	_set_type
+_set_type	PROC NEAR
+	*** 000965	55 			push	bp
+	*** 000966	8b ec 			mov	bp,sp
+;|*** {
+; Line 610
+;	type = 4
+;|***         if ( type > 2 ) {
+; Line 611
+	*** 000968	83 7e 04 02 		cmp	WORD PTR [bp+4],2	;type
+	*** 00096c	7e 6d 			jle	$I491
+;|***                 if ( scrtype == 2 ) {
+; Line 612
+	*** 00096e	83 3e 06 00 02 		cmp	WORD PTR $S269_scrtype,2
+	*** 000973	75 19 			jne	$I492
+;|***                         type = 2;
+; Line 613
+	*** 000975	c7 46 04 02 00 		mov	WORD PTR [bp+4],2	;type
+;|***                         dispg = dispgm;
+; Line 614
+	*** 00097a	c7 06 50 01 00 00 	mov	WORD PTR $S271_dispg,OFFSET dispgm
+;|***                         drawpnt = drawpm;
+; Line 615
+	*** 000980	c7 06 02 00 00 00 	mov	WORD PTR $S272_drawpnt,OFFSET _drawpm
+;|***                         drawsym = drawsm;
+; Line 616
+	*** 000986	c7 06 04 00 00 00 	mov	WORD PTR $S273_drawsym,OFFSET drawsm
+;|***                 } else {
+; Line 617
+	*** 00098c	eb 27 			jmp	SHORT $I493
+					$I492:
+;|***                         if ( type == 6 )
+; Line 618
+	*** 00098e	83 7e 04 06 		cmp	WORD PTR [bp+4],6	;type
+	*** 000992	75 07 			jne	$I494
+;|***                                 type = 1;
+; Line 619
+	*** 000994	c7 46 04 01 00 		mov	WORD PTR [bp+4],1	;type
+;|***                         else
+; Line 620
+	*** 000999	eb 05 			jmp	SHORT $I495
+					$I494:
+;|***                                 type = 0;
+; Line 621
+	*** 00099b	c7 46 04 00 00 		mov	WORD PTR [bp+4],0	;type
+					$I495:
+;|***                         dispg = dispgc;
+; Line 622
+	*** 0009a0	c7 06 50 01 00 00 	mov	WORD PTR $S271_dispg,OFFSET dispgc
+;|***                         drawpnt = drawpc;
+; Line 623
+	*** 0009a6	c7 06 02 00 00 00 	mov	WORD PTR $S272_drawpnt,OFFSET _drawpc
+;|***                         drawsym = drawsc;
+; Line 624
+	*** 0009ac	c7 06 04 00 00 00 	mov	WORD PTR $S273_drawsym,OFFSET drawsc
+;|***                         invertsymbols();
+; Line 625
+	*** 0009b2	e8 00 00 		call	invertsymbols
+;|***                 }
+; Line 626
+					$I493:
+;|***                 trap14( 5, -1L, -1L, type );
+; Line 627
+	*** 0009b5	ff 76 04 		push	WORD PTR [bp+4]	;type
+	*** 0009b8	b8 ff ff 		mov	ax,-1
+	*** 0009bb	99 			cwd	
+	*** 0009bc	52 			push	dx
+	*** 0009bd	50 			push	ax
+	*** 0009be	99 			cwd	
+	*** 0009bf	52 			push	dx
+	*** 0009c0	50 			push	ax
+	*** 0009c1	b8 05 00 		mov	ax,5
+	*** 0009c4	50 			push	ax
+	*** 0009c5	e8 00 00 		call	_trap14
+	*** 0009c8	83 c4 0c 		add	sp,12
+;|***                 trap14( 6, palette );
+; Line 628
+	*** 0009cb	b8 00 00 		mov	ax,OFFSET DGROUP:$S274_palette
+	*** 0009ce	50 			push	ax
+	*** 0009cf	b8 06 00 		mov	ax,6
+	*** 0009d2	50 			push	ax
+	*** 0009d3	e8 00 00 		call	_trap14
+	*** 0009d6	83 c4 04 		add	sp,4
+;|***         } else {
+; Line 629
+	*** 0009d9	eb 24 			jmp	SHORT $I497
+					$I491:
+;|***                 trap14( 5, -1L, -1L, type );
+; Line 630
+	*** 0009db	ff 76 04 		push	WORD PTR [bp+4]	;type
+	*** 0009de	b8 ff ff 		mov	ax,-1
+	*** 0009e1	99 			cwd	
+	*** 0009e2	52 			push	dx
+	*** 0009e3	50 			push	ax
+	*** 0009e4	99 			cwd	
+	*** 0009e5	52 			push	dx
+	*** 0009e6	50 			push	ax
+	*** 0009e7	b8 05 00 		mov	ax,5
+	*** 0009ea	50 			push	ax
+	*** 0009eb	e8 00 00 		call	_trap14
+	*** 0009ee	83 c4 0c 		add	sp,12
+;|***                 trap14( 21, 1 );
+; Line 631
+	*** 0009f1	b8 01 00 		mov	ax,1
+	*** 0009f4	50 			push	ax
+	*** 0009f5	b8 15 00 		mov	ax,21
+	*** 0009f8	50 			push	ax
+	*** 0009f9	e8 00 00 		call	_trap14
+	*** 0009fc	83 c4 04 		add	sp,4
+;|***         }
+; Line 632
+					$I497:
+;|*** }
+; Line 633
+	*** 0009ff	8b e5 			mov	sp,bp
+	*** 000a01	5d 			pop	bp
+	*** 000a02	c3 			ret	
+
+_set_type	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** static  invertsymbols()
+;|*** {
+; Line 638
+invertsymbols	PROC NEAR
+	*** 000a03	55 			push	bp
+	*** 000a04	8b ec 			mov	bp,sp
+;|*** extern  char    swplnsym[ORIENTS][ANGLES][SYMBYTES];
+;|*** extern  char    swhitsym[HITSYMS][SYMBYTES];
+;|*** extern  char    swbmbsym[BOMBANGS][BOMBBYTES];
+;|*** extern  char    swtrgsym[TARGORIENTS][TARGBYTES];
+;|*** extern  char    swwinsym[WINSIZES][WINBYTES];
+;|*** extern  char    swhtrsym[TARGBYTES];
+;|*** extern  char    swexpsym[EXPLSYMS][EXPBYTES];
+;|*** extern  char    swflksym[FLCKSYMS][FLKBYTES];
+;|*** extern  char    swbrdsym[BIRDSYMS][BRDBYTES];
+;|*** extern  char    swoxsym[OXSYMS][OXBYTES];
+;|*** 
+;|***         invert( swplnsym, ORIENTS*ANGLES*SYMBYTES );
+; Line 650
+	*** 000a06	b8 00 08 		mov	ax,2048
+	*** 000a09	50 			push	ax
+	*** 000a0a	b8 00 00 		mov	ax,OFFSET _swplnsym
+	*** 000a0d	50 			push	ax
+	*** 000a0e	e8 00 00 		call	invert
+	*** 000a11	83 c4 04 		add	sp,4
+;|***         invert( swhitsym, HITSYMS*SYMBYTES        );
+; Line 651
+	*** 000a14	b8 80 00 		mov	ax,128
+	*** 000a17	50 			push	ax
+	*** 000a18	b8 00 00 		mov	ax,OFFSET _swhitsym
+	*** 000a1b	50 			push	ax
+	*** 000a1c	e8 00 00 		call	invert
+	*** 000a1f	83 c4 04 		add	sp,4
+;|***         invert( swbmbsym, BOMBANGS*BOMBBYTES      );
+; Line 652
+	*** 000a22	b8 80 00 		mov	ax,128
+	*** 000a25	50 			push	ax
+	*** 000a26	b8 00 00 		mov	ax,OFFSET _swbmbsym
+	*** 000a29	50 			push	ax
+	*** 000a2a	e8 00 00 		call	invert
+	*** 000a2d	83 c4 04 		add	sp,4
+;|***         invert( swtrgsym, TARGORIENTS*TARGBYTES   );
+; Line 653
+	*** 000a30	b8 00 01 		mov	ax,256
+	*** 000a33	50 			push	ax
+	*** 000a34	b8 00 00 		mov	ax,OFFSET _swtrgsym
+	*** 000a37	50 			push	ax
+	*** 000a38	e8 00 00 		call	invert
+	*** 000a3b	83 c4 04 		add	sp,4
+;|***         invert( swwinsym, WINSIZES*WINBYTES       );
+; Line 654
+	*** 000a3e	b8 00 01 		mov	ax,256
+	*** 000a41	50 			push	ax
+	*** 000a42	b8 00 00 		mov	ax,OFFSET _swwinsym
+	*** 000a45	50 			push	ax
+	*** 000a46	e8 00 00 		call	invert
+	*** 000a49	83 c4 04 		add	sp,4
+;|***         invert( swhtrsym, TARGBYTES               );
+; Line 655
+	*** 000a4c	b8 40 00 		mov	ax,64
+	*** 000a4f	50 			push	ax
+	*** 000a50	b8 00 00 		mov	ax,OFFSET _swhtrsym
+	*** 000a53	50 			push	ax
+	*** 000a54	e8 00 00 		call	invert
+	*** 000a57	83 c4 04 		add	sp,4
+;|***         invert( swexpsym, EXPLSYMS*EXPBYTES       );
+; Line 656
+	*** 000a5a	b8 80 00 		mov	ax,128
+	*** 000a5d	50 			push	ax
+	*** 000a5e	b8 00 00 		mov	ax,OFFSET _swexpsym
+	*** 000a61	50 			push	ax
+	*** 000a62	e8 00 00 		call	invert
+	*** 000a65	83 c4 04 		add	sp,4
+;|***         invert( swflksym, FLCKSYMS*FLKBYTES       );
+; Line 657
+	*** 000a68	b8 80 00 		mov	ax,128
+	*** 000a6b	50 			push	ax
+	*** 000a6c	b8 00 00 		mov	ax,OFFSET _swflksym
+	*** 000a6f	50 			push	ax
+	*** 000a70	e8 00 00 		call	invert
+	*** 000a73	83 c4 04 		add	sp,4
+;|***         copy( swbrdsym, spcbirds );
+; Line 658
+	*** 000a76	b8 08 00 		mov	ax,OFFSET DGROUP:$S275_spcbirds
+	*** 000a79	50 			push	ax
+	*** 000a7a	b8 00 00 		mov	ax,OFFSET _swbrdsym
+	*** 000a7d	50 			push	ax
+	*** 000a7e	e8 00 00 		call	copy
+	*** 000a81	83 c4 04 		add	sp,4
+;|***         invert( spcbirds, BIRDSYMS*BRDBYTES*2     );
+; Line 659
+	*** 000a84	b8 08 00 		mov	ax,8
+	*** 000a87	50 			push	ax
+	*** 000a88	b8 08 00 		mov	ax,OFFSET DGROUP:$S275_spcbirds
+	*** 000a8b	50 			push	ax
+	*** 000a8c	e8 00 00 		call	invert
+	*** 000a8f	83 c4 04 		add	sp,4
+;|***         invert( swoxsym,  OXSYMS*OXBYTES          );
+; Line 660
+	*** 000a92	b8 80 00 		mov	ax,128
+	*** 000a95	50 			push	ax
+	*** 000a96	b8 00 00 		mov	ax,OFFSET _swoxsym
+	*** 000a99	50 			push	ax
+	*** 000a9a	e8 00 00 		call	invert
+	*** 000a9d	83 c4 04 		add	sp,4
+;|*** }
+; Line 661
+	*** 000aa0	8b e5 			mov	sp,bp
+	*** 000aa2	5d 			pop	bp
+	*** 000aa3	c3 			ret	
+
+invertsymbols	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** static  copy( from, to )
+;|*** char    *from, *to;
+; Line 666
+copy	PROC NEAR
+	*** 000aa4	55 			push	bp
+	*** 000aa5	8b ec 			mov	bp,sp
+	*** 000aa7	83 ec 02 		sub	sp,2
+	*** 000aaa	56 			push	si
+;|*** {
+; Line 667
+;	to = 6
+;	i = -2
+;	from = 4
+;|*** int     i;
+;|*** 
+;|***         for ( i = 4; i; --i ) {
+; Line 670
+	*** 000aab	c7 46 fe 04 00 		mov	WORD PTR [bp-2],4	;i
+	*** 000ab0	eb 03 			jmp	SHORT $F515
+					$FC516:
+	*** 000ab2	ff 4e fe 		dec	WORD PTR [bp-2]	;i
+					$F515:
+	*** 000ab5	83 7e fe 00 		cmp	WORD PTR [bp-2],0	;i
+	*** 000ab9	74 1b 			je	$FB517
+;|***                 *to++ = *from++;
+; Line 671
+	*** 000abb	8b 5e 06 		mov	bx,WORD PTR [bp+6]	;to
+	*** 000abe	ff 46 06 		inc	WORD PTR [bp+6]	;to
+	*** 000ac1	8b 76 04 		mov	si,WORD PTR [bp+4]	;from
+	*** 000ac4	ff 46 04 		inc	WORD PTR [bp+4]	;from
+	*** 000ac7	8a 04 			mov	al,BYTE PTR [si]
+	*** 000ac9	88 07 			mov	BYTE PTR [bx],al
+;|***                 *to++ = '\0';
+; Line 672
+	*** 000acb	8b 5e 06 		mov	bx,WORD PTR [bp+6]	;to
+	*** 000ace	ff 46 06 		inc	WORD PTR [bp+6]	;to
+	*** 000ad1	c6 07 00 		mov	BYTE PTR [bx],0
+;|***         }
+; Line 673
+	*** 000ad4	eb dc 			jmp	SHORT $FC516
+					$FB517:
+;|*** }
+; Line 674
+	*** 000ad6	5e 			pop	si
+	*** 000ad7	8b e5 			mov	sp,bp
+	*** 000ad9	5d 			pop	bp
+	*** 000ada	c3 			ret	
+
+copy	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** static  invert( symbol, bytes )
+;|*** char    *symbol;
+; Line 679
+invert	PROC NEAR
+	*** 000adb	55 			push	bp
+	*** 000adc	8b ec 			mov	bp,sp
+	*** 000ade	83 ec 14 		sub	sp,20
+	*** 000ae1	57 			push	di
+	*** 000ae2	56 			push	si
+;|*** int     bytes;
+;|*** {
+; Line 681
+;	symbol = 4
+;	bytes = 6
+;	register si = c1
+;	register di = c2
+;	s = -2
+;	n = -8
+;|*** register int    c1, c2;
+;|*** register char   *s;
+;|*** int             n;
+;|*** 
+;|***         s = symbol;
+; Line 686
+	*** 000ae3	8b 46 04 		mov	ax,WORD PTR [bp+4]	;symbol
+	*** 000ae6	89 46 fe 		mov	WORD PTR [bp-2],ax	;s
+;|***         for ( n = bytes >> 1; n; --n ) {
+; Line 687
+	*** 000ae9	8b 46 06 		mov	ax,WORD PTR [bp+6]	;bytes
+	*** 000aec	d1 f8 			sar	ax,1
+	*** 000aee	89 46 f8 		mov	WORD PTR [bp-8],ax	;n
+	*** 000af1	eb 03 			jmp	SHORT $F525
+					$FC526:
+	*** 000af3	ff 4e f8 		dec	WORD PTR [bp-8]	;n
+					$F525:
+	*** 000af6	83 7e f8 00 		cmp	WORD PTR [bp-8],0	;n
+	*** 000afa	75 03 			jne	$JCC2810
+	*** 000afc	e9 c7 00 		jmp	$FB527
+					$JCC2810:
+;|***                 c1 = *s;
+; Line 688
+	*** 000aff	8b 5e fe 		mov	bx,WORD PTR [bp-2]	;s
+	*** 000b02	8a 07 			mov	al,BYTE PTR [bx]
+	*** 000b04	98 			cbw	
+	*** 000b05	8b f0 			mov	si,ax
+;|***                 c2 = *( s + 1 );
+; Line 689
+	*** 000b07	8a 47 01 		mov	al,BYTE PTR [bx+1]
+	*** 000b0a	98 			cbw	
+	*** 000b0b	8b f8 			mov	di,ax
+;|***                 *s++ =  ( ( c1 << 1 ) & 0x80 )
+;|***                         | ( ( c1 << 2 ) & 0x40 )
+;|***                         | ( ( c1 << 3 ) & 0x20 )
+;|***                         | ( ( c1 << 4 ) & 0x10 )
+;|***                         | ( ( c2 >> 3 ) & 0x08 )
+;|***                         | ( ( c2 >> 2 ) & 0x04 )
+;|***                         | ( ( c2 >> 1 ) & 0x02 )
+;|***                         | ( c2 & 0x01 );
+; Line 697
+	*** 000b0d	d1 f8 			sar	ax,1
+	*** 000b0f	88 46 f6 		mov	BYTE PTR [bp-10],al
+	*** 000b12	8b c7 			mov	ax,di
+	*** 000b14	d1 f8 			sar	ax,1
+	*** 000b16	d1 f8 			sar	ax,1
+	*** 000b18	88 46 f4 		mov	BYTE PTR [bp-12],al
+	*** 000b1b	8b c7 			mov	ax,di
+	*** 000b1d	b1 03 			mov	cl,3
+	*** 000b1f	d3 f8 			sar	ax,cl
+	*** 000b21	88 46 f2 		mov	BYTE PTR [bp-14],al
+	*** 000b24	8b c6 			mov	ax,si
+	*** 000b26	d2 e0 			shl	al,cl
+	*** 000b28	88 46 f0 		mov	BYTE PTR [bp-16],al
+	*** 000b2b	8b c6 			mov	ax,si
+	*** 000b2d	d0 e0 			shl	al,1
+	*** 000b2f	d0 e0 			shl	al,1
+	*** 000b31	88 46 ee 		mov	BYTE PTR [bp-18],al
+	*** 000b34	8b c6 			mov	ax,si
+	*** 000b36	d0 e0 			shl	al,1
+	*** 000b38	88 46 ec 		mov	BYTE PTR [bp-20],al
+	*** 000b3b	ff 46 fe 		inc	WORD PTR [bp-2]	;s
+	*** 000b3e	24 80 			and	al,128
+	*** 000b40	8a 4e ee 		mov	cl,BYTE PTR [bp-18]
+	*** 000b43	80 e1 40 		and	cl,64
+	*** 000b46	0a c1 			or	al,cl
+	*** 000b48	8a 4e f0 		mov	cl,BYTE PTR [bp-16]
+	*** 000b4b	80 e1 20 		and	cl,32
+	*** 000b4e	0a c1 			or	al,cl
+	*** 000b50	8b d6 			mov	dx,si
+	*** 000b52	b1 04 			mov	cl,4
+	*** 000b54	d2 e2 			shl	dl,cl
+	*** 000b56	80 e2 10 		and	dl,16
+	*** 000b59	0a c2 			or	al,dl
+	*** 000b5b	8a 4e f2 		mov	cl,BYTE PTR [bp-14]
+	*** 000b5e	80 e1 08 		and	cl,8
+	*** 000b61	0a c1 			or	al,cl
+	*** 000b63	8a 4e f4 		mov	cl,BYTE PTR [bp-12]
+	*** 000b66	80 e1 04 		and	cl,4
+	*** 000b69	0a c1 			or	al,cl
+	*** 000b6b	8a 4e f6 		mov	cl,BYTE PTR [bp-10]
+	*** 000b6e	80 e1 02 		and	cl,2
+	*** 000b71	0a c1 			or	al,cl
+	*** 000b73	8b cf 			mov	cx,di
+	*** 000b75	80 e1 01 		and	cl,1
+	*** 000b78	0a c1 			or	al,cl
+	*** 000b7a	88 07 			mov	BYTE PTR [bx],al
+;|***                 *s++ =  ( c1 & 0x80 )
+;|***                         | ( ( c1 << 1 ) & 0x40 )
+;|***                         | ( ( c1 << 2 ) & 0x20 )
+;|***                         | ( ( c1 << 3 ) & 0x10 )
+;|***                         | ( ( c2 >> 4 ) & 0x08 )
+;|***                         | ( ( c2 >> 3 ) & 0x04 )
+;|***                         | ( ( c2 >> 2 ) & 0x02 )
+;|***                         | ( ( c2 >> 1 ) & 0x01 );
+; Line 705
+	*** 000b7c	8b 5e fe 		mov	bx,WORD PTR [bp-2]	;s
+	*** 000b7f	ff 46 fe 		inc	WORD PTR [bp-2]	;s
+	*** 000b82	8a 46 ec 		mov	al,BYTE PTR [bp-20]
+	*** 000b85	24 40 			and	al,64
+	*** 000b87	8a 4e ee 		mov	cl,BYTE PTR [bp-18]
+	*** 000b8a	80 e1 20 		and	cl,32
+	*** 000b8d	0a c1 			or	al,cl
+	*** 000b8f	8a 4e f0 		mov	cl,BYTE PTR [bp-16]
+	*** 000b92	80 e1 10 		and	cl,16
+	*** 000b95	0a c1 			or	al,cl
+	*** 000b97	8b d7 			mov	dx,di
+	*** 000b99	b1 04 			mov	cl,4
+	*** 000b9b	d3 fa 			sar	dx,cl
+	*** 000b9d	80 e2 08 		and	dl,8
+	*** 000ba0	0a c2 			or	al,dl
+	*** 000ba2	8a 4e f2 		mov	cl,BYTE PTR [bp-14]
+	*** 000ba5	80 e1 04 		and	cl,4
+	*** 000ba8	0a c1 			or	al,cl
+	*** 000baa	8a 4e f4 		mov	cl,BYTE PTR [bp-12]
+	*** 000bad	80 e1 02 		and	cl,2
+	*** 000bb0	0a c1 			or	al,cl
+	*** 000bb2	8a 4e f6 		mov	cl,BYTE PTR [bp-10]
+	*** 000bb5	80 e1 01 		and	cl,1
+	*** 000bb8	0a c1 			or	al,cl
+	*** 000bba	8b ce 			mov	cx,si
+	*** 000bbc	80 e1 80 		and	cl,128
+	*** 000bbf	0a c1 			or	al,cl
+	*** 000bc1	88 07 			mov	BYTE PTR [bx],al
+;|***         }
+; Line 706
+	*** 000bc3	e9 2d ff 		jmp	$FC526
+					$FB527:
+;|*** }
+; Line 707
+	*** 000bc6	5e 			pop	si
+	*** 000bc7	5f 			pop	di
+	*** 000bc8	8b e5 			mov	sp,bp
+	*** 000bca	5d 			pop	bp
+	*** 000bcb	c3 			ret	
+
+invert	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** /*---------------------------------------------------------------------------
+;|*** 
+;|***         External calls to specify current video ram as screen ram or
+;|***         auxiliary screen area.
+;|*** 
+;|*** ---------------------------------------------------------------------------*/
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** setvdisp()
+;|*** {
+; Line 725
+	PUBLIC	_setvdisp
+_setvdisp	PROC NEAR
+	*** 000bcc	55 			push	bp
+	*** 000bcd	8b ec 			mov	bp,sp
+;|*** static  char    *videoram = NULL;
+;|*** 
+;|***         if ( !videoram )
+; Line 728
+	*** 000bcf	83 3e 20 01 00 		cmp	WORD PTR $S529_videoram,0
+	*** 000bd4	75 0d 			jne	$I530
+;|***                 videoram = trap14( 3 );
+; Line 729
+	*** 000bd6	b8 03 00 		mov	ax,3
+	*** 000bd9	50 			push	ax
+	*** 000bda	e8 00 00 		call	_trap14
+	*** 000bdd	83 c4 02 		add	sp,2
+	*** 000be0	a3 20 01 		mov	$S529_videoram,ax
+;|***         dispoff = videoram;
+; Line 730
+					$I530:
+	*** 000be3	a1 20 01 		mov	ax,$S529_videoram
+	*** 000be6	a3 00 00 		mov	$S268_dispoff,ax
+;|*** }
+; Line 731
+	*** 000be9	8b e5 			mov	sp,bp
+	*** 000beb	5d 			pop	bp
+	*** 000bec	c3 			ret	
+
+_setvdisp	ENDP
+;|*** 
+;|*** 
+;|*** 
+;|*** 
+;|*** setadisp()
+;|*** {
+; Line 737
+	PUBLIC	_setadisp
+_setadisp	PROC NEAR
+	*** 000bed	55 			push	bp
+;|***         dispoff = auxdisp - 0x4000;
+; Line 738
+	*** 000bee	c7 06 00 00 00 c0 	mov	WORD PTR $S268_dispoff,OFFSET _auxdisp-16384
+;|*** }
+; Line 739
+	*** 000bf4	5d 			pop	bp
+	*** 000bf5	c3 			ret	
+
+_setadisp	ENDP
+_TEXT	ENDS
+END

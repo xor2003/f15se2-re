@@ -1,0 +1,1946 @@
+;	Static Name Aliases
+;
+;	$S281_pal	EQU	pal
+;	$S282_pal_written	EQU	pal_written
+;	$S369_first_call	EQU	first_call
+	TITLE   VGAPAL.C
+	NAME    VGAPAL
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+EXTRN	__acrtused:ABS
+EXTRN	_printf:NEAR
+EXTRN	_strcmp:NEAR
+EXTRN	_abort:NEAR
+EXTRN	_fprintf:NEAR
+EXTRN	__iob:BYTE
+_DATA      SEGMENT
+	ORG	$+4
+$SG390	DB	0aH,  00H
+$SG393	DB	'  ',  00H
+$SG395	DB	' ',  00H
+$SG397	DB	'%3d',  00H
+$SG399	DB	'%2d',  00H
+$SG401	DB	',',  00H
+$SG402	DB	0aH,  00H
+$SG414	DB	'%s [levels]',  0aH,  0aH,  00H
+$SG415	DB	'levels - either 64 or 256, indicating maximum',  0aH,  00H
+$SG416	DB	'channel intensity value',  0aH,  0aH,  00H
+$SG418	DB	'%s:  Too many arguments!',  0aH,  00H
+$SG422	DB	'64',  00H
+$SG425	DB	'256',  00H
+$SG427	DB	'%s:  Only 64 and 256 supported for levels.',  0aH,  00H
+	ORG	$-187
+$S282_pal_written	DW	00H
+$S369_first_call	DW	01H
+_DATA      ENDS
+_BSS      SEGMENT
+$S281_pal	DW 0180H DUP (?)
+_BSS      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** /*
+;|***  * vgapal.c
+;|***  *
+;|***  * Program that constructs the standard VGA palette and outputs it as
+;|***  * text to standard output.
+;|***  *
+;|***  * The text output is formatted as rows of decimal values representing
+;|***  * unsigned bytes.  Each triple of decimal values specifies the red,
+;|***  * green, and blue value of a palette entry (in that order).  Palette
+;|***  * entries are output in order, all 256 of them.
+;|***  *
+;|***  * This program accepts a single command-line argument beyond the
+;|***  * program name.  This single argument must either be "64" or "256" and
+;|***  * it specifies how many intensity levels each channel has.  "64"
+;|***  * indicates each RGB channel has a range from [0, 63] (matching the
+;|***  * classic VGA palette), while "256" indicates each RGB channel has a
+;|***  * range from [0, 255] (matching modern hardware).
+;|***  *
+;|***  * The 256-level palette is derived from the 64-level palette by
+;|***  * shifting each channel value left by two bits and duplicating the two
+;|***  * most significant bits in the two least significant bits.
+;|***  */
+;|*** 
+;|*** #include <stdio.h>
+;|*** #include <stdlib.h>
+;|*** #include <string.h>
+;|*** 
+;|*** /* Function prototypes */
+;|*** static void addColor(int r, int g, int b);
+;|*** static void addGrayColor(int v);
+;|*** static void add16Color(int lo, int melo, int mehi, int hi);
+;|*** static int addRun(
+;|***     int start,
+;|***     int ch,
+;|***     int lo,
+;|***     int melo,
+;|***     int me,
+;|***     int mehi,
+;|***     int hi);
+;|*** static void addCycle(int lo, int melo, int me, int mehi, int hi);
+;|*** static void buildPalette(void);
+;|*** static void levelUp(void);
+;|*** static void printPalette(int levelup);
+;|*** static void vgapal(int levelup);
+;|*** 
+;|*** /* The array that will contain the calculated palette, in unsigned byte
+;|***    triples */
+;|*** static unsigned char pal[256 * 3];
+;|*** 
+;|*** /* The number of palette entries that have been written to pal */
+;|*** static int pal_written = 0;
+;|*** 
+;|*** /* 
+;|***  * Add another color entry to the palette.
+;|***  *
+;|***  * All palette entries added here must use 64-level values.
+;|***  *
+;|***  * Parameters:
+;|***  *
+;|***  *   r - the red channel value
+;|***  *
+;|***  *   g - the green channel value
+;|***  *
+;|***  *   b - the blue channel value
+;|***  */
+;|*** static void addColor(int r, int g, int b) {
+; Line 66
+addColor	PROC NEAR
+	*** 000000	55 			push	bp
+	*** 000001	8b ec 			mov	bp,sp
+	*** 000003	83 ec 02 		sub	sp,2
+;	r = 4
+;	g = 6
+;	b = 8
+;	i = -2
+;|*** 
+;|***   int i = 0;
+; Line 68
+	*** 000006	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;i
+;|*** 
+;|***   /* Check ranges */
+;|***   if ((r < 0) || (r > 63) ||
+;|***       (g < 0) || (g > 63) ||
+;|***       (b < 0) || (b > 63)) {
+; Line 73
+	*** 00000b	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;r
+	*** 00000f	7c 1e 			jl	$I289
+	*** 000011	83 7e 04 3f 		cmp	WORD PTR [bp+4],63	;r
+	*** 000015	7f 18 			jg	$I289
+	*** 000017	83 7e 06 00 		cmp	WORD PTR [bp+6],0	;g
+	*** 00001b	7c 12 			jl	$I289
+	*** 00001d	83 7e 06 3f 		cmp	WORD PTR [bp+6],63	;g
+	*** 000021	7f 0c 			jg	$I289
+	*** 000023	83 7e 08 00 		cmp	WORD PTR [bp+8],0	;b
+	*** 000027	7c 06 			jl	$I289
+	*** 000029	83 7e 08 3f 		cmp	WORD PTR [bp+8],63	;b
+	*** 00002d	7e 03 			jle	$I288
+					$I289:
+;|***     abort();
+; Line 74
+	*** 00002f	e8 00 00 		call	_abort
+;|***   }
+; Line 75
+;|*** 
+;|***   /* Check that palette isn't full */
+;|***   if (pal_written >= 256) {
+; Line 78
+					$I288:
+	*** 000032	81 3e 00 00 00 01 	cmp	WORD PTR $S282_pal_written,256
+	*** 000038	7c 03 			jl	$I290
+;|***     abort();
+; Line 79
+	*** 00003a	e8 00 00 		call	_abort
+;|***   }
+; Line 80
+;|*** 
+;|***   /* Check that pal_written is sane */
+;|***   if (pal_written < 0) {
+; Line 83
+					$I290:
+	*** 00003d	83 3e 00 00 00 		cmp	WORD PTR $S282_pal_written,0
+	*** 000042	7d 03 			jge	$I291
+;|***     abort();
+; Line 84
+	*** 000044	e8 00 00 		call	_abort
+;|***   }
+; Line 85
+;|*** 
+;|***   /* Calculate starting offset in palette */
+;|***   i = pal_written * 3;
+; Line 88
+					$I291:
+	*** 000047	a1 00 00 		mov	ax,$S282_pal_written
+	*** 00004a	8b c8 			mov	cx,ax
+	*** 00004c	d1 e0 			shl	ax,1
+	*** 00004e	03 c1 			add	ax,cx
+	*** 000050	89 46 fe 		mov	WORD PTR [bp-2],ax	;i
+;|*** 
+;|***   /* Write the color to palette */
+;|***   pal[i] = (unsigned char) r;
+; Line 91
+	*** 000053	8b d8 			mov	bx,ax
+	*** 000055	8a 46 04 		mov	al,BYTE PTR [bp+4]	;r
+	*** 000058	88 87 00 00 		mov	BYTE PTR $S281_pal[bx],al
+;|***   pal[i + 1] = (unsigned char) g;
+; Line 92
+	*** 00005c	8b 5e fe 		mov	bx,WORD PTR [bp-2]	;i
+	*** 00005f	8a 46 06 		mov	al,BYTE PTR [bp+6]	;g
+	*** 000062	88 87 01 00 		mov	BYTE PTR $S281_pal[bx+1],al
+;|***   pal[i + 2] = (unsigned char) b;
+; Line 93
+	*** 000066	8b 5e fe 		mov	bx,WORD PTR [bp-2]	;i
+	*** 000069	8a 46 08 		mov	al,BYTE PTR [bp+8]	;b
+	*** 00006c	88 87 02 00 		mov	BYTE PTR $S281_pal[bx+2],al
+;|*** 
+;|***   /* Update pal_written */
+;|***   pal_written++;
+; Line 96
+	*** 000070	ff 06 00 00 		inc	WORD PTR $S282_pal_written
+;|*** }
+; Line 97
+	*** 000074	8b e5 			mov	sp,bp
+	*** 000076	5d 			pop	bp
+	*** 000077	c3 			ret	
+
+addColor	ENDP
+;|*** 
+;|*** /*
+;|***  * Add a grayscale color to the palette.
+;|***  *
+;|***  * This calls through to addColor with all channel values equal to
+;|***  * the provided v.
+;|***  *
+;|***  * Parameters:
+;|***  *
+;|***  *   v - the grayscale value
+;|***  */
+;|*** static void addGrayColor(int v) {
+; Line 109
+addGrayColor	PROC NEAR
+	*** 000078	55 			push	bp
+	*** 000079	8b ec 			mov	bp,sp
+;	v = 4
+;|***   addColor(v, v, v);
+; Line 110
+	*** 00007b	ff 76 04 		push	WORD PTR [bp+4]	;v
+	*** 00007e	ff 76 04 		push	WORD PTR [bp+4]	;v
+	*** 000081	ff 76 04 		push	WORD PTR [bp+4]	;v
+	*** 000084	e8 79 ff 		call	addColor
+	*** 000087	83 c4 06 		add	sp,6
+;|*** }
+; Line 111
+	*** 00008a	5d 			pop	bp
+	*** 00008b	c3 			ret	
+
+addGrayColor	ENDP
+;|*** 
+;|*** /*
+;|***  * Add the 16 color entries of the standard 16-color palette.
+;|***  *
+;|***  * Parameters:
+;|***  *
+;|***  *   lo - the low intensity value to use
+;|***  *
+;|***  *   melo - the medium-low intensity value to use
+;|***  *
+;|***  *   mehi - the medium-high intensity value to use
+;|***  *
+;|***  *   hi - the high intensity value to use
+;|***  */
+;|*** static void add16Color(int lo, int melo, int mehi, int hi) {
+; Line 126
+add16Color	PROC NEAR
+	*** 00008c	55 			push	bp
+	*** 00008d	8b ec 			mov	bp,sp
+	*** 00008f	83 ec 0c 		sub	sp,12
+;	lo = 4
+;	melo = 6
+;	mehi = 8
+;	hi = 10
+;	r = -4
+;	g = -6
+;	b = -2
+;	i = -10
+;	h = -8
+;	l = -12
+;|*** 
+;|***   int r = 0;
+; Line 128
+	*** 000092	c7 46 fc 00 00 		mov	WORD PTR [bp-4],0	;r
+;|***   int g = 0;
+; Line 129
+	*** 000097	c7 46 fa 00 00 		mov	WORD PTR [bp-6],0	;g
+;|***   int b = 0;
+; Line 130
+	*** 00009c	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;b
+;|***   int i = 0;
+; Line 131
+	*** 0000a1	c7 46 f6 00 00 		mov	WORD PTR [bp-10],0	;i
+;|***   int h = 0;
+; Line 132
+	*** 0000a6	c7 46 f8 00 00 		mov	WORD PTR [bp-8],0	;h
+;|***   int l = 0;
+; Line 133
+	*** 0000ab	c7 46 f4 00 00 		mov	WORD PTR [bp-12],0	;l
+;|*** 
+;|***   /* The passed values must be in 64-level range */
+;|***   if ((lo < 0) || (lo > 63) ||
+;|***       (melo < 0) || (melo > 63) ||
+;|***       (mehi < 0) || (mehi > 63) ||
+;|***       (hi < 0) || (hi > 63)) {
+; Line 139
+	*** 0000b0	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;lo
+	*** 0000b4	7c 2a 			jl	$I306
+	*** 0000b6	83 7e 04 3f 		cmp	WORD PTR [bp+4],63	;lo
+	*** 0000ba	7f 24 			jg	$I306
+	*** 0000bc	83 7e 06 00 		cmp	WORD PTR [bp+6],0	;melo
+	*** 0000c0	7c 1e 			jl	$I306
+	*** 0000c2	83 7e 06 3f 		cmp	WORD PTR [bp+6],63	;melo
+	*** 0000c6	7f 18 			jg	$I306
+	*** 0000c8	83 7e 08 00 		cmp	WORD PTR [bp+8],0	;mehi
+	*** 0000cc	7c 12 			jl	$I306
+	*** 0000ce	83 7e 08 3f 		cmp	WORD PTR [bp+8],63	;mehi
+	*** 0000d2	7f 0c 			jg	$I306
+	*** 0000d4	83 7e 0a 00 		cmp	WORD PTR [bp+10],0	;hi
+	*** 0000d8	7c 06 			jl	$I306
+	*** 0000da	83 7e 0a 3f 		cmp	WORD PTR [bp+10],63	;hi
+	*** 0000de	7e 03 			jle	$I305
+					$I306:
+;|***     abort();
+; Line 140
+	*** 0000e0	e8 00 00 		call	_abort
+;|***   }
+; Line 141
+;|*** 
+;|***   /* Generate each of the 16 values */
+;|***   for(i = 0; i < 16; i++) {
+; Line 144
+					$I305:
+	*** 0000e3	c7 46 f6 00 00 		mov	WORD PTR [bp-10],0	;i
+	*** 0000e8	eb 60 			jmp	SHORT $F307
+					$I310:
+;|***     /* Determine whether low-intensity series or high-intensity */
+;|***     if ((i & 8) == 8) {
+;|***       /* Intensity bit set -- define intense range */
+;|***       h = hi;
+;|***       l = melo;
+;|*** 
+;|***     } else {
+; Line 151
+;|***       /* Intensity bit clear -- define low-intensity range */
+;|***       h = mehi;
+; Line 153
+	*** 0000ea	8b 46 08 		mov	ax,WORD PTR [bp+8]	;mehi
+	*** 0000ed	89 46 f8 		mov	WORD PTR [bp-8],ax	;h
+;|***       l = lo;
+; Line 154
+	*** 0000f0	8b 46 04 		mov	ax,WORD PTR [bp+4]	;lo
+					$L20000:
+	*** 0000f3	89 46 f4 		mov	WORD PTR [bp-12],ax	;l
+;|***     }
+; Line 155
+;|*** 
+;|***     /* Start by setting each channel to low value */
+;|***     r = l;
+; Line 158
+	*** 0000f6	89 46 fc 		mov	WORD PTR [bp-4],ax	;r
+;|***     g = l;
+; Line 159
+	*** 0000f9	89 46 fa 		mov	WORD PTR [bp-6],ax	;g
+;|***     b = l;
+; Line 160
+	*** 0000fc	89 46 fe 		mov	WORD PTR [bp-2],ax	;b
+;|*** 
+;|***     /* Activate channels selected by the appropriate bit */
+;|***     if ((i & 4) == 4) {
+; Line 163
+	*** 0000ff	8a 46 f6 		mov	al,BYTE PTR [bp-10]	;i
+	*** 000102	24 04 			and	al,4
+	*** 000104	3c 04 			cmp	al,4
+	*** 000106	75 06 			jne	$I312
+;|***       r = h;
+; Line 164
+	*** 000108	8b 46 f8 		mov	ax,WORD PTR [bp-8]	;h
+	*** 00010b	89 46 fc 		mov	WORD PTR [bp-4],ax	;r
+;|***     }
+; Line 165
+;|***     if ((i & 2) == 2) {
+; Line 166
+					$I312:
+	*** 00010e	8a 46 f6 		mov	al,BYTE PTR [bp-10]	;i
+	*** 000111	24 02 			and	al,2
+	*** 000113	3c 02 			cmp	al,2
+	*** 000115	75 06 			jne	$I313
+;|***       g = h;
+; Line 167
+	*** 000117	8b 46 f8 		mov	ax,WORD PTR [bp-8]	;h
+	*** 00011a	89 46 fa 		mov	WORD PTR [bp-6],ax	;g
+;|***     }
+; Line 168
+;|***     if ((i & 1) == 1) {
+; Line 169
+					$I313:
+	*** 00011d	8a 46 f6 		mov	al,BYTE PTR [bp-10]	;i
+	*** 000120	24 01 			and	al,1
+	*** 000122	3c 01 			cmp	al,1
+	*** 000124	75 06 			jne	$I314
+;|***       b = h;
+; Line 170
+	*** 000126	8b 46 f8 		mov	ax,WORD PTR [bp-8]	;h
+	*** 000129	89 46 fe 		mov	WORD PTR [bp-2],ax	;b
+;|***     }
+; Line 171
+;|*** 
+;|***     /* As an exceptional case, for index 6 only, change the green
+;|***        component to medium-low intensity so that we get brown instead
+;|***        of dark yellow */
+;|***     if (i == 6) {
+; Line 176
+					$I314:
+	*** 00012c	83 7e f6 06 		cmp	WORD PTR [bp-10],6	;i
+	*** 000130	75 06 			jne	$I315
+;|***       g = melo;
+; Line 177
+	*** 000132	8b 46 06 		mov	ax,WORD PTR [bp+6]	;melo
+	*** 000135	89 46 fa 		mov	WORD PTR [bp-6],ax	;g
+;|***     }
+; Line 178
+;|*** 
+;|***     /* Add this color */
+;|***     addColor(r, g, b);
+; Line 181
+					$I315:
+	*** 000138	ff 76 fe 		push	WORD PTR [bp-2]	;b
+	*** 00013b	ff 76 fa 		push	WORD PTR [bp-6]	;g
+	*** 00013e	ff 76 fc 		push	WORD PTR [bp-4]	;r
+	*** 000141	e8 bc fe 		call	addColor
+	*** 000144	83 c4 06 		add	sp,6
+;|***   } 
+; Line 182
+	*** 000147	ff 46 f6 		inc	WORD PTR [bp-10]	;i
+					$F307:
+	*** 00014a	83 7e f6 10 		cmp	WORD PTR [bp-10],16	;i
+	*** 00014e	7d 14 			jge	$FB309
+;|***     if ((i & 8) == 8) {
+; Line 146
+	*** 000150	8a 46 f6 		mov	al,BYTE PTR [bp-10]	;i
+	*** 000153	24 08 			and	al,8
+	*** 000155	3c 08 			cmp	al,8
+	*** 000157	75 91 			jne	$I310
+;|***       /* Intensity bit set -- define intense range */
+;|***       h = hi;
+; Line 148
+	*** 000159	8b 46 0a 		mov	ax,WORD PTR [bp+10]	;hi
+	*** 00015c	89 46 f8 		mov	WORD PTR [bp-8],ax	;h
+;|***       l = melo;
+; Line 149
+	*** 00015f	8b 46 06 		mov	ax,WORD PTR [bp+6]	;melo
+	*** 000162	eb 8f 			jmp	SHORT $L20000
+					$FB309:
+;|*** 
+;|***     } else {
+;|***       /* Intensity bit clear -- define low-intensity range */
+;|***       h = mehi;
+;|***       l = lo;
+;|***     }
+;|*** 
+;|***     /* Start by setting each channel to low value */
+;|***     r = l;
+;|***     g = l;
+;|***     b = l;
+;|*** 
+;|***     /* Activate channels selected by the appropriate bit */
+;|***     if ((i & 4) == 4) {
+;|***       r = h;
+;|***     }
+;|***     if ((i & 2) == 2) {
+;|***       g = h;
+;|***     }
+;|***     if ((i & 1) == 1) {
+;|***       b = h;
+;|***     }
+;|*** 
+;|***     /* As an exceptional case, for index 6 only, change the green
+;|***        component to medium-low intensity so that we get brown instead
+;|***        of dark yellow */
+;|***     if (i == 6) {
+;|***       g = melo;
+;|***     }
+;|*** 
+;|***     /* Add this color */
+;|***     addColor(r, g, b);
+;|***   } 
+;|*** }
+; Line 183
+	*** 000164	8b e5 			mov	sp,bp
+	*** 000166	5d 			pop	bp
+	*** 000167	c3 			ret	
+
+add16Color	ENDP
+;|*** 
+;|*** /*
+;|***  * Add four colors to the palette corresponding to a "run" within an
+;|***  * RGB cycle.
+;|***  *
+;|***  * start, ch, and the return value are encoded such that only the three
+;|***  * least significant bits are used.  The most significant of these
+;|***  * corresponds to red, the next to green, and the least significant to
+;|***  * blue.
+;|***  *
+;|***  * Intensity values must be 64-level.
+;|***  *
+;|***  * Parameters:
+;|***  *
+;|***  *   start - high and low starting states for each channel at the start
+;|***  *   of the run
+;|***  *
+;|***  *   ch - the channel to change from high to low or low to high (only
+;|***  *   one bit may be set)
+;|***  *
+;|***  *   lo - the low intensity value
+;|***  *
+;|***  *   melo - the medium-low intensity value
+;|***  *
+;|***  *   me - the medium intensity value
+;|***  *
+;|***  *   mehi - the medium-high intensity value
+;|***  *
+;|***  *   hi - the high intensity value
+;|***  *
+;|***  * Return:
+;|***  *
+;|***  *   the high and low starting states for each channel at the start of
+;|***  *   the run after this one
+;|***  */
+;|*** static int addRun(
+;|***     int start,
+;|***     int ch,
+;|***     int lo,
+;|***     int melo,
+;|***     int me,
+;|***     int mehi,
+;|***     int hi) {
+; Line 226
+addRun	PROC NEAR
+	*** 000168	55 			push	bp
+	*** 000169	8b ec 			mov	bp,sp
+	*** 00016b	83 ec 0c 		sub	sp,12
+;	me = 12
+;	mehi = 14
+;	hi = 16
+;	r = -4
+;	g = -10
+;	b = -2
+;	i = -12
+;	up = -6
+;	v = -8
+;	start = 4
+;	ch = 6
+;	lo = 8
+;	melo = 10
+;|*** 
+;|***   int r = 0;
+; Line 228
+	*** 00016e	c7 46 fc 00 00 		mov	WORD PTR [bp-4],0	;r
+;|***   int g = 0;
+; Line 229
+	*** 000173	c7 46 f6 00 00 		mov	WORD PTR [bp-10],0	;g
+;|***   int b = 0;
+; Line 230
+	*** 000178	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;b
+;|***   int i = 0;
+; Line 231
+	*** 00017d	c7 46 f4 00 00 		mov	WORD PTR [bp-12],0	;i
+;|***   int up = 0;
+; Line 232
+	*** 000182	c7 46 fa 00 00 		mov	WORD PTR [bp-6],0	;up
+;|***   int v = 0;
+; Line 233
+	*** 000187	c7 46 f8 00 00 		mov	WORD PTR [bp-8],0	;v
+;|*** 
+;|***   /* Check parameters */
+;|***   if ((start < 0) || (start > 7)) {
+; Line 236
+	*** 00018c	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;start
+	*** 000190	7c 06 			jl	$I331
+	*** 000192	83 7e 04 07 		cmp	WORD PTR [bp+4],7	;start
+	*** 000196	7e 03 			jle	$I330
+					$I331:
+;|***     abort();
+; Line 237
+	*** 000198	e8 00 00 		call	_abort
+;|***   }
+; Line 238
+;|***   if ((ch != 1) && (ch != 2) && (ch != 4)) {
+; Line 239
+					$I330:
+	*** 00019b	83 7e 06 01 		cmp	WORD PTR [bp+6],1	;ch
+	*** 00019f	74 0f 			je	$I332
+	*** 0001a1	83 7e 06 02 		cmp	WORD PTR [bp+6],2	;ch
+	*** 0001a5	74 09 			je	$I332
+	*** 0001a7	83 7e 06 04 		cmp	WORD PTR [bp+6],4	;ch
+	*** 0001ab	74 03 			je	$I332
+;|***     abort();
+; Line 240
+	*** 0001ad	e8 00 00 		call	_abort
+;|***   }
+; Line 241
+;|***   if ((lo < 0) || (lo > 63) ||
+; Line 242
+					$I332:
+;|***       (melo < 0) || (melo > 63) ||
+;|***       (me < 0) || (me > 63) ||
+;|***       (mehi < 0) || (mehi > 63) ||
+;|***       (hi < 0) || (hi > 63)) {
+; Line 246
+	*** 0001b0	83 7e 08 00 		cmp	WORD PTR [bp+8],0	;lo
+	*** 0001b4	7c 36 			jl	$I334
+	*** 0001b6	83 7e 08 3f 		cmp	WORD PTR [bp+8],63	;lo
+	*** 0001ba	7f 30 			jg	$I334
+	*** 0001bc	83 7e 0a 00 		cmp	WORD PTR [bp+10],0	;melo
+	*** 0001c0	7c 2a 			jl	$I334
+	*** 0001c2	83 7e 0a 3f 		cmp	WORD PTR [bp+10],63	;melo
+	*** 0001c6	7f 24 			jg	$I334
+	*** 0001c8	83 7e 0c 00 		cmp	WORD PTR [bp+12],0	;me
+	*** 0001cc	7c 1e 			jl	$I334
+	*** 0001ce	83 7e 0c 3f 		cmp	WORD PTR [bp+12],63	;me
+	*** 0001d2	7f 18 			jg	$I334
+	*** 0001d4	83 7e 0e 00 		cmp	WORD PTR [bp+14],0	;mehi
+	*** 0001d8	7c 12 			jl	$I334
+	*** 0001da	83 7e 0e 3f 		cmp	WORD PTR [bp+14],63	;mehi
+	*** 0001de	7f 0c 			jg	$I334
+	*** 0001e0	83 7e 10 00 		cmp	WORD PTR [bp+16],0	;hi
+	*** 0001e4	7c 06 			jl	$I334
+	*** 0001e6	83 7e 10 3f 		cmp	WORD PTR [bp+16],63	;hi
+	*** 0001ea	7e 03 			jle	$I333
+					$I334:
+;|***     abort();
+; Line 247
+	*** 0001ec	e8 00 00 		call	_abort
+;|***   }
+; Line 248
+;|*** 
+;|***   /* Get the starting RGB color and add it */
+;|***   r = lo;
+; Line 251
+					$I333:
+	*** 0001ef	8b 46 08 		mov	ax,WORD PTR [bp+8]	;lo
+	*** 0001f2	89 46 fc 		mov	WORD PTR [bp-4],ax	;r
+;|***   g = lo;
+; Line 252
+	*** 0001f5	89 46 f6 		mov	WORD PTR [bp-10],ax	;g
+;|***   b = lo;
+; Line 253
+	*** 0001f8	89 46 fe 		mov	WORD PTR [bp-2],ax	;b
+;|*** 
+;|***   if ((start & 4) == 4) {
+; Line 255
+	*** 0001fb	8a 46 04 		mov	al,BYTE PTR [bp+4]	;start
+	*** 0001fe	24 04 			and	al,4
+	*** 000200	3c 04 			cmp	al,4
+	*** 000202	75 06 			jne	$I335
+;|***     r = hi;
+; Line 256
+	*** 000204	8b 46 10 		mov	ax,WORD PTR [bp+16]	;hi
+	*** 000207	89 46 fc 		mov	WORD PTR [bp-4],ax	;r
+;|***   }
+; Line 257
+;|***   if ((start & 2) == 2) {
+; Line 258
+					$I335:
+	*** 00020a	8a 46 04 		mov	al,BYTE PTR [bp+4]	;start
+	*** 00020d	24 02 			and	al,2
+	*** 00020f	3c 02 			cmp	al,2
+	*** 000211	75 06 			jne	$I336
+;|***     g = hi;
+; Line 259
+	*** 000213	8b 46 10 		mov	ax,WORD PTR [bp+16]	;hi
+	*** 000216	89 46 f6 		mov	WORD PTR [bp-10],ax	;g
+;|***   }
+; Line 260
+;|***   if ((start & 1) == 1) {
+; Line 261
+					$I336:
+	*** 000219	8a 46 04 		mov	al,BYTE PTR [bp+4]	;start
+	*** 00021c	24 01 			and	al,1
+	*** 00021e	3c 01 			cmp	al,1
+	*** 000220	75 06 			jne	$I337
+;|***     b = hi;
+; Line 262
+	*** 000222	8b 46 10 		mov	ax,WORD PTR [bp+16]	;hi
+	*** 000225	89 46 fe 		mov	WORD PTR [bp-2],ax	;b
+;|***   }
+; Line 263
+;|*** 
+;|***   addColor(r, g, b);
+; Line 265
+					$I337:
+	*** 000228	ff 76 fe 		push	WORD PTR [bp-2]	;b
+	*** 00022b	ff 76 f6 		push	WORD PTR [bp-10]	;g
+	*** 00022e	ff 76 fc 		push	WORD PTR [bp-4]	;r
+	*** 000231	e8 cc fd 		call	addColor
+	*** 000234	83 c4 06 		add	sp,6
+;|*** 
+;|***   /* If selected channel starts high, we're going down; else, we're
+;|***      going up */
+;|***   if ((start & ch) == ch) {
+; Line 269
+	*** 000237	8b 46 04 		mov	ax,WORD PTR [bp+4]	;start
+	*** 00023a	23 46 06 		and	ax,WORD PTR [bp+6]	;ch
+	*** 00023d	3b 46 06 		cmp	ax,WORD PTR [bp+6]	;ch
+	*** 000240	75 08 			jne	$I338
+;|***     up = 0;
+; Line 270
+	*** 000242	c7 46 fa 00 00 		mov	WORD PTR [bp-6],0	;up
+;|***   } else {
+; Line 271
+	*** 000247	eb 06 			jmp	SHORT $I339
+	*** 000249	90 			nop	
+					$I338:
+;|***     up = 1;
+; Line 272
+	*** 00024a	c7 46 fa 01 00 		mov	WORD PTR [bp-6],1	;up
+;|***   }
+; Line 273
+					$I339:
+;|*** 
+;|***   /* Add remaining three colors of the run */
+;|***   for(i = 0; i < 3; i++) {
+; Line 276
+	*** 00024f	c7 46 f4 00 00 		mov	WORD PTR [bp-12],0	;i
+	*** 000254	eb 56 			jmp	SHORT $F340
+					$I344:
+;|***     /* Value depends if we're going up or down */
+;|***     if (up) {
+;|***       /* Going up */
+;|***       if (i == 0) {
+;|***         v = melo;
+;|***       } else if (i == 1) {
+; Line 282
+	*** 000256	83 7e f4 01 		cmp	WORD PTR [bp-12],1	;i
+	*** 00025a	75 06 			jne	$I346
+;|***         v = me;
+; Line 283
+					$L20006:
+	*** 00025c	8b 46 0c 		mov	ax,WORD PTR [bp+12]	;me
+	*** 00025f	eb 16 			jmp	SHORT $L20002
+	*** 000261	90 			nop	
+					$I346:
+;|***       } else {
+; Line 284
+;|***         v = mehi;
+; Line 285
+	*** 000262	8b 46 0e 		mov	ax,WORD PTR [bp+14]	;mehi
+	*** 000265	eb 10 			jmp	SHORT $L20002
+	*** 000267	90 			nop	
+					$I343:
+;|***       }
+;|***     } else {
+; Line 287
+;|***       /* Going down */
+;|***       if (i == 0) {
+; Line 289
+	*** 000268	83 7e f4 00 		cmp	WORD PTR [bp-12],0	;i
+	*** 00026c	74 f4 			je	$I346
+;|***         v = mehi;
+;|***       } else if (i == 1) {
+; Line 291
+	*** 00026e	83 7e f4 01 		cmp	WORD PTR [bp-12],1	;i
+	*** 000272	74 e8 			je	$L20006
+;|***         v = me;
+;|***       } else {
+; Line 293
+;|***         v = melo;
+; Line 294
+					$L20007:
+	*** 000274	8b 46 0a 		mov	ax,WORD PTR [bp+10]	;melo
+					$L20002:
+	*** 000277	89 46 f8 		mov	WORD PTR [bp-8],ax	;v
+;|***       }
+; Line 295
+;|***     }
+; Line 296
+;|*** 
+;|***     /* Adjust the proper channel */
+;|***     if (ch == 4) {
+; Line 299
+	*** 00027a	83 7e 06 04 		cmp	WORD PTR [bp+6],4	;ch
+	*** 00027e	75 06 			jne	$I353
+;|***       r = v;
+; Line 300
+	*** 000280	89 46 fc 		mov	WORD PTR [bp-4],ax	;r
+;|***     } else if (ch == 2) {
+; Line 301
+	*** 000283	eb 15 			jmp	SHORT $I356
+	*** 000285	90 			nop	
+					$I353:
+	*** 000286	83 7e 06 02 		cmp	WORD PTR [bp+6],2	;ch
+	*** 00028a	75 08 			jne	$I355
+;|***       g = v;
+; Line 302
+	*** 00028c	8b 46 f8 		mov	ax,WORD PTR [bp-8]	;v
+	*** 00028f	89 46 f6 		mov	WORD PTR [bp-10],ax	;g
+;|***     } else {
+; Line 303
+	*** 000292	eb 06 			jmp	SHORT $I356
+					$I355:
+;|***       b = v;
+; Line 304
+	*** 000294	8b 46 f8 		mov	ax,WORD PTR [bp-8]	;v
+	*** 000297	89 46 fe 		mov	WORD PTR [bp-2],ax	;b
+;|***     }
+; Line 305
+					$I356:
+;|*** 
+;|***     /* Add the color */
+;|***     addColor(r, g, b);
+; Line 308
+	*** 00029a	ff 76 fe 		push	WORD PTR [bp-2]	;b
+	*** 00029d	ff 76 f6 		push	WORD PTR [bp-10]	;g
+	*** 0002a0	ff 76 fc 		push	WORD PTR [bp-4]	;r
+	*** 0002a3	e8 5a fd 		call	addColor
+	*** 0002a6	83 c4 06 		add	sp,6
+;|***   }
+; Line 309
+	*** 0002a9	ff 46 f4 		inc	WORD PTR [bp-12]	;i
+					$F340:
+	*** 0002ac	83 7e f4 03 		cmp	WORD PTR [bp-12],3	;i
+	*** 0002b0	7d 0e 			jge	$FB342
+;|***     if (up) {
+; Line 278
+	*** 0002b2	83 7e fa 00 		cmp	WORD PTR [bp-6],0	;up
+	*** 0002b6	74 b0 			je	$I343
+;|***       /* Going up */
+;|***       if (i == 0) {
+; Line 280
+	*** 0002b8	83 7e f4 00 		cmp	WORD PTR [bp-12],0	;i
+	*** 0002bc	75 98 			jne	$I344
+	*** 0002be	eb b4 			jmp	SHORT $L20007
+					$FB342:
+;|***         v = melo;
+;|***       } else if (i == 1) {
+;|***         v = me;
+;|***       } else {
+;|***         v = mehi;
+;|***       }
+;|***     } else {
+;|***       /* Going down */
+;|***       if (i == 0) {
+;|***         v = mehi;
+;|***       } else if (i == 1) {
+;|***         v = me;
+;|***       } else {
+;|***         v = melo;
+;|***       }
+;|***     }
+;|*** 
+;|***     /* Adjust the proper channel */
+;|***     if (ch == 4) {
+;|***       r = v;
+;|***     } else if (ch == 2) {
+;|***       g = v;
+;|***     } else {
+;|***       b = v;
+;|***     }
+;|*** 
+;|***     /* Add the color */
+;|***     addColor(r, g, b);
+;|***   }
+;|*** 
+;|***   /* The next run starts at the starting position of this run, with the
+;|***      channel we just handled flipped */
+;|***   return (start ^ ch);
+; Line 313
+	*** 0002c0	8b 46 04 		mov	ax,WORD PTR [bp+4]	;start
+	*** 0002c3	33 46 06 		xor	ax,WORD PTR [bp+6]	;ch
+	*** 0002c6	8b e5 			mov	sp,bp
+	*** 0002c8	5d 			pop	bp
+	*** 0002c9	c3 			ret	
+
+addRun	ENDP
+;|*** }
+;|*** 
+;|*** /*
+;|***  * Add a 24-color RGB cycle to the palette.
+;|***  *
+;|***  * A cycle consists of six 4-color runs, each of which transitions from
+;|***  * one hue to another until arriving back at starting position.
+;|***  *
+;|***  * Intensities must be provided in 64-level scale.
+;|***  *
+;|***  * Parameters:
+;|***  *
+;|***  *   lo - low intensity value
+;|***  *
+;|***  *   melo - medium-low intensity value
+;|***  *
+;|***  *   me - medium intensity value
+;|***  *
+;|***  *   mehi - medium-high intensity value
+;|***  *
+;|***  *   hi - high intensity value
+;|***  */
+;|*** static void addCycle(int lo, int melo, int me, int mehi, int hi) {
+; Line 336
+addCycle	PROC NEAR
+	*** 0002ca	55 			push	bp
+	*** 0002cb	8b ec 			mov	bp,sp
+	*** 0002cd	83 ec 02 		sub	sp,2
+;	lo = 4
+;	melo = 6
+;	me = 8
+;	mehi = 10
+;	hi = 12
+;	hue = -2
+;|*** 
+;|***   int hue = 0;
+; Line 338
+	*** 0002d0	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;hue
+;|*** 
+;|***   /* Check parameters */
+;|***   if ((lo < 0) || (lo > 63) ||
+;|***       (melo < 0) || (melo > 63) ||
+;|***       (me < 0) || (me > 63) ||
+;|***       (mehi < 0) || (mehi > 63) ||
+;|***       (hi < 0) || (hi > 63)) {
+; Line 345
+	*** 0002d5	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;lo
+	*** 0002d9	7c 36 			jl	$I365
+	*** 0002db	83 7e 04 3f 		cmp	WORD PTR [bp+4],63	;lo
+	*** 0002df	7f 30 			jg	$I365
+	*** 0002e1	83 7e 06 00 		cmp	WORD PTR [bp+6],0	;melo
+	*** 0002e5	7c 2a 			jl	$I365
+	*** 0002e7	83 7e 06 3f 		cmp	WORD PTR [bp+6],63	;melo
+	*** 0002eb	7f 24 			jg	$I365
+	*** 0002ed	83 7e 08 00 		cmp	WORD PTR [bp+8],0	;me
+	*** 0002f1	7c 1e 			jl	$I365
+	*** 0002f3	83 7e 08 3f 		cmp	WORD PTR [bp+8],63	;me
+	*** 0002f7	7f 18 			jg	$I365
+	*** 0002f9	83 7e 0a 00 		cmp	WORD PTR [bp+10],0	;mehi
+	*** 0002fd	7c 12 			jl	$I365
+	*** 0002ff	83 7e 0a 3f 		cmp	WORD PTR [bp+10],63	;mehi
+	*** 000303	7f 0c 			jg	$I365
+	*** 000305	83 7e 0c 00 		cmp	WORD PTR [bp+12],0	;hi
+	*** 000309	7c 06 			jl	$I365
+	*** 00030b	83 7e 0c 3f 		cmp	WORD PTR [bp+12],63	;hi
+	*** 00030f	7e 03 			jle	$I364
+					$I365:
+;|***     abort();
+; Line 346
+	*** 000311	e8 00 00 		call	_abort
+;|***   }
+; Line 347
+;|*** 
+;|***   /* We start out at blue */
+;|***   hue = 1;
+; Line 350
+					$I364:
+	*** 000314	c7 46 fe 01 00 		mov	WORD PTR [bp-2],1	;hue
+;|*** 
+;|***   /* Add each run, updating the hue each time */
+;|***   hue = addRun(hue, 4, lo, melo, me, mehi, hi);
+; Line 353
+	*** 000319	ff 76 0c 		push	WORD PTR [bp+12]	;hi
+	*** 00031c	ff 76 0a 		push	WORD PTR [bp+10]	;mehi
+	*** 00031f	ff 76 08 		push	WORD PTR [bp+8]	;me
+	*** 000322	ff 76 06 		push	WORD PTR [bp+6]	;melo
+	*** 000325	ff 76 04 		push	WORD PTR [bp+4]	;lo
+	*** 000328	b8 04 00 		mov	ax,4
+	*** 00032b	50 			push	ax
+	*** 00032c	b8 01 00 		mov	ax,1
+	*** 00032f	50 			push	ax
+	*** 000330	e8 35 fe 		call	addRun
+	*** 000333	83 c4 0e 		add	sp,14
+	*** 000336	89 46 fe 		mov	WORD PTR [bp-2],ax	;hue
+;|***   hue = addRun(hue, 1, lo, melo, me, mehi, hi);
+; Line 354
+	*** 000339	ff 76 0c 		push	WORD PTR [bp+12]	;hi
+	*** 00033c	ff 76 0a 		push	WORD PTR [bp+10]	;mehi
+	*** 00033f	ff 76 08 		push	WORD PTR [bp+8]	;me
+	*** 000342	ff 76 06 		push	WORD PTR [bp+6]	;melo
+	*** 000345	ff 76 04 		push	WORD PTR [bp+4]	;lo
+	*** 000348	b8 01 00 		mov	ax,1
+	*** 00034b	50 			push	ax
+	*** 00034c	ff 76 fe 		push	WORD PTR [bp-2]	;hue
+	*** 00034f	e8 16 fe 		call	addRun
+	*** 000352	83 c4 0e 		add	sp,14
+	*** 000355	89 46 fe 		mov	WORD PTR [bp-2],ax	;hue
+;|***   hue = addRun(hue, 2, lo, melo, me, mehi, hi);
+; Line 355
+	*** 000358	ff 76 0c 		push	WORD PTR [bp+12]	;hi
+	*** 00035b	ff 76 0a 		push	WORD PTR [bp+10]	;mehi
+	*** 00035e	ff 76 08 		push	WORD PTR [bp+8]	;me
+	*** 000361	ff 76 06 		push	WORD PTR [bp+6]	;melo
+	*** 000364	ff 76 04 		push	WORD PTR [bp+4]	;lo
+	*** 000367	b8 02 00 		mov	ax,2
+	*** 00036a	50 			push	ax
+	*** 00036b	ff 76 fe 		push	WORD PTR [bp-2]	;hue
+	*** 00036e	e8 f7 fd 		call	addRun
+	*** 000371	83 c4 0e 		add	sp,14
+	*** 000374	89 46 fe 		mov	WORD PTR [bp-2],ax	;hue
+;|*** 
+;|***   hue = addRun(hue, 4, lo, melo, me, mehi, hi);
+; Line 357
+	*** 000377	ff 76 0c 		push	WORD PTR [bp+12]	;hi
+	*** 00037a	ff 76 0a 		push	WORD PTR [bp+10]	;mehi
+	*** 00037d	ff 76 08 		push	WORD PTR [bp+8]	;me
+	*** 000380	ff 76 06 		push	WORD PTR [bp+6]	;melo
+	*** 000383	ff 76 04 		push	WORD PTR [bp+4]	;lo
+	*** 000386	b8 04 00 		mov	ax,4
+	*** 000389	50 			push	ax
+	*** 00038a	ff 76 fe 		push	WORD PTR [bp-2]	;hue
+	*** 00038d	e8 d8 fd 		call	addRun
+	*** 000390	83 c4 0e 		add	sp,14
+	*** 000393	89 46 fe 		mov	WORD PTR [bp-2],ax	;hue
+;|***   hue = addRun(hue, 1, lo, melo, me, mehi, hi);
+; Line 358
+	*** 000396	ff 76 0c 		push	WORD PTR [bp+12]	;hi
+	*** 000399	ff 76 0a 		push	WORD PTR [bp+10]	;mehi
+	*** 00039c	ff 76 08 		push	WORD PTR [bp+8]	;me
+	*** 00039f	ff 76 06 		push	WORD PTR [bp+6]	;melo
+	*** 0003a2	ff 76 04 		push	WORD PTR [bp+4]	;lo
+	*** 0003a5	b8 01 00 		mov	ax,1
+	*** 0003a8	50 			push	ax
+	*** 0003a9	ff 76 fe 		push	WORD PTR [bp-2]	;hue
+	*** 0003ac	e8 b9 fd 		call	addRun
+	*** 0003af	83 c4 0e 		add	sp,14
+	*** 0003b2	89 46 fe 		mov	WORD PTR [bp-2],ax	;hue
+;|***   hue = addRun(hue, 2, lo, melo, me, mehi, hi);
+; Line 359
+	*** 0003b5	ff 76 0c 		push	WORD PTR [bp+12]	;hi
+	*** 0003b8	ff 76 0a 		push	WORD PTR [bp+10]	;mehi
+	*** 0003bb	ff 76 08 		push	WORD PTR [bp+8]	;me
+	*** 0003be	ff 76 06 		push	WORD PTR [bp+6]	;melo
+	*** 0003c1	ff 76 04 		push	WORD PTR [bp+4]	;lo
+	*** 0003c4	b8 02 00 		mov	ax,2
+	*** 0003c7	50 			push	ax
+	*** 0003c8	ff 76 fe 		push	WORD PTR [bp-2]	;hue
+	*** 0003cb	e8 9a fd 		call	addRun
+	*** 0003ce	83 c4 0e 		add	sp,14
+	*** 0003d1	89 46 fe 		mov	WORD PTR [bp-2],ax	;hue
+;|*** }
+; Line 360
+	*** 0003d4	8b e5 			mov	sp,bp
+	*** 0003d6	5d 			pop	bp
+	*** 0003d7	c3 			ret	
+
+addCycle	ENDP
+;|*** 
+;|*** /*
+;|***  * Write all 256 colors to the palette using addColor.
+;|***  *
+;|***  * The palette is always written here as 64-level.
+;|***  */
+;|*** static void buildPalette(void) {
+; Line 367
+buildPalette	PROC NEAR
+	*** 0003d8	55 			push	bp
+	*** 0003d9	8b ec 			mov	bp,sp
+	*** 0003db	83 ec 02 		sub	sp,2
+;	x = -2
+;|***   int x = 0;
+; Line 368
+	*** 0003de	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;x
+;|*** 
+;|***   /* Add the 16-color palette first */
+;|***   add16Color(0, 21, 42, 63);
+; Line 371
+	*** 0003e3	b8 3f 00 		mov	ax,63
+	*** 0003e6	50 			push	ax
+	*** 0003e7	b8 2a 00 		mov	ax,42
+	*** 0003ea	50 			push	ax
+	*** 0003eb	b8 15 00 		mov	ax,21
+	*** 0003ee	50 			push	ax
+	*** 0003ef	2b c0 			sub	ax,ax
+	*** 0003f1	50 			push	ax
+	*** 0003f2	e8 97 fc 		call	add16Color
+	*** 0003f5	83 c4 08 		add	sp,8
+;|*** 
+;|***   /* Next we have 16 shades of gray */
+;|***   addGrayColor( 0);
+; Line 374
+	*** 0003f8	2b c0 			sub	ax,ax
+	*** 0003fa	50 			push	ax
+	*** 0003fb	e8 7a fc 		call	addGrayColor
+	*** 0003fe	83 c4 02 		add	sp,2
+;|***   addGrayColor( 5);
+; Line 375
+	*** 000401	b8 05 00 		mov	ax,5
+	*** 000404	50 			push	ax
+	*** 000405	e8 70 fc 		call	addGrayColor
+	*** 000408	83 c4 02 		add	sp,2
+;|***   addGrayColor( 8);
+; Line 376
+	*** 00040b	b8 08 00 		mov	ax,8
+	*** 00040e	50 			push	ax
+	*** 00040f	e8 66 fc 		call	addGrayColor
+	*** 000412	83 c4 02 		add	sp,2
+;|***   addGrayColor(11);
+; Line 377
+	*** 000415	b8 0b 00 		mov	ax,11
+	*** 000418	50 			push	ax
+	*** 000419	e8 5c fc 		call	addGrayColor
+	*** 00041c	83 c4 02 		add	sp,2
+;|***   addGrayColor(14);
+; Line 378
+	*** 00041f	b8 0e 00 		mov	ax,14
+	*** 000422	50 			push	ax
+	*** 000423	e8 52 fc 		call	addGrayColor
+	*** 000426	83 c4 02 		add	sp,2
+;|***   addGrayColor(17);
+; Line 379
+	*** 000429	b8 11 00 		mov	ax,17
+	*** 00042c	50 			push	ax
+	*** 00042d	e8 48 fc 		call	addGrayColor
+	*** 000430	83 c4 02 		add	sp,2
+;|***   addGrayColor(20);
+; Line 380
+	*** 000433	b8 14 00 		mov	ax,20
+	*** 000436	50 			push	ax
+	*** 000437	e8 3e fc 		call	addGrayColor
+	*** 00043a	83 c4 02 		add	sp,2
+;|***   addGrayColor(24);
+; Line 381
+	*** 00043d	b8 18 00 		mov	ax,24
+	*** 000440	50 			push	ax
+	*** 000441	e8 34 fc 		call	addGrayColor
+	*** 000444	83 c4 02 		add	sp,2
+;|***   addGrayColor(28);
+; Line 382
+	*** 000447	b8 1c 00 		mov	ax,28
+	*** 00044a	50 			push	ax
+	*** 00044b	e8 2a fc 		call	addGrayColor
+	*** 00044e	83 c4 02 		add	sp,2
+;|***   addGrayColor(32);
+; Line 383
+	*** 000451	b8 20 00 		mov	ax,32
+	*** 000454	50 			push	ax
+	*** 000455	e8 20 fc 		call	addGrayColor
+	*** 000458	83 c4 02 		add	sp,2
+;|***   addGrayColor(36);
+; Line 384
+	*** 00045b	b8 24 00 		mov	ax,36
+	*** 00045e	50 			push	ax
+	*** 00045f	e8 16 fc 		call	addGrayColor
+	*** 000462	83 c4 02 		add	sp,2
+;|***   addGrayColor(40);
+; Line 385
+	*** 000465	b8 28 00 		mov	ax,40
+	*** 000468	50 			push	ax
+	*** 000469	e8 0c fc 		call	addGrayColor
+	*** 00046c	83 c4 02 		add	sp,2
+;|***   addGrayColor(45);
+; Line 386
+	*** 00046f	b8 2d 00 		mov	ax,45
+	*** 000472	50 			push	ax
+	*** 000473	e8 02 fc 		call	addGrayColor
+	*** 000476	83 c4 02 		add	sp,2
+;|***   addGrayColor(50);
+; Line 387
+	*** 000479	b8 32 00 		mov	ax,50
+	*** 00047c	50 			push	ax
+	*** 00047d	e8 f8 fb 		call	addGrayColor
+	*** 000480	83 c4 02 		add	sp,2
+;|***   addGrayColor(56);
+; Line 388
+	*** 000483	b8 38 00 		mov	ax,56
+	*** 000486	50 			push	ax
+	*** 000487	e8 ee fb 		call	addGrayColor
+	*** 00048a	83 c4 02 		add	sp,2
+;|***   addGrayColor(63);
+; Line 389
+	*** 00048d	b8 3f 00 		mov	ax,63
+	*** 000490	50 			push	ax
+	*** 000491	e8 e4 fb 		call	addGrayColor
+	*** 000494	83 c4 02 		add	sp,2
+;|*** 
+;|***   /* Now come the nine RGB cycles, organized in three groups of three
+;|***      cycles -- the groups represent high value, medium value, and low
+;|***      value, and the cycles within the groups represent high saturation,
+;|***      medium saturation, low saturation */
+;|***   addCycle( 0, 16, 31, 47, 63);
+; Line 395
+	*** 000497	b8 3f 00 		mov	ax,63
+	*** 00049a	50 			push	ax
+	*** 00049b	b8 2f 00 		mov	ax,47
+	*** 00049e	50 			push	ax
+	*** 00049f	b8 1f 00 		mov	ax,31
+	*** 0004a2	50 			push	ax
+	*** 0004a3	b8 10 00 		mov	ax,16
+	*** 0004a6	50 			push	ax
+	*** 0004a7	2b c0 			sub	ax,ax
+	*** 0004a9	50 			push	ax
+	*** 0004aa	e8 1d fe 		call	addCycle
+	*** 0004ad	83 c4 0a 		add	sp,10
+;|***   addCycle(31, 39, 47, 55, 63);
+; Line 396
+	*** 0004b0	b8 3f 00 		mov	ax,63
+	*** 0004b3	50 			push	ax
+	*** 0004b4	b8 37 00 		mov	ax,55
+	*** 0004b7	50 			push	ax
+	*** 0004b8	b8 2f 00 		mov	ax,47
+	*** 0004bb	50 			push	ax
+	*** 0004bc	b8 27 00 		mov	ax,39
+	*** 0004bf	50 			push	ax
+	*** 0004c0	b8 1f 00 		mov	ax,31
+	*** 0004c3	50 			push	ax
+	*** 0004c4	e8 03 fe 		call	addCycle
+	*** 0004c7	83 c4 0a 		add	sp,10
+;|***   addCycle(45, 49, 54, 58, 63);
+; Line 397
+	*** 0004ca	b8 3f 00 		mov	ax,63
+	*** 0004cd	50 			push	ax
+	*** 0004ce	b8 3a 00 		mov	ax,58
+	*** 0004d1	50 			push	ax
+	*** 0004d2	b8 36 00 		mov	ax,54
+	*** 0004d5	50 			push	ax
+	*** 0004d6	b8 31 00 		mov	ax,49
+	*** 0004d9	50 			push	ax
+	*** 0004da	b8 2d 00 		mov	ax,45
+	*** 0004dd	50 			push	ax
+	*** 0004de	e8 e9 fd 		call	addCycle
+	*** 0004e1	83 c4 0a 		add	sp,10
+;|*** 
+;|***   addCycle( 0,  7, 14, 21, 28);
+; Line 399
+	*** 0004e4	b8 1c 00 		mov	ax,28
+	*** 0004e7	50 			push	ax
+	*** 0004e8	b8 15 00 		mov	ax,21
+	*** 0004eb	50 			push	ax
+	*** 0004ec	b8 0e 00 		mov	ax,14
+	*** 0004ef	50 			push	ax
+	*** 0004f0	b8 07 00 		mov	ax,7
+	*** 0004f3	50 			push	ax
+	*** 0004f4	2b c0 			sub	ax,ax
+	*** 0004f6	50 			push	ax
+	*** 0004f7	e8 d0 fd 		call	addCycle
+	*** 0004fa	83 c4 0a 		add	sp,10
+;|***   addCycle(14, 17, 21, 24, 28);
+; Line 400
+	*** 0004fd	b8 1c 00 		mov	ax,28
+	*** 000500	50 			push	ax
+	*** 000501	b8 18 00 		mov	ax,24
+	*** 000504	50 			push	ax
+	*** 000505	b8 15 00 		mov	ax,21
+	*** 000508	50 			push	ax
+	*** 000509	b8 11 00 		mov	ax,17
+	*** 00050c	50 			push	ax
+	*** 00050d	b8 0e 00 		mov	ax,14
+	*** 000510	50 			push	ax
+	*** 000511	e8 b6 fd 		call	addCycle
+	*** 000514	83 c4 0a 		add	sp,10
+;|***   addCycle(20, 22, 24, 26, 28);
+; Line 401
+	*** 000517	b8 1c 00 		mov	ax,28
+	*** 00051a	50 			push	ax
+	*** 00051b	b8 1a 00 		mov	ax,26
+	*** 00051e	50 			push	ax
+	*** 00051f	b8 18 00 		mov	ax,24
+	*** 000522	50 			push	ax
+	*** 000523	b8 16 00 		mov	ax,22
+	*** 000526	50 			push	ax
+	*** 000527	b8 14 00 		mov	ax,20
+	*** 00052a	50 			push	ax
+	*** 00052b	e8 9c fd 		call	addCycle
+	*** 00052e	83 c4 0a 		add	sp,10
+;|*** 
+;|***   addCycle( 0,  4,  8, 12, 16);
+; Line 403
+	*** 000531	b8 10 00 		mov	ax,16
+	*** 000534	50 			push	ax
+	*** 000535	b8 0c 00 		mov	ax,12
+	*** 000538	50 			push	ax
+	*** 000539	b8 08 00 		mov	ax,8
+	*** 00053c	50 			push	ax
+	*** 00053d	b8 04 00 		mov	ax,4
+	*** 000540	50 			push	ax
+	*** 000541	2b c0 			sub	ax,ax
+	*** 000543	50 			push	ax
+	*** 000544	e8 83 fd 		call	addCycle
+	*** 000547	83 c4 0a 		add	sp,10
+;|***   addCycle( 8, 10, 12, 14, 16);
+; Line 404
+	*** 00054a	b8 10 00 		mov	ax,16
+	*** 00054d	50 			push	ax
+	*** 00054e	b8 0e 00 		mov	ax,14
+	*** 000551	50 			push	ax
+	*** 000552	b8 0c 00 		mov	ax,12
+	*** 000555	50 			push	ax
+	*** 000556	b8 0a 00 		mov	ax,10
+	*** 000559	50 			push	ax
+	*** 00055a	b8 08 00 		mov	ax,8
+	*** 00055d	50 			push	ax
+	*** 00055e	e8 69 fd 		call	addCycle
+	*** 000561	83 c4 0a 		add	sp,10
+;|***   addCycle(11, 12, 13, 15, 16);
+; Line 405
+	*** 000564	b8 10 00 		mov	ax,16
+	*** 000567	50 			push	ax
+	*** 000568	b8 0f 00 		mov	ax,15
+	*** 00056b	50 			push	ax
+	*** 00056c	b8 0d 00 		mov	ax,13
+	*** 00056f	50 			push	ax
+	*** 000570	b8 0c 00 		mov	ax,12
+	*** 000573	50 			push	ax
+	*** 000574	b8 0b 00 		mov	ax,11
+	*** 000577	50 			push	ax
+	*** 000578	e8 4f fd 		call	addCycle
+	*** 00057b	83 c4 0a 		add	sp,10
+;|*** 
+;|***   /* Fill the last eight palette entries with full black */
+;|***   addGrayColor(0);
+; Line 408
+	*** 00057e	2b c0 			sub	ax,ax
+	*** 000580	50 			push	ax
+	*** 000581	e8 f4 fa 		call	addGrayColor
+	*** 000584	83 c4 02 		add	sp,2
+;|***   addGrayColor(0);
+; Line 409
+	*** 000587	2b c0 			sub	ax,ax
+	*** 000589	50 			push	ax
+	*** 00058a	e8 eb fa 		call	addGrayColor
+	*** 00058d	83 c4 02 		add	sp,2
+;|***   addGrayColor(0);
+; Line 410
+	*** 000590	2b c0 			sub	ax,ax
+	*** 000592	50 			push	ax
+	*** 000593	e8 e2 fa 		call	addGrayColor
+	*** 000596	83 c4 02 		add	sp,2
+;|***   addGrayColor(0);
+; Line 411
+	*** 000599	2b c0 			sub	ax,ax
+	*** 00059b	50 			push	ax
+	*** 00059c	e8 d9 fa 		call	addGrayColor
+	*** 00059f	83 c4 02 		add	sp,2
+;|*** 
+;|***   addGrayColor(0);
+; Line 413
+	*** 0005a2	2b c0 			sub	ax,ax
+	*** 0005a4	50 			push	ax
+	*** 0005a5	e8 d0 fa 		call	addGrayColor
+	*** 0005a8	83 c4 02 		add	sp,2
+;|***   addGrayColor(0);
+; Line 414
+	*** 0005ab	2b c0 			sub	ax,ax
+	*** 0005ad	50 			push	ax
+	*** 0005ae	e8 c7 fa 		call	addGrayColor
+	*** 0005b1	83 c4 02 		add	sp,2
+;|***   addGrayColor(0);
+; Line 415
+	*** 0005b4	2b c0 			sub	ax,ax
+	*** 0005b6	50 			push	ax
+	*** 0005b7	e8 be fa 		call	addGrayColor
+	*** 0005ba	83 c4 02 		add	sp,2
+;|***   addGrayColor(0);
+; Line 416
+	*** 0005bd	2b c0 			sub	ax,ax
+	*** 0005bf	50 			push	ax
+	*** 0005c0	e8 b5 fa 		call	addGrayColor
+	*** 0005c3	83 c4 02 		add	sp,2
+;|*** }
+; Line 417
+	*** 0005c6	8b e5 			mov	sp,bp
+	*** 0005c8	5d 			pop	bp
+	*** 0005c9	c3 			ret	
+
+buildPalette	ENDP
+;|*** 
+;|*** /*
+;|***  * Convert the palette from 64-level to 256-level.
+;|***  *
+;|***  * This may only be called once.  All 256 colors of the palette must
+;|***  * already have been added.
+;|***  */
+;|*** static void levelUp(void) {
+; Line 425
+levelUp	PROC NEAR
+	*** 0005ca	55 			push	bp
+	*** 0005cb	8b ec 			mov	bp,sp
+	*** 0005cd	83 ec 04 		sub	sp,4
+;	i = -4
+;	v = -2
+;|***   static int first_call = 1;
+;|*** 
+;|***   int i = 0;
+; Line 428
+	*** 0005d0	c7 46 fc 00 00 		mov	WORD PTR [bp-4],0	;i
+;|***   int v = 0;
+; Line 429
+	*** 0005d5	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;v
+;|*** 
+;|***   /* Can only call once */
+;|***   if (first_call) {
+; Line 432
+	*** 0005da	83 3e 02 00 00 		cmp	WORD PTR $S369_first_call,0
+	*** 0005df	74 09 			je	$I372
+;|***     first_call = 0;
+; Line 433
+	*** 0005e1	c7 06 02 00 00 00 	mov	WORD PTR $S369_first_call,0
+;|***   } else {
+; Line 434
+	*** 0005e7	eb 04 			jmp	SHORT $I373
+	*** 0005e9	90 			nop	
+					$I372:
+;|***     abort();
+; Line 435
+	*** 0005ea	e8 00 00 		call	_abort
+;|***   }
+; Line 436
+					$I373:
+;|*** 
+;|***   /* Palette must be full */
+;|***   if (pal_written != 256) {
+; Line 439
+	*** 0005ed	81 3e 00 00 00 01 	cmp	WORD PTR $S282_pal_written,256
+	*** 0005f3	74 03 			je	$I374
+;|***     abort();
+; Line 440
+	*** 0005f5	e8 00 00 		call	_abort
+;|***   }
+; Line 441
+;|*** 
+;|***   /* Convert each individual component from 64-level to 256-level */
+;|***   for(i = 0; i < (256 * 3); i++) {
+; Line 444
+					$I374:
+	*** 0005f8	c7 46 fc 00 00 		mov	WORD PTR [bp-4],0	;i
+					$FC376:
+;|***     /* Get component value */
+;|***     v = pal[i];
+; Line 446
+	*** 0005fd	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;i
+	*** 000600	8a 87 00 00 		mov	al,BYTE PTR $S281_pal[bx]
+	*** 000604	2a e4 			sub	ah,ah
+	*** 000606	89 46 fe 		mov	WORD PTR [bp-2],ax	;v
+;|*** 
+;|***     /* Verify range */
+;|***     if (v > 63) {
+; Line 449
+	*** 000609	3d 3f 00 		cmp	ax,63
+	*** 00060c	7e 03 			jle	$I378
+;|***       abort();
+; Line 450
+	*** 00060e	e8 00 00 		call	_abort
+;|***     }
+; Line 451
+;|*** 
+;|***     /* First, shift value two bits left */
+;|***     v = (v << 2);
+; Line 454
+					$I378:
+	*** 000611	b1 02 			mov	cl,2
+	*** 000613	d3 66 fe 		shl	WORD PTR [bp-2],cl	;v
+;|*** 
+;|***     /* Second, duplicate two most significant bits of byte in two least
+;|***        significant bits */
+;|***     v = v | (v >> 6);
+; Line 458
+	*** 000616	8b 46 fe 		mov	ax,WORD PTR [bp-2]	;v
+	*** 000619	b1 06 			mov	cl,6
+	*** 00061b	d3 f8 			sar	ax,cl
+	*** 00061d	09 46 fe 		or	WORD PTR [bp-2],ax	;v
+;|*** 
+;|***     /* Write converted value back to palette */
+;|***     pal[i] = (unsigned char) v;
+; Line 461
+	*** 000620	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;i
+	*** 000623	8a 46 fe 		mov	al,BYTE PTR [bp-2]	;v
+	*** 000626	88 87 00 00 		mov	BYTE PTR $S281_pal[bx],al
+;|***   }
+; Line 462
+	*** 00062a	ff 46 fc 		inc	WORD PTR [bp-4]	;i
+	*** 00062d	81 7e fc 00 03 		cmp	WORD PTR [bp-4],768	;i
+	*** 000632	7c c9 			jl	$FC376
+;|*** }
+; Line 463
+	*** 000634	8b e5 			mov	sp,bp
+	*** 000636	5d 			pop	bp
+	*** 000637	c3 			ret	
+
+levelUp	ENDP
+;|*** 
+;|*** /*
+;|***  * Print the contents of the palette.
+;|***  *
+;|***  * All 256 colors must already have been added to the palette.  The
+;|***  * palette must *not* have already been upconverted from 64-level to
+;|***  * 256-level; this procedure will do that if requested.
+;|***  *
+;|***  * Parameters:
+;|***  *
+;|***  *   levelup - non-zero if the palette should be upconverted to 256
+;|***  *   levels before being printed, zero to leave it at 64 levels
+;|***  */
+;|*** static void printPalette(int levelup) {
+; Line 477
+printPalette	PROC NEAR
+	*** 000638	55 			push	bp
+	*** 000639	8b ec 			mov	bp,sp
+	*** 00063b	83 ec 02 		sub	sp,2
+;	levelup = 4
+;	i = -2
+;|*** 
+;|***   int i = 0;
+; Line 479
+	*** 00063e	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;i
+;|*** 
+;|***   /* Palette must be full */
+;|***   if (pal_written != 256) {
+; Line 482
+	*** 000643	81 3e 00 00 00 01 	cmp	WORD PTR $S282_pal_written,256
+	*** 000649	74 03 			je	$I382
+;|***     abort();
+; Line 483
+	*** 00064b	e8 00 00 		call	_abort
+;|***   }
+; Line 484
+;|*** 
+;|***   /* Upconvert the palette if requested */
+;|***   if (levelup) {
+; Line 487
+					$I382:
+	*** 00064e	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;levelup
+	*** 000652	74 03 			je	$I383
+;|***     levelUp();
+; Line 488
+	*** 000654	e8 73 ff 		call	levelUp
+;|***   }
+; Line 489
+;|*** 
+;|***   /* Write each component */
+;|***   for(i = 0; i < (256 * 3); i++) {
+; Line 492
+					$I383:
+	*** 000657	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;i
+	*** 00065c	eb 5a 			jmp	SHORT $F384
+					$I389:
+;|***  
+;|***      /* Figure out if we need to prefix a separator */
+;|***     if (i == 0) {
+;|***       /* First component -- no separator */
+;|*** 
+;|***     } else if ((i % 12) == 0) {
+;|***       /* Not first component but multiple of 12 (every four colors), so
+;|***          add a line break */
+;|***       printf("\n");
+;|*** 
+;|***     } else if ((i % 3) == 0) {
+; Line 503
+	*** 00065e	8b 46 fe 		mov	ax,WORD PTR [bp-2]	;i
+	*** 000661	99 			cwd	
+	*** 000662	b9 03 00 		mov	cx,3
+	*** 000665	f7 f9 			idiv	cx
+	*** 000667	0b d2 			or	dx,dx
+	*** 000669	75 05 			jne	$I392
+;|***       /* Not a multiple of 12 but a multiple of three (each color), so
+;|***          add double space separator */
+;|***       printf("  ");
+; Line 506
+	*** 00066b	b8 06 00 		mov	ax,OFFSET DGROUP:$SG393
+	*** 00066e	eb 03 			jmp	SHORT $L20010
+					$I392:
+;|*** 
+;|***     } else {
+; Line 508
+;|***       /* Not a multiple of three, so just add a single space */
+;|***       printf(" ");
+; Line 510
+	*** 000670	b8 09 00 		mov	ax,OFFSET DGROUP:$SG395
+					$L20010:
+	*** 000673	50 			push	ax
+	*** 000674	e8 00 00 		call	_printf
+	*** 000677	83 c4 02 		add	sp,2
+;|***     }
+; Line 511
+					$I391:
+;|*** 
+;|***     /* Output component value, aligned to 3-digit if 256-level or
+;|***        2-digit if 64-level */
+;|***     if (levelup) {
+; Line 515
+	*** 00067a	83 7e 04 00 		cmp	WORD PTR [bp+4],0	;levelup
+	*** 00067e	74 10 			je	$I396
+;|***       printf("%3d", (int) pal[i]);
+; Line 516
+	*** 000680	8b 5e fe 		mov	bx,WORD PTR [bp-2]	;i
+	*** 000683	8a 87 00 00 		mov	al,BYTE PTR $S281_pal[bx]
+	*** 000687	2a e4 			sub	ah,ah
+	*** 000689	50 			push	ax
+	*** 00068a	b8 0b 00 		mov	ax,OFFSET DGROUP:$SG397
+	*** 00068d	eb 0e 			jmp	SHORT $L20011
+	*** 00068f	90 			nop	
+					$I396:
+;|***     } else {
+; Line 517
+;|***       printf("%2d", (int) pal[i]);
+; Line 518
+	*** 000690	8b 5e fe 		mov	bx,WORD PTR [bp-2]	;i
+	*** 000693	8a 87 00 00 		mov	al,BYTE PTR $S281_pal[bx]
+	*** 000697	2a e4 			sub	ah,ah
+	*** 000699	50 			push	ax
+	*** 00069a	b8 0f 00 		mov	ax,OFFSET DGROUP:$SG399
+					$L20011:
+	*** 00069d	50 			push	ax
+	*** 00069e	e8 00 00 		call	_printf
+	*** 0006a1	83 c4 04 		add	sp,4
+;|***     }
+; Line 519
+;|*** 
+;|***     /* If not the last component, suffix a comma */
+;|***     if (i < (256 * 3) - 1) {
+; Line 522
+	*** 0006a4	81 7e fe ff 02 		cmp	WORD PTR [bp-2],767	;i
+	*** 0006a9	7d 0a 			jge	$FC385
+;|***       printf(",");
+; Line 523
+	*** 0006ab	b8 13 00 		mov	ax,OFFSET DGROUP:$SG401
+	*** 0006ae	50 			push	ax
+	*** 0006af	e8 00 00 		call	_printf
+	*** 0006b2	83 c4 02 		add	sp,2
+;|***     }
+; Line 524
+;|***   }
+; Line 525
+					$FC385:
+	*** 0006b5	ff 46 fe 		inc	WORD PTR [bp-2]	;i
+					$F384:
+	*** 0006b8	81 7e fe 00 03 		cmp	WORD PTR [bp-2],768	;i
+	*** 0006bd	7d 19 			jge	$FB386
+;|***     if (i == 0) {
+; Line 495
+	*** 0006bf	83 7e fe 00 		cmp	WORD PTR [bp-2],0	;i
+	*** 0006c3	74 b5 			je	$I391
+;|***       /* First component -- no separator */
+;|*** 
+;|***     } else if ((i % 12) == 0) {
+; Line 498
+	*** 0006c5	8b 46 fe 		mov	ax,WORD PTR [bp-2]	;i
+	*** 0006c8	99 			cwd	
+	*** 0006c9	b9 0c 00 		mov	cx,12
+	*** 0006cc	f7 f9 			idiv	cx
+	*** 0006ce	0b d2 			or	dx,dx
+	*** 0006d0	75 8c 			jne	$I389
+;|***       /* Not first component but multiple of 12 (every four colors), so
+;|***          add a line break */
+;|***       printf("\n");
+; Line 501
+	*** 0006d2	b8 04 00 		mov	ax,OFFSET DGROUP:$SG390
+	*** 0006d5	eb 9c 			jmp	SHORT $L20010
+	*** 0006d7	90 			nop	
+					$FB386:
+;|*** 
+;|***     } else if ((i % 3) == 0) {
+;|***       /* Not a multiple of 12 but a multiple of three (each color), so
+;|***          add double space separator */
+;|***       printf("  ");
+;|*** 
+;|***     } else {
+;|***       /* Not a multiple of three, so just add a single space */
+;|***       printf(" ");
+;|***     }
+;|*** 
+;|***     /* Output component value, aligned to 3-digit if 256-level or
+;|***        2-digit if 64-level */
+;|***     if (levelup) {
+;|***       printf("%3d", (int) pal[i]);
+;|***     } else {
+;|***       printf("%2d", (int) pal[i]);
+;|***     }
+;|*** 
+;|***     /* If not the last component, suffix a comma */
+;|***     if (i < (256 * 3) - 1) {
+;|***       printf(",");
+;|***     }
+;|***   }
+;|*** 
+;|***   /* Add a line break at the very end */
+;|***   printf("\n");
+; Line 528
+	*** 0006d8	b8 15 00 		mov	ax,OFFSET DGROUP:$SG402
+	*** 0006db	50 			push	ax
+	*** 0006dc	e8 00 00 		call	_printf
+	*** 0006df	83 c4 02 		add	sp,2
+;|*** }
+; Line 529
+	*** 0006e2	8b e5 			mov	sp,bp
+	*** 0006e4	5d 			pop	bp
+	*** 0006e5	c3 			ret	
+
+printPalette	ENDP
+;|*** 
+;|*** /*
+;|***  * Program procedure.
+;|***  *
+;|***  * Parameters:
+;|***  *
+;|***  *   levelup - non-zero if output should be converted to 256-level,
+;|***  *   zero for output in 64-level
+;|***  */
+;|*** static void vgapal(int levelup) {
+; Line 539
+vgapal	PROC NEAR
+	*** 0006e6	55 			push	bp
+	*** 0006e7	8b ec 			mov	bp,sp
+;	levelup = 4
+;|***   buildPalette();
+; Line 540
+	*** 0006e9	e8 ec fc 		call	buildPalette
+;|***   printPalette(levelup);
+; Line 541
+	*** 0006ec	ff 76 04 		push	WORD PTR [bp+4]	;levelup
+	*** 0006ef	e8 46 ff 		call	printPalette
+	*** 0006f2	83 c4 02 		add	sp,2
+;|*** }
+; Line 542
+	*** 0006f5	5d 			pop	bp
+	*** 0006f6	c3 			ret	
+	*** 0006f7	90 			nop	
+
+vgapal	ENDP
+;|*** 
+;|*** /*
+;|***  * Main procedure.
+;|***  *
+;|***  * Parameters:
+;|***  *
+;|***  *   argc - number of command-line arguments (including program name)
+;|***  *
+;|***  *   argv - array of pointers to null-terminated ASCII arguments
+;|***  *
+;|***  * Return:
+;|***  * 
+;|***  *   zero if successful, one if error
+;|***  */
+;|*** int main(int argc, char *argv[]) {
+; Line 557
+	PUBLIC	_main
+_main	PROC NEAR
+	*** 0006f8	55 			push	bp
+	*** 0006f9	8b ec 			mov	bp,sp
+	*** 0006fb	83 ec 04 		sub	sp,4
+;	argc = 4
+;	argv = 6
+;	status = -2
+;	levelup = -4
+;|*** 
+;|***   int status = 1;
+; Line 559
+	*** 0006fe	c7 46 fe 01 00 		mov	WORD PTR [bp-2],1	;status
+;|***   int levelup = 0;
+; Line 560
+	*** 000703	c7 46 fc 00 00 		mov	WORD PTR [bp-4],0	;levelup
+;|*** 
+;|***   /* Number of arguments must be at least one and argument array must
+;|***      not be NULL */
+;|***   if ((argc < 1) || (argv == NULL)) {
+; Line 564
+	*** 000708	83 7e 04 01 		cmp	WORD PTR [bp+4],1	;argc
+	*** 00070c	7c 06 			jl	$I412
+	*** 00070e	83 7e 06 00 		cmp	WORD PTR [bp+6],0	;argv
+	*** 000712	75 03 			jne	$I411
+					$I412:
+;|***     abort();
+; Line 565
+	*** 000714	e8 00 00 		call	_abort
+;|***   }
+; Line 566
+;|*** 
+;|***   /* If no additional arguments, display help screen and fail */
+;|***   if (status && (argc <= 1)) {
+; Line 569
+					$I411:
+	*** 000717	83 7e fe 00 		cmp	WORD PTR [bp-2],0	;status
+	*** 00071b	74 3a 			je	$I413
+	*** 00071d	83 7e 04 01 		cmp	WORD PTR [bp+4],1	;argc
+	*** 000721	7f 34 			jg	$I413
+;|***     fprintf(stderr, "%s [levels]\n\n", argv[0]);
+; Line 570
+	*** 000723	8b 5e 06 		mov	bx,WORD PTR [bp+6]	;argv
+	*** 000726	ff 37 			push	WORD PTR [bx]
+	*** 000728	b8 17 00 		mov	ax,OFFSET DGROUP:$SG414
+	*** 00072b	50 			push	ax
+	*** 00072c	b8 10 00 		mov	ax,OFFSET __iob+16
+	*** 00072f	50 			push	ax
+	*** 000730	e8 00 00 		call	_fprintf
+	*** 000733	83 c4 06 		add	sp,6
+;|***     fprintf(stderr, "levels - either 64 or 256, indicating maximum\n");
+; Line 571
+	*** 000736	b8 25 00 		mov	ax,OFFSET DGROUP:$SG415
+	*** 000739	50 			push	ax
+	*** 00073a	b8 10 00 		mov	ax,OFFSET __iob+16
+	*** 00073d	50 			push	ax
+	*** 00073e	e8 00 00 		call	_fprintf
+	*** 000741	83 c4 04 		add	sp,4
+;|***     fprintf(stderr, "channel intensity value\n\n");
+; Line 572
+	*** 000744	b8 54 00 		mov	ax,OFFSET DGROUP:$SG416
+	*** 000747	50 			push	ax
+	*** 000748	b8 10 00 		mov	ax,OFFSET __iob+16
+	*** 00074b	50 			push	ax
+	*** 00074c	e8 00 00 		call	_fprintf
+	*** 00074f	83 c4 04 		add	sp,4
+;|***     status = 0;
+; Line 573
+	*** 000752	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;status
+;|***   }
+; Line 574
+;|*** 
+;|***   /* If too many arguments, fail */
+;|***   if (status && (argc > 2)) {
+; Line 577
+					$I413:
+	*** 000757	83 7e fe 00 		cmp	WORD PTR [bp-2],0	;status
+	*** 00075b	74 1e 			je	$I417
+	*** 00075d	83 7e 04 02 		cmp	WORD PTR [bp+4],2	;argc
+	*** 000761	7e 18 			jle	$I417
+;|***     fprintf(stderr, "%s:  Too many arguments!\n", argv[0]);
+; Line 578
+	*** 000763	8b 5e 06 		mov	bx,WORD PTR [bp+6]	;argv
+	*** 000766	ff 37 			push	WORD PTR [bx]
+	*** 000768	b8 6e 00 		mov	ax,OFFSET DGROUP:$SG418
+	*** 00076b	50 			push	ax
+	*** 00076c	b8 10 00 		mov	ax,OFFSET __iob+16
+	*** 00076f	50 			push	ax
+	*** 000770	e8 00 00 		call	_fprintf
+	*** 000773	83 c4 06 		add	sp,6
+;|***     status = 0;
+; Line 579
+	*** 000776	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;status
+;|***   }
+; Line 580
+;|*** 
+;|***   /* Parse parameter, setting levelup flag if we need to convert up to
+;|***      256-level output */
+;|***   if (status) {
+; Line 584
+					$I417:
+	*** 00077b	83 7e fe 00 		cmp	WORD PTR [bp-2],0	;status
+	*** 00077f	74 5b 			je	$I426
+;|***     if (argv[1] == NULL) {
+; Line 585
+	*** 000781	8b 5e 06 		mov	bx,WORD PTR [bp+6]	;argv
+	*** 000784	83 7f 02 00 		cmp	WORD PTR [bx+2],0
+	*** 000788	75 03 			jne	$I420
+;|***       abort();
+; Line 586
+	*** 00078a	e8 00 00 		call	_abort
+;|***     }
+; Line 587
+;|*** 
+;|***     if (strcmp(argv[1], "64") == 0) {
+; Line 589
+					$I420:
+	*** 00078d	b8 88 00 		mov	ax,OFFSET DGROUP:$SG422
+	*** 000790	50 			push	ax
+	*** 000791	8b 5e 06 		mov	bx,WORD PTR [bp+6]	;argv
+	*** 000794	ff 77 02 		push	WORD PTR [bx+2]
+	*** 000797	e8 00 00 		call	_strcmp
+	*** 00079a	83 c4 04 		add	sp,4
+	*** 00079d	0b c0 			or	ax,ax
+	*** 00079f	75 07 			jne	$I421
+;|***       /* 64-level; no upconversion required */
+;|***       levelup = 0;
+; Line 591
+	*** 0007a1	c7 46 fc 00 00 		mov	WORD PTR [bp-4],0	;levelup
+;|***     } else if (strcmp(argv[1], "256") == 0) {
+; Line 592
+	*** 0007a6	eb 34 			jmp	SHORT $I426
+					$I421:
+	*** 0007a8	b8 8b 00 		mov	ax,OFFSET DGROUP:$SG425
+	*** 0007ab	50 			push	ax
+	*** 0007ac	8b 5e 06 		mov	bx,WORD PTR [bp+6]	;argv
+	*** 0007af	ff 77 02 		push	WORD PTR [bx+2]
+	*** 0007b2	e8 00 00 		call	_strcmp
+	*** 0007b5	83 c4 04 		add	sp,4
+	*** 0007b8	0b c0 			or	ax,ax
+	*** 0007ba	75 08 			jne	$I424
+;|***       /* 256-level; upconversion required */
+;|***       levelup = 1;
+; Line 594
+	*** 0007bc	c7 46 fc 01 00 		mov	WORD PTR [bp-4],1	;levelup
+;|***     } else {
+; Line 595
+	*** 0007c1	eb 19 			jmp	SHORT $I426
+	*** 0007c3	90 			nop	
+					$I424:
+;|***       /* Unrecognized value */
+;|***       fprintf(stderr, "%s:  Only 64 and 256 supported for levels.\n",
+;|***         argv[0]);
+; Line 598
+	*** 0007c4	8b 5e 06 		mov	bx,WORD PTR [bp+6]	;argv
+	*** 0007c7	ff 37 			push	WORD PTR [bx]
+	*** 0007c9	b8 8f 00 		mov	ax,OFFSET DGROUP:$SG427
+	*** 0007cc	50 			push	ax
+	*** 0007cd	b8 10 00 		mov	ax,OFFSET __iob+16
+	*** 0007d0	50 			push	ax
+	*** 0007d1	e8 00 00 		call	_fprintf
+	*** 0007d4	83 c4 06 		add	sp,6
+;|***       status = 0;
+; Line 599
+	*** 0007d7	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;status
+;|***     }
+; Line 600
+					$I426:
+;|***   }
+; Line 601
+;|*** 
+;|***   /* Call through to main program, passing flag */
+;|***   if (status) {
+; Line 604
+	*** 0007dc	83 7e fe 00 		cmp	WORD PTR [bp-2],0	;status
+	*** 0007e0	74 09 			je	$I428
+;|***     vgapal(levelup);
+; Line 605
+	*** 0007e2	ff 76 fc 		push	WORD PTR [bp-4]	;levelup
+	*** 0007e5	e8 fe fe 		call	vgapal
+	*** 0007e8	83 c4 02 		add	sp,2
+;|***   }
+; Line 606
+;|*** 
+;|***   /* Invert status for return */
+;|***   if (status) {
+; Line 609
+					$I428:
+	*** 0007eb	83 7e fe 00 		cmp	WORD PTR [bp-2],0	;status
+	*** 0007ef	74 07 			je	$I429
+;|***     status = 0;
+; Line 610
+	*** 0007f1	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;status
+;|***   } else {
+; Line 611
+	*** 0007f6	eb 05 			jmp	SHORT $I430
+					$I429:
+;|***     status = 1;
+; Line 612
+	*** 0007f8	c7 46 fe 01 00 		mov	WORD PTR [bp-2],1	;status
+;|***   }
+; Line 613
+					$I430:
+;|*** 
+;|***   /* Return inverted status */
+;|***   return status;
+; Line 616
+	*** 0007fd	8b 46 fe 		mov	ax,WORD PTR [bp-2]	;status
+	*** 000800	8b e5 			mov	sp,bp
+	*** 000802	5d 			pop	bp
+	*** 000803	c3 			ret	
+
+_main	ENDP
+_TEXT	ENDS
+END
+;|*** }

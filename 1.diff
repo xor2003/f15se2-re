@@ -1,0 +1,3244 @@
+diff --git a/Makefile b/Makefile
+index 310603c..e919271 100644
+--- a/Makefile
++++ b/Makefile
+@@ -15,7 +15,7 @@ CONFDIR := conf
+ TOOLDIR := tools
+ CXXFLAGS := -Wfatal-errors
+ # UASM: no copyright into, 8086 instuctions, MASM compatibility
+-UASMFLAGS := -q -0 -Zm
++UASMFLAGS := -q -0 -Zm -Fl
+ # DOS C compiler: no stack probes, debug mode
+ C_TOOLCHAIN ?= msc510
+ MSC_CFLAGS ?= /Fc /Gs /Zi /Id:\f15-se2 /Id:\f15-se2\src /Zp1
+diff --git a/conf/egame_rc.json b/conf/egame_rc.json
+index bef99f5..40b4b50 100644
+--- a/conf/egame_rc.json
++++ b/conf/egame_rc.json
+@@ -13,7 +13,7 @@
+         { "seg": "seg000", "begin": "0x147",  "end": "0x210",  "from": "drawCockpit",      "to": "endp" },
+         { "seg": "seg000", "begin": "0x211",  "end": "0x293",  "from": "sub_10211",        "to": "endp" },
+         { "seg": "seg000", "begin": "0x29a",  "end": "0x2e0",  "from": "gfxInit",          "to": "endp" },
+-        { "seg": "seg000", "begin": "0x1e0e", "end": "0x1f3d", "from": "sub_11E0E",        "to": "endp" },
++        { "seg": "seg000", "begin": "0x1e0e", "end": "0x1f3d", "from": "InitializeCockpitData",        "to": "endp" },
+         { "seg": "seg000", "begin": "0x2049", "end": "0x206c", "from": "moveDataFar",      "to": "endp" },
+         { "seg": "seg000", "begin": "0x206d", "end": "0x215b", "from": "moveStuff",        "to": "endp" },
+         { "seg": "seg000", "begin": "0x215c", "end": "0x21a8", "from": "moveNearFar",      "to": "endp" },
+@@ -30,7 +30,7 @@
+         { "seg": "seg000", "begin": "0x55ab", "end": "0x5fda", "from": "ProcessPlayerInputAndAI","to": "endp" },
+         { "seg": "seg000", "begin": "0x8e50", "end": "0x9484", "from": "UpdateFlightModelAndHUD","to": "endp" },
+         { "seg": "seg000", "begin": "0x9e44", "end": "0x9e5c", "from": "sub_19E44",        "to": "endp" },
+-        { "seg": "seg000", "begin": "0x9e5d", "end": "0x9e93", "from": "sub_19E5D",        "to": "endp" },
++        { "seg": "seg000", "begin": "0x9e5d", "end": "0x9e93", "from": "DrawHUDElement",        "to": "endp" },
+         { "seg": "seg000", "begin": "0xa0cb", "end": "0xa0fd", "from": "drawSomeStrings",  "to": "endp" },
+         { "seg": "seg000", "begin": "0xa13a", "end": "0xa182", "from": "drawString",       "to": "endp" },
+         { "seg": "seg000", "begin": "0xc8de", "end": "0xc9d0", "from": "load15Flt3d3",     "to": "endp" },
+@@ -77,7 +77,7 @@
+         { "seg": "dseg", "off": "0x66bf", "from": "db", "to": ".DATA?" }
+     ],
+     "preserves": [
+-        "installCBreakHandler", "copyJoystickData", "restoreJoystickData", "setupOverlaySlots", "restoreCBreakHandler", "getInterruptHandler", "sub_22411", "setTimerIrqHandler", "setInt9Handler", "restoreInt9Handler", "int9Handler", "sub_13C3B", "restoreTimerIrqHandler", "picBlit", "sub_13DF2", 
++        "installCBreakHandler", "copyJoystickData", "restoreJoystickData", "setupOverlaySlots", "restoreCBreakHandler", "getInterruptHandler", "InitializeGameSettings", "setTimerIrqHandler", "setInt9Handler", "restoreInt9Handler", "CustomInt9Handler", "sub_13C3B", "restoreTimerIrqHandler", "picBlit", "sub_13DF2", 
+         // could be C?
+         "sub_13C47", "loadF15DgtlBin", "setupDac",
+         "openFile", "createFile", "sub_1DF4F", "DecompressAndBlitRow", "closeFile", "read512FromFileIntoBuf", "manipulateTimer"
+@@ -87,13 +87,13 @@
+     ],
+     "publics": [ 
+         "commData", "gameData", "hercFlag", "gfxModeUnset", "noJoy80", "noJoy80_2", "copyJoystickData", "setupOverlaySlots", "installCBreakHandler", "loadF15DgtlBin", "setupDac",
+-        "gfxBufPtr", "restoreJoystickData", "regs", "exitCode", "restoreCBreakHandler", "sub_22411", "scenarioPlh", "regnStr", "f15DgtlResult", "byte_34197", "aCockpit_pic", "a256pit_pic", "byte_32933",  "restoreTimerIrqHandler", "audio_jump_64", "audio_jump_65", "setTimerIrqHandler", "sub_13C3B", "setInt9Handler", "restoreInt9Handler", "dword_38FE2", "word_3C0A2", "flagFarToNear", "byte_3C16E", "word_3BEC0", "word_3BED0", "dword_3B7F8", "word_3B148", "dword_3B7DA", "flt15_buf1", "flt15_word1", "flt15_buf2", "aRb_4", "a_3d3_0", "a15flt_xxx", "fileHandle", "aOpenErrorOn_3d3_0", "flt15_size", "picBlit", "byte_3B7FC", "byte_3790C", "farPointer", "word_3C69E", "word_3B144", "word_3C046", "word_3BED2", "word_336FC", "byte_3BFA4", "byte_3BEC4", "byte_3BED8", "byte_3C02A", "word_3C00C", "word_38FFA", "unk_3B202", "byte_3AFAC", "word_3401A", "openFile", "closeFile", "off_38334", "off_3834C", "a_3dg", "byte_3A900", "aBadGridFileFormat_", "aRb_3", "misc_jump_5b_getkey", "unk_33E1A", "unk_34121", "aPleaseInsertF15DiskB", "sign3dg", "buf1_3dg", "buf2_3dg", "buf3_3dg", "buf4_3dg", "aTooMuchTileData", "aBadTileFileFormat_", "aRb_2", "a_3dt", "aTooManyTiles_", "sign3dt", "aOpenErrorOn_3dt", "sizes3dt", "matrix3dt", "matrix3dt_2", "val_3dt", "buf1_3dt", "buf2_3dt", "buf3_3dt", "buf3d3_1", "buf3d3_2", "buf3d3_3", "buf3d3", "size3d3_2", "a_3d3", "aBadObjFileFormat_", "size3d3_3", "byte_3BE3E", "size3d3_4", "size3d3_5", "size3d3_6", "aOpenErrorOn_3d3", "aRb", "sign3d3", "size3d3", "aObjectDataTooBig_", "byte_3BE80", "aObjdataOverflow", "word_33DD0", "aRb_0", "aRb_1", "size3d3_7", "aPhoto_3d3_0", "aPhoto_3d3", "word_3B14A", "sub_21444",
++        "gfxBufPtr", "restoreJoystickData", "regs", "exitCode", "restoreCBreakHandler", "InitializeGameSettings", "scenarioPlh", "regnStr", "f15DgtlResult", "byte_34197", "aCockpit_pic", "a256pit_pic", "byte_32933",  "restoreTimerIrqHandler", "audio_jump_64", "audio_jump_65", "setTimerIrqHandler", "sub_13C3B", "setInt9Handler", "restoreInt9Handler", "dword_38FE2", "word_3C0A2", "flagFarToNear", "byte_3C16E", "g_viewX_", "g_viewY_", "g_ViewY", "g_playerTargetIndex", "g_ViewX", "flt15_buf1", "flt15_word1", "flt15_buf2", "aRb_4", "a_3d3_0", "a15flt_xxx", "fileHandle", "aOpenErrorOn_3d3_0", "flt15_size", "picBlit", "byte_3B7FC", "byte_3790C", "farPointer", "word_3C69E", "word_3B144", "word_3C046", "word_3BED2", "word_336FC", "byte_3BFA4", "byte_3BEC4", "byte_3BED8", "byte_3C02A", "word_3C00C", "word_38FFA", "unk_3B202", "byte_3AFAC", "word_3401A", "openFile", "closeFile", "off_38334", "off_3834C", "a_3dg", "byte_3A900", "aBadGridFileFormat_", "aRb_3", "misc_jump_5b_getkey", "unk_33E1A", "unk_34121", "aPleaseInsertF15DiskB", "sign3dg", "buf1_3dg", "buf2_3dg", "buf3_3dg", "buf4_3dg", "aTooMuchTileData", "aBadTileFileFormat_", "aRb_2", "a_3dt", "aTooManyTiles_", "sign3dt", "aOpenErrorOn_3dt", "sizes3dt", "matrix3dt", "matrix3dt_2", "val_3dt", "buf1_3dt", "buf2_3dt", "buf3_3dt", "buf3d3_1", "buf3d3_2", "buf3d3_3", "buf3d3", "size3d3_2", "a_3d3", "aBadObjFileFormat_", "size3d3_3", "byte_3BE3E", "size3d3_4", "size3d3_5", "size3d3_6", "aOpenErrorOn_3d3", "aRb", "sign3d3", "size3d3", "aObjectDataTooBig_", "byte_3BE80", "aObjdataOverflow", "word_33DD0", "aRb_0", "aRb_1", "size3d3_7", "aPhoto_3d3_0", "aPhoto_3d3", "word_3B14A", "sub_21444",
+         "dword_3C01C",
+-       "dword_3B4D4", "sub_1CF64", "keyValue", "word_380CE", "dword_3B1FE", "word_336FE", "dword_3C024", "word_3B4DE", "word_3C02C", "word_380C8", "word_3B4E4", "word_380CA", "word_380CC", "word_3C5AA", "word_3BE94", "stru_3A95A", "word_336E8", "sub_1D190", "sub_1D178", "word_3C028", "word_3C03A", "word_330C4",
+-      "word_336F4", "stru_335C4", "ARCTAN", "word_3A940", "word_3370E", "xydist", "word_3C02E", "word_3C45C", "word_336F2", "word_336EA", "stru_3AA5E", "word_3370C", "stru_3B208", 
+-        "unk_3A948", "sub_160D3", "sub_19FCC", "word_38152", "word_37561", "word_39604", "word_37563", "word_38126", "sub_195C9", "sub_2152A", "off_38364", "word_330BC", "unk_3806E", "TransformAndProjectObject", "a256left_pic", "a256right_pic", "a256rear_pic", "gfx_jump_21", "gfx_jump_23", "sub_121CA", "aRight_pic", "byte_3995A", "aLeft_pic", "word_36B86", "byte_3850E", "unk_38128", "word_3755D", "sub_11A18", "word_3755F", "aRear_pic", "word_38FDC", "sub_11A88", "word_3C09A", "word_330C2", "sub_20BAE", "word_3C09E", "word_3BE98", "byte_3C5A0", "sub_15FDB", "word_3C040",
+-       "word_383F4", "word_3BEBE", "sub_1A183", "word_3C6A4", "byte_37C2F", "sams", "word_3AA5A", "word_3C5A6", "missleSpec", "word_3C8B6", "aPressAnyKeyToP", "word_3AA5C", "aTraining", "copySomeMem", "word_38FC4", "waypoints", "word_3C008", "word_391FE", "byte_37C24", "string_3C04A", "draw2Strings", "word_3370A", "word_3C6AC", "missiles",
+-       "aAccel", "sub_19C0C", "aStallWarning", "waypointIndex", "aAutopilot", "word_38FEA", "word_3BE92", "MakeRotationMatrix", "word_3C16A", "word_380D0", "tempString", "word_383F2", "word_330B6", "missileSpecIndex", "sub_21A86",
++       "dword_3B4D4", "sub_1CF64", "keyValue", "g_viewZ", "dword_3B1FE", "word_336FE", "dword_3C024", "word_3B4DE", "word_3C02C", "g_ourHead", "word_3B4E4", "g_ourPitch", "g_ourRoll", "word_3C5AA", "word_3BE94", "stru_3A95A", "word_336E8", "cosX", "sinX", "word_3C028", "word_3C03A", "g_frameRateScaling",
++      "word_336F4", "stru_335C4", "ARCTAN", "word_3A940", "word_3370E", "Dist2D", "word_3C02E", "g_currentWeaponType", "word_336F2", "word_336EA", "g_planes", "word_3370C", "stru_3B208", 
++        "unk_3A948", "sub_160D3", "ClearMessageArea", "word_38152", "g_LineY1", "word_39604", "g_LineY2", "word_38126", "RenderScene", "sub_2152A", "off_38364", "word_330BC", "unk_3806E", "TransformAndProjectObject_2", "a256left_pic", "a256right_pic", "a256rear_pic", "gfx_jump_21", "gfx_jump_23", "sub_121CA", "aRight_pic", "byte_3995A", "aLeft_pic", "word_36B86", "byte_3850E", "unk_38128", "g_LineX1", "sub_11A18", "g_LineX2", "aRear_pic", "g_difficultyLevel", "SetupWeaponDisplay", "word_3C09A", "word_330C2", "sub_20BAE", "word_3C09E", "word_3BE98", "byte_3C5A0", "UpdateThrottleState", "word_3C040",
++       "word_383F4", "word_3BEBE", "sub_1A183", "word_3C6A4", "byte_37C2F", "sams", "g_knots", "word_3C5A6", "missleSpec", "word_3C8B6", "aPressAnyKeyToP", "word_3AA5C", "aTraining", "copySomeMem", "word_38FC4", "waypoints", "word_3C008", "g_playerPlaneFlags", "g_halfSpeedUpdateFlag", "string_3C04A", "draw2Strings", "word_3370A", "word_3C6AC", "missiles",
++       "aAccel", "sub_19C0C", "aStallWarning", "waypointIndex", "aAutopilot", "word_38FEA", "word_3BE92", "MakeRotationMatrix", "g_closestThreatIndex", "word_380D0", "tempString", "word_383F2", "g_autopilotAltitude", "missileSpecIndex", "GameLoopUpdate",
+         "gfx_jump_0_alloc",
+         "gfx_jump_05_drawString",
+         "gfx_jump_0c",
+@@ -109,7 +109,7 @@
+         "gfx_jump_4f",
+         "gfx_jump_52",
+ "otherDacValues", "byte_37116", "dacValues1", "gfx_jump_32", "byte_36D86", "dacValues",
+-"word_330B8", "word_3BECE", "__bios_keybrd", "word_336F6", "audio_jump_6a", "word_33702", "word_3C5A4", "makeSound", "_itoa", "word_38602", "word_33712", "sub_1DB9C", "word_38080", "word_33442", "word_38090", "sub_151F9", "unk_38FD0", "word_3BE3C", "word_39606", "word_38FE0", "word_38084", "keyScancode", "word_380AA", "stru_33402", "word_3B204", "sub_2265B", "__aNldiv", "word_380AC", "word_3B206", "word_33098", "sub_2267E", "word_3A944", "word_330BE", "sub_1613B", "randlmul", "byte_380DD", "forceRange", "word_336EC", "_strcpy", "sub_1606C", "tempStrcpy", "word_38FE8", "word_3AFA6", "word_3B4DA", "sub_13B2F", "abs_word", "word_3AFA8", "__aNlmul", "sub_15411", "word_3BEC8", "unk_38092", "strBuf", "word_3809A", "word_3808C", "sub_15237", "word_3A8FE", "word_3BF90", "word_3809C", "sub_15557", "word_380A0", "word_38FDA", "word_3B15A", "sub_11B37", "_kbhit", "byte_37F98", "word_3C00E", "word_380E0", "word_380A2", "byte_37FEC", "byte_37F99", "sub_13B86", "sub_13B96", "word_380E2", "word_380A4", "word_38FDE", "word_380A6", "word_3BEBC", "_strcat", "word_3BECC", "byte_3C6A0"
++"g_missionStatus", "word_3BECE", "__bios_keybrd", "word_336F6", "audio_jump_6a", "word_33702", "word_3C5A4", "makeSound", "_itoa", "word_38602", "word_33712", "sub_1DB9C", "word_38080", "word_33442", "word_38090", "sub_151F9", "unk_38FD0", "word_3BE3C", "word_39606", "word_38FE0", "word_38084", "keyScancode", "word_380AA", "stru_33402", "word_3B204", "sub_2265B", "__aNldiv", "word_380AC", "word_3B206", "word_33098", "sub_2267E", "g_velocity", "word_330BE", "sub_1613B", "randlmul", "byte_380DD", "forceRange", "word_336EC", "_strcpy", "sub_1606C", "tempStrcpy", "word_38FE8", "g_thrust", "word_3B4DA", "FixedPointMul", "abs_word", "word_3AFA8", "__aNlmul", "UpdateRotationMatrix", "word_3BEC8", "unk_38092", "strBuf", "word_3809A", "word_3808C", "sub_15237", "word_3A8FE", "g_gunHits", "word_3809C", "sub_15557", "word_380A0", "g_gees", "word_3B15A", "PrepareToExit", "_kbhit", "byte_37F98", "word_3C00E", "g_setThrust", "word_380A2", "byte_37FEC", "byte_37F99", "sub_13B86", "sub_13B96", "word_380E2", "word_380A4", "word_38FDE", "word_380A6", "word_3BEBC", "_strcat", "word_3BECC", "byte_3C6A0"
+     ],
+     "preamble": [
+         ".8086",
+diff --git a/map/egame.map b/map/egame.map
+index 00cab64..4b5c817 100644
+--- a/map/egame.map
++++ b/map/egame.map
+@@ -33,7 +33,7 @@ routine_262: seg000 NEAR 1bfd-1c20 R1bfd-1c20
+ routine_180: seg000 NEAR 1c21-1d0f R1c21-1cf3 U1cf4-1cf5 R1cf6-1d0f
+ routine_178: seg000 NEAR 1d10-1d6d R1d10-1d6d
+ routine_271: seg000 NEAR 1d6e-1e0d R1d6e-1e0d
+-sub_11E0E: seg000 NEAR 1e0e-1f3d R1e0e-1f3d
++InitializeCockpitData: seg000 NEAR 1e0e-1f3d R1e0e-1f3d
+ routine_185: seg000 NEAR 1f3e-2048 R1f3e-2048
+ moveDataFar: seg000 NEAR 2049-206c R2049-206c
+ moveStuff: seg000 NEAR 206d-215b R206d-215b
+@@ -139,7 +139,7 @@ routine_222: seg000 NEAR 9c84-9d85 R9c84-9d85
+ routine_221: seg000 NEAR 9d86-9daf R9d86-9daf
+ routine_307: seg000 NEAR 9db0-9e43 R9db0-9e43
+ sub_19E44: seg000 NEAR 9e44-9e5c R9e44-9e5c
+-sub_19E5D: seg000 NEAR 9e5d-9e93 R9e5d-9e93
++DrawHUDElement: seg000 NEAR 9e5d-9e93 R9e5d-9e93
+ routine_328: seg000 NEAR 9e94-9eb5 R9e94-9eb5
+ routine_188: seg000 NEAR 9eb6-9f46 R9eb6-9f46
+ routine_212: seg000 NEAR 9fad-9fcb R9fad-9fcb
+@@ -338,7 +338,7 @@ routine_313: seg001 NEAR 2028-21d7 R1f25-1f33 R2028-21d7
+ sub_21A7A: seg002 FAR 000a-000d R000a-000d
+ sub_21A7E: seg002 FAR 000e-0011 R000e-0011
+ routine_144: seg002 NEAR 0016-09a0 R0016-09a0
+-sub_22411: seg002 NEAR 09a1-0bea R09a1-0bea assembly
++InitializeGameSettings: seg002 NEAR 09a1-0bea R09a1-0bea assembly
+ routine_167: seg002 FAR 0beb-0bfa R0beb-0bfa
+ routine_248: seg002 NEAR 0bfb-0c0d R0bfb-0c0d
+ routine_166: seg002 FAR 0c0e-0c20 R0c0e-0c20
+diff --git a/mzretools b/mzretools
+index b35f4e2..4da8f5e 160000
+--- a/mzretools
++++ b/mzretools
+@@ -1 +1 @@
+-Subproject commit b35f4e25b1041929d1abba7a286a20372895431b
++Subproject commit 4da8f5e4834c3234d4825619866d7e43c006ab09
+diff --git a/src/egame.h b/src/egame.h
+index cd119fc..7c1538b 100644
+--- a/src/egame.h
++++ b/src/egame.h
+@@ -79,17 +79,17 @@ int sub_11841();
+ // ==== seg000:0x18d5 ====
+ int sub_118D5();
+ // ==== seg000:0x18f6 ====
+-int sub_118F6();
++int InitMission();
+ // ==== seg000:0x1971 ====
+ int sub_11971();
+ // ==== seg000:0x19a3 ====
+-int sub_119A3();
++int InitializeWeapons();
+ // ==== seg000:0x1a18 ====
+ int sub_11A18();
+ // ==== seg000:0x1a88 ====
+-int sub_11A88();
++int SetupWeaponDisplay();
+ // ==== seg000:0x1b37 ====
+-int sub_11B37();
++int PrepareToExit();
+ // ==== seg000:0x1bc3 ====
+ int sub_11BC3();
+ // ==== seg000:0x1bfd ====
+@@ -101,7 +101,7 @@ int sub_11D10();
+ // ==== seg000:0x1d6e ====
+ int placeString();
+ // ==== seg000:0x1e0e ====
+-int sub_11E0E();
++int InitializeCockpitData();
+ // ==== seg000:0x1f3e ====
+ int sub_11F3E();
+ // ==== seg000:0x2049 ====
+@@ -177,7 +177,7 @@ int sub_13A90();
+ // ==== seg000:0x3aee ====
+ int setupDac();
+ // ==== seg000:0x3b2f ====
+-int sub_13B2F();
++int FixedPointMul();
+ // ==== seg000:0x3b86 ====
+ int sub_13B86();
+ // ==== seg000:0x3b96 ====
+@@ -209,7 +209,7 @@ int setTimerIrqHandler();
+ // ==== seg000:0x3cb6 ====
+ int restoreTimerIrqHandler();
+ // ==== seg000:0x3d6b ====
+-int sub_13D6B();
++int timerInterruptLogic();
+ // ==== seg000:0x3df2 ====
+ int sub_13DF2();
+ // ==== seg000:0x3e87 ====
+@@ -225,7 +225,7 @@ int sub_151F9();
+ // ==== seg000:0x5237 ====
+ int sub_15237();
+ // ==== seg000:0x5411 ====
+-int sub_15411();
++int UpdateRotationMatrix();
+ // ==== seg000:0x543b ====
+ int sub_1543B();
+ // ==== seg000:0x54b7 ====
+@@ -237,7 +237,7 @@ int sub_15557();
+ // ==== seg000:0x55ab ====
+ int ProcessPlayerInputAndAI();
+ // ==== seg000:0x5fdb ====
+-int sub_15FDB();
++int UpdateThrottleState();
+ // ==== seg000:0x606c ====
+ int sub_1606C();
+ // ==== seg000:0x60d3 ====
+@@ -281,29 +281,29 @@ int sub_18E38();
+ // ==== seg000:0x8e50 ====
+ int UpdateFlightModelAndHUD();
+ // ==== seg000:0x94d0 ====
+-int sub_194D0();
++int SetHUDMessage();
+ // ==== seg000:0x957a ====
+ int sub_1957A();
+ // ==== seg000:0x9595 ====
+-int sub_19595();
++int InitHUD();
+ // ==== seg000:0x95c9 ====
+-int sub_195C9();
++int RenderScene();
+ // ==== seg000:0x9875 ====
+ int zoomIn();
+ // ==== seg000:0x98b4 ====
+ int zoomOut();
+ // ==== seg000:0x98fa ====
+-int sub_198FA();
++int TransformXCoordinate();
+ // ==== seg000:0x9915 ====
+-int sub_19915();
++int TransformYCoordinate();
+ // ==== seg000:0x993a ====
+ int sub_1993A();
+ // ==== seg000:0x99ec ====
+-int sub_199EC();
++int TransformAndProjectObject();
+ // ==== seg000:0x9a4d ====
+-int sub_19A4D();
++int GetObjectScreenPosition();
+ // ==== seg000:0x9adb ====
+-int sub_19ADB();
++int UpdateObjectAI();
+ // ==== seg000:0x9b98 ====
+ int sub_19B98();
+ // ==== seg000:0x9be1 ====
+@@ -319,17 +319,17 @@ int sub_19DB0();
+ // ==== seg000:0x9e44 ====
+ void __cdecl sub_19E44(int);
+ // ==== seg000:0x9e5d ====
+-void __cdecl sub_19E5D(int, int, int, int);
++void __cdecl DrawHUDElement(int, int, int, int);
+ // ==== seg000:0x9e94 ====
+ int sub_19E94();
+ // ==== seg000:0x9eb6 ====
+ int sub_19EB6();
+ // ==== seg000:0x9fad ====
+-int __cdecl sub_19FAD(int, char *);
++int __cdecl DisplayMessageTop(int, char *);
+ // ==== seg000:0x9fcc ====
+-int sub_19FCC();
++int ClearMessageArea();
+ // ==== seg000:0xa030 ====
+-int __cdecl sub_1A030(int, char *);
++int __cdecl DisplayMessageBottom(int, char *);
+ // ==== seg000:0xa0cb ====
+ int __cdecl drawSomeStrings(char *, int, int, int);
+ // ==== seg000:0xa0fe ====
+@@ -355,7 +355,7 @@ int sub_1A7C4();
+ // ==== seg000:0xa872 ====
+ int sub_1A872();
+ // ==== seg000:0xa8c8 ====
+-int TransformAndProjectObject();
++int TransformAndProjectObject_2();
+ // ==== seg000:0xa934 ====
+ int sub_1A934();
+ // ==== seg000:0xa962 ====
+@@ -405,13 +405,13 @@ int sub_1CF64();
+ // ==== seg000:0xcf8e ====
+ int forceRange();
+ // ==== seg000:0xcfa6 ====
+-int xydist();
++int Dist2D();
+ // ==== seg000:0xd008 ====
+ int ARCTAN();
+ // ==== seg000:0xd178 ====
+-int __cdecl sub_1D178(int, int);
++int __cdecl sinX(int, int);
+ // ==== seg000:0xd190 ====
+-int sub_1D190();
++int cosX();
+ // ==== seg000:0xd1c8 ====
+ int abs_word();
+ // ==== seg000:0xd1e8 ====
+@@ -505,13 +505,13 @@ int sub_1F82C();
+ // ==== seg001:0x2 ====
+ int far sub_1F882();
+ // ==== seg001:0x78 ====
+-int sub_1F8F8();
++int ProjectAndCalculateScreenCoords();
+ // ==== seg001:0x113 ====
+-int sub_1F993();
++int SetCustomInterruptVector();
+ // ==== seg001:0x137 ====
+-int sub_1F9B7();
++int RestoreOriginalInterruptVector();
+ // ==== seg001:0x15d ====
+-int sub_1F9DD();
++int ClipAndDrawLineManager();
+ // ==== seg001:0x23f ====
+ int sub_1FABF();
+ // ==== seg001:0x29d ====
+@@ -523,13 +523,13 @@ int sub_1FB88();
+ // ==== seg001:0x334 ====
+ int sub_1FBB4();
+ // ==== seg001:0x383 ====
+-int sub_1FC03();
++int CalculateOutcode();
+ // ==== seg001:0x3ba ====
+ int sub_1FC3A();
+ // ==== seg001:0x40e ====
+-int sub_1FC8E();
++int ClipLineSegment_Bisection();
+ // ==== seg001:0x484 ====
+-int sub_1FD04();
++int ClipLineSegment_Bisection_Int();
+ // ==== seg001:0x4f2 ====
+ int sub_1FD72();
+ // ==== seg001:0x52d ====
+@@ -541,9 +541,9 @@ int far sub_1FEEC();
+ // ==== seg001:0x67e ====
+ int sub_1FEFE();
+ // ==== seg001:0x884 ====
+-int far sub_20104();
++int far Process3DObjectData();
+ // ==== seg001:0x908 ====
+-int sub_20188();
++int TransformAndProjectPoint();
+ // ==== seg001:0xa09 ====
+ int sub_20289();
+ // ==== seg001:0xa36 ====
+@@ -555,31 +555,31 @@ int far sub_202DA();
+ // ==== seg001:0xa76 ====
+ int far sub_202F6();
+ // ==== seg001:0xa80 ====
+-int sub_20300();
++int SortObjectForDrawing();
+ // ==== seg001:0xb60 ====
+-int sub_203E0();
++int DrawSortedObjects();
+ // ==== seg001:0xbca ====
+ int far sub_2044A();
+ // ==== seg001:0xbe7 ====
+-int sub_20467();
++int Draw3DObjectDispatcher();
+ // ==== seg001:0xcb4 ====
+-int sub_20534();
++int SetupObjectTransformation();
+ // ==== seg001:0xdd8 ====
+ int far sub_20658();
+ // ==== seg001:0xdf4 ====
+ int sub_20674();
+ // ==== seg001:0x10f0 ====
+-int sub_20970();
++int DrawObjectPolygons();
+ // ==== seg001:0x11c6 ====
+ int far sub_20A46();
+ // ==== seg001:0x11d8 ====
+-int sub_20A58();
++int ProcessAndClipPolygons();
+ // ==== seg001:0x1282 ====
+ int sub_20B02();
+ // ==== seg001:0x132e ====
+ int far sub_20BAE();
+ // ==== seg001:0x135f ====
+-int sub_20BDF();
++int SetupObjectMatrix();
+ // ==== seg001:0x147b ====
+ int sub_20CFB();
+ // ==== seg001:0x1599 ====
+@@ -587,7 +587,7 @@ int sub_20E19();
+ // ==== seg001:0x15b8 ====
+ int far sub_20E38();
+ // ==== seg001:0x15cd ====
+-int sub_20E4D();
++int MatrixMultiply_3x3();
+ // ==== seg001:0x175c ====
+ int far sub_20FDC();
+ // ==== seg001:0x176a ====
+@@ -607,7 +607,7 @@ int far sub_21526();
+ // ==== seg001:0x1caa ====
+ int far sub_2152A();
+ // ==== seg001:0x1cb6 ====
+-int sub_21536();
++int DrawLine3D_Clipped();
+ // ==== seg001:0x1e42 ====
+ int sub_216C2();
+ // ==== seg001:0x1e84 ====
+@@ -615,15 +615,15 @@ int far sub_21704();
+ // ==== seg001:0x1e9a ====
+ int far sub_2171A();
+ // ==== seg001:0x1ea0 ====
+-int sub_21720();
++int ClearDirtyRectangle();
+ // ==== seg001:0x1ed6 ====
+-int sub_21756();
++int UpdateDirtyRectangle();
+ // ==== seg001:0x1f34 ====
+-int sub_217B4();
++int DrawLineSegment_Bresenham();
+ // ==== seg001:0x201c ====
+ int far sub_2189C();
+ // ==== seg001:0x2028 ====
+-int sub_218A8();
++int DrawLine_Handler();
+ // bytes outside routine, potential module boundary at 0x9
+ // ==== seg002:0xa ====
+ int far sub_21A7A();
+@@ -632,9 +632,9 @@ void __cdecl __far sub_21A7E();
+ // ==== seg002:0x12 ====
+ int far sub_21A82();
+ // ==== seg002:0x16 ====
+-int sub_21A86();
++int GameLoopUpdate();
+ // ==== seg002:0x9a1 ====
+-void __cdecl sub_22411();
++void __cdecl InitializeGameSettings();
+ // ==== seg002:0xbeb ====
+ int far sub_2265B();
+ // ==== seg002:0xbfb ====
+@@ -642,7 +642,7 @@ int sub_2266B();
+ // ==== seg002:0xc0e ====
+ int far sub_2267E();
+ // ==== seg002:0xc21 ====
+-int sub_22691();
++int ReadJoystick();
+ // ==== seg002:0xc4e ====
+ int sub_226BE();
+ // ==== seg002:0xcaa ====
+@@ -654,7 +654,7 @@ int far setInt9Handler();
+ // ==== seg003:0x56 ====
+ int far restoreInt9Handler();
+ // ==== seg003:0x70 ====
+-int int9Handler();
++int CustomInt9Handler();
+ // bytes outside routine, potential module boundary at 0x189
+ extern uint8 unk_328B0[];
+ extern int16 word_328B2;
+@@ -683,8 +683,8 @@ extern int16 f15dgtlAddr;
+ extern int allocSize;
+ extern uint8 unk_32977[];
+ extern int16 word_3298A;
+-extern int16 word_3298C;
+-extern int16 word_3298E;
++extern int16 g_ViewPositionX;
++extern int16 g_ViewPositionY;
+ extern uint8 unk_329AB[];
+ extern uint8 ovlInsaneFlag;
+ extern uint8 aErrorReleasingOverlay[];
+@@ -727,7 +727,7 @@ extern uint8 aMainstay[];
+ extern uint8 aF4e[];
+ extern uint8 aAn72[];
+ extern struct Sam sams[39];
+-extern int16 word_33096;
++extern int16 g_missileHits;
+ extern int16 word_33098;
+ extern int16 word_3309A;
+ extern int16 word_3309C;
+@@ -735,13 +735,13 @@ extern int16 word_3309E;
+ extern struct MissileSpec missleSpec[];
+ extern int16 missileSpecIndex;
+ extern int16 word_330B4;
+-extern int16 word_330B6;
+-extern int16 word_330B8;
++extern int16 g_autopilotAltitude;
++extern int16 g_missionStatus;
+ extern int16 word_330BA;
+ extern int16 word_330BC;
+ extern int16 word_330BE;
+ extern int16 word_330C2;
+-extern __int16 word_330C4;
++extern __int16 g_frameRateScaling;
+ extern struct Missile missiles[20];
+ extern int16 word_333D2;
+ extern int16 word_333D4;
+@@ -942,9 +942,9 @@ extern int16 word_341B8;
+ extern int16 word_341BA;
+ extern int16 word_341BC;
+ extern int32 dword_3423C;
+-extern int16 word_34240;
+-extern int16 word_34242;
+-extern int16 word_34244;
++extern int16 g_ObjectPositionX;
++extern int16 g_ObjectPositionY;
++extern int16 g_ObjectPositionZ;
+ extern int16 word_34246;
+ extern int16 word_34248;
+ extern int16 word_3424A;
+@@ -960,21 +960,21 @@ extern int16 word_34262;
+ extern int16 word_34264;
+ extern int16 word_34266;
+ extern int16 word_34268;
+-extern int16 word_3426A;
+-extern int16 word_3426C;
+-extern int16 word_3426E;
+-extern __int16 word_34270;
+-extern int16 word_34272;
+-extern int16 word_34274;
+-extern int16 word_34276;
+-extern int16 word_34278;
+-extern int16 word_3427A;
+-extern int16 word_3427C;
+-extern int16 word_3427E;
+-extern int16 word_34280;
+-extern int16 word_34282;
+-extern int16 word_34284;
+-extern int16 word_34286;
++extern int16 g_SinRoll;
++extern int16 g_CosRoll;
++extern int16 g_SinHead;
++extern __int16 g_CosHead;
++extern int16 g_SinPitch;
++extern int16 g_CosPitch;
++extern int16 g_TransformMatrix_00;
++extern int16 g_TransformMatrix_01;
++extern int16 g_TransformMatrix_02;
++extern int16 g_TransformMatrix_10;
++extern int16 g_TransformMatrix_11;
++extern int16 g_TransformMatrix_12;
++extern int16 g_TransformMatrix_20;
++extern int16 g_TransformMatrix_21;
++extern int16 g_TransformMatrix_22;
+ extern int16 word_34288;
+ extern int16 word_3428A;
+ extern int16 word_3428C;
+@@ -1062,18 +1062,18 @@ extern int16 word_3754F;
+ extern int16 word_37551;
+ extern int16 word_37553;
+ extern int16 word_37555;
+-extern int16 word_37557;
+-extern int16 word_37559;
+-extern int16 word_3755D;
+-extern int16 word_3755F;
+-extern int16 word_37561;
+-extern int16 word_37563;
++extern int16 g_ViewportWidth;
++extern int16 g_ViewportHeight;
++extern int16 g_LineX1;
++extern int16 g_LineX2;
++extern int16 g_LineY1;
++extern int16 g_LineY2;
+ extern uint8 unk_37565[];
+ extern uint8 unk_3771D[];
+ extern int16 word_378D5;
+ extern int16 word_378D7;
+-extern int16 word_378D9;
+-extern int16 word_378DB;
++extern int16 g_DirtyRectX1;
++extern int16 g_DirtyRectX2;
+ extern uint8 byte_378DE;
+ extern int16 word_378DF;
+ extern int16 word_378E1;
+@@ -1166,7 +1166,7 @@ extern int16 word_37C1C;
+ extern int16 word_37C1E;
+ extern int16 word_37C20;
+ extern int16 word_37C22;
+-extern uint8 byte_37C24;
++extern uint8 g_halfSpeedUpdateFlag;
+ extern int16 word_37C25;
+ extern int16 word_37C27;
+ extern int16 word_37C29;
+@@ -1231,15 +1231,15 @@ extern int16 word_380A6;
+ extern int16 word_380AA;
+ extern int16 word_380AC;
+ extern uint8 unk_380B6[];
+-extern int word_380C8;
+-extern int word_380CA;
+-extern int word_380CC;
+-extern int16 word_380CE;
++extern int g_ourHead;
++extern int g_ourPitch;
++extern int g_ourRoll;
++extern int16 g_viewZ;
+ extern unsigned int word_380D0;
+ extern int16 word_380D8;
+ extern uint8 byte_380DA[];
+ extern unsigned __int8 byte_380DD;
+-extern int16 word_380E0;
++extern int16 g_setThrust;
+ extern unsigned int word_380E2;
+ extern uint8 a256left_pic[];
+ extern uint8 a256right_pic[];
+@@ -1293,7 +1293,7 @@ extern int16 word_383D8;
+ extern int16 word_383DA;
+ extern uint8 byte_383E4;
+ extern uint8 byte_383E5[];
+-extern int16 word_383EA;
++extern int16 g_zoomLevel;
+ extern int16 radarRange;
+ extern int16 word_383EE;
+ extern int16 word_383F0;
+@@ -1471,16 +1471,17 @@ extern uint8 byte_38D6E[];
+ extern int16 word_38F70;
+ extern int word_38F72;
+ extern uint8 strBuf[];
+-extern uint8 byte_38F8C;
+-extern uint8 byte_38F8D[];
++extern uint8 g_RawJoyX1;
++extern uint8 byte_38F8D;
++extern uint8 g_RawJoyY1[];
+ extern int16 word_38FC4;
+ extern int16 word_38FC6;
+ extern int16 word_38FC8;
+ extern int16 word_38FCC;
+ extern int16 word_38FCE;
+ extern uint8 unk_38FD0[];
+-extern int word_38FDA;
+-extern int word_38FDC;
++extern int g_gees;
++extern int g_difficultyLevel;
+ extern int16 word_38FDE;
+ extern int16 word_38FE0;
+ extern unsigned __int8 far *dword_38FE2;
+@@ -1488,14 +1489,14 @@ extern FILE *fileHandle;
+ extern int16 word_38FE8;
+ extern int16 word_38FEA;
+ extern int16 word_38FEC;
+-extern int16 word_38FEE;
++extern int16 g_closestThreatDistance;
+ extern struct Game far *gameData;
+ extern int16 word_38FF6;
+ extern int16 word_38FF8;
+ extern int16 word_38FFA;
+ extern int16 word_38FFC;
+ extern uint8 buf4_3dg[];
+-extern int16 word_391FE;
++extern int16 g_playerPlaneFlags;
+ extern int16 word_39200;
+ extern uint8 buf3_3dg[];
+ extern int16 word_39402;
+@@ -1513,17 +1514,17 @@ extern uint8 val_3dt[];
+ extern __int16 word_3A8FE;
+ extern uint8 byte_3A900[];
+ extern int16 word_3A940;
+-extern int word_3A944;
++extern int g_velocity;
+ extern int16 word_3A946;
+ extern uint8 unk_3A948[];
+ extern struct struc_1 stru_3A95A[];
+-extern __int16 word_3AA5A;
++extern __int16 g_knots;
+ extern int16 word_3AA5C;
+-extern struct struc_4 stru_3AA5E[];
++extern struct struc_4 g_planes[];
+ extern int16 word_3AF0C;
+ extern uint8 buf3d3_1[];
+ extern int16 word_3AFA4;
+-extern int16 word_3AFA6;
++extern int16 g_thrust;
+ extern int16 word_3AFA8;
+ extern int16 word_3AFAA;
+ extern uint8 byte_3AFAC[];
+@@ -1531,7 +1532,7 @@ extern int16 word_3B0AC;
+ extern uint8 buf3d3_2[];
+ extern int16 word_3B144;
+ extern int16 word_3B146;
+-extern int16 word_3B148;
++extern int16 g_playerTargetIndex;
+ extern int word_3B14A[];
+ extern int16 word_3B14C;
+ extern int16 word_3B158;
+@@ -1567,7 +1568,7 @@ extern uint8 byte_3B4E9;
+ extern int16 word_3B4EA;
+ extern uint8 byte_3B4EC[];
+ extern int16 word_3B5D6;
+-extern int32 dword_3B7DA;
++extern int32 g_ViewX;
+ extern int16 word_3B7DE;
+ extern int16 word_3B7E0;
+ extern int16 word_3B7E2;
+@@ -1580,7 +1581,7 @@ extern uint8 byte_3B7EE;
+ extern uint8 byte_3B7EF;
+ extern uint8 byte_3B7F0;
+ extern uint8 byte_3B7F1[];
+-extern int32 dword_3B7F8;
++extern int32 g_ViewY;
+ extern uint8 byte_3B7FC[];
+ extern int16 word_3BE3C;
+ extern uint8 byte_3BE3E[];
+@@ -1594,14 +1595,14 @@ extern int16 word_3BE98;
+ extern int16 word_3BE9C;
+ extern int16 word_3BEBC;
+ extern int16 word_3BEBE;
+-extern int16 word_3BEC0;
++extern int16 g_viewX_;
+ extern int16 word_3BEC2;
+ extern uint8 byte_3BEC4[];
+ extern int16 word_3BEC8;
+ extern int16 sign3d3;
+ extern int16 word_3BECC;
+ extern int16 word_3BECE;
+-extern int16 word_3BED0;
++extern int16 g_viewY_;
+ extern int16 word_3BED2;
+ extern int16 word_3BED4;
+ extern int16 word_3BED6;
+@@ -1609,7 +1610,7 @@ extern uint8 byte_3BED8[];
+ extern int16 word_3BF3C;
+ extern int16 word_3BF3E;
+ extern char tempString[80];
+-extern int16 word_3BF90;
++extern int16 g_gunHits;
+ extern union REGS regs;
+ extern uint8 byte_3BF93[];
+ extern uint8 unk_3BF95;
+@@ -1649,10 +1650,10 @@ extern int16 word_3C09C;
+ extern int16 word_3C09E;
+ extern int16 word_3C0A0;
+ extern int16 word_3C0A2[];
+-extern int16 word_3C16A;
++extern int16 g_closestThreatIndex;
+ extern int16 word_3C16C;
+ extern uint8 byte_3C16E[];
+-extern int16 word_3C45C;
++extern int16 g_currentWeaponType;
+ extern int16 word_3C45E;
+ extern int matrix3dt_2[5][32];
+ extern char byte_3C5A0;
+diff --git a/src/egame11.c b/src/egame11.c
+index ca53884..48abaa2 100755
+--- a/src/egame11.c
++++ b/src/egame11.c
+@@ -17,7 +17,7 @@ unsigned char far byte_2D6A4[0x4844+0x9c8];
+ 
+ // ==== seg000:0x147 ====
+ void drawCockpit() {
+-    sub_11E0E();
++    InitializeCockpitData();
+     load15Flt3d3();
+     // 0x162
+     strcpy(regnStr, scenarioPlh[gameData->theater]);
+@@ -83,7 +83,7 @@ void gfxInit() {
+ }
+ 
+ // ==== seg000:0x1e0e ====
+-int sub_11E0E() {
++int InitializeCockpitData() {
+     int var_2, var_4;
+     setCommWorldbufPtr();
+     flagFarToNear = 1;
+@@ -100,20 +100,20 @@ int sub_11E0E() {
+     } // 1e61
+     if (gameData->difficulty != 0) { //1e6c
+         // 1e8c
+-        dword_3B7DA = ((int32)(stru_3AA5E[word_3B148].field_0) << 5) + 2;
++        g_ViewX = ((int32)(g_planes[g_playerTargetIndex].field_0) << 5) + 2;
+         // 1eb1
+-        dword_3B7F8 = (0x8000 - (int32)(stru_3AA5E[word_3B148].field_2)) << 5;
++        g_ViewY = (0x8000 - (int32)(g_planes[g_playerTargetIndex].field_2)) << 5;
+     }
+     else { // 1eba
+         // 1ed1
+-        dword_3B7DA = ((int32)waypoints[0].x << 5) + 2;
++        g_ViewX = ((int32)waypoints[0].x << 5) + 2;
+         // 1ef5
+-        dword_3B7F8 = (0x8000 - (int32)waypoints[0].y) << 5;
++        g_ViewY = (0x8000 - (int32)waypoints[0].y) << 5;
+     } // 1efc
+     // 1f15
+-    word_3BEC0 = (dword_3B7DA + 0x10) >> 5;
++    g_viewX_ = (g_ViewX + 0x10) >> 5;
+     // 1f36
+-    word_3BED0 = 0x8000 - ((dword_3B7F8 + 0x10) >> 5);
++    g_viewY_ = 0x8000 - ((g_ViewY + 0x10) >> 5);
+ }
+ 
+ // ==== seg000:0x2049 ====
+@@ -236,7 +236,7 @@ void load3D3(char *arg_0) {
+     while ((fileHandle = fopen(aPhoto_3d3, aRb_0)) == NULL) {
+         // 2add
+         sub_19E44(0);
+-        sub_19E5D(0, 0x28, 0x13f, 0x2d);
++        DrawHUDElement(0, 0x28, 0x13f, 0x2d);
+         drawSomeStrings(aPleaseInsertF15DiskB, 0x6c, 0x28, 0x0f);
+         gfx_jump_46_retrace2();
+         misc_jump_5b_getkey();
+diff --git a/src/egame12.c b/src/egame12.c
+index fa38fb1..bfadf11 100755
+--- a/src/egame12.c
++++ b/src/egame12.c
+@@ -28,36 +28,36 @@ int otherKeyDispatch(void) {
+     // seg000:3F7A
+     if (word_3BECC == 0) {
+         // seg000:3F81
+-        word_3AFA6 = 
+-        word_380E0 = 
+-        word_3A944 = 
++        g_thrust = 
++        g_setThrust = 
++        g_velocity = 
+         word_380D0 = 
+-        word_380CE = 
+-        word_380CC = 
+-        word_380CA = 0;
++        g_viewZ = 
++        g_ourRoll = 
++        g_ourPitch = 0;
+ 
+         // seg000:3F9C
+         if (gameData->difficulty == 0) {
+             
+             // seg000:3FA2
+-            word_380C8 = ((word_3BED0 - (waypoints[1].y)) < 0x8000) ? 0 : 0x8000;
++            g_ourHead = ((g_viewY_ - (waypoints[1].y)) < 0x8000) ? 0 : 0x8000;
+         } else {
+             // seg000:3FBA
+-            word_380C8 = (gameData->theater == 6)
++            g_ourHead = (gameData->theater == 6)
+                ? 0  // If true, the result is 0
+                : ((gameData->theater & 1) ? 0 : 0x8000); // Else, evaluate the second condition
+         }
+ 
+         // seg000:3FDE
+-        if (stru_3AA5E[word_3B148].field_6 & 0x200) {
++        if (g_planes[g_playerTargetIndex].field_6 & 0x200) {
+             // seg000:3FE6
+-            *((unsigned char*)&word_380C8 + 1) += 4;
++            *((unsigned char*)&g_ourHead + 1) += 4;
+         }
+ 
+         // seg000:3FEB
+-        sub_15411();
++        UpdateRotationMatrix();
+         // seg000:3FEE
+-        sub_15FDB();
++        UpdateThrottleState();
+         // seg000:3FF1
+         word_3BECC = 1;
+     }
+@@ -89,61 +89,61 @@ int otherKeyDispatch(void) {
+         // seg000:41F5
+         case 0x0C2D: // Minus
+             // seg000:403A
+-            word_380E0 = sub_1CF64(word_380E0 - 10, 0, 100);
++            g_setThrust = sub_1CF64(g_setThrust - 10, 0, 100);
+             // seg000:4051
+-            sub_15FDB();
++            UpdateThrottleState();
+             // seg000:4054
+             goto switch_break;
+         // seg000:420D
+         case 0x0D3D: // Equal
+             // seg000:4057
+-            word_380E0 = sub_1CF64(word_380E0 + ((word_380E0 < 10) ? 5 : 10), 0, 100);
++            g_setThrust = sub_1CF64(g_setThrust + ((g_setThrust < 10) ? 5 : 10), 0, 100);
+             // seg000:407B
+-            sub_15FDB();
++            UpdateThrottleState();
+             // seg000:407E
+-            *((unsigned char*)&word_391FE) &= 0xF7; // ~8
++            *((unsigned char*)&g_playerPlaneFlags) &= 0xF7; // ~8
+             // seg000:4083
+             goto switch_break;
+         // seg000:421C
+         case 0x1E61: // A
+             // seg000:4086
+-            word_380E0 = 0x90;
++            g_setThrust = 0x90;
+             // seg000:408C
+-            sub_15FDB();
++            UpdateThrottleState();
+             // seg000:408F
+-            *((unsigned char*)&word_391FE) &= 0xF7; // ~8
++            *((unsigned char*)&g_playerPlaneFlags) &= 0xF7; // ~8
+             // seg000:4094
+             goto switch_break;
+         // seg000:4205
+         case 0x0D2B: // Shift-Equal
+             // seg000:4097
+-            word_380E0 = 100;
++            g_setThrust = 100;
+             // seg000:409D
+-            sub_15FDB();
++            UpdateThrottleState();
+             // seg000:40A0
+-            *((unsigned char*)&word_391FE) &= 0xF7; // ~8
++            *((unsigned char*)&g_playerPlaneFlags) &= 0xF7; // ~8
+             // seg000:40A5
+             goto post_key_B_check;
+         // seg000:41FD
+         case 0x0C5F: // Shift-Minus
+             // seg000:40A7
+-            word_380E0 = 0;
++            g_setThrust = 0;
+             // seg000:40B4
+             makeSound(0x10, 0);
+             // seg000:40BA
+-            sub_15FDB();
++            UpdateThrottleState();
+             // seg000:40BD
+             goto switch_break;
+         // seg000:4234
+         case 0x3062: // B
+             // seg000:40C0
+-            *((unsigned char*)&word_391FE) ^= 8;
++            *((unsigned char*)&g_playerPlaneFlags) ^= 8;
+         // seg000:40C5
+         post_key_B_check:
+             // seg000:40C5
+-            if (!(*((unsigned char*)&word_391FE) & 8) && word_3BEBE != 0 && word_380E0 == 100) {
++            if (!(*((unsigned char*)&g_playerPlaneFlags) & 8) && word_3BEBE != 0 && g_setThrust == 100) {
+                 // seg000:40DA
+-                word_3A944 = 0x546;
++                g_velocity = 0x546;
+                 // seg000:40E8
+                 makeSound(0x1C, 2);
+             }
+@@ -163,7 +163,7 @@ int otherKeyDispatch(void) {
+         // seg000:41EB
+         case 0x1000: // Alt-Q
+             // seg000:410A
+-            sub_11B37(1);
++            PrepareToExit(1);
+             // seg000:4110
+             exitCode = 0;
+             // seg000:4115
+@@ -178,9 +178,9 @@ int otherKeyDispatch(void) {
+             // seg000:414C
+             sub_19E44(0);
+             // seg000:415E
+-            sub_19E5D(0, 0, 0x13F, 0xC7);
++            DrawHUDElement(0, 0, 0x13F, 0xC7);
+             // seg000:417B
+-            TransformAndProjectObject(0, 0, 0x71, 0x37, 0x0C, 7, 0);
++            TransformAndProjectObject_2(0, 0, 0x71, 0x37, 0x0C, 7, 0);
+             // seg000:4181
+             sub_1613B();
+             // seg000:4184
+@@ -190,7 +190,7 @@ int otherKeyDispatch(void) {
+                 // seg000:41D7
+                 gfx_jump_2a(off_38364[0], 0, 0x61, off_3834C[0], 0, 0x61, 0x140, 0x67);
+                 // seg000:41DF
+-                sub_15FDB();
++                UpdateThrottleState();
+             }
+             // seg000:41E2
+             goto switch_break;
+@@ -211,7 +211,7 @@ switch_break:
+     }
+ 
+     // seg000:4249
+-    if (word_380E0 != 0 && word_3AFA6 == 0) {
++    if (g_setThrust != 0 && g_thrust == 0) {
+         // seg000:425F
+         makeSound(0x0E, 2);
+     }
+@@ -259,17 +259,17 @@ switch_break:
+     }
+     
+     // seg000:4316
+-    if (word_3BEBE == word_380CE && word_3C5A4 < 0 && word_380CA <= 0) {
++    if (word_3BEBE == g_viewZ && word_3C5A4 < 0 && g_ourPitch <= 0) {
+         // seg000:432A
+         word_3C5A4 = 0;
+     }
+ 
+     // seg000:4330
+-    if (word_3AA5A > 0x15E && !(*((unsigned char*)&word_391FE) & 1) && word_336EC != 0) {
++    if (g_knots > 0x15E && !(*((unsigned char*)&g_playerPlaneFlags) & 1) && word_336EC != 0) {
+         // seg000:4346
+         word_336EC = 0;
+         // seg000:434C
+-        *((unsigned char*)&word_391FE) |= 1;
++        *((unsigned char*)&g_playerPlaneFlags) |= 1;
+         // seg000:4355
+         tempStrcpy("Landing gear raised");
+         // seg000:4363
+@@ -277,9 +277,9 @@ switch_break:
+     }
+     
+     // seg000:4369
+-    if (word_3BEBE == word_380CE && word_380E0 == 0 && !(*((unsigned char*)&word_391FE) & 8)) {
++    if (word_3BEBE == g_viewZ && g_setThrust == 0 && !(*((unsigned char*)&g_playerPlaneFlags) & 8)) {
+         // seg000:4380
+-        *((unsigned char*)&word_391FE) |= 8;
++        *((unsigned char*)&g_playerPlaneFlags) |= 8;
+         // seg000:4389
+         tempStrcpy("Brakes on");
+     }
+@@ -287,27 +287,27 @@ switch_break:
+     // seg000:438F
+     if (word_3C00E != 0 || word_3C5A4 != 0) {
+         // seg000:439D
+-        word_330B6 = 0;
++        g_autopilotAltitude = 0;
+     }
+     
+     // seg000:43A3
+-    if (word_330B6 != 0) {
++    if (g_autopilotAltitude != 0) {
+         // seg000:43AD
+         var_2C = (word_336EA != 0) ? 
+                  (int16)((word_38FE0 & 0xF) << 8) - 0x800
+                  : 0;
+         
+         // seg000:43DE
+-        var_2C = forceRange(var_2C - word_380C8 + word_3BE92, 0xEC00, 0x1400) * 2;
++        var_2C = forceRange(var_2C - g_ourHead + word_3BE92, 0xEC00, 0x1400) * 2;
+         
+         // seg000:43FD
+-        word_3C00E = -sub_1CF64((var_2C - word_380CC) >> 6, -24, 24);
++        word_3C00E = -sub_1CF64((var_2C - g_ourRoll) >> 6, -24, 24);
+         
+         // seg000:4420
+-        var_14 = forceRange(((word_330B6 - word_380CE) << 4) - word_38FC4, 0xEC00, 0xC00);
++        var_14 = forceRange(((g_autopilotAltitude - g_viewZ) << 4) - word_38FC4, 0xEC00, 0xC00);
+         
+         // seg000:443D
+-        word_3C5A4 = sub_1CF64((var_14 - word_380CA) >> 7, -8, 8);
++        word_3C5A4 = sub_1CF64((var_14 - g_ourPitch) >> 7, -8, 8);
+     }
+     
+     // seg000:4446
+@@ -319,21 +319,21 @@ switch_break:
+         
+ 
+         // seg000:4462
+-        var_2A = stru_3AA5E[var_10].field_0 - word_3BEC0;
++        var_2A = g_planes[var_10].field_0 - g_viewX_;
+         // seg000:446D
+-        var_34 = stru_3AA5E[var_10].field_2 - word_3BED0;
++        var_34 = g_planes[var_10].field_2 - g_viewY_;
+ 
+         // seg000:4478
+-        if (!(stru_3AA5E[var_10].field_6 & 0x200)) {
++        if (!(g_planes[var_10].field_6 & 0x200)) {
+             // seg000:4481
+             var_3E = -abs_word(var_34);
+         }
+ 
+         // seg000:4493
+-        var_34 += ((stru_3AA5E[var_10].field_6 & 0x200) ? 0x1E : 0x40) * var_3E;
++        var_34 += ((g_planes[var_10].field_6 & 0x200) ? 0x1E : 0x40) * var_3E;
+         
+         // seg000:44A9
+-        var_2C = abs(word_380C8);
++        var_2C = abs(g_ourHead);
+         // seg000:44B6
+         if (var_3E == -1) {
+             // seg000:44BC
+@@ -341,7 +341,7 @@ switch_break:
+             // seg000:44C4
+             var_34 = -var_34;
+             // seg000:44D3
+-            var_2C = abs(word_380C8 - 0x8000);
++            var_2C = abs(g_ourHead - 0x8000);
+         }
+ 
+         // seg000:4514
+@@ -353,7 +353,7 @@ switch_break:
+         }
+ 
+         // seg000:452C
+-        if (stru_3AA5E[var_10].field_6 & 0x200) {
++        if (g_planes[var_10].field_6 & 0x200) {
+             // seg000:4534
+             var_14 += 100;
+         }
+@@ -365,37 +365,37 @@ switch_break:
+         }
+ 
+         // seg000:4552
+-        var_34 = stru_3AA5E[var_10].field_2 + (((stru_3AA5E[var_10].field_6 & 0x200) ? 0x1C : 0x38) * var_3E);
++        var_34 = g_planes[var_10].field_2 + (((g_planes[var_10].field_6 & 0x200) ? 0x1C : 0x38) * var_3E);
+ 
+         // seg000:459F
+         var_34 += sub_1CF64((abs(var_2A) * 4) + (var_2C / 16), 0, 0xC00) * var_3E;
+         
+         // seg000:45AB
+-        *((unsigned char*)&word_391FE) &= 0xF7;
++        *((unsigned char*)&g_playerPlaneFlags) &= 0xF7;
+         
+         // seg000:45B0
+         if (var_2C > 0x4000) {
+             // seg000:45BE
+-            var_2A = stru_3AA5E[var_10].field_0;
++            var_2A = g_planes[var_10].field_0;
+             // seg000:45C5
+             var_14 = 0x1000;
+         } else {
+             // seg000:45CC
+-            var_2A = stru_3AA5E[var_10].field_0 + (var_2A * var_3E * 2);
++            var_2A = g_planes[var_10].field_0 + (var_2A * var_3E * 2);
+             // seg000:45E5
+-            if (word_380E0 * 80 < word_3AA5A) {
++            if (g_setThrust * 80 < g_knots) {
+                  // seg000:45EF
+-                 *((unsigned char*)&word_391FE) |= 8;
++                 *((unsigned char*)&g_playerPlaneFlags) |= 8;
+             }
+         }
+         
+         // seg000:4603
+-        var_E = ARCTAN(var_2A - word_3BEC0, word_3BED0 - var_34);
++        var_E = ARCTAN(var_2A - g_viewX_, g_viewY_ - var_34);
+         // seg000:460C
+-        var_3C = (int16)word_3AA5A / 16;
++        var_3C = (int16)g_knots / 16;
+ 
+         // seg000:4638
+-        var_2C = forceRange(var_E - word_380C8, (-var_3C) << 8, var_3C << 8) * 2;
++        var_2C = forceRange(var_E - g_ourHead, (-var_3C) << 8, var_3C << 8) * 2;
+ 
+         // seg000:4643
+         if (word_33702 != 0) {
+@@ -404,33 +404,33 @@ switch_break:
+         }
+         
+         // seg000:4663
+-        word_3C00E = -sub_1CF64((var_2C - word_380CC) >> 6, -32, 32);
++        word_3C00E = -sub_1CF64((var_2C - g_ourRoll) >> 6, -32, 32);
+ 
+         // seg000:46A5
+-        word_380E0 = sub_1CF64((var_14 / 64) + (abs(var_2C) / 128), 35, 80);
++        g_setThrust = sub_1CF64((var_14 / 64) + (abs(var_2C) / 128), 35, 80);
+         // seg000:46AE
+-        sub_15FDB();
++        UpdateThrottleState();
+         
+         // seg000:46CF
+-        var_14 = forceRange(((var_14 - word_380CE) >> 3) + (word_38FC4 >> 7), -24, 24);
++        var_14 = forceRange(((var_14 - g_viewZ) >> 3) + (word_38FC4 >> 7), -24, 24);
+         
+         // seg000:46EE
+-        word_3C5A4 = sub_1CF64(var_14 - (word_380CA >> 7), -16, 16);
++        word_3C5A4 = sub_1CF64(var_14 - (g_ourPitch >> 7), -16, 16);
+         
+         // seg000:46F7
+-        if (word_3AA5A < 0x15E) {
++        if (g_knots < 0x15E) {
+             // seg000:46FF
+-            *((unsigned char*)&word_391FE) &= 0xFE;
++            *((unsigned char*)&g_playerPlaneFlags) &= 0xFE;
+         }
+ 
+         // seg000:4704
+-        if (word_3BEBE == word_380CE) {
++        if (word_3BEBE == g_viewZ) {
+             // seg000:470D
+-            word_380E0 = 0;
++            g_setThrust = 0;
+             // seg000:4713
+             word_3C00E = 0;
+             // seg000:4719
+-            word_391FE |= 8;
++            g_playerPlaneFlags |= 8;
+             // seg000:471E
+             word_3C5A4 = 0;
+         }
+@@ -439,20 +439,20 @@ switch_break:
+     // seg000:4728
+     if (gameData->unk4 != 0) {
+         // seg000:473F
+-        var_24 = ((int32)word_3AA5A * (1000 - word_380CE)) >> 15;
++        var_24 = ((int32)g_knots * (1000 - g_viewZ)) >> 15;
+     } else {
+         // seg000:4753
+         var_24 = 0;
+     }
+     
+     // seg000:4758
+-    if (!((word_391FE) & 1)) {
++    if (!((g_playerPlaneFlags) & 1)) {
+         // seg000:4771
+-        var_24 += sub_1CF64((word_3AA5A - 200) >> 5, 0, 32);
++        var_24 += sub_1CF64((g_knots - 200) >> 5, 0, 32);
+     }
+     
+     // seg000:477A
+-    if (var_24 > 0 && ((uint16)word_3BEBE) < ((uint16)word_380CE)) {
++    if (var_24 > 0 && ((uint16)word_3BEBE) < ((uint16)g_viewZ)) {
+         // seg000:478C
+         word_3C00E += randlmul(var_24) - (var_24 >> 1);
+         // seg000:47A0
+@@ -460,9 +460,9 @@ switch_break:
+     }
+     
+     // seg000:47B3
+-    if ((word_391FE & 1) && word_3C5A4 <= 0 && ((uint16)word_3A944) < ((uint16)word_3A8FE) && gameData->unk4 < 2 && abs(word_380CC) < 0x3000 && word_38FE8 == 0) {
++    if ((g_playerPlaneFlags & 1) && word_3C5A4 <= 0 && ((uint16)g_velocity) < ((uint16)word_3A8FE) && gameData->unk4 < 2 && abs(g_ourRoll) < 0x3000 && word_38FE8 == 0) {
+         // seg000:47EB
+-        var_14 = ((((word_38FC4) - (word_380CA)) >> 2) - word_380CE + 300) >> 2;
++        var_14 = ((((word_38FC4) - (g_ourPitch)) >> 2) - g_viewZ + 300) >> 2;
+         // seg000:4804
+         if (var_14 > 0) {
+             // seg000:4812
+@@ -480,14 +480,14 @@ switch_break:
+         word_3C00E = 0x40;
+ 
+         // seg000:482B
+-        word_3C5A4 = (abs(word_380CC) > 0x4000) ? 0x10 : -8; // pitch_input_modifier
++        word_3C5A4 = (abs(g_ourRoll) > 0x4000) ? 0x10 : -8; // pitch_input_modifier
+         
+         // seg000:4864
+         //word_3BE3C++;
+         word_3C040 += sub_1CF64(
+             - (++word_3BE3C - 0x20),
+-            (int16)0xFF00 / word_330C4,
+-            (int16)0x80 / word_330C4
++            (int16)0xFF00 / g_frameRateScaling,
++            (int16)0x80 / g_frameRateScaling
+         );
+         //word_3C040 += stall_decay_effect;
+ 
+@@ -498,22 +498,22 @@ switch_break:
+             // seg000:4876
+             if ((word_38FE0 & 7) == 0) {
+                 // seg000:4880
+-                sub_11B37(0);
++                PrepareToExit(0);
+             }
+         }
+ 
+         // seg000:4886
+-        if (word_380CE == 0 && word_336F6 == -1) {
++        if (g_viewZ == 0 && word_336F6 == -1) {
+             // seg000:4894
+             word_336F6 = 0;
+             // seg000:489A
+-            stru_3AA5E[0].field_0 = word_3BEC0;
++            g_planes[0].field_0 = g_viewX_;
+             // seg000:48A0
+-            stru_3AA5E[0].field_2 = word_3BED0;
++            g_planes[0].field_2 = g_viewY_;
+             // seg000:48A6
+-            word_3BEBC = word_3BEC0;
++            word_3BEBC = g_viewX_;
+             // seg000:48AC
+-            word_3BEC8 = word_3BED0;
++            word_3BEC8 = g_viewY_;
+             // seg000:48B2
+             word_3BECE = 0;
+             // seg000:48B8
+@@ -521,8 +521,8 @@ switch_break:
+             // seg000:48C3
+             makeSound(2, 2);
+             // seg000:48CB
+-            word_380E0 = 
+-            word_3A944 = 0;
++            g_setThrust = 
++            g_velocity = 0;
+         }
+ 
+         // seg000:48D1
+@@ -534,11 +534,11 @@ switch_break:
+             bailout_index = ((uint16)word_336E8 / 2) & 7;
+ 
+             // seg000:48FB
+-            stru_33402[bailout_index].field_0 = word_3BEC0;
++            stru_33402[bailout_index].field_0 = g_viewX_;
+             // seg000:4902
+-            stru_33402[bailout_index].field_2 = word_3BED0;
++            stru_33402[bailout_index].field_2 = g_viewY_;
+             // seg000:4909
+-            stru_33402[bailout_index].field_4 = word_380CE;
++            stru_33402[bailout_index].field_4 = g_viewZ;
+ 
+             // seg000:4914
+             stru_33402[bailout_index].field_6 = randlmul(0x20) << 11;
+@@ -546,49 +546,49 @@ switch_break:
+             // seg000:4922
+             word_33442 = bailout_index;
+             // seg000:4928
+-            word_3BEBC = word_3BEC0;
++            word_3BEBC = g_viewX_;
+             // seg000:492E
+-            word_3BEC8 = word_3BED0;
++            word_3BEC8 = g_viewY_;
+             // seg000:4934
+-            word_3BECE = word_380CE;
++            word_3BECE = g_viewZ;
+             // seg000:493A
+             word_39606 = -8;
+             // seg000:4947
+             makeSound(0, 2);
+ 
+             // seg000:494D
+-            word_380CA = -0x4000;
++            g_ourPitch = -0x4000;
+             // seg000:4953
+             byte_380DD = 1;
+         }
+     }
+     
+     // seg000:4958
+-    if (word_3BF90 != 0) {
++    if (g_gunHits != 0) {
+         // seg000:496D
+-        if (word_380E0 > -((word_3BF90 * 4) - 0x90)) {
++        if (g_setThrust > -((g_gunHits * 4) - 0x90)) {
+             // seg000:4973
+-            word_380E0 = -((word_3BF90 * 4) - 0x90);
++            g_setThrust = -((g_gunHits * 4) - 0x90);
+             // seg000:4977
+-            if (word_380E0 < 0)
++            if (g_setThrust < 0)
+                 // seg000:497B
+-                word_380E0 = 0;
++                g_setThrust = 0;
+             // seg000:4981
+-            sub_15FDB();
++            UpdateThrottleState();
+         }
+     }
+     
+     // seg000:4984
+-    word_3AFA6 += ((word_380E0 - word_3AFA6) / 4) / ((int16)word_330C4);
++    g_thrust += ((g_setThrust - g_thrust) / 4) / ((int16)g_frameRateScaling);
+     // seg000:49A7
+-    if (word_380E0 > word_3AFA6) word_3AFA6++;
++    if (g_setThrust > g_thrust) g_thrust++;
+     // seg000:49B4
+-    if (word_380E0 < word_3AFA6) word_3AFA6 = word_380E0;
++    if (g_setThrust < g_thrust) g_thrust = g_setThrust;
+ 
+     // seg000:49C0
+-    if ((((uint16)word_336E8) % ((uint16)(word_330C4 << 1))) == 0 && word_380E0 != 0 && word_336EA == 0) {
++    if ((((uint16)word_336E8) % ((uint16)(g_frameRateScaling << 1))) == 0 && g_setThrust != 0 && word_336EA == 0) {
+         // seg000:49ED
+-        word_33098 -= ((word_380E0 * word_380E0) / 750) + 2;
++        word_33098 -= ((g_setThrust * g_setThrust) / 750) + 2;
+         // seg000:49F1
+         sub_1606C();
+     }
+@@ -596,45 +596,45 @@ switch_break:
+     // seg000:49F4
+     if (word_33098 <= 0) {
+         // seg000:49FB
+-        word_3AFA6 = 0;
++        g_thrust = 0;
+         // seg000:4A01
+         word_33098 = 0;
+     }
+ 
+     // seg000:4A07
+-    word_38FDA = byte_37FEC[(abs(word_380CC) >> 8) & 0x7f];
++    g_gees = byte_37FEC[(abs(g_ourRoll) >> 8) & 0x7f];
+     // seg000:4A23
+-    if (((uint16)word_3BEBE) < ((uint16)word_380CE)) {
++    if (((uint16)word_3BEBE) < ((uint16)g_viewZ)) {
+         // seg000:4A34
+-        word_38FDA += word_3C5A4 / 2;
++        g_gees += word_3C5A4 / 2;
+     }
+     
+     // seg000:4A38
+-    if (word_38FDA > 0x80) {
++    if (g_gees > 0x80) {
+         // seg000:4A40
+-        word_38FDA = 0x80;
++        g_gees = 0x80;
+         // seg000:4A6C
+-        word_3C5A4 = sub_1CF64(0x80 - byte_37FEC[(abs(word_380CC) >> 8) & 0x7f], 0, word_3C5A4);
++        word_3C5A4 = sub_1CF64(0x80 - byte_37FEC[(abs(g_ourRoll) >> 8) & 0x7f], 0, word_3C5A4);
+     }
+     
+     
+     // seg000:4A9A
+-    _strcpy(unk_38FD0, _itoa(word_38FDA / 16, strBuf, 10));
++    _strcpy(unk_38FD0, _itoa(g_gees / 16, strBuf, 10));
+     // seg000:4AA8
+     _strcat(unk_38FD0, ".");
+     
+     // seg000:4AD3
+-    _strcat(unk_38FD0, _itoa((abs(word_38FDA) & 0xF) >> 1, strBuf, 10));
++    _strcat(unk_38FD0, _itoa((abs(g_gees) & 0xF) >> 1, strBuf, 10));
+     // seg000:4AE1
+     _strcat(unk_38FD0, "G");
+ 
+     // seg000:4AFB
+-    var_32 = (((int32)(word_3AFA6 - sub_1D178(word_380CA, 80))) * ((int32)800)) / ((int32)100);
++    var_32 = (((int32)(g_thrust - sinX(g_ourPitch, 80))) * ((int32)800)) / ((int32)100);
+     
+     // seg000:4B16
+     word_3C5A6 = 100;
+     // seg000:4B30
+-    var_32 = (( ((uint32)(((uint16)word_380CE >> 7) + 0x0400)) * ((int32)(var_32)) ) >> 10);
++    var_32 = (( ((uint32)(((uint16)g_viewZ >> 7) + 0x0400)) * ((int32)(var_32)) ) >> 10);
+      
+     // seg000:4B56
+     word_3C5A6 = (uint32)((int32)100 * (int32)((word_380D0 >> 6) + 0x0400)) >> 10;
+@@ -643,15 +643,15 @@ switch_break:
+     var_32 = ((int32)var_32) * ((int32)(-((word_33098 >> 9) - 100))) / (int32)90;
+     
+     // seg000:4B9E
+-    var_32 = (((int32)var_32) * ((int32)(128 - word_38FDA))) >> 7;
++    var_32 = (((int32)var_32) * ((int32)(128 - g_gees))) >> 7;
+     
+     // seg000:4BC7
+-    word_3C5A6 = ((int32)sub_15557(word_38FDA * 4) * (int32)word_3C5A6) >> 8;
++    word_3C5A6 = ((int32)sub_15557(g_gees * 4) * (int32)word_3C5A6) >> 8;
+     // seg000:4BDA
+     word_3C5A6 = abs(word_3C5A6);
+ 
+     // seg000:4BE3
+-    if (!(*((unsigned char*)&word_391FE) & 1)) {
++    if (!(*((unsigned char*)&g_playerPlaneFlags) & 1)) {
+         // seg000:4BEA
+         var_32 -= var_32 >> 3;
+     }
+@@ -662,58 +662,58 @@ switch_break:
+     var_1A = sub_1CF64(var_32, 0, 900) * 27;
+     
+     // seg000:4C39
+-    word_3A944 += ((((int32)var_1A - word_3A944) / 16) / (int32)word_330C4);
++    g_velocity += ((((int32)var_1A - g_velocity) / 16) / (int32)g_frameRateScaling);
+     
+     // seg000:4C5F
+-    word_3B4DA = ((int32)word_3A8FE * 3072) / (abs(word_3A944) + 1);
++    word_3B4DA = ((int32)word_3A8FE * 3072) / (abs(g_velocity) + 1);
+     // seg000:4C65
+     if ((uint16)word_3B4DA > 0x2000) word_3B4DA = 0x2000;
+     
+     // seg000:4C7B
+-    word_38FC4 = sub_1D190(word_380CC, word_3B4DA - 0x300);
++    word_38FC4 = cosX(g_ourRoll, word_3B4DA - 0x300);
+     
+     // seg000:4C84
+-    if (*((unsigned char*)&word_391FE) & 8) {
++    if (*((unsigned char*)&g_playerPlaneFlags) & 8) {
+         // seg000:4C8B
+-        if (word_3BEBE == word_380CE) {
++        if (word_3BEBE == g_viewZ) {
+             // seg000:4CB0
+-            word_3A944 -= (-((gameData->unk4 * 8) - 32) * 27) / word_330C4;
++            g_velocity -= (-((gameData->unk4 * 8) - 32) * 27) / g_frameRateScaling;
+             // seg000:4CB8
+-            if (word_3BEBE != 0 && (uint16)word_3A944 < 0x1B0) {
++            if (word_3BEBE != 0 && (uint16)g_velocity < 0x1B0) {
+                  // seg000:4CC7
+-                 word_3A944 = 0;
++                 g_velocity = 0;
+             }
+         } else {
+              // seg000:4CD8
+-             word_3A944 -= ((uint16)word_3A944 >> 4) / word_330C4;
++             g_velocity -= ((uint16)g_velocity >> 4) / g_frameRateScaling;
+         }
+     }
+     
+     // seg000:4CE0
+-    if ((uint16)word_3A944 > 0xAFC8) word_3A944 = 0;
++    if ((uint16)g_velocity > 0xAFC8) g_velocity = 0;
+     
+     // seg000:4CF6
+-    var_22 = sub_1D190(word_380CA, word_3A944);
++    var_22 = cosX(g_ourPitch, g_velocity);
+     // seg000:4D07
+-    word_3AA5A = (uint16)word_3A944 / 27;
++    g_knots = (uint16)g_velocity / 27;
+     
+     // seg000:4D11
+-    audio_jump_6a(word_3AA5A, word_3AFA6);
++    audio_jump_6a(g_knots, g_thrust);
+     
+     // seg000:4D47
+-    var_18 = (((int32)sub_1D178(word_380CC, word_38FDA << 4)) << 7) / ((int32)((int16)((uint16)word_3A944 >> 9) + 0x20));
++    var_18 = (((int32)sinX(g_ourRoll, g_gees << 4)) << 7) / ((int32)((int16)((uint16)g_velocity >> 9) + 0x20));
+ 
+     // seg000:4D52
+-    var_18 = sub_1D190(word_380CA, var_18);
++    var_18 = cosX(g_ourPitch, var_18);
+     
+     // seg000:4D5B
+-    if (word_3BEBE == word_380CE) {
++    if (word_3BEBE == g_viewZ) {
+         // seg000:4D64
+         var_18 = (word_3C00E * -1) << 6;
+         // seg000:4D70
+         word_3C00E = 0;
+         // seg000:4D76
+-        if (word_3AA5A < word_3C5A6) {
++        if (g_knots < word_3C5A6) {
+             // seg000:4D7F
+             word_3C5A4 = 0;
+         }
+@@ -722,14 +722,14 @@ switch_break:
+     // seg000:4D85
+     if (word_38FDE != 0) {
+         // seg000:4D8C
+-        word_3C5A4 = -2000 - word_380CA;
++        word_3C5A4 = -2000 - g_ourPitch;
+         // seg000:4D96
+-        word_3A944 = 
+-        word_380E0 = 0;
++        g_velocity = 
++        g_setThrust = 0;
+     }
+     
+     // seg000:4DB6
+-    var_28 = (((int32)word_3C00E) << 7) / ((int32)word_330C4);
++    var_28 = (((int32)word_3C00E) << 7) / ((int32)g_frameRateScaling);
+     // seg000:4DBC
+     if (var_28 != 0) {
+         // seg000:4DC1
+@@ -743,7 +743,7 @@ switch_break:
+     }
+     
+     // seg000:4DF8
+-    var_20 = (int16)((int32)word_3C5A4 << 7) / word_330C4;
++    var_20 = (int16)((int32)word_3C5A4 << 7) / g_frameRateScaling;
+     // seg000:4DFD
+     if (var_20 != 0) {
+         // seg000:4E02
+@@ -757,7 +757,7 @@ switch_break:
+     }
+     
+     // seg000:4E35
+-    var_16 = (int16)var_18 / word_330C4;
++    var_16 = (int16)var_18 / g_frameRateScaling;
+     // seg000:4E3A
+     if (var_16 != 0) {
+         // seg000:4E3F
+@@ -774,33 +774,33 @@ switch_break:
+     sub_15237();
+ 
+     // seg000:4E6D
+-    if ((uint16)word_3A944 > (uint16)word_3A8FE && (uint16)word_3BEBE < (uint16)word_380CE) {
++    if ((uint16)g_velocity > (uint16)word_3A8FE && (uint16)word_3BEBE < (uint16)g_viewZ) {
+         // seg000:4E9A
+-        word_380CA -= ((uint16)word_3A8FE - (uint16)word_3A944) >> ((gameData->unk4 == 2 || word_3BF90 > 8) ? 1 : 2);
++        g_ourPitch -= ((uint16)word_3A8FE - (uint16)g_velocity) >> ((gameData->unk4 == 2 || g_gunHits > 8) ? 1 : 2);
+         // seg000:4EA4
+         byte_380DD = 1;
+         // seg000:4EA9
+-        if (word_380CA >= 0 && (uint16)word_380CE < 200) {
++        if (g_ourPitch >= 0 && (uint16)g_viewZ < 200) {
+             // seg000:4EC0
+             makeSound(0x14, 1);
+         }
+     }
+ 
+     // seg000:4EC6
+-    if (word_3BEBE == word_380CE) {
++    if (word_3BEBE == g_viewZ) {
+         // seg000:4ECF
+-        if (word_380CC != 0) {
++        if (g_ourRoll != 0) {
+             // seg000:4ED6
+-            word_380CC = 0;
++            g_ourRoll = 0;
+             // seg000:4EDC
+             byte_380DD = 1;
+         }
+         // seg000:4EE1
+-        if (word_380CA >= 0 && (word_380CA <= 0 || word_3AA5A < word_3C5A6)) {
++        if (g_ourPitch >= 0 && (g_ourPitch <= 0 || g_knots < word_3C5A6)) {
+             // seg000:4EF3
+             if (word_38FDE == 0) {
+                 // seg000:4EFA
+-                word_380CA = 0;
++                g_ourPitch = 0;
+             }
+             // seg000:4F00
+             byte_380DD = 1;
+@@ -811,29 +811,29 @@ switch_break:
+     word_38FDE = 0;
+ 
+     // seg000:4F0B
+-    byte_3C6A0 = ( (abs(word_380CA)) - (abs(word_380CC) / 2) > 0x1000) ? 1 : 0;
++    byte_3C6A0 = ( (abs(g_ourPitch)) - (abs(g_ourRoll) / 2) > 0x1000) ? 1 : 0;
+     
+     // seg000:4F36
+     if (byte_380DD) {
+         // seg000:4F3D
+-        sub_15411();
++        UpdateRotationMatrix();
+     }
+     
+     // seg000:4F40
+     var_C = word_380D0;
+     // seg000:4F60
+-    word_3C8B6 = sub_13B2F((((uint16)word_3A944) / 10), sub_13B96(word_380CA - word_38FC4));
++    word_3C8B6 = FixedPointMul((((uint16)g_velocity) / 10), sub_13B96(g_ourPitch - word_38FC4));
+ 
+     // seg000:4F69
+     if (word_33712 == 0) {
+         // seg000:4F75
+-        word_380D0 += (word_3C8B6 / word_330C4);
++        word_380D0 += (word_3C8B6 / g_frameRateScaling);
+         
+         // seg000:4F9A
+-        dword_3B7DA += sub_13B2F(var_22, sub_13B96(word_380C8)) / 10 / word_330C4;
++        g_ViewX += FixedPointMul(var_22, sub_13B96(g_ourHead)) / 10 / g_frameRateScaling;
+ 
+         // seg000:4FC4
+-        dword_3B7F8 += sub_13B2F(var_22, sub_13B86(word_380C8)) / 10 / word_330C4;
++        g_ViewY += FixedPointMul(var_22, sub_13B86(g_ourHead)) / 10 / g_frameRateScaling;
+     }
+     
+     // seg000:4FCF
+@@ -847,36 +847,36 @@ switch_break:
+     // seg000:4FF4
+     if (word_380D0 < 0x2000) {
+         // seg000:4FFC
+-        word_380CE = word_380D0;
++        g_viewZ = word_380D0;
+     } else if (word_380D0 < 0x4000) {
+         // seg000:500C
+-        word_380CE = ((word_380D0 - 0x2000) >> 1) + 0x2000;
++        g_viewZ = ((word_380D0 - 0x2000) >> 1) + 0x2000;
+     } else {
+         // seg000:501C
+-        word_380CE = ((word_380D0 - 0x4000) >> 2) + 0x3000;
++        g_viewZ = ((word_380D0 - 0x4000) >> 2) + 0x3000;
+     }
+ 
+     // seg000:502C
+-    if (word_3BEBE == word_380CE) {
++    if (word_3BEBE == g_viewZ) {
+         // seg000:5038
+         if (var_C > word_3BEBE && word_33702 != 0) {
+             // seg000:5055
+             makeSound(0xC, 2);
+-            //temp_bx = word_3C16A << 4;
++            //temp_bx = g_closestThreatIndex << 4;
+ 
+             // seg000:5063
+-            if (((stru_3AA5E[word_3C16A].field_6 & 0x200) ? 0x100 : 0x80) 
+-                >= ((int16)(-word_3C8B6 * word_330B8) / 2)) {
++            if (((g_planes[g_closestThreatIndex].field_6 & 0x200) ? 0x100 : 0x80) 
++                >= ((int16)(-word_3C8B6 * g_missionStatus) / 2)) {
+                 // seg000:508B
+-                if (gameData->unk4 != 0 && !(word_391FE & 1)) {
++                if (gameData->unk4 != 0 && !(g_playerPlaneFlags & 1)) {
+                     // seg000:50B4
+-                    if (((int16)abs(word_380CC)) > (int16)((0x30 / (word_330B8 + 1)) << 8)) {
++                    if (((int16)abs(g_ourRoll)) > (int16)((0x30 / (g_missionStatus + 1)) << 8)) {
+                         // seg000:50BF
+                         makeSound(0, 2);
+                         // seg000:50C9
+                         sub_12278(0x3C);
+                         // seg000:50D3
+-                        sub_11B37(5);
++                        PrepareToExit(5);
+                     }
+                 }
+             }
+@@ -888,44 +888,44 @@ switch_break:
+     // seg000:50DF
+     var_38 = word_336E8 & 0xF;
+     // seg000:50EE
+-    stru_3A95A[var_38].field_A = word_380C8;
++    stru_3A95A[var_38].field_A = g_ourHead;
+     // seg000:50F5
+-    stru_3A95A[var_38].field_C = word_380CA;
++    stru_3A95A[var_38].field_C = g_ourPitch;
+     // seg000:50FC
+-    stru_3A95A[var_38].field_E = word_380CC;
++    stru_3A95A[var_38].field_E = g_ourRoll;
+     // seg000:510A
+-    *(int32*)&stru_3A95A[var_38].field_0 = dword_3B7DA;
++    *(int32*)&stru_3A95A[var_38].field_0 = g_ViewX;
+     // seg000:5119
+-    *(int32*)&stru_3A95A[var_38].field_4 = dword_3B7F8;
++    *(int32*)&stru_3A95A[var_38].field_4 = g_ViewY;
+     // seg000:5121
+-    stru_3A95A[var_38].field_8 = word_380CE;
++    stru_3A95A[var_38].field_8 = g_viewZ;
+ 
+     // seg000:5128
+-    if (word_3C45C == 1) {
++    if (g_currentWeaponType == 1) {
+         // seg000:5132
+         if (word_336F2 >= 0) {
+             // TODO struct
+             // seg000:5168
+-            var_38 = sub_1CF64((xydist(word_3BEC0 - word_3B204[word_336F2 * 0x12], word_3BED0 - word_3B206[word_336F2 * 0x12]) * word_330C4) >> 8, 0, 12);
++            var_38 = sub_1CF64((Dist2D(g_viewX_ - word_3B204[word_336F2 * 0x12], g_viewY_ - word_3B206[word_336F2 * 0x12]) * g_frameRateScaling) >> 8, 0, 12);
+ 
+         } else {
+             // seg000:5173
+-            var_38 = word_330C4 - 1;
++            var_38 = g_frameRateScaling - 1;
+         }
+ 
+         // seg000:517A
+         var_38 = (word_336E8 - var_38) & 0xF;
+         
+         // seg000:518C
+-        var_2C = word_380C8 - stru_3A95A[var_38].field_A;
++        var_2C = g_ourHead - stru_3A95A[var_38].field_A;
+         // seg000:5196
+-        var_14 = word_380CA - stru_3A95A[var_38].field_C;
++        var_14 = g_ourPitch - stru_3A95A[var_38].field_C;
+  
+         // seg000:51BF
+-        word_3C6A4 = sub_1D190(word_380CC, ((-var_2C) >> 2)) + sub_1D178(word_380CC, (var_14 >> 2));
++        word_3C6A4 = cosX(g_ourRoll, ((-var_2C) >> 2)) + sinX(g_ourRoll, (var_14 >> 2));
+ 
+         // seg000:51E8
+-        word_3C6AC = sub_1D178(word_380CC, (var_2C >> 2)) + sub_1D190(word_380CC, (var_14 >> 1));
++        word_3C6AC = sinX(g_ourRoll, (var_2C >> 2)) + cosX(g_ourRoll, (var_14 >> 1));
+     }
+ 
+     // seg000:51F8
+diff --git a/src/egame13.c b/src/egame13.c
+index e7236e5..bf514dd 100755
+--- a/src/egame13.c
++++ b/src/egame13.c
+@@ -15,42 +15,42 @@
+ // something to do with view switching?
+ int ProcessPlayerInputAndAI() {
+     int var_2, var_4, var_6, var_8, var_A, var_C, var_E;
+-    dword_3B1FE = dword_3C01C = dword_3B7DA;
+-    dword_3B4D4 = dword_3B7F8;
+-    dword_3C024 = 0x100000 - dword_3B7F8;
++    dword_3B1FE = dword_3C01C = g_ViewX;
++    dword_3B4D4 = g_ViewY;
++    dword_3C024 = 0x100000 - g_ViewY;
+     // 55ef
+-    word_3B4DE = word_380CE + 0x18;
+-    word_3C02C = word_380CE;
++    word_3B4DE = g_viewZ + 0x18;
++    word_3C02C = g_viewZ;
+     var_2 = word_336FE = sub_1CF64(word_336FE, 2, 8);
+     // 5613
+     switch(keyValue) {
+     case 0:
+     case 0x44: // 5616
+-        word_3C5AA = word_380C8;
+-        word_3BE94 = word_380CA;
+-        word_3B4E4 = word_380CC;
++        word_3C5AA = g_ourHead;
++        word_3BE94 = g_ourPitch;
++        word_3B4E4 = g_ourRoll;
+         // 5628
+         break;
+     case 0x41: // 562b
+-        word_3C5AA = word_380C8 + 0x8000;
+-        word_3BE94 = -word_380CA;
+-        word_3B4E4 = -word_380CC;
++        word_3C5AA = g_ourHead + 0x8000;
++        word_3BE94 = -g_ourPitch;
++        word_3B4E4 = -g_ourRoll;
+         // 5644
+         break;
+     case 0x43:
+-        word_3C5AA = word_380C8 + 0x4000;
+-        word_3BE94 = -word_380CC;
+-        word_3B4E4 = word_380CA;
++        word_3C5AA = g_ourHead + 0x4000;
++        word_3BE94 = -g_ourRoll;
++        word_3B4E4 = g_ourPitch;
+         // 565e
+         break;
+     case 0x42:
+-        word_3C5AA = word_380C8 - 0x4000;
+-        word_3BE94 = word_380CC;
+-        word_3B4E4 = -word_380CA;
++        word_3C5AA = g_ourHead - 0x4000;
++        word_3BE94 = g_ourRoll;
++        word_3B4E4 = -g_ourPitch;
+         // 5678
+         break;
+     case 0x84: // 567b
+-        var_E = (word_336E8 - ((word_330C4  + 1) / 2) - 1) & 0xf;
++        var_E = (word_336E8 - ((g_frameRateScaling  + 1) / 2) - 1) & 0xf;
+         word_3C5AA = stru_3A95A[var_E].field_A;
+         word_3BE94 = stru_3A95A[var_E].field_C;
+         // 56a9
+@@ -61,38 +61,38 @@ int ProcessPlayerInputAndAI() {
+         // 56d1
+         break;
+     case 0x85:
+-        word_3C5AA = word_380C8 - 0x4000;
++        word_3C5AA = g_ourHead - 0x4000;
+         word_3BE94 = 0;
+         word_3B4E4 = 0;
+         // 5708
+-        dword_3B1FE = sub_1D178(word_380C8 + 0x4000, 0x18 << var_2) + dword_3B7DA;
++        dword_3B1FE = sinX(g_ourHead + 0x4000, 0x18 << var_2) + g_ViewX;
+         // 572e
+-        dword_3B4D4 = sub_1D190(word_380C8 + 0x4000, 0x18 << var_2) + dword_3B7F8;
++        dword_3B4D4 = cosX(g_ourHead + 0x4000, 0x18 << var_2) + g_ViewY;
+         // 5735
+         break;
+     case 0x86: // 5738
+         word_3C5AA = 0x8000;
+         word_3BE94 = 0;
+         word_3B4E4 = 0;
+-        dword_3B4D4 = (0x18 << var_2) + dword_3B7F8;
++        dword_3B4D4 = (0x18 << var_2) + g_ViewY;
+         // 5762
+         break;
+     case 0x87:
+-        word_3C5AA = word_380C8;
++        word_3C5AA = g_ourHead;
+         word_3BE94 = 0;
+         word_3B4E4 = 0;
+         // 5796
+-        dword_3B1FE = sub_1D178(word_380C8 + 0x8000, 0x18 << var_2) + dword_3B7DA;
++        dword_3B1FE = sinX(g_ourHead + 0x8000, 0x18 << var_2) + g_ViewX;
+         // 57ad
+-        dword_3B4D4 = sub_1D190(word_380C8 + 0x8000, 0x18 << var_2) + dword_3B7F8;
+-        word_3B4DE = (4 << var_2) + word_380CE;
++        dword_3B4D4 = cosX(g_ourHead + 0x8000, 0x18 << var_2) + g_ViewY;
++        word_3B4DE = (4 << var_2) + g_viewZ;
+         // 57d2
+         break;
+     case 0x88:
+     case 0x89:
+     case 0x8b: // 57d5
+         if (keyValue != 0x89) { // 57dd
+-            if (word_3C45C == 1) { // 57e4
++            if (g_currentWeaponType == 1) { // 57e4
+                 // XXX: test byte ptr word_336F2, 80h -> check which byte is tested, other byte ptr instructions in this routine
+                 if (!(word_336F2 & 0x80)) word_3C02E = word_336F2 + 0x20;
+             } 
+@@ -116,8 +116,8 @@ int ProcessPlayerInputAndAI() {
+                     word_3C02C = stru_335C4[word_3C02E].field_4;
+                 }
+                 else { // 5877
+-                    stru_335C4[word_3C02E].field_8 = word_380C8;
+-                    stru_335C4[word_3C02E].field_A = word_380CA;
++                    stru_335C4[word_3C02E].field_8 = g_ourHead;
++                    stru_335C4[word_3C02E].field_A = g_ourPitch;
+                     if (word_3370E != 0) keyValue = 0x87;
+                 } // 589b
+                 var_2 = 5;
+@@ -131,40 +131,40 @@ int ProcessPlayerInputAndAI() {
+             } // 58d9
+         }
+         else { // 58db
+-            dword_3C01C = (uint32)stru_3AA5E[word_3C02E & 0x3f].field_0 << 5;
+-            dword_3C024 = (uint32)stru_3AA5E[word_3C02E & 0x3f].field_2 << 5;
++            dword_3C01C = (uint32)g_planes[word_3C02E & 0x3f].field_0 << 5;
++            dword_3C024 = (uint32)g_planes[word_3C02E & 0x3f].field_2 << 5;
+             // 5928
+-            word_3C02C = stru_3AA5E[word_3C02E & 0x3f].field_6 & 0x200 ? 0xc8 : 0x32;
++            word_3C02C = g_planes[word_3C02E & 0x3f].field_6 & 0x200 ? 0xc8 : 0x32;
+             var_2 = 7;
+             if (word_336EA != 0 && word_3370C == -1) var_2 = 6;
+         } // 5943
+         if (word_3370E == 0) var_2 = var_4;
+         // 5967
+-        var_A = (dword_3C01C >> 5) - word_3BEC0;
++        var_A = (dword_3C01C >> 5) - g_viewX_;
+         // 5981
+-        var_C = (dword_3C024 >> 5) - word_3BED0;
+-        var_6 = xydist(var_A, var_C);
++        var_C = (dword_3C024 >> 5) - g_viewY_;
++        var_6 = Dist2D(var_A, var_C);
+         word_3C5AA = ARCTAN(var_A, -var_C);
+         // 59ba
+-        word_3BE94 = -ARCTAN((word_3C02C - word_380CE) >> 5, var_6);
++        word_3BE94 = -ARCTAN((word_3C02C - g_viewZ) >> 5, var_6);
+         word_3B4E4 = 0;
+         // 59d6
+-        var_8 = sub_1D190(word_3BE94, 0x18 << var_2);
++        var_8 = cosX(word_3BE94, 0x18 << var_2);
+         if (word_3C02E & 0x60 || word_3370E != 0) { // 59ea
+             if (keyValue == 0x88) { // 59f2
+                 // 5a0b
+-                dword_3B1FE = sub_1D178(word_3C5AA + 0x8000, var_8) + dword_3B7DA;
+-                dword_3B4D4 = sub_1D190(word_3C5AA + 0x8000, var_8) + dword_3B7F8;
++                dword_3B1FE = sinX(word_3C5AA + 0x8000, var_8) + g_ViewX;
++                dword_3B4D4 = cosX(word_3C5AA + 0x8000, var_8) + g_ViewY;
+                 // 5a53
+-                word_3B4DE = sub_1D178(word_3BE94, 0x18 << var_2) + (4 << var_2) + word_380CE; 
++                word_3B4DE = sinX(word_3BE94, 0x18 << var_2) + (4 << var_2) + g_viewZ; 
+                 word_3BE94 = -word_3BE94;
+             }
+             else { // 5a62
+-                dword_3B1FE = sub_1D178(word_3C5AA, var_8) + dword_3C01C;
+-                dword_3B4D4 = sub_1D190(word_3C5AA, var_8) - dword_3C024 + 0x100000;
++                dword_3B1FE = sinX(word_3C5AA, var_8) + dword_3C01C;
++                dword_3B4D4 = cosX(word_3C5AA, var_8) - dword_3C024 + 0x100000;
+                 // 5ac3
+-                word_3B4DE = (4 << var_2) - sub_1D178(word_3BE94, 0x18 << var_2) + word_3C02C;
+-                if (word_3C02E & 0x40 && stru_3AA5E[word_3C02E & 0x3f].field_6 & 0x200 && word_3B4DE < 0x84) { 
++                word_3B4DE = (4 << var_2) - sinX(word_3BE94, 0x18 << var_2) + word_3C02C;
++                if (word_3C02E & 0x40 && g_planes[word_3C02E & 0x3f].field_6 & 0x200 && word_3B4DE < 0x84) { 
+                     word_3B4DE = 0x84;
+                 } // 5aed
+                 word_3C5AA += 0x8000;
+@@ -174,12 +174,12 @@ int ProcessPlayerInputAndAI() {
+             word_3C5AA = stru_335C4[word_3C02E].field_8;
+             word_3BE94 = stru_335C4[word_3C02E].field_A - 0x400;
+             // 5b22
+-            var_8 = sub_1D190(word_3BE94, 0x10 << var_2);
+-            dword_3B1FE = dword_3C01C - sub_1D178(word_3C5AA, var_8);
++            var_8 = cosX(word_3BE94, 0x10 << var_2);
++            dword_3B1FE = dword_3C01C - sinX(word_3C5AA, var_8);
+             // 5b68
+-            dword_3B4D4 = 0x100000 - (sub_1D190(word_3C5AA, var_8) + dword_3C024);
++            dword_3B4D4 = 0x100000 - (cosX(word_3C5AA, var_8) + dword_3C024);
+             // 5b88
+-            word_3B4DE = word_3C02C - sub_1D178(word_3BE94, 0x10 << var_2);
++            word_3B4DE = word_3C02C - sinX(word_3BE94, 0x10 << var_2);
+         }
+         // 5b8c
+         break;
+@@ -219,14 +219,14 @@ int ProcessPlayerInputAndAI() {
+             gfx_jump_2a(*off_38364, 0, 0x61, *off_38334, 0, 0x61, 0x140, 0x67);
+             // 5d23
+             gfx_jump_2a(*off_38364, 0, 0x61, *off_3834C, 0, 0x61, 0x140, 0x67);
+-            sub_15FDB();
++            UpdateThrottleState();
+             sub_11A18();
+-            sub_11A88(missileSpecIndex);
++            SetupWeaponDisplay(missileSpecIndex);
+             if (word_3C09A == 0) { // 5d42
+-                sub_195C9(word_3BEC0, word_3BED0);
++                RenderScene(g_viewX_, g_viewY_);
+             } // 5d50
+             word_336F4 = word_336F2 = 0xffff;
+-            sub_19FCC(3, 3);
++            ClearMessageArea(3, 3);
+             word_39604 = 0;
+         } 
+         else { // 5d6c
+@@ -253,7 +253,7 @@ int ProcessPlayerInputAndAI() {
+     } // 5e7b
+     byte_34197 = byte_228D0[0x2f];
+     *(uint8*)(&word_3BE98) = 3;
+-    if (word_38FDC == 0 && commData->gfxModeNum != 0) { // 5e9d
++    if (g_difficultyLevel == 0 && commData->gfxModeNum != 0) { // 5e9d
+         byte_34197 = 3;
+         *(uint8*)(&word_3BE98) = 0x0b;
+     } // 5ea7
+@@ -267,24 +267,24 @@ int ProcessPlayerInputAndAI() {
+     if (keyValue == 0x41) { // 5f06
+         sub_160D3(unk_38128);
+         gfx_jump_21(0xf);
+-        word_3755D = 0xf1;
+-        word_37561 = 0x15;
+-        word_3755F = 0xfb;
+-        word_37563 = 0x5e;
++        g_LineX1 = 0xf1;
++        g_LineY1 = 0x15;
++        g_LineX2 = 0xfb;
++        g_LineY2 = 0x5e;
+         // 5f34
+         sub_2152A();
+-        word_3755D = 0x53;
+-        word_37561 = 0x15;
+-        word_3755F = 0x49;
+-        word_37563 = 0x5e;
++        g_LineX1 = 0x53;
++        g_LineY1 = 0x15;
++        g_LineX2 = 0x49;
++        g_LineY2 = 0x5e;
+         // 5f51
+         sub_2152A();
+         gfx_jump_23();
+         var_E = byte_3C5A0;
+         byte_3C5A0 = gfx_jump_2d();
+         // 5f84
+-        TransformAndProjectObject(0x6b, 0x30, 0xd1, 0, 0x6f, 0x2f, 0);
+-        TransformAndProjectObject(0x41, 0x5f, 0x7d, 0x36, 0xc3, 2, 0);
++        TransformAndProjectObject_2(0x6b, 0x30, 0xd1, 0, 0x6f, 0x2f, 0);
++        TransformAndProjectObject_2(0x41, 0x5f, 0x7d, 0x36, 0xc3, 2, 0);
+         byte_3C5A0 = var_E;
+     } // 5fb1
+     gfx_jump_46_retrace2();
+@@ -299,8 +299,8 @@ int UpdateFlightModelAndHUD(int arg_0) {
+     char var_1C;
+     byte_3C5A0 = gfx_jump_2d();
+     // probably x,y
+-    var_16 = waypoints[waypointIndex].x - word_3BEC0;
+-    var_1A = waypoints[waypointIndex].y - word_3BED0;
++    var_16 = waypoints[waypointIndex].x - g_viewX_;
++    var_1A = waypoints[waypointIndex].y - g_viewY_;
+     // 8e83
+     word_3BE92 = ARCTAN(var_16, -var_1A);
+     if (word_330C2 != 0) { // 8e96
+@@ -308,12 +308,12 @@ int UpdateFlightModelAndHUD(int arg_0) {
+             word_38FEA = 0;
+             if (!(keyValue & 0x80)) { // 8eaa
+                 sub_19E44(0xd);
+-                sub_19E5D(0, 0, 0x13f, 0x60);
++                DrawHUDElement(0, 0, 0x13f, 0x60);
+                 gfx_jump_4f(0x3c);
+             }
+         } // 8ed2
+         byte_37C2F = 1;
+-        if (keyValue == 0 && byte_37C24 == 0) { // 8eeb
++        if (keyValue == 0 && g_halfSpeedUpdateFlag == 0) { // 8eeb
+             if (!commData->setupUseJoy) { // 8ef9
+                 sub_19E44(0);
+                 sub_19C0C(0x115, 0x53, 0x125, 0x53);
+@@ -331,43 +331,43 @@ int UpdateFlightModelAndHUD(int arg_0) {
+                 // 8fc8
+                 sub_19C0C(var_14, var_18 + 1, var_14, var_18 - 1);
+             } // 8fce
+-            if (word_391FE & 0x200) { // 8fd6
++            if (g_playerPlaneFlags & 0x200) { // 8fd6
+                 sub_19E44(0xf);
+                 sub_19C0C(0x9c, 0x59, 0xa4, 0x59);
+                 sub_19C0C(0xa0, 0x56, 0xa0, 0x5c);
+             } // 900c
+             sub_19E44(word_330BC != 0 ? 4 : 0);
+             // 9041
+-            var_10 = sub_1CF64((((word_3C5A6 - word_3AA5A) * 2) / 5) + 0x1d, 0, 0x3d);
++            var_10 = sub_1CF64((((word_3C5A6 - g_knots) * 2) / 5) + 0x1d, 0, 0x3d);
+             if (var_10) sub_19C0C(0x48, 0x55 - var_10, 0x48, 0x55);
+             // 9089
+             sub_19C0C(0xf7,  0x38, 0xf7, sub_1CF64(-((word_3C8B6 >> 4) - 0x38), 0x14, 0x55));
+             // 908f
+-            if ((word_391FE & 1) == 0 && (word_336E8 & 1) != 0 && gameData->unk4 != 0 && word_3C8B6 < 0) { // 90af
+-                var_2 = (((stru_3AA5E[word_3C16A].field_6 & 0x200 ? 0x100 : 0x80) / gameData->unk4) >> 4) + 0x38;
++            if ((g_playerPlaneFlags & 1) == 0 && (word_336E8 & 1) != 0 && gameData->unk4 != 0 && word_3C8B6 < 0) { // 90af
++                var_2 = (((g_planes[g_closestThreatIndex].field_6 & 0x200 ? 0x100 : 0x80) / gameData->unk4) >> 4) + 0x38;
+                 sub_19E44(0xf);
+                 // 90f7
+                 sub_19C0C(0xf2, var_2 - 2, 0xf4, var_2);
+                 sub_19C0C(0xf2, var_2 + 2, 0xf4, var_2);
+             } // 9115
+             // stall warning display
+-            if (word_3AA5A < word_3C5A6 && word_3BEBE != word_380CE && word_336E8 & 1) { // 912e
++            if (g_knots < word_3C5A6 && word_3BEBE != g_viewZ && word_336E8 & 1) { // 912e
+                 draw2Strings(aStallWarning, 0x84, 0x1e, 0xf);
+             } // 9144
+-            if (word_3C45C == 0 || word_3C45C == 2) { // 9152
++            if (g_currentWeaponType == 0 || g_currentWeaponType == 2) { // 9152
+                 sub_19E44(7);
+                 word_3C008 = (word_38FC4 >> 6) + 0x38;
+                 if (word_3C008 > 0xa && word_3C008 < 0x6f) { // 9173
+-                    TransformAndProjectObject(0x9a, word_3C008 - 4, 0x94, 0x15, 0x0b, 7, 0xf);
++                    TransformAndProjectObject_2(0x9a, word_3C008 - 4, 0x94, 0x15, 0x0b, 7, 0xf);
+                 }
+             } // 9198
+-            if (word_3C45C == 1) { // 91a2
+-                var_1C = byte_37C24 + 4;
++            if (g_currentWeaponType == 1) { // 91a2
++                var_1C = g_halfSpeedUpdateFlag + 4;
+                 var_14 = (word_3C6A4 >> var_1C) + 0x9f;
+                 var_18 = (word_3C6AC >> var_1C) + 0x38;
+                 // 91c3
+                 if (var_14 > 0xa && var_14 < 0x135 && var_18 > 8 && var_18 < 0x5b) { // 91da
+-                    TransformAndProjectObject(var_14 - 6, var_18 - 5, 0x91, 0x4, 0xd, 0xb, 0xe);
++                    TransformAndProjectObject_2(var_14 - 6, var_18 - 5, 0x91, 0x4, 0xd, 0xb, 0xe);
+                 } // 9202
+                 // 7 = air to air? Only Sidewinder and Amraam have it
+                 if (sams[missiles[missleSpec[missileSpecIndex].field_0].field_16].field_C == 7) { // 9223
+@@ -375,9 +375,9 @@ int UpdateFlightModelAndHUD(int arg_0) {
+                     // 9239
+                     for (var_A = 0; var_A <= 0x100; var_A += 0x10) { // 924b
+                         var_4 = var_A << 8;
+-                        var_8 = sub_1D178(var_4, 0x28) + 0x9f;
++                        var_8 = sinX(var_4, 0x28) + 0x9f;
+                         // 9278
+-                        var_C = -(sub_1D190(var_4, 0x23) - 0x38);
++                        var_C = -(cosX(var_4, 0x23) - 0x38);
+                         if (var_A != 0) sub_19C0C(var_8, var_C, var_E, var_12);
+                         // 9294
+                         var_E = var_8;
+@@ -385,20 +385,20 @@ int UpdateFlightModelAndHUD(int arg_0) {
+                     }
+                 }
+             } // 929f
+-            sub_1A183(word_3AA5A, 0x50, 0x36, 0xf);
++            sub_1A183(g_knots, 0x50, 0x36, 0xf);
+             if (word_380D0 <= 0x4e20) { // 92bd
+                 sub_1A183(word_380D0 < 0x64 ? word_380D0 : (word_380D0 / 5) * 5, 0xe4, 0x36, 0xf);
+             } // 92ee
+             if (word_3370A > 1) { // 92f5
+                 drawSomeStrings(aAccel, 0x96, 0x4, 0xf);
+             } // 930b
+-            if (word_391FE & 0x1000) { // 9313
++            if (g_playerPlaneFlags & 0x1000) { // 9313
+                 drawSomeStrings(aTraining, 0xea, 0x10, 0xf);
+             } // 9329
+-            if (word_330B6 != 0) { // 9330
++            if (g_autopilotAltitude != 0) { // 9330
+                 drawSomeStrings(aAutopilot, 0xec, 0x5a, 0xf);
+             } // 9346
+-            var_6 = sub_1CF64((((word_3BE92 - word_380C8) >> 6) / 3) + 0x9f, 0x59, 0xe5);
++            var_6 = sub_1CF64((((word_3BE92 - g_ourHead) >> 6) / 3) + 0x9f, 0x59, 0xe5);
+             sub_19E44(0x0b);
+             sub_19C0C(var_6 - 2, 0xf, var_6, 0x11);
+             // 93a0
+@@ -409,7 +409,7 @@ int UpdateFlightModelAndHUD(int arg_0) {
+ somewhere:        
+         MakeRotationMatrix(byte_3C5A0);
+     } // 93cf
+-    if (word_383F2 != 0 && ((keyValue == 0 && byte_37C24 == 0) || (word_3370E != 0))) { // 93eb
++    if (word_383F2 != 0 && ((keyValue == 0 && g_halfSpeedUpdateFlag == 0) || (word_3370E != 0))) { // 93eb
+         draw2Strings(tempString, -(((int16)strlen(tempString) >> 1) - 0x28) * 4, 0x18, 0xf);
+         word_383F2--;
+         // 9417
+@@ -417,7 +417,7 @@ somewhere:
+             draw2Strings(aPressAnyKeyToP, 0x78, 1, word_330BC != 0 ? 0xe : 0);
+         }
+     } // 943f
+-    if (word_383F4 != 0 && keyValue == 0 && byte_37C24 == 0) { // 9454
++    if (word_383F4 != 0 && keyValue == 0 && g_halfSpeedUpdateFlag == 0) { // 9454
+         draw2Strings(string_3C04A, -(((int16)strlen(string_3C04A) >> 1) - 0x28) * 4, 0x5a, 0xf);
+         word_383F4--;
+     } // 9480
+@@ -430,7 +430,7 @@ void sub_19E44(int arg_0) {
+ }
+ 
+ // ==== seg000:0x9e5d ====
+-void sub_19E5D(int arg_0, int arg_2, int arg_4, int arg_6) {
++void DrawHUDElement(int arg_0, int arg_2, int arg_4, int arg_6) {
+     sub_21444(off_38334, arg_0, arg_2, arg_4, arg_6);
+     sub_21444(off_3834C, arg_0, arg_2, arg_4, arg_6);
+ }
+diff --git a/src/egame2.c b/src/egame2.c
+index 1a5a97b..bcd43a3 100755
+--- a/src/egame2.c
++++ b/src/egame2.c
+@@ -11,12 +11,12 @@
+ 
+ // ==== seg002:0xa ====
+ int far sub_21A7A() {
+-    sub_21A86();
++    GameLoopUpdate();
+ }
+ 
+ // ==== seg002:0xe ====
+ void far sub_21A7E() {
+-    sub_22411();
++    InitializeGameSettings();
+ }
+ 
+ // ==== seg000:0x21c6 ====
+diff --git a/src/egame_rc.asm b/src/egame_rc.asm
+index 3d215ee..a956a1e 100644
+--- a/src/egame_rc.asm
++++ b/src/egame_rc.asm
+@@ -21,7 +21,7 @@ PUBLIC _restoreJoystickData
+ PUBLIC _regs
+ PUBLIC _exitCode
+ PUBLIC _restoreCBreakHandler
+-PUBLIC _sub_22411
++PUBLIC _InitializeGameSettings
+ PUBLIC _scenarioPlh
+ PUBLIC _regnStr
+ PUBLIC _f15DgtlResult
+@@ -40,11 +40,11 @@ PUBLIC _dword_38FE2
+ PUBLIC _word_3C0A2
+ PUBLIC _flagFarToNear
+ PUBLIC _byte_3C16E
+-PUBLIC _word_3BEC0
+-PUBLIC _word_3BED0
+-PUBLIC _dword_3B7F8
+-PUBLIC _word_3B148
+-PUBLIC _dword_3B7DA
++PUBLIC _g_viewX_
++PUBLIC _g_viewY_
++PUBLIC _g_ViewY
++PUBLIC _g_playerTargetIndex
++PUBLIC _g_ViewX
+ PUBLIC _flt15_buf1
+ PUBLIC _flt15_word1
+ PUBLIC _flt15_buf2
+@@ -134,52 +134,52 @@ PUBLIC _dword_3C01C
+ PUBLIC _dword_3B4D4
+ PUBLIC _sub_1CF64
+ PUBLIC _keyValue
+-PUBLIC _word_380CE
++PUBLIC _g_viewZ
+ PUBLIC _dword_3B1FE
+ PUBLIC _word_336FE
+ PUBLIC _dword_3C024
+ PUBLIC _word_3B4DE
+ PUBLIC _word_3C02C
+-PUBLIC _word_380C8
++PUBLIC _g_ourHead
+ PUBLIC _word_3B4E4
+-PUBLIC _word_380CA
+-PUBLIC _word_380CC
++PUBLIC _g_ourPitch
++PUBLIC _g_ourRoll
+ PUBLIC _word_3C5AA
+ PUBLIC _word_3BE94
+ PUBLIC _stru_3A95A
+ PUBLIC _word_336E8
+-PUBLIC _sub_1D190
+-PUBLIC _sub_1D178
++PUBLIC _cosX
++PUBLIC _sinX
+ PUBLIC _word_3C028
+ PUBLIC _word_3C03A
+-PUBLIC _word_330C4
++PUBLIC _g_frameRateScaling
+ PUBLIC _word_336F4
+ PUBLIC _stru_335C4
+ PUBLIC _ARCTAN
+ PUBLIC _word_3A940
+ PUBLIC _word_3370E
+-PUBLIC _xydist
++PUBLIC _Dist2D
+ PUBLIC _word_3C02E
+-PUBLIC _word_3C45C
++PUBLIC _g_currentWeaponType
+ PUBLIC _word_336F2
+ PUBLIC _word_336EA
+-PUBLIC _stru_3AA5E
++PUBLIC _g_planes
+ PUBLIC _word_3370C
+ PUBLIC _stru_3B208
+ PUBLIC _unk_3A948
+ PUBLIC _sub_160D3
+-PUBLIC _sub_19FCC
++PUBLIC _ClearMessageArea
+ PUBLIC _word_38152
+-PUBLIC _word_37561
++PUBLIC _g_LineY1
+ PUBLIC _word_39604
+-PUBLIC _word_37563
++PUBLIC _g_LineY2
+ PUBLIC _word_38126
+-PUBLIC _sub_195C9
++PUBLIC _RenderScene
+ PUBLIC _sub_2152A
+ PUBLIC _off_38364
+ PUBLIC _word_330BC
+ PUBLIC _unk_3806E
+-PUBLIC _TransformAndProjectObject
++PUBLIC _TransformAndProjectObject_2
+ PUBLIC _a256left_pic
+ PUBLIC _a256right_pic
+ PUBLIC _a256rear_pic
+@@ -192,19 +192,19 @@ PUBLIC _aLeft_pic
+ PUBLIC _word_36B86
+ PUBLIC _byte_3850E
+ PUBLIC _unk_38128
+-PUBLIC _word_3755D
++PUBLIC _g_LineX1
+ PUBLIC _sub_11A18
+-PUBLIC _word_3755F
++PUBLIC _g_LineX2
+ PUBLIC _aRear_pic
+-PUBLIC _word_38FDC
+-PUBLIC _sub_11A88
++PUBLIC _g_difficultyLevel
++PUBLIC _SetupWeaponDisplay
+ PUBLIC _word_3C09A
+ PUBLIC _word_330C2
+ PUBLIC _sub_20BAE
+ PUBLIC _word_3C09E
+ PUBLIC _word_3BE98
+ PUBLIC _byte_3C5A0
+-PUBLIC _sub_15FDB
++PUBLIC _UpdateThrottleState
+ PUBLIC _word_3C040
+ PUBLIC _word_383F4
+ PUBLIC _word_3BEBE
+@@ -212,7 +212,7 @@ PUBLIC _sub_1A183
+ PUBLIC _word_3C6A4
+ PUBLIC _byte_37C2F
+ PUBLIC _sams
+-PUBLIC _word_3AA5A
++PUBLIC _g_knots
+ PUBLIC _word_3C5A6
+ PUBLIC _missleSpec
+ PUBLIC _word_3C8B6
+@@ -223,8 +223,8 @@ PUBLIC _copySomeMem
+ PUBLIC _word_38FC4
+ PUBLIC _waypoints
+ PUBLIC _word_3C008
+-PUBLIC _word_391FE
+-PUBLIC _byte_37C24
++PUBLIC _g_playerPlaneFlags
++PUBLIC _g_halfSpeedUpdateFlag
+ PUBLIC _string_3C04A
+ PUBLIC _draw2Strings
+ PUBLIC _word_3370A
+@@ -238,13 +238,13 @@ PUBLIC _aAutopilot
+ PUBLIC _word_38FEA
+ PUBLIC _word_3BE92
+ PUBLIC _MakeRotationMatrix
+-PUBLIC _word_3C16A
++PUBLIC _g_closestThreatIndex
+ PUBLIC _word_380D0
+ PUBLIC _tempString
+ PUBLIC _word_383F2
+-PUBLIC _word_330B6
++PUBLIC _g_autopilotAltitude
+ PUBLIC _missileSpecIndex
+-PUBLIC _sub_21A86
++PUBLIC _GameLoopUpdate
+ PUBLIC _gfx_jump_0_alloc
+ PUBLIC _gfx_jump_05_drawString
+ PUBLIC _gfx_jump_0c
+@@ -265,7 +265,7 @@ PUBLIC _dacValues1
+ PUBLIC _gfx_jump_32
+ PUBLIC _byte_36D86
+ PUBLIC _dacValues
+-PUBLIC _word_330B8
++PUBLIC _g_missionStatus
+ PUBLIC _word_3BECE
+ PUBLIC ___bios_keybrd
+ PUBLIC _word_336F6
+@@ -296,7 +296,7 @@ PUBLIC _word_380AC
+ PUBLIC _word_3B206
+ PUBLIC _word_33098
+ PUBLIC _sub_2267E
+-PUBLIC _word_3A944
++PUBLIC _g_velocity
+ PUBLIC _word_330BE
+ PUBLIC _sub_1613B
+ PUBLIC _randlmul
+@@ -307,13 +307,13 @@ PUBLIC __strcpy
+ PUBLIC _sub_1606C
+ PUBLIC _tempStrcpy
+ PUBLIC _word_38FE8
+-PUBLIC _word_3AFA6
++PUBLIC _g_thrust
+ PUBLIC _word_3B4DA
+-PUBLIC _sub_13B2F
++PUBLIC _FixedPointMul
+ PUBLIC _abs_word
+ PUBLIC _word_3AFA8
+ PUBLIC ___aNlmul
+-PUBLIC _sub_15411
++PUBLIC _UpdateRotationMatrix
+ PUBLIC _word_3BEC8
+ PUBLIC _unk_38092
+ PUBLIC _strBuf
+@@ -321,17 +321,17 @@ PUBLIC _word_3809A
+ PUBLIC _word_3808C
+ PUBLIC _sub_15237
+ PUBLIC _word_3A8FE
+-PUBLIC _word_3BF90
++PUBLIC _g_gunHits
+ PUBLIC _word_3809C
+ PUBLIC _sub_15557
+ PUBLIC _word_380A0
+-PUBLIC _word_38FDA
++PUBLIC _g_gees
+ PUBLIC _word_3B15A
+-PUBLIC _sub_11B37
++PUBLIC _PrepareToExit
+ PUBLIC __kbhit
+ PUBLIC _byte_37F98
+ PUBLIC _word_3C00E
+-PUBLIC _word_380E0
++PUBLIC _g_setThrust
+ PUBLIC _word_380A2
+ PUBLIC _byte_37FEC
+ PUBLIC _byte_37F99
+@@ -402,7 +402,7 @@ struc_3         ends
+ ; ---------------------------------------------------------------------------
+ 
+ struc_4         struc ; (sizeof=0x10, mappedto_14)
+-                                        ; XREF: dseg:stru_3AA5E/r
++                                        ; XREF: dseg:g_planes/r
+ field_0         dw ?                    ; XREF: sub_11841+60/r
+                                         ; sub_11F3E+60/r ...
+ field_2         dw ?                    ; XREF: sub_11841+68/r
+@@ -421,7 +421,7 @@ struc_4         ends
+ Waypoint        struc ; (sizeof=0x4, mappedto_15)
+                                         ; XREF: dseg:waypoints/r
+ x               dw ?                    ; XREF: UpdatePlayerAndWorldState+5B2/w
+-                                        ; sub_11E0E:else_11EBA/r ...
++                                        ; InitializeCockpitData:else_11EBA/r ...
+ y               dw ?                    ; XREF: UpdatePlayerAndWorldState+1FB/r
+                                         ; UpdatePlayerAndWorldState+5B9/w ...
+ Waypoint        ends
+@@ -542,7 +542,7 @@ _loadF15DgtlBin proc near
+ loc_102F5:
+     mov allocSize, bx
+     mov ah, 48h
+-    int 21h ;DOS - 2+ - ALLOCATE MEMORY
++    int 21h ;DOS - Allocate Memory
+     mov f15dgtlAddr, ax
+     sub cx, cx
+     mov es, cx
+@@ -550,7 +550,7 @@ loc_102F5:
+     mov ah, 3Dh
+     mov al, 0
+     mov dx, offset aF15dgtl_bin ;"F15DGTL.BIN"
+-    int 21h ;DOS - 2+ - OPEN DISK FILE WITH HANDLE
++    int 21h ;DOS - Open File with Handle
+     mov bx, ax
+     mov cx, allocSize
+     shl cx, 1
+@@ -562,11 +562,11 @@ loc_102F5:
+     mov ds, ax
+     mov dx, 0
+     mov ah, 3Fh
+-    int 21h ;DOS - 2+ - READ FROM FILE WITH HANDLE
++    int 21h ;DOS - Read from File with Handle
+     pop ds
+     push ax
+     mov ah, 3Eh
+-    int 21h ;DOS - 2+ - CLOSE A FILE WITH HANDLE
++    int 21h ;DOS - Close File with Handle
+     pop ax
+     retn
+ _loadF15DgtlBin endp
+@@ -660,9 +660,9 @@ sub_118D5 proc near
+ sub_118D5 endp
+ ; ------------------------------seg000:0x18f5------------------------------
+ ; ------------------------------seg000:0x18f6------------------------------
+-sub_118F6 proc near
++InitMission proc near
+     retn
+-sub_118F6 endp
++InitMission endp
+ ; ------------------------------seg000:0x1970------------------------------
+ ; ------------------------------seg000:0x1971------------------------------
+ sub_11971 proc near
+@@ -670,9 +670,9 @@ sub_11971 proc near
+ sub_11971 endp
+ ; ------------------------------seg000:0x19a2------------------------------
+ ; ------------------------------seg000:0x19a3------------------------------
+-sub_119A3 proc near
++InitializeWeapons proc near
+     retn
+-sub_119A3 endp
++InitializeWeapons endp
+ ; ------------------------------seg000:0x1a17------------------------------
+ ; ------------------------------seg000:0x1a18------------------------------
+ _sub_11A18 proc near
+@@ -680,14 +680,14 @@ _sub_11A18 proc near
+ _sub_11A18 endp
+ ; ------------------------------seg000:0x1a87------------------------------
+ ; ------------------------------seg000:0x1a88------------------------------
+-_sub_11A88 proc near
++_SetupWeaponDisplay proc near
+     retn
+-_sub_11A88 endp
++_SetupWeaponDisplay endp
+ ; ------------------------------seg000:0x1b36------------------------------
+ ; ------------------------------seg000:0x1b37------------------------------
+-_sub_11B37 proc near
++_PrepareToExit proc near
+     retn
+-_sub_11B37 endp
++_PrepareToExit endp
+ ; ------------------------------seg000:0x1bc2------------------------------
+ ; ------------------------------seg000:0x1bc3------------------------------
+ sub_11BC3 proc near
+@@ -878,9 +878,9 @@ loc_13B23:
+ _setupDac endp
+ ; ------------------------------seg000:0x3b2e------------------------------
+ ; ------------------------------seg000:0x3b2f------------------------------
+-_sub_13B2F proc near
++_FixedPointMul proc near
+     retn
+-_sub_13B2F endp
++_FixedPointMul endp
+ ; ------------------------------seg000:0x3b44------------------------------
+ ; ------------------------------seg000:0x3b86------------------------------
+ _sub_13B86 proc near
+@@ -1049,9 +1049,9 @@ timerIrqAddr dd byte_13D05
+ byte_13D05 db 0FBh, 50h, 53h, 51h, 52h, 56h, 57h, 55h, 1Eh, 6, 0B8h
+ timerIsrPtr dd 0
+ ; ------------------------------seg000:0x3d6b------------------------------
+-sub_13D6B proc near
++timerInterruptLogic proc near
+     retn
+-sub_13D6B endp
++timerInterruptLogic endp
+ ; ------------------------------seg000:0x3df1------------------------------
+ ; ------------------------------seg000:0x3df2------------------------------
+ sub_13DF2 proc near
+@@ -1199,9 +1199,9 @@ _sub_15237 proc near
+ _sub_15237 endp
+ ; ------------------------------seg000:0x5410------------------------------
+ ; ------------------------------seg000:0x5411------------------------------
+-_sub_15411 proc near
++_UpdateRotationMatrix proc near
+     retn
+-_sub_15411 endp
++_UpdateRotationMatrix endp
+ ; ------------------------------seg000:0x543a------------------------------
+ ; ------------------------------seg000:0x543b------------------------------
+ sub_1543B proc near
+@@ -1224,9 +1224,9 @@ _sub_15557 proc near
+ _sub_15557 endp
+ ; ------------------------------seg000:0x55aa------------------------------
+ ; ------------------------------seg000:0x5fdb------------------------------
+-_sub_15FDB proc near
++_UpdateThrottleState proc near
+     retn
+-_sub_15FDB endp
++_UpdateThrottleState endp
+ ; ------------------------------seg000:0x606b------------------------------
+ ; ------------------------------seg000:0x606c------------------------------
+ _sub_1606C proc near
+@@ -1329,9 +1329,9 @@ sub_18E38 proc near
+ sub_18E38 endp
+ ; ------------------------------seg000:0x8e4f------------------------------
+ ; ------------------------------seg000:0x94d0------------------------------
+-sub_194D0 proc near
++SetHUDMessage proc near
+     retn
+-sub_194D0 endp
++SetHUDMessage endp
+ ; ------------------------------seg000:0x9579------------------------------
+ ; ------------------------------seg000:0x957a------------------------------
+ sub_1957A proc near
+@@ -1339,14 +1339,14 @@ sub_1957A proc near
+ sub_1957A endp
+ ; ------------------------------seg000:0x9594------------------------------
+ ; ------------------------------seg000:0x9595------------------------------
+-sub_19595 proc near
++InitHUD proc near
+     retn
+-sub_19595 endp
++InitHUD endp
+ ; ------------------------------seg000:0x95c8------------------------------
+ ; ------------------------------seg000:0x95c9------------------------------
+-_sub_195C9 proc near
++_RenderScene proc near
+     retn
+-_sub_195C9 endp
++_RenderScene endp
+ ; ------------------------------seg000:0x9874------------------------------
+ ; ------------------------------seg000:0x9875------------------------------
+ zoomIn proc near
+@@ -1359,14 +1359,14 @@ zoomOut proc near
+ zoomOut endp
+ ; ------------------------------seg000:0x98f9------------------------------
+ ; ------------------------------seg000:0x98fa------------------------------
+-sub_198FA proc near
++TransformXCoordinate proc near
+     retn
+-sub_198FA endp
++TransformXCoordinate endp
+ ; ------------------------------seg000:0x9914------------------------------
+ ; ------------------------------seg000:0x9915------------------------------
+-sub_19915 proc near
++TransformYCoordinate proc near
+     retn
+-sub_19915 endp
++TransformYCoordinate endp
+ ; ------------------------------seg000:0x9939------------------------------
+ ; ------------------------------seg000:0x993a------------------------------
+ sub_1993A proc near
+@@ -1374,19 +1374,19 @@ sub_1993A proc near
+ sub_1993A endp
+ ; ------------------------------seg000:0x99eb------------------------------
+ ; ------------------------------seg000:0x99ec------------------------------
+-sub_199EC proc near
++TransformAndProjectObject proc near
+     retn
+-sub_199EC endp
++TransformAndProjectObject endp
+ ; ------------------------------seg000:0x9a4c------------------------------
+ ; ------------------------------seg000:0x9a4d------------------------------
+-sub_19A4D proc near
++GetObjectScreenPosition proc near
+     retn
+-sub_19A4D endp
++GetObjectScreenPosition endp
+ ; ------------------------------seg000:0x9ada------------------------------
+ ; ------------------------------seg000:0x9adb------------------------------
+-sub_19ADB proc near
++UpdateObjectAI proc near
+     retn
+-sub_19ADB endp
++UpdateObjectAI endp
+ ; ------------------------------seg000:0x9b97------------------------------
+ ; ------------------------------seg000:0x9b98------------------------------
+ sub_19B98 proc near
+@@ -1429,19 +1429,19 @@ sub_19EB6 proc near
+ sub_19EB6 endp
+ ; ------------------------------seg000:0x9f46------------------------------
+ ; ------------------------------seg000:0x9fad------------------------------
+-sub_19FAD proc near
++DisplayMessageTop proc near
+     retn
+-sub_19FAD endp
++DisplayMessageTop endp
+ ; ------------------------------seg000:0x9fcb------------------------------
+ ; ------------------------------seg000:0x9fcc------------------------------
+-_sub_19FCC proc near
++_ClearMessageArea proc near
+     retn
+-_sub_19FCC endp
++_ClearMessageArea endp
+ ; ------------------------------seg000:0xa02f------------------------------
+ ; ------------------------------seg000:0xa030------------------------------
+-sub_1A030 proc near
++DisplayMessageBottom proc near
+     retn
+-sub_1A030 endp
++DisplayMessageBottom endp
+ ; ------------------------------seg000:0xa0ca------------------------------
+ ; ------------------------------seg000:0xa0fe------------------------------
+ _draw2Strings proc near
+@@ -1494,9 +1494,9 @@ sub_1A872 proc near
+ sub_1A872 endp
+ ; ------------------------------seg000:0xa8c7------------------------------
+ ; ------------------------------seg000:0xa8c8------------------------------
+-_TransformAndProjectObject proc near
++_TransformAndProjectObject_2 proc near
+     retn
+-_TransformAndProjectObject endp
++_TransformAndProjectObject_2 endp
+ ; ------------------------------seg000:0xa933------------------------------
+ ; ------------------------------seg000:0xa934------------------------------
+ sub_1A934 proc near
+@@ -1614,9 +1614,9 @@ _forceRange proc near
+ _forceRange endp
+ ; ------------------------------seg000:0xcfa5------------------------------
+ ; ------------------------------seg000:0xcfa6------------------------------
+-_xydist proc near
++_Dist2D proc near
+     retn
+-_xydist endp
++_Dist2D endp
+ ; ------------------------------seg000:0xd007------------------------------
+ ; ------------------------------seg000:0xd008------------------------------
+ _ARCTAN proc near
+@@ -1624,14 +1624,14 @@ _ARCTAN proc near
+ _ARCTAN endp
+ ; ------------------------------seg000:0xd177------------------------------
+ ; ------------------------------seg000:0xd178------------------------------
+-_sub_1D178 proc near
++_sinX proc near
+     retn
+-_sub_1D178 endp
++_sinX endp
+ ; ------------------------------seg000:0xd18f------------------------------
+ ; ------------------------------seg000:0xd190------------------------------
+-_sub_1D190 proc near
++_cosX proc near
+     retn
+-_sub_1D190 endp
++_cosX endp
+ ; ------------------------------seg000:0xd1a4------------------------------
+ ; ------------------------------seg000:0xd1c8------------------------------
+ _abs_word proc near
+@@ -2384,24 +2384,24 @@ sub_1F882 proc far
+ sub_1F882 endp
+ ; ------------------------------seg001:0x64------------------------------
+ ; ------------------------------seg001:0x78------------------------------
+-sub_1F8F8 proc near
++ProjectAndCalculateScreenCoords proc near
+     retn
+-sub_1F8F8 endp
++ProjectAndCalculateScreenCoords endp
+ ; ------------------------------seg001:0xfa------------------------------
+ ; ------------------------------seg001:0x113------------------------------
+-sub_1F993 proc near
++SetCustomInterruptVector proc near
+     retn
+-sub_1F993 endp
++SetCustomInterruptVector endp
+ ; ------------------------------seg001:0x136------------------------------
+ ; ------------------------------seg001:0x137------------------------------
+-sub_1F9B7 proc near
++RestoreOriginalInterruptVector proc near
+     retn
+-sub_1F9B7 endp
++RestoreOriginalInterruptVector endp
+ ; ------------------------------seg001:0x14b------------------------------
+ ; ------------------------------seg001:0x15d------------------------------
+-sub_1F9DD proc near
++ClipAndDrawLineManager proc near
+     retn
+-sub_1F9DD endp
++ClipAndDrawLineManager endp
+ ; ------------------------------seg001:0x23e------------------------------
+ ; ------------------------------seg001:0x23f------------------------------
+ sub_1FABF proc near
+@@ -2429,9 +2429,9 @@ sub_1FBB4 proc near
+ sub_1FBB4 endp
+ ; ------------------------------seg001:0x382------------------------------
+ ; ------------------------------seg001:0x383------------------------------
+-sub_1FC03 proc near
++CalculateOutcode proc near
+     retn
+-sub_1FC03 endp
++CalculateOutcode endp
+ ; ------------------------------seg001:0x3b9------------------------------
+ ; ------------------------------seg001:0x3ba------------------------------
+ sub_1FC3A proc near
+@@ -2439,14 +2439,14 @@ sub_1FC3A proc near
+ sub_1FC3A endp
+ ; ------------------------------seg001:0x40d------------------------------
+ ; ------------------------------seg001:0x40e------------------------------
+-sub_1FC8E proc near
++ClipLineSegment_Bisection proc near
+     retn
+-sub_1FC8E endp
++ClipLineSegment_Bisection endp
+ ; ------------------------------seg001:0x483------------------------------
+ ; ------------------------------seg001:0x484------------------------------
+-sub_1FD04 proc near
++ClipLineSegment_Bisection_Int proc near
+     retn
+-sub_1FD04 endp
++ClipLineSegment_Bisection_Int endp
+ ; ------------------------------seg001:0x4f1------------------------------
+ ; ------------------------------seg001:0x4f2------------------------------
+ sub_1FD72 proc near
+@@ -2474,14 +2474,14 @@ sub_1FEFE proc near
+ sub_1FEFE endp
+ ; ------------------------------seg001:0x883------------------------------
+ ; ------------------------------seg001:0x884------------------------------
+-sub_20104 proc far
++Process3DObjectData proc far
+     retn
+-sub_20104 endp
++Process3DObjectData endp
+ ; ------------------------------seg001:0x907------------------------------
+ ; ------------------------------seg001:0x908------------------------------
+-sub_20188 proc near
++TransformAndProjectPoint proc near
+     retn
+-sub_20188 endp
++TransformAndProjectPoint endp
+ ; ------------------------------seg001:0xa08------------------------------
+ ; ------------------------------seg001:0xa09------------------------------
+ sub_20289 proc near
+@@ -2509,14 +2509,14 @@ sub_202F6 proc far
+ sub_202F6 endp
+ ; ------------------------------seg001:0xa7f------------------------------
+ ; ------------------------------seg001:0xa80------------------------------
+-sub_20300 proc near
++SortObjectForDrawing proc near
+     retn
+-sub_20300 endp
++SortObjectForDrawing endp
+ ; ------------------------------seg001:0xb5f------------------------------
+ ; ------------------------------seg001:0xb60------------------------------
+-sub_203E0 proc near
++DrawSortedObjects proc near
+     retn
+-sub_203E0 endp
++DrawSortedObjects endp
+ ; ------------------------------seg001:0xbbb------------------------------
+ ; ------------------------------seg001:0xbca------------------------------
+ sub_2044A proc far
+@@ -2524,14 +2524,14 @@ sub_2044A proc far
+ sub_2044A endp
+ ; ------------------------------seg001:0xbe6------------------------------
+ ; ------------------------------seg001:0xbe7------------------------------
+-sub_20467 proc near
++Draw3DObjectDispatcher proc near
+     retn ;sp-analysis failed
+-sub_20467 endp
++Draw3DObjectDispatcher endp
+ ; ------------------------------seg001:0xcb3------------------------------
+ ; ------------------------------seg001:0xcb4------------------------------
+-sub_20534 proc near
++SetupObjectTransformation proc near
+     retn
+-sub_20534 endp
++SetupObjectTransformation endp
+ ; ------------------------------seg001:0xdd6------------------------------
+ ; ------------------------------seg001:0xdd8------------------------------
+ sub_20658 proc far
+@@ -2544,9 +2544,9 @@ sub_20674 proc near
+ sub_20674 endp
+ ; ------------------------------seg001:0xf77------------------------------
+ ; ------------------------------seg001:0x10f0------------------------------
+-sub_20970 proc near
++DrawObjectPolygons proc near
+     retn
+-sub_20970 endp
++DrawObjectPolygons endp
+ ; ------------------------------seg001:0x11c2------------------------------
+ ; ------------------------------seg001:0x11c6------------------------------
+ sub_20A46 proc far
+@@ -2554,9 +2554,9 @@ sub_20A46 proc far
+ sub_20A46 endp
+ ; ------------------------------seg001:0x11d7------------------------------
+ ; ------------------------------seg001:0x11d8------------------------------
+-sub_20A58 proc near
++ProcessAndClipPolygons proc near
+     retn
+-sub_20A58 endp
++ProcessAndClipPolygons endp
+ ; ------------------------------seg001:0x1281------------------------------
+ ; ------------------------------seg001:0x1282------------------------------
+ sub_20B02 proc near
+@@ -2569,9 +2569,9 @@ _sub_20BAE proc far
+ _sub_20BAE endp
+ ; ------------------------------seg001:0x1345------------------------------
+ ; ------------------------------seg001:0x135f------------------------------
+-sub_20BDF proc near
++SetupObjectMatrix proc near
+     retn
+-sub_20BDF endp
++SetupObjectMatrix endp
+ ; ------------------------------seg001:0x147a------------------------------
+ ; ------------------------------seg001:0x147b------------------------------
+ sub_20CFB proc near
+@@ -2589,9 +2589,9 @@ sub_20E38 proc far
+ sub_20E38 endp
+ ; ------------------------------seg001:0x15cc------------------------------
+ ; ------------------------------seg001:0x15cd------------------------------
+-sub_20E4D proc near
++MatrixMultiply_3x3 proc near
+     retn
+-sub_20E4D endp
++MatrixMultiply_3x3 endp
+ ; ------------------------------seg001:0x175b------------------------------
+ ; ------------------------------seg001:0x175c------------------------------
+ sub_20FDC proc far
+@@ -2639,9 +2639,9 @@ _sub_2152A proc far
+ _sub_2152A endp
+ ; ------------------------------seg001:0x1cb5------------------------------
+ ; ------------------------------seg001:0x1cb6------------------------------
+-sub_21536 proc near
++DrawLine3D_Clipped proc near
+     retn
+-sub_21536 endp
++DrawLine3D_Clipped endp
+ ; ------------------------------seg001:0x1e3f------------------------------
+ ; ------------------------------seg001:0x1e42------------------------------
+ sub_216C2 proc near
+@@ -2659,19 +2659,19 @@ sub_2171A proc far
+ sub_2171A endp
+ ; ------------------------------seg001:0x1e9f------------------------------
+ ; ------------------------------seg001:0x1ea0------------------------------
+-sub_21720 proc near
++ClearDirtyRectangle proc near
+     retn
+-sub_21720 endp
++ClearDirtyRectangle endp
+ ; ------------------------------seg001:0x1ed5------------------------------
+ ; ------------------------------seg001:0x1ed6------------------------------
+-sub_21756 proc near
++UpdateDirtyRectangle proc near
+     retn
+-sub_21756 endp
++UpdateDirtyRectangle endp
+ ; ------------------------------seg001:0x1f24------------------------------
+ ; ------------------------------seg001:0x1f34------------------------------
+-sub_217B4 proc near
++DrawLineSegment_Bresenham proc near
+     retn
+-sub_217B4 endp
++DrawLineSegment_Bresenham endp
+ ; ------------------------------seg001:0x201a------------------------------
+ ; ------------------------------seg001:0x201c------------------------------
+ sub_2189C proc far
+@@ -2679,9 +2679,9 @@ sub_2189C proc far
+ sub_2189C endp
+ ; ------------------------------seg001:0x2027------------------------------
+ ; ------------------------------seg001:0x2028------------------------------
+-sub_218A8 proc near
++DrawLine_Handler proc near
+     retn
+-sub_218A8 endp
++DrawLine_Handler endp
+ ; ------------------------------seg001:0x21d5------------------------------
+ ; ------------------------------seg002:0x12------------------------------
+ sub_21A82 proc far
+@@ -2689,20 +2689,20 @@ sub_21A82 proc far
+ sub_21A82 endp
+ ; ------------------------------seg002:0x15------------------------------
+ ; ------------------------------seg002:0x16------------------------------
+-_sub_21A86 proc near
++_GameLoopUpdate proc near
+     retn
+-_sub_21A86 endp
++_GameLoopUpdate endp
+ ; ------------------------------seg002:0x9a0------------------------------
+ ; ------------------------------seg002:0x9a1------------------------------
+-_sub_22411 proc near
+-    mov ax, _gfxBufPtr
++_InitializeGameSettings proc near
++    mov ax, _gfxBufPtr ;Initializes game settings based on detected hardware (VGA vs EGA). Corresponds to F-14's NJOYCAL.C.
+     mov word_37B7E, ax
+     mov word_37B9C, ax
+     mov word_37BBA, ax
+     mov word_37BD8, ax
+-    mov _byte_37C24, 0
++    mov _g_halfSpeedUpdateFlag, 0
+ loc_22425:
+-    cmp _byte_37C24, 1
++    cmp _g_halfSpeedUpdateFlag, 1
+     jz short loc_2242F
+     jmp loc_22545
+ loc_2242F:
+@@ -2902,7 +2902,7 @@ loc_225C7:
+     mov ax, 10h
+     mov word_37B72, ax
+     retn
+-_sub_22411 endp
++_InitializeGameSettings endp
+ ; ------------------------------seg002:0xbea------------------------------
+ ; ------------------------------seg002:0xbeb------------------------------
+ _sub_2265B proc far
+@@ -2920,9 +2920,9 @@ _sub_2267E proc far
+ _sub_2267E endp
+ ; ------------------------------seg002:0xc20------------------------------
+ ; ------------------------------seg002:0xc21------------------------------
+-sub_22691 proc near
++ReadJoystick proc near
+     retn
+-sub_22691 endp
++ReadJoystick endp
+ ; ------------------------------seg002:0xc4d------------------------------
+ ; ------------------------------seg002:0xc4e------------------------------
+ sub_226BE proc near
+@@ -2994,7 +2994,7 @@ loc_2277C:
+ loc_2277F: ;store original int9 handler address
+     mov word ptr cs:loc_228C4+1, ax
+     mov word ptr cs:loc_228C4+3, dx
+-    mov ax, offset int9Handler
++    mov ax, offset CustomInt9Handler
+ loc_2278B:
+     mov dx, cs
+     cli
+@@ -3002,6 +3002,8 @@ loc_2278B:
+ loc_22790:
+     mov [bx+2], dx
+     sti
++    public RestoreInt9Handler
++RestoreInt9Handler: ;Restores the original keyboard interrupt (INT 9) handler.
+     pop ds
+     retf
+ _setInt9Handler endp
+@@ -3027,8 +3029,8 @@ loc_227AE:
+ _restoreInt9Handler endp
+ ; ------------------------------seg003:0x6f------------------------------
+ ; ------------------------------seg003:0x70------------------------------
+-int9Handler proc near
+-    sti
++CustomInt9Handler proc near
++    sti ;Custom keyboard interrupt handler to process key presses.
+     pushf
+ loc_227B2:
+     push ds
+@@ -3156,7 +3158,7 @@ loc_228BE:
+ loc_228C4:
+     db 0EAh ;far jump to original handlerjmp far ptr 0:0
+     dd 0
+-int9Handler endp
++CustomInt9Handler endp
+ ; ------------------------------seg003:0x184------------------------------
+ ; ==============================================================================
+ .DATA ;dseg segment para public 'DATA' use16
+@@ -3222,8 +3224,10 @@ unk_32977 db 0
+     db 0
+     db 0
+ word_3298A dw 0C4h
+-word_3298C dw 0A0h
+-word_3298E dw 64h
++    public g_ViewPositionX
++g_ViewPositionX dw 0A0h
++    public g_ViewPositionY
++g_ViewPositionY dw 64h
+     db 0
+     db 0
+     db 2
+@@ -4072,7 +4076,7 @@ aAn72 db 'An-72',0
+     Sam <'AA-9', 52h, 7D0h, 0FFFFh, 3, 13h>
+     Sam <'AA-10', 40h, 7D0h, 0, 4, 13h>
+     Sam <'Equip.', 0, 0, 1Dh, 0, 0Eh>
+-word_33096 dw 4
++g_missileHits dw 4
+ _word_33098 dw 1388h
+ word_3309A dw 0
+ word_3309C dw 0Ch
+@@ -4085,15 +4089,15 @@ word_3309E dw 12h
+     MissileSpec <0>
+ _missileSpecIndex dw 0
+ word_330B4 dw 28Ah
+-_word_330B6 dw 0
+-_word_330B8 dw 1
++_g_autopilotAltitude dw 0
++_g_missionStatus dw 1
+ word_330BA dw 1
+ _word_330BC dw 0
+ _word_330BE dw 0
+     db 1
+     db 0
+ _word_330C2 dw 1
+-_word_330C4 dw 4
++_g_frameRateScaling dw 4
+     _missiles Missile <'AIM-9M', 'Sidewinder', 17h, 4>
+     Missile <'AIM-120', 'AMRAAM ', 16h, 4>
+     Missile <'AGM-88A', 'HARM', 18h, 4>
+@@ -6769,9 +6773,12 @@ word_341BC dw 2710h
+     db 0ECh
+     db 0Eh
+ dword_3423C dd 0
+-word_34240 dw 0
+-word_34242 dw 0
+-word_34244 dw 0
++    public g_ObjectPositionX
++g_ObjectPositionX dw 0
++    public g_ObjectPositionY
++g_ObjectPositionY dw 0
++    public g_ObjectPositionZ
++g_ObjectPositionZ dw 0
+ word_34246 dw 0
+ word_34248 dw 0
+ word_3424A dw 0
+@@ -6794,21 +6801,36 @@ word_34262 dw 0
+ word_34264 dw 0
+ word_34266 dw 0
+ word_34268 dw 0
+-word_3426A dw 0
+-word_3426C dw 0
+-word_3426E dw 0
+-word_34270 dw 0
+-word_34272 dw 0
+-word_34274 dw 0
+-word_34276 dw 0
+-word_34278 dw 0
+-word_3427A dw 0
+-word_3427C dw 0
+-word_3427E dw 0
+-word_34280 dw 0
+-word_34282 dw 0
+-word_34284 dw 0
+-word_34286 dw 0
++    public g_SinRoll
++g_SinRoll dw 0
++    public g_CosRoll
++g_CosRoll dw 0
++    public g_SinHead
++g_SinHead dw 0
++    public g_CosHead
++g_CosHead dw 0
++    public g_SinPitch
++g_SinPitch dw 0
++    public g_CosPitch
++g_CosPitch dw 0
++    public g_TransformMatrix_00
++g_TransformMatrix_00 dw 0
++    public g_TransformMatrix_01
++g_TransformMatrix_01 dw 0
++    public g_TransformMatrix_02
++g_TransformMatrix_02 dw 0
++    public g_TransformMatrix_10
++g_TransformMatrix_10 dw 0
++    public g_TransformMatrix_11
++g_TransformMatrix_11 dw 0
++    public g_TransformMatrix_12
++g_TransformMatrix_12 dw 0
++    public g_TransformMatrix_20
++g_TransformMatrix_20 dw 0
++    public g_TransformMatrix_21
++g_TransformMatrix_21 dw 0
++    public g_TransformMatrix_22
++g_TransformMatrix_22 dw 0
+ word_34288 dw 0
+ word_3428A dw 0
+ word_3428C dw 0
+@@ -14839,14 +14861,20 @@ word_3754F dw 0
+ word_37551 dw 0
+ word_37553 dw 0
+ word_37555 dw 0
+-word_37557 dw 13Fh
+-word_37559 dw 6Fh
+-    db 0
+-    db 0
+-_word_3755D dw 0
+-_word_3755F dw 0
+-_word_37561 dw 0
+-_word_37563 dw 0
++    public g_ViewportWidth
++g_ViewportWidth dw 13Fh
++    public g_ViewportHeight
++g_ViewportHeight dw 6Fh
++    db 0
++    db 0
++    public _g_LineX1
++_g_LineX1 dw 0
++    public _g_LineX2
++_g_LineX2 dw 0
++    public _g_LineY1
++_g_LineY1 dw 0
++    public _g_LineY2
++_g_LineY2 dw 0
+ unk_37565 db 0FFh
+     db 0FFh
+     db 0FFh
+@@ -15729,8 +15757,10 @@ unk_3771D db 0
+     db 0
+ word_378D5 dw 0
+ word_378D7 dw 0
+-word_378D9 dw 0FFFFh
+-word_378DB dw 0
++    public g_DirtyRectX1
++g_DirtyRectX1 dw 0FFFFh
++    public g_DirtyRectX2
++g_DirtyRectX2 dw 0
+     db 0 ;align 2
+ byte_378DE db 0
+ word_378DF dw 0
+@@ -16489,7 +16519,7 @@ word_37C1C dw 0
+ word_37C1E dw 0
+ word_37C20 dw 0
+ word_37C22 dw 0
+-_byte_37C24 db 0
++_g_halfSpeedUpdateFlag db 0
+ word_37C25 dw 0
+ word_37C27 dw 0
+ word_37C29 dw 0
+@@ -17588,10 +17618,10 @@ unk_380B6 db 0
+     db 0
+     db 0
+     db 0
+-_word_380C8 dw 0
+-_word_380CA dw 0
+-_word_380CC dw 0
+-_word_380CE dw 0
++_g_ourHead dw 0
++_g_ourPitch dw 0
++_g_ourRoll dw 0
++_g_viewZ dw 0
+ _word_380D0 dw 0
+     db 0Ch
+     db 0
+@@ -17606,7 +17636,7 @@ byte_380DA db 0
+ _byte_380DD db 0
+     db 0 ;align 4
+     db 0
+-_word_380E0 dw 0
++_g_setThrust dw 0
+ _word_380E2 dw 0
+ _a256left_pic db '256Left.Pic',0
+ _a256right_pic db '256Right.Pic',0
+@@ -18141,7 +18171,7 @@ byte_383E5 db 1
+     db 0
+     db 1
+     db 0
+-word_383EA dw 8
++g_zoomLevel dw 8
+ radarRange dw 1
+ word_383EE dw 0
+ word_383F0 dw 0
+@@ -19323,9 +19353,11 @@ byte_38D6E db 0
+ word_38F70 dw ?
+ word_38F72 dw ?
+ _strBuf db 18h dup(?)
+-byte_38F8C db ?
++    public g_RawJoyX1
++g_RawJoyX1 db ?
+ byte_38F8D db ?
+-    db ?
++    public g_RawJoyY1
++g_RawJoyY1 db ?
+     db ?
+     db ?
+     db ?
+@@ -19396,8 +19428,8 @@ _unk_38FD0 db ?
+     db ?
+     db ?
+     db ?
+-_word_38FDA dw ?
+-_word_38FDC dw ?
++_g_gees dw ?
++_g_difficultyLevel dw ?
+ _word_38FDE dw ?
+ _word_38FE0 dw ?
+ _dword_38FE2 dd ?
+@@ -19405,7 +19437,7 @@ _fileHandle dw ?
+ _word_38FE8 dw ?
+ _word_38FEA dw ?
+ word_38FEC dw ?
+-word_38FEE dw ?
++g_closestThreatDistance dw ?
+ _gameData dd ?
+     db ?
+     db ?
+@@ -19414,7 +19446,7 @@ word_38FF8 dw ?
+ _word_38FFA dw ?
+ word_38FFC dw ?
+ _buf4_3dg db 200h dup(?)
+-_word_391FE dw ?
++_g_playerPlaneFlags dw ?
+ word_39200 dw ?
+ _buf3_3dg db 200h dup(?)
+ word_39402 dw ?
+@@ -24023,7 +24055,7 @@ _byte_3A900 db 40h dup(?)
+ _word_3A940 dw ?
+     db ? ;align 4
+     db ?
+-_word_3A944 dw ?
++_g_velocity dw ?
+ word_3A946 dw ?
+ _unk_3A948 db ?
+     db ?
+@@ -24044,9 +24076,9 @@ _unk_3A948 db ?
+     db ?
+     db ?
+     _stru_3A95A struc_1 10h dup(<?>)
+-_word_3AA5A dw ?
++_g_knots dw ?
+ _word_3AA5C dw ?
+-    _stru_3AA5E struc_4 4Ah dup(<?>)
++    _g_planes struc_4 4Ah dup(<?>)
+     db ?
+     db ?
+     db ?
+@@ -24064,7 +24096,7 @@ _word_3AA5C dw ?
+ word_3AF0C dw ?
+ _buf3d3_1 db 96h dup(?)
+ word_3AFA4 dw ?
+-_word_3AFA6 dw ?
++_g_thrust dw ?
+ _word_3AFA8 dw ?
+ word_3AFAA dw ?
+ _byte_3AFAC db 100h dup(?)
+@@ -24072,7 +24104,7 @@ word_3B0AC dw ?
+ _buf3d3_2 db 96h dup(?)
+ _word_3B144 dw ?
+ word_3B146 dw ?
+-_word_3B148 dw ?
++_g_playerTargetIndex dw ?
+ _word_3B14A dw ?
+ word_3B14C dw ?
+     db ?
+@@ -25540,7 +25572,7 @@ word_3B5D6 dw ?
+     db ?
+     db ?
+     db ?
+-_dword_3B7DA dd ?
++_g_ViewX dd ?
+ word_3B7DE dw ?
+ word_3B7E0 dw ?
+ word_3B7E2 dw ?
+@@ -25559,7 +25591,7 @@ byte_3B7F1 db ?
+     db ?
+     db ?
+     db ?
+-_dword_3B7F8 dd ?
++_g_ViewY dd ?
+ _byte_3B7FC db 640h dup(?)
+ _word_3BE3C dw ?
+ _byte_3BE3E db 40h dup(?)
+@@ -25605,7 +25637,7 @@ word_3BE9C dw ?
+     db ?
+ _word_3BEBC dw ?
+ _word_3BEBE dw ?
+-_word_3BEC0 dw ?
++_g_viewX_ dw ?
+ word_3BEC2 dw ?
+ _byte_3BEC4 db ?
+     db ? ;align 4
+@@ -25615,7 +25647,7 @@ _word_3BEC8 dw ?
+ _sign3d3 dw ?
+ _word_3BECC dw ?
+ _word_3BECE dw ?
+-_word_3BED0 dw ?
++_g_viewY_ dw ?
+ _word_3BED2 dw ?
+ word_3BED4 dw ?
+ word_3BED6 dw ?
+@@ -25623,7 +25655,7 @@ _byte_3BED8 db 64h dup(?)
+ word_3BF3C dw ?
+ word_3BF3E dw ?
+ _tempString db 50h dup(?)
+-_word_3BF90 dw ?
++_g_gunHits dw ?
+ _regs db ?
+ byte_3BF93 db ?
+     db ?
+@@ -25686,10 +25718,10 @@ word_3C09C dw ?
+ _word_3C09E dw ?
+ word_3C0A0 dw ?
+ _word_3C0A2 dw 64h dup(?)
+-_word_3C16A dw ?
++_g_closestThreatIndex dw ?
+ word_3C16C dw ?
+ _byte_3C16E db 2EEh dup(?)
+-_word_3C45C dw ?
++_g_currentWeaponType dw ?
+ word_3C45E dw ?
+ _matrix3dt_2 dw 0A0h dup(?)
+ _byte_3C5A0 db ?

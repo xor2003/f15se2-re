@@ -1,0 +1,4 @@
+test.obj start1.obj start2.obj start3.obj start4.obj start_rc.obj 
+d:\test.exe
+d:\test.map
+slibce.lib

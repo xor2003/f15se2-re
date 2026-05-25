@@ -23,7 +23,7 @@ int otherKeyDispatch(void) {
     int16 temp_di;
     int16 temp_ax, temp_bx, temp_cx;
     int32 temp_long_dx_ax;
-    int16 temp_1, temp_2, temp_3, temp_4, temp_5;
+    int16 temp_2, temp_3, temp_4, temp_5;
 
     // seg000:3F7A
     if (word_3BECC == 0) {
@@ -645,12 +645,10 @@ switch_break:
     // seg000:4B16
     word_3C5A6 = 100;
     // seg000:4B30
-    temp_1 = ((uint16)g_viewZ >> 7) + 0x0400;
-    var_32 = ((int32)temp_1 * (int32)var_32) >> 10;
+    var_32 = ((int32)(((uint16)g_viewZ >> 7) + 0x0400) * (int32)var_32) >> 10;
      
     // seg000:4B56
-    temp_1 = (word_380D0 >> 6) + 0x0400;
-    word_3C5A6 = ((int32)100 * (int32)temp_1) >> 10;
+    word_3C5A6 = ((int32)100 * (int32)(((uint16)word_380D0 >> 6) + 0x0400)) >> 10;
     
     // seg000:4B83
     var_32 = ((int32)var_32) * ((int32)(-((word_33098 >> 9) - 100))) / (int32)90;

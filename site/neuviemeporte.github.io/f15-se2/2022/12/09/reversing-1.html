@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>What does it take to take an old game apart? (Part 1) | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="What does it take to take an old game apart? (Part 1)" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="This is a one-off, lengthy post that I decided to write up to summarize the know-how necessary to take a project of this kind, and the tools and methods that can be employed in order to get it done." />
+<meta property="og:description" content="This is a one-off, lengthy post that I decided to write up to summarize the know-how necessary to take a project of this kind, and the tools and methods that can be employed in order to get it done." />
+<link rel="canonical" href="/f15-se2/2022/12/09/reversing-1.html" />
+<meta property="og:url" content="/f15-se2/2022/12/09/reversing-1.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2022-12-09T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="What does it take to take an old game apart? (Part 1)" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2022-12-09T00:00:00+00:00","datePublished":"2022-12-09T00:00:00+00:00","description":"This is a one-off, lengthy post that I decided to write up to summarize the know-how necessary to take a project of this kind, and the tools and methods that can be employed in order to get it done.","headline":"What does it take to take an old game apart? (Part 1)","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2022/12/09/reversing-1.html"},"url":"/f15-se2/2022/12/09/reversing-1.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">What does it take to take an old game apart? (Part 1)</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2022-12-09T00:00:00+00:00" itemprop="datePublished">Dec 9, 2022
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>This is a one-off, lengthy post that I decided to write up to summarize the know-how necessary to take a project of this kind, and the tools and methods that can be employed in order to get it done.</p>
+
+<p>A lot of this stuff is probably going to sound basic to anybody who has an idea of what reverse engineering entails, but I’m writing this for the benefit of anyone who might want to pick up a similar project, as well as to organize my own thoughts. Parts of it might be vague or philosophical, so just bear with me or ignore this rant.</p>
+
+<p>A game is made of assets, like models, textures and world maps, and the code that makes use of those assets and implements additional game logic to create a dynamic environment that responds to the player’s inputs.</p>
+
+<h2 id="code">Code</h2>
+
+<p>The game code is implemented in a programming language of the developer’s choice. Back in the time F15 SE2 was made, that language would often be pure assembly for the particular platform the game was developed for (which would prove a hindrance if you wanted to port your game to different platforms). Part of the reason was, the hardware was quite limited in its capabiliies, and to make best use of it, or perhaps even be able to have to your game run with acceptable performance in the first place, you needed to get close to the metal and directly manipulate the hardware on the lowest level - no fancy pre-made engines or libraries were available, you had to roll your own.</p>
+
+<p>Slowly, compilers for high level languages like C and Pascal were starting to appear on personal computers, but their capabilities were severely limited compared to the level of optimizations modern compilers are capable of - today your code will be broken up into pieces, reordered, scattered all over the compiled binary in a form beyond recognition. Back in the late 80s, what your wrote in a high level language was translated mostly directly into sequences of machine code, and the code generated often kinda sucked, so that’s another reason people chose to go with writing assembly by hand in the first place.</p>
+
+<p>After a program written in a high level language gets compiled into executable form, information is lost. The functions that the programmer named so carefully to have their purpose clearly documented are just a sequence of binary-encoded CPU instructions without a name, surrounded by other sequences of instructions belonging to other functions. Variables in the code that had nice names to say what purpose they serve, now become nameless sequences of binary data in the game’s executable, with no clear boundaries to show where they were supposed to start or end. I’ve heard it described that reverse engineering compiled binary code is like trying to extract the eggs, flour and sugar after the cake’s been baked, and I think that’s a good analogy. You need to disassemble the binary game code into assembler text, and study that text to try and understand what it is trying to accomplish, then write code that does the same thing in the same language and operating system that the original was implemented on, or on a different platform altogether.</p>
+
+<h2 id="data">Data</h2>
+
+<p>The assets will nowadays usually be produced by some powerhouse commercial software for 3d modelling and effects, texture design, audio engineering etc., with the result being a binary blob in some relatively common format (JPG/PNG/MP3/whatever) Back then, such software was either non-existent, was prohibitively expensive, or had pitiful functionality and/or performance, which is why again, people working in those game companies wrote their own sprite, 3d model or map design software, and the data formats were proprietary and often specific to that particular company.</p>
+
+<p>It is obviously necessary to understand the formats used by a game when trying to reimplement it, perhaps even more so than understanding the code itself - after all, if you knew how the formats work, you could go about <a href="https://fabiensanglard.net/reverse_engineering_strike_commander/">implementing an alternative implementation</a>, without ever taking a look at the code. You would not have preserved the identical behaviour of the original, but all the content would be there, and it’s a matter of what you perceive what your goal was at the beginning, to determine if that’s good enough or not. See, I told you this would get philosophical.</p>
+
+<p>So, reversing based on figuring out the data formats alone is possible, but I don’t posess a code breaker mentality, and I have hardly any information on the data to go on, which means that (for me at least), the only real way forward of figuring out how a format like that works, is to infer it from the way the code interacts with the files containing it, and how it uses that data during gameplay.</p>
+
+<h2 id="operating-system">Operating system</h2>
+
+<p>DOS is a relatively simple OS, which provides the barest of abstractions over the computer hardware. You are free to bypass DOS at any time (actually, it’s usually required if you want decent performance), unlike a modern OS you can write to any area of memory (no memory protection, normally we are running in <a href="https://en.wikipedia.org/wiki/Real_mode">real mode</a>), including memory occupied by DOS itself, you can (and must) interact with hardware behind DOS’s back and do all kinds of wild stuff in order to achieve basic functionality, like putting graphics on screen.</p>
+
+<p>In fact, pretty much the only comprehensive service DOS provides is managing the filesystem on the disk for you, so you can open files and directories without reading raw sectors off the disk. Well, at least it’s something. Yeah, I know, there’s time and date, DOS will load your program and set it up and make sure it can run, it can also do some other stuff, but not much that’s useful in game programming. In particular, there is no universal framework or drivers for display or audio hardware, which is why games from that period had to implement support for those on their own, and most games supported multiple variants of hardware (especially soundcards after everybody settled on <a href="https://en.wikipedia.org/wiki/Super_VGA">SVGA</a> and <a href="https://en.wikipedia.org/wiki/VESA_BIOS_Extensions">VESA</a> for high-performance display purposes. There’s no multithreading out of the box, actually there’s not even a capability to run more than one process at once (technically there are <a href="https://en.wikipedia.org/wiki/Terminate-and-stay-resident_program">TSRs</a>, but they are not a part of what we might consider a multitasking environment).</p>
+
+<p>Still, an understanding of DOS services and internals is crucial to understanding what game code running under it is trying to do.</p>
+
+<p>(continues in <a href="/f15-se2/2022/12/09/reversing-2.html">Part 2</a>)</p>
+
+  </div><a class="u-url" href="/f15-se2/2022/12/09/reversing-1.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

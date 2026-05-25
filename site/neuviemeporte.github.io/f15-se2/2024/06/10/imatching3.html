@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Trying to think like a compiler, Part 3 | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Trying to think like a compiler, Part 3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<meta property="og:description" content="(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)" />
+<link rel="canonical" href="/f15-se2/2024/06/10/imatching3.html" />
+<meta property="og:url" content="/f15-se2/2024/06/10/imatching3.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2024-06-10T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Trying to think like a compiler, Part 3" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2024-06-10T00:00:00+00:00","datePublished":"2024-06-10T00:00:00+00:00","description":"(This post is part of a series on the subject of my hobby project, which is recreating the C source code for the 1989 game F-15 Strike Eagle II by reverse engineering the original binaries.)","headline":"Trying to think like a compiler, Part 3","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2024/06/10/imatching3.html"},"url":"/f15-se2/2024/06/10/imatching3.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Trying to think like a compiler, Part 3</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2024-06-10T00:00:00+00:00" itemprop="datePublished">Jun 10, 2024
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><small>(<em>This post is part of a <a href="/category/f15-se2.html">series</a> on the subject of my hobby project, which is recreating the C source code for the 1989 game <a href="/f15-se2/2022/06/05/origins.html">F-15 Strike Eagle II</a> by reverse engineering the original binaries.</em>)</small></p>
+
+<p>I have a confession to make. Although I’ve managed to figure out many puzzles on this project, including spending 5 months on searching for <a href="/f15-se2/2023/05/17/compiler.html">the right compiler flags</a>, and coming out on top thus far, sometimes I still think it all might actually be impossible. The idea that code can be recovered from these old binaries and made to line up perfectly instruction by instruction sounds so absurd that I find it hard to believe, even though I’ve been managing to pull it off for a while now. Whenever I pick a new routine to reconstruct, I wonder, “is this going to be the one that defeats me?”. The rush that I get after clearing a routine, especially one that <em>seemed</em> impossible is intoxicating, which is probably the reason I keep doing this night after night. So let me share some more examples of what has been on my plate recently.</p>
+
+<h2 id="the-one-that-got-away">The one that got away</h2>
+
+<p>A while back, I <a href="/f15-se2/2023/11/08/imatching2.html">mentioned</a> coming across a routine that had the look of C, but it contained a <code class="language-plaintext highlighter-rouge">repne movsw</code> instruction which I could not get the compiler to emit, at least not in the exact way needed:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">startCode1:</span><span class="err">200</span><span class="nf">E</span>			<span class="nv">mov</span>	<span class="nb">si</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_6</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">2011</span>			<span class="nf">mov</span>	<span class="nb">cl</span><span class="p">,</span> <span class="mi">5</span>
+<span class="nl">startCode1:</span><span class="err">2013</span>			<span class="nf">shl</span>	<span class="nb">si</span><span class="p">,</span> <span class="nb">cl</span>
+<span class="nl">startCode1:</span><span class="err">2015</span>			<span class="nf">push</span>	<span class="nb">si</span>
+<span class="nl">startCode1:</span><span class="err">2016</span>			<span class="nf">lea</span>	<span class="nb">di</span><span class="p">,</span> <span class="nv">hallfameBuf</span><span class="p">[</span><span class="nb">si</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">201</span><span class="nf">A</span>			<span class="nv">lea</span>	<span class="nb">si</span><span class="p">,</span> <span class="kt">word</span><span class="nv">_1E366</span><span class="p">[</span><span class="nb">si</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">201</span><span class="nf">E</span>			<span class="nv">push</span>	<span class="nb">ds</span>
+<span class="nl">startCode1:</span><span class="err">201</span><span class="nf">F</span>			<span class="nv">pop</span>	<span class="nb">es</span>
+<span class="nl">startCode1:</span><span class="err">2020</span>			<span class="nf">mov</span>	<span class="nb">cx</span><span class="p">,</span> <span class="mh">10h</span>
+<span class="nl">startCode1:</span><span class="err">2023</span>			<span class="nf">repne</span> <span class="nv">movsw</span>
+<span class="nl">startCode1:</span><span class="err">2025</span>			<span class="nf">pop</span>	<span class="nb">si</span>
+<span class="nl">startCode1:</span><span class="err">2026</span>			<span class="nf">inc</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_6</span><span class="p">]</span></code></pre></figure>
+
+<p>I was expecting this to be a folding of <code class="language-plaintext highlighter-rouge">memcpy()</code> into an intrinsic function, which are the 1980s equivalent of inline functions, and it was close, but not 100%. So I shelved this routine and moved on. Some time later, doing work on an unrelated routine, I <a href="/f15-se2/2024/05/05/ghidra.html">figured out</a> that the data involved was actually part of an array of structures, so my IDA-generated listing changed to the following around this area:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">startCode1:</span><span class="err">200</span><span class="nf">E</span>			<span class="nv">mov</span>	<span class="nb">si</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_6</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">2011</span>			<span class="nf">mov</span>	<span class="nb">cl</span><span class="p">,</span> <span class="mi">5</span>
+<span class="nl">startCode1:</span><span class="err">2013</span>			<span class="nf">shl</span>	<span class="nb">si</span><span class="p">,</span> <span class="nb">cl</span>
+<span class="nl">startCode1:</span><span class="err">2015</span>			<span class="nf">push</span>	<span class="nb">si</span>
+<span class="nl">startCode1:</span><span class="err">2016</span>			<span class="nf">lea</span>	<span class="nb">di</span><span class="p">,</span> <span class="nv">hallfameBuf.field_0</span><span class="p">[</span><span class="nb">si</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">201</span><span class="nf">A</span>			<span class="nv">lea</span>	<span class="nb">si</span><span class="p">,</span> <span class="p">(</span><span class="nv">hallfameBuf.field_0</span><span class="o">+</span><span class="mh">20h</span><span class="p">)[</span><span class="nb">si</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">201</span><span class="nf">E</span>			<span class="nv">push</span>	<span class="nb">ds</span>
+<span class="nl">startCode1:</span><span class="err">201</span><span class="nf">F</span>			<span class="nv">pop</span>	<span class="nb">es</span>
+<span class="nl">startCode1:</span><span class="err">2020</span>			<span class="nf">mov</span>	<span class="nb">cx</span><span class="p">,</span> <span class="mh">10h</span>
+<span class="nl">startCode1:</span><span class="err">2023</span>			<span class="nf">repne</span> <span class="nv">movsw</span>
+<span class="nl">startCode1:</span><span class="err">2025</span>			<span class="nf">pop</span>	<span class="nb">si</span>
+<span class="nl">startCode1:</span><span class="err">2026</span>			<span class="nf">inc</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_6</span><span class="p">]</span></code></pre></figure>
+
+<p>Is it <code class="language-plaintext highlighter-rouge">memcpy()</code>ing an array member from one structure to another? Nope, <code class="language-plaintext highlighter-rouge">0x10</code> is the size of the entire structure (I know this by examining how the data is used elsewhere). Sometimes I forget that C can assign struct variables to each other, because it’s not used that often. But that is exactly what this is. It’s jiggling pilot roster entries around in a loop:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">Pilot</span> <span class="p">{</span>
+    <span class="n">int8</span> <span class="n">field_0</span><span class="p">[</span><span class="n">PILOTNAMELEN</span><span class="p">];</span>
+    <span class="n">int32</span> <span class="n">field_16</span><span class="p">;</span> <span class="c1">// total score</span>
+    <span class="n">uint16</span> <span class="n">field_1A</span><span class="p">;</span> <span class="c1">// last score</span>
+    <span class="n">int8</span> <span class="n">field_1C</span><span class="p">;</span> <span class="c1">// rank</span>
+    <span class="n">uint8</span> <span class="n">field_1D</span><span class="p">;</span>
+    <span class="n">int8</span> <span class="n">field_1E</span><span class="p">;</span> <span class="c1">// theater</span>
+    <span class="n">int8</span> <span class="n">field_1F</span><span class="p">;</span> <span class="c1">// difficulty</span>
+<span class="p">};</span>
+<span class="c1">// I am linking this in from assembly for now</span>
+<span class="k">extern</span> <span class="k">struct</span> <span class="nc">Pilot</span> <span class="n">hallfameBuf</span><span class="p">[];</span>
+<span class="kt">int</span> <span class="n">updateHallfame</span><span class="p">()</span> <span class="p">{</span>
+        <span class="c1">// ...</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">var_2</span> <span class="o">=</span> <span class="n">gameData</span><span class="o">-&gt;</span><span class="n">pilotIdx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">var_2</span> <span class="o">&gt;=</span> <span class="n">hallfameCount</span><span class="p">;</span> <span class="n">var_2</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">hallfameBuf</span><span class="p">[</span><span class="n">var_2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">hallfameBuf</span><span class="p">[</span><span class="n">var_2</span><span class="p">];</span> <span class="c1">// assign whole structs to each other</span>
+        <span class="p">}</span></code></pre></figure>
+
+<p>This matches the instruction sequence perfectly. The compiler took a shortcut to copying around entire structures (whose size is a compile time constant) using the 8086 string instructions and it took me a while to figure out how clever it was. Feels good to have it off the list though.</p>
+
+<h2 id="the-gloves-come-off">The gloves come off</h2>
+
+<p>Until now, I’ve had limited exposure to optimized code from this compiler. At some point I noticed that some routines were not doing the usual <code class="language-plaintext highlighter-rouge">sub sp, N</code> for taking arguments off the stack after a function call, when the call was the last thing done in a function (because the stack pointer will be restored when the current routine returns so why bother). It turned out i had to remove the <a href="/f15-se2/2023/09/02/compiler3.html">hard-earned</a> <code class="language-plaintext highlighter-rouge">/Zi</code> flag (which disables some optimizations for debugging) for the source file containing the affected routines, meaning they are now built with the default optimization settings of <code class="language-plaintext highlighter-rouge">/Ot</code> (optimize for speed). Because in my reconstructed source code I have the routines arranged by the offset at which they appear in the original, it’s easy to see in which file a routine belongs that I just picked up for working on it. Until now, these routines did not do anything too complicated and were rather simple to rewrite into C, which lulled me into a sense of false security, concluding that the MSC optimizer was incapable of anything more exciting than simple <a href="https://en.wikipedia.org/wiki/Peephole_optimization">peephole optimizations</a>. If I only knew how wrong I was.</p>
+
+<p>The comparison tool tripped on this routine for handling key input on the pilot selection screen, so I picked it up and started work on writing the C code. Soon, I was scratching my head at the erratic execution flow that was jumping all over the place, and that was supposed to come down to neat <code class="language-plaintext highlighter-rouge">if</code> conditions and <code class="language-plaintext highlighter-rouge">for</code> loops. Below is the routine, somewhat abbreviated, but otherwise showing the whole control flow:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F44</span>	<span class="nv">processPilotInput</span> <span class="nv">proc</span> <span class="nv">near</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F44</span>			<span class="nv">push</span>	<span class="nb">bp</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F45</span>			<span class="nv">mov</span>	<span class="nb">bp</span><span class="p">,</span> <span class="nb">sp</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F47</span>			<span class="nv">sub</span>	<span class="nb">sp</span><span class="p">,</span> <span class="mh">0Ah</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F4A</span>			<span class="nv">push</span>	<span class="nb">di</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F4B</span>			<span class="nv">push</span>	<span class="nb">si</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F4C</span>			<span class="nv">mov</span>	<span class="nv">pilotSelectFlag</span><span class="p">,</span> <span class="mi">1</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F51</span>			<span class="nv">call</span>	<span class="nv">setTimerIrqHandler</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F54</span>			<span class="nv">jmp</span>	<span class="nv">short</span> <span class="nb">ch</span><span class="nv">eckInput_11F7B</span> <span class="c1">; 🙄 OK, so like a loop with the condition at the end, maybe a do...while?</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F56</span>	<span class="nv">notReturn_11F56</span><span class="p">:</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F56</span>			<span class="nv">cmp</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mh">1Bh</span>		<span class="c1">; escape</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F59</span>			<span class="nv">jz</span>	<span class="nv">short</span> <span class="nv">handleEsc_11FB2</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F5B</span>			<span class="nv">cmp</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mh">4800h</span>	<span class="c1">; up arrow</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F5E</span>			<span class="nv">jnz</span>	<span class="nv">short</span> <span class="nv">loc_11F63</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F60</span>			<span class="nv">jmp</span>	<span class="nv">upArrow_12052</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F63</span>	<span class="nv">loc_11F63</span><span class="p">:</span>                         <span class="c1">; 🟢 the comparison sequence against constants might be a switch?</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F63</span>			<span class="nv">cmp</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mh">4B00h</span>	<span class="c1">; left arrow</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F66</span>			<span class="nv">jnz</span>	<span class="nv">short</span> <span class="nv">loc_11F6B</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F68</span>			<span class="nv">jmp</span>	<span class="nv">leftArrow_1205E</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F6B</span>	<span class="nv">loc_11F6B</span><span class="p">:</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F6B</span>			<span class="nv">cmp</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mh">4D00h</span>	<span class="c1">; right</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F6E</span>			<span class="nv">jnz</span>	<span class="nv">short</span> <span class="nv">loc_11F73</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F70</span>			<span class="nv">jmp</span>	<span class="nv">rightArrow_12066</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F73</span>	<span class="nv">loc_11F73</span><span class="p">:</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F73</span>			<span class="nv">cmp</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mh">5000h</span>	<span class="c1">; down</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F76</span>			<span class="nv">jnz</span>	<span class="nv">short</span> <span class="nb">ch</span><span class="nv">eckInput_11F7B</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F78</span>			<span class="nv">jmp</span>	<span class="nv">downArrow_12058</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F7B</span>	<span class="nb">ch</span><span class="nv">eckInput_11F7B</span><span class="p">:</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F7B</span>			<span class="nv">mov</span>	<span class="nb">ax</span><span class="p">,</span> <span class="nv">hallfameCount</span>     <span class="c1">; 😭 can't figure out a way to put this here</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F7E</span>			<span class="nv">mov</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_2</span><span class="p">],</span> <span class="nb">ax</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F81</span>			<span class="nv">call</span>	<span class="nv">processStoreInput</span> <span class="c1">; 🟠 loop termination condition? or part of the switch?</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F84</span>			<span class="nv">cmp</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mh">0Dh</span>		<span class="c1">; check	return pressed</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F87</span>			<span class="nv">jnz</span>	<span class="nv">short</span> <span class="nv">notReturn_11F56</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">F89</span>			<span class="nv">mov</span>	<span class="nb">bx</span><span class="p">,</span> <span class="nv">hallfameCount</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FA5</span>			<span class="nv">retn</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FA6</span>			<span class="nv">mov</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mi">7</span>		<span class="c1">; beep!</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FA9</span>			<span class="nv">push</span>	<span class="nb">ax</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FAA</span>			<span class="nv">call</span>	<span class="nv">_putch</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FAD</span>			<span class="nv">add</span>	<span class="nb">sp</span><span class="p">,</span> <span class="mi">2</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FB0</span>			<span class="nv">jmp</span>	<span class="nv">short</span> <span class="nb">ch</span><span class="nv">eckInput_11F7B</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FB2</span>	<span class="nv">handleEsc_11FB2</span><span class="p">:</span>                 <span class="c1">; 🙄 switch case handling code blocks placed outside the loop?</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FB2</span>			<span class="nv">mov</span>	<span class="nb">si</span><span class="p">,</span> <span class="nv">hallfameCount</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FB6</span>			<span class="nv">mov</span>	<span class="nb">cl</span><span class="p">,</span> <span class="mi">5</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FB8</span>			<span class="nv">shl</span>	<span class="nb">si</span><span class="p">,</span> <span class="nb">cl</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FBA</span>			<span class="nv">sub</span>	<span class="nb">al</span><span class="p">,</span> <span class="nb">al</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FBC</span>			<span class="nv">mov</span>	<span class="nv">hallfameBuf.field_1C</span><span class="p">[</span><span class="nb">si</span><span class="p">],</span> <span class="nb">al</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FC0</span>			<span class="nv">mov</span>	<span class="nv">hallfameBuf.field_1D</span><span class="p">[</span><span class="nb">si</span><span class="p">],</span> <span class="nb">al</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FC4</span>			<span class="nv">sub</span>	<span class="nb">ah</span><span class="p">,</span> <span class="nb">ah</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FC6</span>			<span class="nv">mov</span>	<span class="nv">hallfameBuf.field_1A</span><span class="p">[</span><span class="nb">si</span><span class="p">],</span> <span class="nb">ax</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FCA</span>			<span class="nv">sub</span>	<span class="nb">dx</span><span class="p">,</span> <span class="nb">dx</span>                <span class="c1">; 😭 this looks innocent, but will be painful</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FCC</span>			<span class="nv">mov</span>	<span class="kt">word</span> <span class="nv">ptr</span> <span class="nv">hallfameBuf.field_16</span><span class="p">[</span><span class="nb">si</span><span class="p">],</span> <span class="nb">ax</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FD0</span>			<span class="nv">mov</span>	<span class="kt">word</span> <span class="nv">ptr</span> <span class="p">(</span><span class="nv">hallfameBuf.field_16</span><span class="o">+</span><span class="mi">2</span><span class="p">)[</span><span class="nb">si</span><span class="p">],</span> <span class="nb">dx</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FD4</span>			<span class="nv">mov</span>	<span class="nv">hallfameBuf.field_1F</span><span class="p">[</span><span class="nb">si</span><span class="p">],</span> <span class="nb">al</span>
+<span class="nl">startCode1:</span><span class="err">1</span><span class="nf">FD8</span>			<span class="nv">mov</span>	<span class="nv">hallfameBuf.field_1E</span><span class="p">[</span><span class="nb">si</span><span class="p">],</span> <span class="nb">al</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">204</span><span class="nf">C</span>			<span class="nv">call</span>	<span class="nv">saveHallfame</span>
+<span class="nl">startCode1:</span><span class="err">204</span><span class="nf">F</span>			<span class="nv">jmp</span>	<span class="nb">ch</span><span class="nv">eckInput_11F7B</span>    <span class="c1">; 🟢 jump back into the loop, maybe a goto?</span>
+<span class="nl">startCode1:</span><span class="err">2052</span>	<span class="nl">upArrow_12052:</span>
+<span class="nl">startCode1:</span><span class="err">2052</span>			<span class="nf">dec</span>	<span class="nv">hallfameCount</span>
+<span class="nl">startCode1:</span><span class="err">2056</span>			<span class="nf">jmp</span>	<span class="nv">short</span> <span class="nv">processArrow_1206B</span>
+<span class="nl">startCode1:</span><span class="err">2058</span>	<span class="nl">downArrow_12058:</span>
+<span class="nl">startCode1:</span><span class="err">2058</span>			<span class="nf">inc</span>	<span class="nv">hallfameCount</span>
+<span class="nl">startCode1:</span><span class="err">205</span><span class="nf">C</span>			<span class="nv">jmp</span>	<span class="nv">short</span> <span class="nv">processArrow_1206B</span>
+<span class="nl">startCode1:</span><span class="err">205</span><span class="nf">E</span>	<span class="nv">leftArrow_1205E</span><span class="p">:</span>
+<span class="nl">startCode1:</span><span class="err">205</span><span class="nf">E</span>			<span class="nv">sub</span>	<span class="nv">hallfameCount</span><span class="p">,</span> <span class="mi">4</span>
+<span class="nl">startCode1:</span><span class="err">2063</span>			<span class="nf">jmp</span>	<span class="nv">short</span> <span class="nv">processArrow_1206B</span>
+<span class="nl">startCode1:</span><span class="err">2065</span>			<span class="nf">nop</span>
+<span class="nl">startCode1:</span><span class="err">2066</span>	<span class="nl">rightArrow_12066:</span>
+<span class="nl">startCode1:</span><span class="err">2066</span>			<span class="nf">add</span>	<span class="nv">hallfameCount</span><span class="p">,</span> <span class="mi">4</span>
+<span class="nl">startCode1:</span><span class="err">206</span><span class="nf">B</span>	<span class="nv">processArrow_1206B</span><span class="p">:</span>             <span class="c1">; 🟠 common code for the arrow key switch cases handling</span>
+<span class="nl">startCode1:</span><span class="err">206</span><span class="nf">B</span>			<span class="nv">and</span>	<span class="nv">hallfameCount</span><span class="p">,</span> <span class="mi">7</span>
+<span class="nl">startCode1:</span><span class="err">2070</span>			<span class="nf">cmp</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_2</span><span class="p">],</span> <span class="mi">4</span>
+<span class="nl">startCode1:</span><span class="err">2074</span>			<span class="nf">jge</span>	<span class="nv">short</span> <span class="nv">loc_1207C</span>
+<span class="nl">startCode1:</span><span class="err">2076</span>			<span class="nf">mov</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mh">10h</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">20</span><span class="nf">FF</span>			<span class="nv">call</span>	<span class="nv">far</span> <span class="nv">ptr</span>	<span class="nv">gfx_jump_29_switchColor</span>
+<span class="nl">startCode1:</span><span class="err">2104</span>			<span class="nf">add</span>	<span class="nb">sp</span><span class="p">,</span> <span class="mh">0Eh</span>
+<span class="nl">startCode1:</span><span class="err">2107</span>			<span class="nf">jmp</span>	<span class="nb">ch</span><span class="nv">eckInput_11F7B</span>
+<span class="nl">startCode1:</span><span class="err">2107</span>	<span class="nf">processPilotInput</span> <span class="nv">endp</span></code></pre></figure>
+
+<p>For the record, writing out this routine in exactly the same sequence as the instructions in the disassembly, then using <code class="language-plaintext highlighter-rouge">goto</code> to try and obtain the same sequence of control flow jumping around does not work, it’s not even close. This was written as a series of more or less neat control structures, and it was the compiler which made a mess out of it. It will not take in that same mess as input and generate that same output, its operation is not idempotent in that way.</p>
+
+<p>The main problem here (other than the control jumping around a lot) is getting the <code class="language-plaintext highlighter-rouge">jmp short</code> at <code class="language-plaintext highlighter-rouge">0x1f54</code>, <em>and</em> the assignment to <code class="language-plaintext highlighter-rouge">var_2</code> at <code class="language-plaintext highlighter-rouge">0x1f7b</code> at the same time. Whenever I do something like this:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">for</span> <span class="p">(;;)</span> <span class="p">{</span>
+    <span class="n">var_2</span> <span class="o">=</span> <span class="n">hallfameCount</span><span class="p">;</span>
+    <span class="k">switch</span> <span class="p">(</span><span class="n">processStoreInput</span><span class="p">())</span> <span class="p">{</span>
+        <span class="c1">// ...</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The compiler would do the assignment and the call for the switch where it was encountered, at the top of the loop, and not emit a jump.</p>
+
+<p>I actually shelved this routine after staring at it for two days, completed some other ones, then encountered an another, even more hopeless-looking routine that I’m describing in the next section. Only after figuring <em>that</em> one out, did I come back here – it gave me the confidence that this was actually doable.</p>
+
+<p>At some point, I removed the assignment, thinking it might be something the compiler is doing by itself (I’ve seen bogus writes to stack variables coming from nowhere before), and started playing with different loop variants. Then I noticed the jump appearing when the switch was directly under the loop, not in a brace, i.e. <code class="language-plaintext highlighter-rouge">for(;;) switch()...</code>, not <code class="language-plaintext highlighter-rouge">for(;;) { switch()...</code>. Why it acts that way, I have no idea. But the assignment was still missing. Huh, I knew the weird usage of the comma in C would come in handy some day. This was the golden ticket:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span> <span class="nf">processPilotInput</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kt">int</span> <span class="n">var_2</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">var_4</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">var_6</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">var_A</span><span class="p">;</span>
+    <span class="n">pilotSelectFlag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="c1">// 1f51</span>
+    <span class="n">setTimerIrqHandler</span><span class="p">();</span>
+    <span class="c1">// 1f54</span>
+    <span class="k">while</span> <span class="p">(</span><span class="n">var_2</span> <span class="o">=</span> <span class="n">hallfameCount</span><span class="p">,</span> <span class="nb">true</span><span class="p">)</span> <span class="k">switch</span> <span class="p">(</span><span class="n">processStoreInput</span><span class="p">())</span> <span class="p">{</span>
+    <span class="c1">// 1f84</span>
+    <span class="k">case</span> <span class="n">KEYCODE_ENTER</span><span class="p">:</span> 
+        <span class="k">if</span> <span class="p">((</span><span class="n">hallfameBuf</span><span class="p">[</span><span class="n">hallfameCount</span><span class="p">].</span><span class="n">field_1D</span> <span class="o">&amp;</span> <span class="mh">0x60</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="c1">// 1f98</span>
+            <span class="n">restoreTimerIrqHandler</span><span class="p">();</span>
+            <span class="n">pilotSelectFlag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="c1">// 1fa6 </span>
+        <span class="n">putch</span><span class="p">(</span><span class="mi">7</span><span class="p">);</span>
+        <span class="k">continue</span><span class="p">;</span>
+    <span class="c1">// 1f56</span>
+    <span class="k">case</span> <span class="n">KEYCODE_ESC</span><span class="p">:</span> 
+        <span class="c1">// 1fb2</span>
+        <span class="p">[...]</span></code></pre></figure>
+
+<p>The weird layout of the subsequent switch sections matched the original perfectly by itself. It placed a sequence of comparisons at the beginning, and the actual code from the cases later, and the order of the comparisons seems to be dicated by the numerical value of the case, not the order they are put in the code - but it <em>does</em> influence the order that the handling code is laid out. The usage of the comma operator is bugging me a little bit as it’s not used often and there are simpler ways of spelling out the required control flow, but it will have to stay that way for now. Maybe somebody was trying to be clever, or they needed to add an extra step to the loop in a hurry and couldn’t be bothered to add braces - who knows.</p>
+
+<p>I wanted my win quickly, but the compiler didn’t want to cooperate with this sequence of initializing members of a struct var at <code class="language-plaintext highlighter-rouge">0x1fbc</code>:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="k">case</span> <span class="n">KEYCODE_ESC</span><span class="p">:</span> 
+        <span class="c1">// 1fb2</span>
+        <span class="n">hallfameBuf</span><span class="p">[</span><span class="n">hallfameCount</span><span class="p">].</span><span class="n">field_1C</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">// 8b</span>
+        <span class="n">hallfameBuf</span><span class="p">[</span><span class="n">hallfameCount</span><span class="p">].</span><span class="n">field_1D</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">// 8b</span>
+        <span class="n">hallfameBuf</span><span class="p">[</span><span class="n">hallfameCount</span><span class="p">].</span><span class="n">field_1A</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">// 16b</span>
+        <span class="n">hallfameBuf</span><span class="p">[</span><span class="n">hallfameCount</span><span class="p">].</span><span class="n">field_16</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">// 32b</span>
+        <span class="n">hallfameBuf</span><span class="p">[</span><span class="n">hallfameCount</span><span class="p">].</span><span class="n">field_1F</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">// 8b</span>
+        <span class="n">hallfameBuf</span><span class="p">[</span><span class="n">hallfameCount</span><span class="p">].</span><span class="n">field_1E</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">// 8b</span></code></pre></figure>
+
+<p>Instead of going through <code class="language-plaintext highlighter-rouge">al</code> for the 8-bit members, <code class="language-plaintext highlighter-rouge">ax</code> for the 16-bit one, and <code class="language-plaintext highlighter-rouge">ax:dx</code> for the 32-bit, it would just do straight <code class="language-plaintext highlighter-rouge">mov [0x...], 0x0</code>. Then I realized it would take assignment chaining:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">        <span class="n">hallfameBuf</span><span class="p">[</span><span class="n">hallfameCount</span><span class="p">].</span><span class="n">field_1E</span> <span class="c1">// 8b</span>
+            <span class="o">=</span> <span class="n">hallfameBuf</span><span class="p">[</span><span class="n">hallfameCount</span><span class="p">].</span><span class="n">field_1F</span> <span class="c1">// 8b</span>
+            <span class="o">=</span> <span class="n">hallfameBuf</span><span class="p">[</span><span class="n">hallfameCount</span><span class="p">].</span><span class="n">field_16</span> <span class="c1">// 32b</span>
+            <span class="o">=</span> <span class="n">hallfameBuf</span><span class="p">[</span><span class="n">hallfameCount</span><span class="p">].</span><span class="n">field_1A</span> <span class="c1">// 16b</span>
+            <span class="o">=</span> <span class="n">hallfameBuf</span><span class="p">[</span><span class="n">hallfameCount</span><span class="p">].</span><span class="n">field_1D</span> <span class="c1">// 8b</span>
+            <span class="o">=</span> <span class="n">hallfameBuf</span><span class="p">[</span><span class="n">hallfameCount</span><span class="p">].</span><span class="n">field_1C</span> <span class="c1">// 8b</span>
+            <span class="o">=</span> <span class="mi">0</span><span class="p">;</span></code></pre></figure>
+
+<p>The order of these is important, I had to essentially brute force my way around it, because if it’s different in even the slightest, then the code won’t match. It was particularly painful to get the 32-bit load with <code class="language-plaintext highlighter-rouge">sub dx, dx</code> – it would just load the older byte with a constant 0. Again, I have no idea why having 8-bit values earlier in the chain makes it use <code class="language-plaintext highlighter-rouge">dx</code>, but there you go.</p>
+
+<p>The last item that was giving me trouble was the common handling code for the arrow key cases:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="c1">// ...</span>
+    <span class="k">case</span> <span class="n">KEYCODE_UPARROW</span><span class="p">:</span>
+        <span class="c1">// 2052</span>
+        <span class="n">hallfameCount</span><span class="o">--</span><span class="p">;</span>
+        <span class="k">goto</span> <span class="n">handleArrow</span><span class="p">;</span>
+    <span class="c1">// 1f73</span>
+    <span class="k">case</span> <span class="n">KEYCODE_DNARROW</span><span class="p">:</span>
+        <span class="c1">// 2058</span>
+        <span class="n">hallfameCount</span><span class="o">++</span><span class="p">;</span>
+        <span class="k">goto</span> <span class="n">handleArrow</span><span class="p">;</span>
+    <span class="c1">// 1f63</span>
+    <span class="k">case</span> <span class="n">KEYCODE_LEFTARROW</span><span class="p">:</span>
+        <span class="c1">// 205e</span>
+        <span class="n">hallfameCount</span> <span class="o">-=</span> <span class="mi">4</span><span class="p">;</span>
+        <span class="k">goto</span> <span class="n">handleArrow</span><span class="p">;</span>
+    <span class="c1">// 1f68</span>
+    <span class="k">case</span> <span class="n">KEYCODE_RIGHTARROW</span><span class="p">:</span>
+        <span class="c1">// 2066</span>
+        <span class="k">goto</span> <span class="n">handleArrow</span><span class="p">;</span>
+    <span class="p">}</span> <span class="c1">// end of "for(;;) switch() {...}</span>
+<span class="n">handleArrow</span><span class="o">:</span>
+    <span class="c1">// 206b - common handling code</span>
+    <span class="n">hallfameCount</span> <span class="o">&amp;=</span> <span class="mi">7</span><span class="p">;</span>
+    <span class="n">var_4</span> <span class="o">=</span> <span class="p">(</span><span class="n">var_2</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">?</span> <span class="mh">0x10</span> <span class="o">:</span> <span class="mh">0xa0</span><span class="p">;</span>
+    <span class="c1">// ...</span></code></pre></figure>
+
+<p>I could not put the handling code in the body of the loop and have the arrowkey cases break out of the switch into the common code, because making the loop have braces made my coveted <code class="language-plaintext highlighter-rouge">jmp short</code> disappear. So I used the gotos. However, written out like this, it would move the common code under the first case block, and jump to it up from the others, and I needed to have it at the bottom and jump down. So I moved the code into the switch myself and this was the final piece:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="k">case</span> <span class="n">KEYCODE_UPARROW</span><span class="p">:</span>
+        <span class="c1">// 2052</span>
+        <span class="n">hallfameCount</span><span class="o">--</span><span class="p">;</span>
+        <span class="k">goto</span> <span class="n">handleArrow</span><span class="p">;</span>
+    <span class="c1">// 1f73</span>
+    <span class="k">case</span> <span class="n">KEYCODE_DNARROW</span><span class="p">:</span>
+        <span class="c1">// 2058</span>
+        <span class="n">hallfameCount</span><span class="o">++</span><span class="p">;</span>
+        <span class="k">goto</span> <span class="n">handleArrow</span><span class="p">;</span>
+    <span class="c1">// 1f63</span>
+    <span class="k">case</span> <span class="n">KEYCODE_LEFTARROW</span><span class="p">:</span>
+        <span class="c1">// 205e</span>
+        <span class="n">hallfameCount</span> <span class="o">-=</span> <span class="mi">4</span><span class="p">;</span>
+        <span class="k">goto</span> <span class="n">handleArrow</span><span class="p">;</span>
+    <span class="c1">// 1f68</span>
+    <span class="k">case</span> <span class="n">KEYCODE_RIGHTARROW</span><span class="p">:</span>
+        <span class="c1">// 2066</span>
+        <span class="n">hallfameCount</span> <span class="o">+=</span> <span class="mi">4</span><span class="p">;</span>
+<span class="n">handleArrow</span><span class="o">:</span>    
+        <span class="c1">// 206b</span>
+        <span class="n">hallfameCount</span> <span class="o">&amp;=</span> <span class="mi">7</span><span class="p">;</span>
+        <span class="n">var_4</span> <span class="o">=</span> <span class="p">(</span><span class="n">var_2</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">?</span> <span class="mh">0x10</span> <span class="o">:</span> <span class="mh">0xa0</span><span class="p">;</span>
+        <span class="c1">// ...</span>
+    <span class="p">}</span> <span class="c1">// end of "for(;;) switch() {...}</span></code></pre></figure>
+
+<h2 id="ctrl-c-ctrl-v">Ctrl-C, Ctrl-V</h2>
+
+<p>This next routine handles typing in the name from the player on the pilot selection screen. Again, the control flow is all over the place, specifically within this section:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">startCode1:</span><span class="err">23</span><span class="nf">AA</span>	<span class="nv">outerLoop_123AA</span><span class="p">:</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">AA</span>			<span class="nv">mov</span>	<span class="nb">ax</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_4</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">AD</span>			<span class="nv">cmp</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mi">8</span>                  <span class="c1">; 🙄 sequence of cmp's against constants, switch(var_4)?</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">B0</span>			<span class="nv">jnz</span>	<span class="nv">short</span> <span class="nv">var4Not8_123B5</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">B2</span>			<span class="nv">jmp</span>	<span class="nv">var4Is8_12498</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">B5</span>	<span class="nv">var4Not8_123B5</span><span class="p">:</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">B5</span>			<span class="nv">cmp</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mh">18h</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">B8</span>			<span class="nv">jz</span>	<span class="nv">short</span> <span class="nv">else_123F8</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">BA</span>			<span class="nv">cmp</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mh">20h</span>	<span class="c1">; ' '</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">BD</span>			<span class="nv">jb</span>	<span class="nv">short</span> <span class="nb">bl</span><span class="nv">inkRect_1243B</span>  <span class="c1">; 🟢 ok, these cases (except 8) go to the same place in case of mismatch...</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">BF</span>			<span class="nv">cmp</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mh">7Fh</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">C2</span>			<span class="nv">ja</span>	<span class="nv">short</span> <span class="nb">bl</span><span class="nv">inkRect_1243B</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">C4</span>			<span class="nv">mov</span>	<span class="nb">ax</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">a</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">C7</span>			<span class="nv">cmp</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_10</span><span class="p">],</span> <span class="nb">ax</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">CA</span>			<span class="nv">jge</span>	<span class="nv">short</span> <span class="nb">bl</span><span class="nv">inkRect_1243B</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">CC</span>			<span class="nv">push</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">pilot</span><span class="p">]</span>	<span class="c1">; char *</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">CF</span>			<span class="nv">push</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">buf</span><span class="p">]</span>	<span class="c1">; int *</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">D2</span>			<span class="nv">call</span>	<span class="nv">stringWidth</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">D5</span>			<span class="nv">add</span>	<span class="nb">sp</span><span class="p">,</span> <span class="mi">4</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">D8</span>			<span class="nv">cmp</span>	<span class="nb">ax</span><span class="p">,</span> <span class="mh">90h</span>	<span class="c1">; '�'</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="kd">DB</span>			<span class="nv">jg</span>	<span class="nv">short</span> <span class="nb">bl</span><span class="nv">inkRect_1243B</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="kd">DD</span>			<span class="nv">mov</span>	<span class="nb">bx</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_10</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">E0</span>			<span class="nv">inc</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_10</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">E3</span>			<span class="nv">mov</span>	<span class="nb">si</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">pilot</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">E6</span>			<span class="nv">mov</span>	<span class="nb">al</span><span class="p">,</span> <span class="kt">byte</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_4</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">E9</span>			<span class="nv">mov</span>	<span class="p">[</span><span class="nb">bx</span><span class="o">+</span><span class="nb">si</span><span class="p">],</span> <span class="nb">al</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">EB</span>	<span class="nv">innerLoop_123EB</span><span class="p">:</span>                  <span class="c1">; fall through for all the conditions above</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">EB</span>			<span class="nv">mov</span>	<span class="nb">bx</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_10</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">EE</span>			<span class="nv">mov</span>	<span class="nb">si</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">pilot</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">F1</span>			<span class="nv">mov</span>	<span class="kt">byte</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">bx</span><span class="o">+</span><span class="nb">si</span><span class="p">],</span> <span class="mi">0</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">F4</span>			<span class="nv">jmp</span>	<span class="nv">short</span> <span class="nv">loc_12403</span>	      <span class="c1">; skip over part of the fall-through for the default case</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">F6</span>			<span class="nv">nop</span>                       <span class="c1">; 😶 what's with all the nops, alignment?</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">F7</span>			<span class="nv">nop</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">F8</span>	<span class="nv">else_123F8</span><span class="p">:</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">F8</span>			<span class="nv">mov</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_10</span><span class="p">],</span> <span class="mi">0</span>
+<span class="nl">startCode1:</span><span class="err">23</span><span class="nf">FD</span>			<span class="nv">mov</span>	<span class="nb">bx</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">pilot</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">2400</span>			<span class="nf">mov</span>	<span class="kt">byte</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">bx</span><span class="p">],</span> <span class="mi">0</span>
+<span class="nl">startCode1:</span><span class="err">2403</span>	<span class="nl">loc_12403:</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">241</span><span class="nf">A</span>			<span class="nv">call</span>	<span class="nb">cl</span><span class="nv">earRect</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">242</span><span class="nf">C</span>			<span class="nv">call</span>	<span class="nv">actualDrawString</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">243</span><span class="nf">B</span>	<span class="nb">bl</span><span class="nv">inkRect_1243B</span><span class="p">:</span>
+<span class="nl">startCode1:</span><span class="err">243</span><span class="nf">B</span>			<span class="nv">call</span>	<span class="nv">getJoyKey</span>
+<span class="nl">startCode1:</span><span class="err">243</span><span class="nf">E</span>			<span class="nv">or</span>	<span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nl">startCode1:</span><span class="err">2440</span>			<span class="nf">jnz</span>	<span class="nv">short</span> <span class="nv">haveHey_124A4</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">2446</span>			<span class="nf">call</span>	<span class="nv">waitMdaCgaStatus</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">2495</span>			<span class="nf">jmp</span>	<span class="nv">short</span> <span class="nb">bl</span><span class="nv">inkRect_1243B</span>  <span class="c1">; 🟢 jumps back up, while loop?</span>
+<span class="nl">startCode1:</span><span class="err">2497</span>			<span class="nf">nop</span>
+<span class="nl">startCode1:</span><span class="err">2498</span>	<span class="nl">var4Is8_12498:</span>
+<span class="nl">startCode1:</span><span class="err">2498</span>			<span class="nf">cmp</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_10</span><span class="p">],</span> <span class="mi">0</span>
+<span class="nl">startCode1:</span><span class="err">249</span><span class="nf">C</span>			<span class="nv">jle</span>	<span class="nv">short</span> <span class="nb">bl</span><span class="nv">inkRect_1243B</span>  <span class="c1">; 🟠 the "8" case also goes to the blinkRect code conditionally</span>
+<span class="nl">startCode1:</span><span class="err">249</span><span class="nf">E</span>			<span class="nv">dec</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_10</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">A1</span>			<span class="nv">jmp</span>	<span class="nv">innerLoop_123EB</span>        <span class="p">:</span> <span class="err">🙄</span> <span class="nv">jumping</span> <span class="nv">into</span> <span class="nv">the</span> <span class="mh">0x18</span> <span class="nv">case</span> <span class="nv">from</span> <span class="nv">the</span> <span class="mi">8</span> <span class="nv">case?</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">A4</span>	<span class="nv">haveHey_124A4</span><span class="p">:</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">A4</span>			<span class="nv">call</span>	<span class="nv">sub_125E4</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">A7</span>			<span class="nv">mov</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_4</span><span class="p">],</span> <span class="nb">ax</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">AA</span>			<span class="nv">cmp</span>	<span class="kt">byte</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_4</span><span class="p">],</span> <span class="mi">0</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">AE</span>			<span class="nv">jz</span>	<span class="nv">short</span> <span class="nv">loc_124B4</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">B0</span>			<span class="nv">mov</span>	<span class="kt">byte</span> <span class="nv">ptr</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_4</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">B4</span>	<span class="nv">loc_124B4</span><span class="p">:</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">B4</span>			<span class="nv">cmp</span>	<span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">var_4</span><span class="p">],</span> <span class="mh">0Dh</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">B8</span>			<span class="nv">jz</span>	<span class="nv">short</span> <span class="nv">nameAccepted_124BD</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">BA</span>			<span class="nv">jmp</span>	<span class="nv">outerLoop_123AA</span>        <span class="c1">; 🟢 the end of the outer loop</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">BD</span>	<span class="nv">nameAccepted_124BD</span><span class="p">:</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">D9</span>			<span class="nv">call</span>	<span class="nb">cl</span><span class="nv">earRect</span>	<span class="c1">; clears the "enter your name" prompt at screen	bottom</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">DC</span>			<span class="nv">add</span>	<span class="nb">sp</span><span class="p">,</span> <span class="mh">0Ah</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">DF</span>			<span class="nv">pop</span>	<span class="nb">si</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">E0</span>			<span class="nv">mov</span>	<span class="nb">sp</span><span class="p">,</span> <span class="nb">bp</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">E2</span>			<span class="nv">pop</span>	<span class="nb">bp</span>
+<span class="nl">startCode1:</span><span class="err">24</span><span class="nf">E3</span>			<span class="nv">retn</span></code></pre></figure>
+
+<p>Overall, it’s a mess which I have untangled once and promptly forgotten. Ultimately, it comes to this:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="k">do</span> <span class="p">{</span>
+        <span class="c1">// 23aa</span>
+        <span class="k">switch</span><span class="p">(</span><span class="n">var_4</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// 23b5</span>
+        <span class="k">case</span> <span class="mh">0x18</span><span class="p">:</span>
+            <span class="c1">// 23f8</span>
+            <span class="n">var_10</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+            <span class="n">pilot</span><span class="o">-&gt;</span><span class="n">field_0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="sc">'\0'</span><span class="p">;</span>
+            <span class="c1">// 2403 🔵 deduplication target</span>
+            <span class="n">clearRect</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="n">var_2</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">c</span><span class="p">);</span>
+            <span class="n">actualDrawString</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">pilot</span><span class="o">-&gt;</span><span class="n">field_0</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
+            <span class="n">var_6</span> <span class="o">=</span> <span class="n">page</span><span class="p">[</span><span class="mi">4</span><span class="p">];</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="c1">// 23ad</span>
+        <span class="k">case</span> <span class="mi">8</span><span class="p">:</span> 
+            <span class="c1">// 2498</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">var_10</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">var_10</span><span class="o">--</span><span class="p">;</span>
+                <span class="c1">// 23eb 🔵 deduplication target</span>
+                <span class="n">pilot</span><span class="o">-&gt;</span><span class="n">field_0</span><span class="p">[</span><span class="n">var_10</span><span class="p">]</span> <span class="o">=</span> <span class="sc">'\0'</span><span class="p">;</span>
+                <span class="c1">// 2403 🔴 deduplicated code block coalesced with above</span>
+                <span class="n">clearRect</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="n">var_2</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">c</span><span class="p">);</span>
+                <span class="n">actualDrawString</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">pilot</span><span class="o">-&gt;</span><span class="n">field_0</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
+                <span class="n">var_6</span> <span class="o">=</span> <span class="n">page</span><span class="p">[</span><span class="mi">4</span><span class="p">];</span>
+            <span class="p">}</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="nl">default:</span> 
+            <span class="c1">// 23ba</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">var_4</span> <span class="o">&gt;=</span> <span class="mh">0x20</span> <span class="o">&amp;&amp;</span> <span class="n">var_4</span> <span class="o">&lt;=</span> <span class="mh">0x7f</span> <span class="o">&amp;&amp;</span> <span class="n">var_10</span> <span class="o">&lt;</span> <span class="n">a</span> <span class="o">&amp;&amp;</span> <span class="n">stringWidth</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">pilot</span><span class="o">-&gt;</span><span class="n">field_0</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mh">0x90</span><span class="p">)</span> <span class="p">{</span>
+                <span class="c1">// 23e9</span>
+                <span class="n">pilot</span><span class="o">-&gt;</span><span class="n">field_0</span><span class="p">[</span><span class="n">var_10</span><span class="o">++</span><span class="p">]</span> <span class="o">=</span> <span class="n">var_4</span><span class="p">;</span>
+                <span class="c1">// 23eb 🔴 deduplicated with above</span>
+                <span class="n">pilot</span><span class="o">-&gt;</span><span class="n">field_0</span><span class="p">[</span><span class="n">var_10</span><span class="p">]</span> <span class="o">=</span> <span class="sc">'\0'</span><span class="p">;</span>
+                <span class="c1">// 2403 🔴 deduplication again</span>
+                <span class="n">clearRect</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="n">var_2</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">c</span><span class="p">);</span>
+                <span class="n">actualDrawString</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">pilot</span><span class="o">-&gt;</span><span class="n">field_0</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">);</span>
+                <span class="n">var_6</span> <span class="o">=</span> <span class="n">page</span><span class="p">[</span><span class="mi">4</span><span class="p">];</span>
+            <span class="p">}</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="c1">// 243b </span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">getJoyKey</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">waitMdaCgaStatus</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+            <span class="n">gfx_jump_29_switchColor</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="n">var_2</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">c</span><span class="p">,</span> 
+                <span class="n">pilotNameInputColors</span><span class="p">[</span><span class="n">var_C</span><span class="p">],</span> <span class="n">pilotNameInputColors</span><span class="p">[</span><span class="n">var_C</span> <span class="o">^</span> <span class="mi">1</span><span class="p">]);</span>
+            <span class="n">var_C</span> <span class="o">^=</span> <span class="mi">1</span><span class="p">;</span>
+            <span class="n">page</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">pilotNameInputColors</span><span class="p">[</span><span class="n">var_C</span><span class="p">];</span>
+        <span class="p">}</span></code></pre></figure>
+
+<p>The compiler appears to have synthesized the repeated expressions (the <code class="language-plaintext highlighter-rouge">pilot-&gt;field[0]</code>, <code class="language-plaintext highlighter-rouge">pilot-&gt;field[var_10]</code> assignments and the <code class="language-plaintext highlighter-rouge">clearRect()...actualDrawString()</code> sequence) into one code block between <code class="language-plaintext highlighter-rouge">0x23eb</code> and <code class="language-plaintext highlighter-rouge">0x243b</code>, and it’s jumping into various points inside it from the different cases in the switch to account for the differences between the cases. Outwardly, it has the appearance of an inner loop, but it’s just code deduplication. So the lesson here is, for optimized code, if something crazy is happenning like one branch jumping into the middle of another, it might be possible (or even necessary) to avoid a goto and reduplicate the deduplicated code to get a match.</p>
+
+<p>The other lesson is that reconstructing optimized code from this compiler is possible, if not always straightforward. I’m grateful that big chunks of the scenario disk version of the game have been built in debug mode with <code class="language-plaintext highlighter-rouge">/Zi</code> (definitely the monstrous <a href="/f15-se2/2024/05/05/ghidra.html">0x4093 routine</a>, I would have been screwed or at least considerably set back if that was optimized), which let me get off the ground and make progress initially. I’m a more seasoned reverse engineer now, which makes me believe I can take on the optimized routines when they inevitably come - probably until the next one, which is when the impostor syndrome will kick in again. 😉</p>
+
+<p>Reconstructing optimized code is a mixed bag. On one hand, the optimizer will make many equivalent variations of your code converge to the same optimized form – so in some cases at least, you don’t need to be exact, there’s a natural “pull” for the opcodes to get organized in an optimized way. On the other hand, this also means that when you can’t get the compiler to emit the exact instructions that you need, it feels like nothing you do makes a difference, because of that same pull. That is until you figure out the factor that actually makes it behave different, and it all falls into place with a loud thud.</p>
+
+<p>With this, and other routines I’ve done recently in place, I’m looking at 54% completion (size-wise) in porting overall, with 48 routines ported and 146 remaining (most of them probably assembly). My comparison tool is currently stopping at the 80% mark of the reachable code area, meaning it’s seen and compared or ignored that much of the non-libc code. Basically the first number (54%) is the progress of the overall bigger goal of porting <code class="language-plaintext highlighter-rouge">START.EXE</code> to C, while the second (80%) is for the completion of the slightly smaller sub goal of the C code reconstruction.</p>
+
+  </div><a class="u-url" href="/f15-se2/2024/06/10/imatching3.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

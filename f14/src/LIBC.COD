@@ -1,0 +1,233 @@
+;	Static Name Aliases
+;
+	TITLE   LIBC.C
+	NAME    LIBC
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+PUBLIC  _foobar
+PUBLIC  _barfoo
+PUBLIC  _foobaz
+EXTRN	__acrtused:ABS
+EXTRN	__aNlmul:NEAR
+EXTRN	__aNlrem:NEAR
+EXTRN	__aNNaldiv:NEAR
+EXTRN	_exit:NEAR
+EXTRN	_getch:NEAR
+EXTRN	_fclose:NEAR
+EXTRN	_fopen:NEAR
+EXTRN	_fread:NEAR
+EXTRN	_fwrite:NEAR
+EXTRN	_lseek:NEAR
+EXTRN	_strcmp:NEAR
+EXTRN	_getche:NEAR
+EXTRN	_movedata:NEAR
+EXTRN	_inp:NEAR
+EXTRN	_putch:NEAR
+EXTRN	_abs:NEAR
+EXTRN	_srand:NEAR
+EXTRN	_rand:NEAR
+EXTRN	__aNldiv:NEAR
+_BSS      SEGMENT
+COMM NEAR	_x:	BYTE:	 2
+COMM NEAR	_y:	BYTE:	 2
+_BSS      ENDS
+_DATA      SEGMENT
+_foobar	DB	'hello_c_data',  00H
+	ORG	$+1
+_barfoo	DW	0abcdH
+_foobaz	DB	'something_else',  00H
+_DATA      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** #define SENTINEL 1
+;|*** //#define MOCK_STARTUP 1
+;|*** #define IMPORT_LIBC 1
+;|*** #define LIBC_OVERRIDE 1
+;|*** 
+;|*** #ifdef LIBC_OVERRIDE
+;|*** void itoa() {}
+; Line 7
+	PUBLIC	_itoa
+_itoa	PROC NEAR
+	*** 000000	c3 			ret	
+	*** 000001	90 			nop	
+
+_itoa	ENDP
+;|*** void _setargv() {}
+; Line 8
+	PUBLIC	__setargv
+__setargv	PROC NEAR
+	*** 000002	c3 			ret	
+	*** 000003	90 			nop	
+
+__setargv	ENDP
+;|*** void _setenvp() {}
+; Line 9
+	PUBLIC	__setenvp
+__setenvp	PROC NEAR
+	*** 000004	c3 			ret	
+	*** 000005	90 			nop	
+
+__setenvp	ENDP
+;|*** void strcat() {}
+; Line 10
+	PUBLIC	_strcat
+_strcat	PROC NEAR
+	*** 000006	c3 			ret	
+	*** 000007	90 			nop	
+
+_strcat	ENDP
+;|*** void strcpy() {}
+; Line 11
+	PUBLIC	_strcpy
+_strcpy	PROC NEAR
+	*** 000008	c3 			ret	
+	*** 000009	90 			nop	
+
+_strcpy	ENDP
+;|*** void memcpy() {}
+; Line 12
+	PUBLIC	_memcpy
+_memcpy	PROC NEAR
+	*** 00000a	c3 			ret	
+	*** 00000b	90 			nop	
+
+_memcpy	ENDP
+;|*** #endif
+;|*** 
+;|*** #ifdef IMPORT_LIBC
+;|*** void exit();
+;|*** void getch();
+;|*** void fclose();
+;|*** void fopen();
+;|*** void fread();
+;|*** void fwrite();
+;|*** void lseek();
+;|*** void strcmp();
+;|*** void getche();
+;|*** void movedata();
+;|*** void inp();
+;|*** void putch();
+;|*** void abs();
+;|*** void srand();
+;|*** void rand();
+;|*** 
+;|*** void _aNldiv();
+;|*** void _aNlmul();
+;|*** void _aNlrem();
+;|*** void _aNNaldiv();
+;|*** #endif
+;|*** 
+;|*** 
+;|*** #ifdef SENTINEL
+;|*** /* initialized data */
+;|*** const char foobar[] = "hello_c_data";
+;|*** int barfoo = 0xabcd;
+;|*** const char foobaz[] = "something_else";
+;|*** /* uninitialized (BSS) data */
+;|*** int x;
+;|*** int y;
+;|*** #endif
+;|*** 
+;|*** #ifdef MOCK_STARTUP
+;|*** int _acrtused; // trick linker into thinking startup code is already there
+;|*** #endif
+;|*** 
+;|*** void flushall();
+;|*** void fflush();
+;|*** 
+;|*** int main() {
+; Line 56
+	PUBLIC	_main
+_main	PROC NEAR
+;|*** #ifdef IMPORT_LIBC
+;|***     rand();
+; Line 58
+	*** 00000c	e8 00 00 		call	_rand
+;|***     fclose();
+; Line 59
+	*** 00000f	e8 00 00 		call	_fclose
+;|***     fopen();
+; Line 60
+	*** 000012	e8 00 00 		call	_fopen
+;|***     fread();
+; Line 61
+	*** 000015	e8 00 00 		call	_fread
+;|***     fwrite();
+; Line 62
+	*** 000018	e8 00 00 		call	_fwrite
+;|***     lseek();
+; Line 63
+	*** 00001b	e8 00 00 		call	_lseek
+;|***     strcmp();
+; Line 64
+	*** 00001e	e8 00 00 		call	_strcmp
+;|***     getche();
+; Line 65
+	*** 000021	e8 00 00 		call	_getche
+;|***     getch();
+; Line 66
+	*** 000024	e8 00 00 		call	_getch
+;|***     movedata();
+; Line 67
+	*** 000027	e8 00 00 		call	_movedata
+;|***     inp();
+; Line 68
+	*** 00002a	e8 00 00 		call	_inp
+;|***     putch();
+; Line 69
+	*** 00002d	e8 00 00 		call	_putch
+;|***     abs();
+; Line 70
+	*** 000030	e8 00 00 		call	_abs
+;|***     srand();
+; Line 71
+	*** 000033	e8 00 00 		call	_srand
+;|*** 
+;|***     _aNldiv();
+; Line 73
+	*** 000036	e8 00 00 		call	__aNldiv
+;|***     _aNlmul();
+; Line 74
+	*** 000039	e8 00 00 		call	__aNlmul
+;|***     _aNlrem();
+; Line 75
+	*** 00003c	e8 00 00 		call	__aNlrem
+;|***     _aNNaldiv();
+; Line 76
+	*** 00003f	e8 00 00 		call	__aNNaldiv
+;|*** 
+;|***     exit();
+; Line 78
+	*** 000042	e8 00 00 		call	_exit
+;|*** #endif
+;|***     x = 1;
+; Line 80
+	*** 000045	c7 06 00 00 01 00 	mov	WORD PTR _x,1
+;|***     y = 2;
+; Line 81
+	*** 00004b	c7 06 00 00 02 00 	mov	WORD PTR _y,2
+;|***     return 0;
+; Line 82
+	*** 000051	2b c0 			sub	ax,ax
+	*** 000053	c3 			ret	
+
+_main	ENDP
+_TEXT	ENDS
+END
+;|*** }
+;|*** 

@@ -1,0 +1,324 @@
+;|*** /*** EXTERNAL PROCEDURES ***/
+_SetDrawWindow	PROC NEAR
+;	LWidth = -4
+;	LHeight = -2
+_SetViewRot	PROC NEAR
+_SetViewPos	PROC NEAR
+_Do3dObject	PROC NEAR
+;	dx = -14
+;	dy = -18
+;	dz = -20
+;	t1 = -6
+;	t2 = -10
+;	SCL = -2
+_AwacsPicture	PROC NEAR
+;	psi = -42
+;	Mini = -46
+;	i = -28
+;	dx = -40
+;	dy = -44
+;	dist = -14
+;	angl = -12
+;	MinDist = -26
+;	MinAngl = -22
+;	eyex = -30
+;	eyey = -38
+;	eyedist = -24
+;	bogeyi = -52
+;	cnt = -16
+;	ptemp = -20
+;	carrx = -2
+;	carry = -6
+;	carrangle = -50
+;	carrrelangle = -10
+;	carrdist = -36
+;	do_id = -48
+;	is_target = -8
+;	waynum = -4
+;	bogey_org_num = -34
+;	whatsrc = -32
+_bios_clearkeyflags	PROC NEAR
+;	bios_keyflags = -4
+_log_close	PROC NEAR
+_my_vtrace	PROC NEAR
+;	thistime = -4
+;	timedelta = -8
+_my_trace	PROC NEAR
+;	ap = -2
+_my_fartrace	PROC NEAR
+;	ptr = -8
+;	size = -10
+;	idx = -4
+;	ap = -2
+_ftoncpy	PROC NEAR
+;	src = -6
+;	dest = -2
+;	i = -10
+_dumpbuf	PROC NEAR
+;	buffer = -518
+;	bytes_written = -6
+;	file = -2
+;	result = -520
+;	bytes_to_copy = -524
+_changeext	PROC NEAR
+;	dot = -2
+_dos_alloc	PROC NEAR
+;	err = -2
+_dos_free	PROC NEAR
+;	err = -2
+_dos_resize	PROC NEAR
+;	err = -2
+_dos_getfree	PROC NEAR
+;	err = -2
+loadprog	PROC NEAR
+;	err = -2
+_dos_loadOverlay	PROC NEAR
+_dos_runProgram	PROC NEAR
+_dos_loadProgram	PROC NEAR
+;	err = -2
+_dos_getReturnCode	PROC NEAR
+;	err = -2
+_dos_getProcessId	PROC NEAR
+_dos_setProcessId	PROC NEAR
+dos_sysvars	PROC NEAR
+_dos_mcbInfo	PROC NEAR
+;	segment = -8
+;	lol = -142
+;	mcb = -6
+;	total = -10
+;	alloc = -146
+;	free = -2
+;	i = -144
+;	strbuf = -138
+_dos_lastFreeBlock	PROC NEAR
+;	segment = -6
+;	lol = -10
+;	mcb = -4
+_dos_envSize	PROC NEAR
+;	envSegment = -6
+;	envMcb = -4
+_load_driver	PROC NEAR
+;	drvAddress = -6
+;	commPtr = -4
+_game_init	PROC NEAR
+;	gfxDrvAddress = -6
+;	gfxBufAddress = -8
+;	err = -10
+;	freeMemory = -16
+;	charPtr = -4
+;	gfxInit = -14
+_game_run	PROC NEAR
+;	err = -2
+_load_segment	PROC NEAR
+_main	PROC NEAR
+;	i = -6
+;	j = -8
+;	debugMenu = -10
+;	debugFlight = -2
+;	debugDebrief = -4
+;	arg = -12
+;	len = -14
+_IntDiv	PROC NEAR
+;	S1 = -2
+;	S2 = -4
+;	LA = -8
+;	LB = -12
+_Iasin	PROC NEAR
+;	AA = -4
+;	angl = -2
+;	delta = -8
+;	i = -6
+_Iacos	PROC NEAR
+_Sqrt	PROC NEAR
+;	B = -4
+;	A = -2
+_MatrixMul	PROC NEAR
+;	TM = -18
+_Decompose	PROC NEAR
+;	CosPitch = -2
+_IntDiv	PROC NEAR
+;	S1 = -2
+;	S2 = -4
+;	LA = -8
+;	LB = -12
+_Iasin	PROC NEAR
+;	AA = -4
+;	angl = -2
+;	delta = -8
+;	i = -6
+_Iacos	PROC NEAR
+_Sqrt	PROC NEAR
+;	A = -2
+;	B = -4
+_main	PROC NEAR
+;	x = -2
+;	y = -4
+_somefunc	PROC NEAR
+_itoa	PROC NEAR
+__setargv	PROC NEAR
+__setenvp	PROC NEAR
+_strcat	PROC NEAR
+_strcpy	PROC NEAR
+_memcpy	PROC NEAR
+_main	PROC NEAR
+_Messages	PROC NEAR
+_Message	PROC NEAR
+;	i = -6
+;	min = -4
+;	slot = -2
+_MsgBox	PROC NEAR
+_MyMessages	PROC NEAR
+;	outside = -18
+;	P = -4
+;	SRC = -10
+;	cnt = -6
+;	lastmsg = -14
+;	lastmsgnum = -12
+;	msgplace = -16
+_MyMessage	PROC NEAR
+;	i = -8
+;	min = -4
+;	slot = -2
+;	cnt = -6
+;	lastmsg = -12
+;	lastmsgnum = -10
+;	msgplace = -14
+_MBox	PROC NEAR
+_MsgPrnt	PROC NEAR
+;	msgcolor = -2
+_InSideMSGBox	PROC NEAR
+_OutSideMSGBox	PROC NEAR
+_OutSideHeading	PROC NEAR
+;	S = -80
+;	N = -172
+;	V = -82
+_SetJoysticks	PROC NEAR
+_GetRidOfKeyJoy	PROC NEAR
+_JoyRecal	PROC NEAR
+;	b = -2
+_NShowJoy	PROC NEAR
+;	SEG = -14
+;	x = -6
+;	y = -10
+;	w = -4
+;	z = -12
+;	d = -2
+;	i = -8
+_NWaitShowJoy	PROC NEAR
+;	i = -4
+;	v = -2
+;	j = -8
+_RedrawJoyBox	PROC NEAR
+_CenterPrint	PROC NEAR
+_GetJoyConfig	PROC NEAR
+;	f = -2
+;	offset = -4
+_SaveJoyConfig	PROC NEAR
+;	f = -2
+;	offset = -4
+_output_stdout	PROC NEAR
+_log_open	PROC NEAR
+_log_close	PROC NEAR
+_output_log	PROC NEAR
+_output_tee	PROC NEAR
+_output	PROC NEAR
+;	ap = -2
+_INFO	PROC NEAR
+;	ap = -2
+_ERROR	PROC NEAR
+;	ap = -2
+_FATAL	PROC NEAR
+;	ap = -2
+_DEBUG	PROC NEAR
+;	ap = -2
+_dumpregs	PROC NEAR
+_hexdump	PROC NEAR
+;	bpl = -8
+;	limit = -10
+;	i = -4
+;	j = -6
+;	c = -2
+;	pos = -12
+_overlay_load	PROC NEAR
+;	RESERVE_PARA = -18
+;	EXTRA_PARA = -6
+;	freeMem = -2
+;	alloc = -14
+;	ovlSegment = -4
+;	ovlSize = -16
+;	ovlHeader = -12
+;	err = -8
+_overlay_functionAddress	PROC NEAR
+;	ovlHeader = -8
+;	slotArray = -4
+_rng	PROC NEAR
+_rng2	PROC NEAR
+_xydist	PROC NEAR
+;	d = -4
+_uangle	PROC NEAR
+_sinX	PROC NEAR
+_cosX	PROC NEAR
+_wrd	PROC NEAR
+_sgn	PROC NEAR
+_seedme	PROC NEAR
+_seedme2	PROC NEAR
+_rnd	PROC NEAR
+_rnd2	PROC NEAR
+_WaitTicks	PROC NEAR
+_foo	PROC NEAR
+_assert	PROC NEAR
+;	arg_ptr = -2
+_testComm	PROC NEAR
+_testGame	PROC NEAR
+_testStruct	PROC NEAR
+_testTrace	PROC NEAR
+;	str = -8
+;	a = -2
+;	b = -4
+;	c = -6
+_main	PROC NEAR
+_strcpyFar	PROC NEAR
+;	dest = -4
+_memcpyFar	PROC NEAR
+;	dest = -4
+_writeWordFar	PROC NEAR
+;	wordPtr = -4
+_blitFileFar	PROC NEAR
+;	dest = -4
+;	buffer = -268
+;	infile = -8
+;	readsize = -6
+;	i = -12
+;	err = -10
+_sizeString	PROC NEAR
+;	bytes = -4
+addColor	PROC NEAR
+;	i = -2
+addGrayColor	PROC NEAR
+add16Color	PROC NEAR
+;	r = -4
+;	g = -6
+;	b = -2
+;	i = -10
+;	h = -8
+;	l = -12
+addRun	PROC NEAR
+;	r = -4
+;	g = -10
+;	b = -2
+;	i = -12
+;	up = -6
+;	v = -8
+addCycle	PROC NEAR
+;	hue = -2
+buildPalette	PROC NEAR
+;	x = -2
+levelUp	PROC NEAR
+;	i = -4
+;	v = -2
+printPalette	PROC NEAR
+;	i = -2
+vgapal	PROC NEAR
+_main	PROC NEAR
+;	status = -2
+;	levelup = -4

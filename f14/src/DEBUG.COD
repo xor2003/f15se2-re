@@ -1,0 +1,635 @@
+;	Static Name Aliases
+;
+;	$S202_stream	EQU	stream
+;	$S210_lasttime	EQU	lasttime
+;	$S227_tracebuf	EQU	tracebuf
+	TITLE   DEBUG.C
+	NAME    DEBUG
+
+	.8087
+_TEXT	SEGMENT  WORD PUBLIC 'CODE'
+_TEXT	ENDS
+_DATA	SEGMENT  WORD PUBLIC 'DATA'
+_DATA	ENDS
+CONST	SEGMENT  WORD PUBLIC 'CONST'
+CONST	ENDS
+_BSS	SEGMENT  WORD PUBLIC 'BSS'
+_BSS	ENDS
+$$SYMBOLS	SEGMENT  BYTE PUBLIC 'DEBSYM'
+$$SYMBOLS	ENDS
+$$TYPES	SEGMENT  BYTE PUBLIC 'DEBTYP'
+$$TYPES	ENDS
+DGROUP	GROUP	CONST, _BSS, _DATA
+	ASSUME  CS: _TEXT, DS: DGROUP, SS: DGROUP
+EXTRN	__acrtused:ABS
+EXTRN	_strncpy:NEAR
+EXTRN	_fflush:NEAR
+EXTRN	_fopen:NEAR
+EXTRN	_fprintf:NEAR
+EXTRN	_fwrite:NEAR
+EXTRN	_time:NEAR
+EXTRN	_printf:NEAR
+EXTRN	_exit:NEAR
+EXTRN	_setbuf:NEAR
+EXTRN	_vfprintf:NEAR
+EXTRN	_strchr:NEAR
+EXTRN	_strlen:NEAR
+EXTRN	_fclose:NEAR
+_DATA      SEGMENT
+	ORG	$+2
+$SG215	DB	'a',  00H
+$SG216	DB	'f15.log',  00H
+$SG218	DB	'Unable to open debug stream',  00H
+$SG220	DB	'Successfully opened debug log',  0aH,  00H
+$SG221	DB	'[%04lds] ',  00H
+$SG222	DB	0aH,  00H
+	ORG	$+5
+$SG260	DB	'wb',  00H
+$SG263	DB	'Unable to open file for buffer dump: %s',  00H
+$SG264	DB	'Dumping %lu bytes from %p to %s',  00H
+$SG270	DB	'Write error occurred!',  00H
+	ORG	$-185
+$S202_stream	DW	00H
+	ORG	$+82
+$S210_lasttime	DD	00H
+_DATA      ENDS
+_BSS      SEGMENT
+$S227_tracebuf	DW 040H DUP (?)
+_BSS      ENDS
+_TEXT      SEGMENT
+	ASSUME	CS: _TEXT
+;|*** #include "pointers.h"
+;|*** 
+;|*** #include <stdio.h>
+;|*** #include <STDARG.H>
+;|*** #include <STRING.H>
+;|*** 
+;|*** static FILE *stream = NULL;
+;|*** 
+;|*** void log_close() {
+; Line 9
+	PUBLIC	_log_close
+_log_close	PROC NEAR
+;|***     if (!stream) return;
+; Line 10
+	*** 000000	83 3e 00 00 00 		cmp	WORD PTR $S202_stream,0
+	*** 000005	74 10 			je	$EX204
+	*** 000007	ff 36 00 00 		push	WORD PTR $S202_stream
+	*** 00000b	e8 00 00 		call	_fclose
+	*** 00000e	83 c4 02 		add	sp,2
+;|***     fclose(stream);
+;|***     stream = NULL;
+; Line 12
+	*** 000011	c7 06 00 00 00 00 	mov	WORD PTR $S202_stream,0
+;|*** }
+; Line 13
+					$EX204:
+	*** 000017	c3 			ret	
+
+_log_close	ENDP
+;|*** 
+;|*** void my_vtrace(const char* fmt, va_list ap) {
+; Line 15
+	PUBLIC	_my_vtrace
+_my_vtrace	PROC NEAR
+	*** 000018	55 			push	bp
+	*** 000019	8b ec 			mov	bp,sp
+	*** 00001b	83 ec 08 		sub	sp,8
+;	fmt = 4
+;	ap = 6
+;	thistime = -4
+;	timedelta = -8
+;|***     static long lasttime = 0;
+;|***     const long thistime = time(NULL);
+; Line 17
+	*** 00001e	2b c0 			sub	ax,ax
+	*** 000020	50 			push	ax
+	*** 000021	e8 00 00 		call	_time
+	*** 000024	83 c4 02 		add	sp,2
+	*** 000027	99 			cwd	
+	*** 000028	89 46 fc 		mov	WORD PTR [bp-4],ax	;thistime
+	*** 00002b	89 56 fe 		mov	WORD PTR [bp-2],dx
+;|***     long timedelta;
+;|***     if (stream == NULL) {
+; Line 19
+	*** 00002e	83 3e 00 00 00 		cmp	WORD PTR $S202_stream,0
+	*** 000033	75 55 			jne	$I214
+;|***         lasttime = time(NULL);
+; Line 20
+	*** 000035	2b c0 			sub	ax,ax
+	*** 000037	50 			push	ax
+	*** 000038	e8 00 00 		call	_time
+	*** 00003b	83 c4 02 		add	sp,2
+	*** 00003e	99 			cwd	
+	*** 00003f	a3 54 00 		mov	WORD PTR $S210_lasttime,ax
+	*** 000042	89 16 56 00 		mov	WORD PTR $S210_lasttime+2,dx
+;|***         stream = fopen("f15.log", "a");
+; Line 21
+	*** 000046	b8 02 00 		mov	ax,OFFSET DGROUP:$SG215
+	*** 000049	50 			push	ax
+	*** 00004a	b8 04 00 		mov	ax,OFFSET DGROUP:$SG216
+	*** 00004d	50 			push	ax
+	*** 00004e	e8 00 00 		call	_fopen
+	*** 000051	83 c4 04 		add	sp,4
+	*** 000054	a3 00 00 		mov	$S202_stream,ax
+;|***         if (stream == NULL) {
+; Line 22
+	*** 000057	0b c0 			or	ax,ax
+	*** 000059	75 14 			jne	$I217
+;|***             printf("Unable to open debug stream");
+; Line 23
+	*** 00005b	b8 0c 00 		mov	ax,OFFSET DGROUP:$SG218
+	*** 00005e	50 			push	ax
+	*** 00005f	e8 00 00 		call	_printf
+	*** 000062	83 c4 02 		add	sp,2
+;|***             exit(1);
+; Line 24
+	*** 000065	b8 01 00 		mov	ax,1
+	*** 000068	50 			push	ax
+	*** 000069	e8 00 00 		call	_exit
+	*** 00006c	83 c4 02 		add	sp,2
+;|***         }
+; Line 25
+;|***         setbuf(stream, NULL);
+; Line 26
+					$I217:
+	*** 00006f	2b c0 			sub	ax,ax
+	*** 000071	50 			push	ax
+	*** 000072	ff 36 00 00 		push	WORD PTR $S202_stream
+	*** 000076	e8 00 00 		call	_setbuf
+	*** 000079	83 c4 04 		add	sp,4
+;|***         fprintf(stream, "Successfully opened debug log\n");
+; Line 27
+	*** 00007c	b8 28 00 		mov	ax,OFFSET DGROUP:$SG220
+	*** 00007f	50 			push	ax
+	*** 000080	ff 36 00 00 		push	WORD PTR $S202_stream
+	*** 000084	e8 00 00 		call	_fprintf
+	*** 000087	83 c4 04 		add	sp,4
+;|***     }
+; Line 28
+;|***     timedelta = thistime - lasttime;
+; Line 29
+					$I214:
+	*** 00008a	8b 46 fc 		mov	ax,WORD PTR [bp-4]	;thistime
+	*** 00008d	8b 56 fe 		mov	dx,WORD PTR [bp-2]
+	*** 000090	2b 06 54 00 		sub	ax,WORD PTR $S210_lasttime
+	*** 000094	1b 16 56 00 		sbb	dx,WORD PTR $S210_lasttime+2
+	*** 000098	89 46 f8 		mov	WORD PTR [bp-8],ax	;timedelta
+	*** 00009b	89 56 fa 		mov	WORD PTR [bp-6],dx
+;|***     lasttime = thistime;
+; Line 30
+	*** 00009e	8b 46 fc 		mov	ax,WORD PTR [bp-4]	;thistime
+	*** 0000a1	8b 56 fe 		mov	dx,WORD PTR [bp-2]
+	*** 0000a4	a3 54 00 		mov	WORD PTR $S210_lasttime,ax
+	*** 0000a7	89 16 56 00 		mov	WORD PTR $S210_lasttime+2,dx
+;|***     fprintf(stream, "[%04lds] ", timedelta);
+; Line 31
+	*** 0000ab	ff 76 fa 		push	WORD PTR [bp-6]
+	*** 0000ae	ff 76 f8 		push	WORD PTR [bp-8]	;timedelta
+	*** 0000b1	b8 47 00 		mov	ax,OFFSET DGROUP:$SG221
+	*** 0000b4	50 			push	ax
+	*** 0000b5	ff 36 00 00 		push	WORD PTR $S202_stream
+	*** 0000b9	e8 00 00 		call	_fprintf
+	*** 0000bc	83 c4 08 		add	sp,8
+;|***     vfprintf(stream, fmt, ap);
+; Line 32
+	*** 0000bf	ff 76 06 		push	WORD PTR [bp+6]	;ap
+	*** 0000c2	ff 76 04 		push	WORD PTR [bp+4]	;fmt
+	*** 0000c5	ff 36 00 00 		push	WORD PTR $S202_stream
+	*** 0000c9	e8 00 00 		call	_vfprintf
+	*** 0000cc	83 c4 06 		add	sp,6
+;|***     fprintf(stream, "\n");
+; Line 33
+	*** 0000cf	b8 51 00 		mov	ax,OFFSET DGROUP:$SG222
+	*** 0000d2	50 			push	ax
+	*** 0000d3	ff 36 00 00 		push	WORD PTR $S202_stream
+	*** 0000d7	e8 00 00 		call	_fprintf
+	*** 0000da	83 c4 04 		add	sp,4
+;|***     fflush(stream);
+; Line 34
+	*** 0000dd	ff 36 00 00 		push	WORD PTR $S202_stream
+	*** 0000e1	e8 00 00 		call	_fflush
+	*** 0000e4	83 c4 02 		add	sp,2
+;|*** }
+; Line 35
+	*** 0000e7	8b e5 			mov	sp,bp
+	*** 0000e9	5d 			pop	bp
+	*** 0000ea	c3 			ret	
+	*** 0000eb	90 			nop	
+
+_my_vtrace	ENDP
+;|*** 
+;|*** void my_trace(const char* fmt, ...) {
+; Line 37
+	PUBLIC	_my_trace
+_my_trace	PROC NEAR
+	*** 0000ec	55 			push	bp
+	*** 0000ed	8b ec 			mov	bp,sp
+	*** 0000ef	83 ec 02 		sub	sp,2
+;	fmt = 4
+;	ap = -2
+;|***     va_list ap;
+;|***     va_start(ap, fmt);
+; Line 39
+	*** 0000f2	8d 46 06 		lea	ax,WORD PTR [bp+6]
+	*** 0000f5	89 46 fe 		mov	WORD PTR [bp-2],ax	;ap
+;|***     my_vtrace(fmt, ap);
+; Line 40
+	*** 0000f8	8d 46 06 		lea	ax,WORD PTR [bp+6]
+	*** 0000fb	50 			push	ax
+	*** 0000fc	ff 76 04 		push	WORD PTR [bp+4]	;fmt
+	*** 0000ff	e8 16 ff 		call	_my_vtrace
+	*** 000102	83 c4 04 		add	sp,4
+;|***     va_end(ap);
+; Line 41
+	*** 000105	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;ap
+;|*** }
+; Line 42
+	*** 00010a	8b e5 			mov	sp,bp
+	*** 00010c	5d 			pop	bp
+	*** 00010d	c3 			ret	
+
+_my_trace	ENDP
+;|*** 
+;|*** static char tracebuf[128];
+;|*** 
+;|*** void my_fartrace(const char far *msg, ...) {
+; Line 46
+	PUBLIC	_my_fartrace
+_my_fartrace	PROC NEAR
+	*** 00010e	55 			push	bp
+	*** 00010f	8b ec 			mov	bp,sp
+	*** 000111	83 ec 0a 		sub	sp,10
+	*** 000114	56 			push	si
+;	msg = 4
+;	ptr = -8
+;	size = -10
+;	idx = -4
+;	ap = -2
+;|***     const char FAR *ptr = msg;
+; Line 47
+	*** 000115	8b 46 04 		mov	ax,WORD PTR [bp+4]	;msg
+	*** 000118	8b 56 06 		mov	dx,WORD PTR [bp+6]
+	*** 00011b	89 46 f8 		mov	WORD PTR [bp-8],ax	;ptr
+	*** 00011e	89 56 fa 		mov	WORD PTR [bp-6],dx
+;|***     size_t size = 0, idx;
+; Line 48
+	*** 000121	c7 46 f6 00 00 		mov	WORD PTR [bp-10],0	;size
+;|***     va_list ap;
+;|***     while (*ptr++ != '\0') size++;
+; Line 50
+	*** 000126	eb 03 			jmp	SHORT $L20007
+					$FC236:
+	*** 000128	ff 46 f6 		inc	WORD PTR [bp-10]	;size
+					$L20007:
+	*** 00012b	c4 5e f8 		les	bx,DWORD PTR [bp-8]	;ptr
+	*** 00012e	ff 46 f8 		inc	WORD PTR [bp-8]	;ptr
+	*** 000131	26 80 3f 00 		cmp	BYTE PTR es:[bx],0
+	*** 000135	75 f1 			jne	$FC236
+;|***     ptr = msg;
+; Line 51
+	*** 000137	8b 46 04 		mov	ax,WORD PTR [bp+4]	;msg
+	*** 00013a	8b 56 06 		mov	dx,WORD PTR [bp+6]
+	*** 00013d	89 46 f8 		mov	WORD PTR [bp-8],ax	;ptr
+	*** 000140	89 56 fa 		mov	WORD PTR [bp-6],dx
+;|***     for (idx = 0; idx < size && idx < 127; ++idx) {
+; Line 52
+	*** 000143	c7 46 fc 00 00 		mov	WORD PTR [bp-4],0	;idx
+	*** 000148	eb 19 			jmp	SHORT $F238
+					$FC239:
+	*** 00014a	83 7e fc 7f 		cmp	WORD PTR [bp-4],127	;idx
+	*** 00014e	73 1b 			jae	$FB240
+;|***       tracebuf[idx] = *ptr++;
+; Line 53
+	*** 000150	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;idx
+	*** 000153	c4 76 f8 		les	si,DWORD PTR [bp-8]	;ptr
+	*** 000156	ff 46 f8 		inc	WORD PTR [bp-8]	;ptr
+	*** 000159	26 8a 04 		mov	al,BYTE PTR es:[si]
+	*** 00015c	88 87 00 00 		mov	BYTE PTR $S227_tracebuf[bx],al
+;|***     }
+; Line 54
+	*** 000160	ff 46 fc 		inc	WORD PTR [bp-4]	;idx
+					$F238:
+	*** 000163	8b 46 f6 		mov	ax,WORD PTR [bp-10]	;size
+	*** 000166	39 46 fc 		cmp	WORD PTR [bp-4],ax	;idx
+	*** 000169	72 df 			jb	$FC239
+					$FB240:
+;|***     tracebuf[idx] = '\0';
+; Line 55
+	*** 00016b	8b 5e fc 		mov	bx,WORD PTR [bp-4]	;idx
+	*** 00016e	c6 87 00 00 00 		mov	BYTE PTR $S227_tracebuf[bx],0
+;|***     va_start(ap, msg);
+; Line 56
+	*** 000173	8d 46 08 		lea	ax,WORD PTR [bp+8]
+	*** 000176	89 46 fe 		mov	WORD PTR [bp-2],ax	;ap
+;|***     my_vtrace(tracebuf, ap);
+; Line 57
+	*** 000179	8d 46 08 		lea	ax,WORD PTR [bp+8]
+	*** 00017c	50 			push	ax
+	*** 00017d	b8 00 00 		mov	ax,OFFSET DGROUP:$S227_tracebuf
+	*** 000180	50 			push	ax
+	*** 000181	e8 94 fe 		call	_my_vtrace
+	*** 000184	83 c4 04 		add	sp,4
+;|***     va_end(ap);
+; Line 58
+	*** 000187	c7 46 fe 00 00 		mov	WORD PTR [bp-2],0	;ap
+;|*** }
+; Line 59
+	*** 00018c	5e 			pop	si
+	*** 00018d	8b e5 			mov	sp,bp
+	*** 00018f	5d 			pop	bp
+	*** 000190	c3 			ret	
+	*** 000191	90 			nop	
+
+_my_fartrace	ENDP
+;|*** 
+;|*** void ftoncpy(void *near_ptr, void far *far_ptr, uint32 size) {
+; Line 61
+	PUBLIC	_ftoncpy
+_ftoncpy	PROC NEAR
+	*** 000192	55 			push	bp
+	*** 000193	8b ec 			mov	bp,sp
+	*** 000195	83 ec 0a 		sub	sp,10
+	*** 000198	56 			push	si
+;	near_ptr = 4
+;	far_ptr = 6
+;	size = 10
+;	src = -6
+;	dest = -2
+;	i = -10
+;|***     uint8 far *src = (uint8 far *)far_ptr;
+; Line 62
+	*** 000199	8b 46 06 		mov	ax,WORD PTR [bp+6]	;far_ptr
+	*** 00019c	8b 56 08 		mov	dx,WORD PTR [bp+8]
+	*** 00019f	89 46 fa 		mov	WORD PTR [bp-6],ax	;src
+	*** 0001a2	89 56 fc 		mov	WORD PTR [bp-4],dx
+;|***     uint8 *dest = (uint8 *)near_ptr;
+; Line 63
+	*** 0001a5	8b 46 04 		mov	ax,WORD PTR [bp+4]	;near_ptr
+	*** 0001a8	89 46 fe 		mov	WORD PTR [bp-2],ax	;dest
+;|***     uint32 i;
+;|*** 
+;|***     for (i = 0; i < size; i++) {
+; Line 66
+	*** 0001ab	2b c0 			sub	ax,ax
+	*** 0001ad	89 46 f8 		mov	WORD PTR [bp-8],ax
+	*** 0001b0	89 46 f6 		mov	WORD PTR [bp-10],ax	;i
+	*** 0001b3	eb 09 			jmp	SHORT $F249
+	*** 0001b5	90 			nop	
+					$FC250:
+	*** 0001b6	83 46 f6 01 		add	WORD PTR [bp-10],1	;i
+	*** 0001ba	83 56 f8 00 		adc	WORD PTR [bp-8],0
+					$F249:
+	*** 0001be	8b 46 0a 		mov	ax,WORD PTR [bp+10]	;size
+	*** 0001c1	8b 56 0c 		mov	dx,WORD PTR [bp+12]
+	*** 0001c4	39 56 f8 		cmp	WORD PTR [bp-8],dx
+	*** 0001c7	77 17 			ja	$FB251
+	*** 0001c9	72 05 			jb	$L20000
+	*** 0001cb	39 46 f6 		cmp	WORD PTR [bp-10],ax	;i
+	*** 0001ce	73 10 			jae	$FB251
+					$L20000:
+;|***         dest[i] = src[i];
+; Line 67
+	*** 0001d0	8b 5e f6 		mov	bx,WORD PTR [bp-10]	;i
+	*** 0001d3	c4 76 fa 		les	si,DWORD PTR [bp-6]	;src
+	*** 0001d6	26 8a 00 		mov	al,es:[bx][si]
+	*** 0001d9	8b 76 fe 		mov	si,WORD PTR [bp-2]	;dest
+	*** 0001dc	88 00 			mov	[bx][si],al
+;|***     }
+; Line 68
+	*** 0001de	eb d6 			jmp	SHORT $FC250
+					$FB251:
+;|*** }
+; Line 69
+	*** 0001e0	5e 			pop	si
+	*** 0001e1	8b e5 			mov	sp,bp
+	*** 0001e3	5d 			pop	bp
+	*** 0001e4	c3 			ret	
+	*** 0001e5	90 			nop	
+
+_ftoncpy	ENDP
+;|*** 
+;|*** #define CHUNK_SIZE 512
+;|*** 
+;|*** void dumpbuf(const char *filename, const uint8 far *buf, const uint32 size) {
+; Line 73
+	PUBLIC	_dumpbuf
+_dumpbuf	PROC NEAR
+	*** 0001e6	55 			push	bp
+	*** 0001e7	8b ec 			mov	bp,sp
+	*** 0001e9	81 ec 0c 02 		sub	sp,524
+;	buffer = -518
+;	bytes_written = -6
+;	file = -2
+;	result = -520
+;	filename = 4
+;	buf = 6
+;	size = 10
+;|***     char buffer[CHUNK_SIZE];
+;|***     uint32 bytes_written = 0;
+; Line 75
+	*** 0001ed	2b c0 			sub	ax,ax
+	*** 0001ef	89 46 fc 		mov	WORD PTR [bp-4],ax
+	*** 0001f2	89 46 fa 		mov	WORD PTR [bp-6],ax	;bytes_written
+;|***     FILE *file = fopen(filename, "wb");
+; Line 76
+	*** 0001f5	b8 58 00 		mov	ax,OFFSET DGROUP:$SG260
+	*** 0001f8	50 			push	ax
+	*** 0001f9	ff 76 04 		push	WORD PTR [bp+4]	;filename
+	*** 0001fc	e8 00 00 		call	_fopen
+	*** 0001ff	83 c4 04 		add	sp,4
+	*** 000202	89 46 fe 		mov	WORD PTR [bp-2],ax	;file
+;|***     size_t result;
+;|*** 
+;|***     if (!file) {
+; Line 79
+	*** 000205	0b c0 			or	ax,ax
+	*** 000207	75 11 			jne	$I262
+;|***         my_trace("Unable to open file for buffer dump: %s", filename);
+; Line 80
+	*** 000209	ff 76 04 		push	WORD PTR [bp+4]	;filename
+	*** 00020c	b8 5b 00 		mov	ax,OFFSET DGROUP:$SG263
+	*** 00020f	50 			push	ax
+	*** 000210	e8 d9 fe 		call	_my_trace
+	*** 000213	83 c4 04 		add	sp,4
+;|***         return;
+; Line 81
+	*** 000216	8b e5 			mov	sp,bp
+	*** 000218	5d 			pop	bp
+	*** 000219	c3 			ret	
+					$I262:
+	*** 00021a	ff 76 04 		push	WORD PTR [bp+4]	;filename
+	*** 00021d	ff 76 08 		push	WORD PTR [bp+8]
+	*** 000220	ff 76 06 		push	WORD PTR [bp+6]	;buf
+	*** 000223	ff 76 0c 		push	WORD PTR [bp+12]
+	*** 000226	ff 76 0a 		push	WORD PTR [bp+10]	;size
+	*** 000229	b8 83 00 		mov	ax,OFFSET DGROUP:$SG264
+	*** 00022c	50 			push	ax
+	*** 00022d	e8 bc fe 		call	_my_trace
+	*** 000230	83 c4 0c 		add	sp,12
+;|***     }
+;|***     my_trace("Dumping %lu bytes from %p to %s", size, buf, filename);
+;|***     while (bytes_written < size) {
+; Line 84
+					$FC266:
+	*** 000233	8b 46 0a 		mov	ax,WORD PTR [bp+10]	;size
+	*** 000236	8b 56 0c 		mov	dx,WORD PTR [bp+12]
+	*** 000239	39 56 fc 		cmp	WORD PTR [bp-4],dx
+	*** 00023c	76 03 			jbe	$JCC572
+	*** 00023e	e9 85 00 		jmp	$FB267
+					$JCC572:
+	*** 000241	72 05 			jb	$L20003
+	*** 000243	39 46 fa 		cmp	WORD PTR [bp-6],ax	;bytes_written
+	*** 000246	73 7e 			jae	$FB267
+					$L20003:
+;	bytes_to_copy = -524
+;|***         uint32 bytes_to_copy = (size - bytes_written > CHUNK_SIZE) ? CHUNK_SIZE : (size - bytes_written);
+; Line 85
+	*** 000248	8b 46 0a 		mov	ax,WORD PTR [bp+10]	;size
+	*** 00024b	8b 56 0c 		mov	dx,WORD PTR [bp+12]
+	*** 00024e	2b 46 fa 		sub	ax,WORD PTR [bp-6]	;bytes_written
+	*** 000251	1b 56 fc 		sbb	dx,WORD PTR [bp-4]
+	*** 000254	0b d2 			or	dx,dx
+	*** 000256	75 05 			jne	$L20005
+	*** 000258	3d 00 02 		cmp	ax,512
+	*** 00025b	76 05 			jbe	$L20004
+					$L20005:
+	*** 00025d	2b d2 			sub	dx,dx
+	*** 00025f	b8 00 02 		mov	ax,512
+					$L20004:
+	*** 000262	89 86 f4 fd 		mov	WORD PTR [bp-524],ax	;bytes_to_copy
+	*** 000266	89 96 f6 fd 		mov	WORD PTR [bp-522],dx
+;|*** #ifdef DEBUGDUMP
+;|***         my_trace("remaining = %lu", bytes_to_copy);
+;|*** #endif
+;|***         // Copy data from far pointer to near buffer
+;|***         ftoncpy(buffer, buf, bytes_to_copy);
+; Line 90
+	*** 00026a	52 			push	dx
+	*** 00026b	50 			push	ax
+	*** 00026c	ff 76 08 		push	WORD PTR [bp+8]
+	*** 00026f	ff 76 06 		push	WORD PTR [bp+6]	;buf
+	*** 000272	8d 86 fa fd 		lea	ax,WORD PTR [bp-518]	;buffer
+	*** 000276	50 			push	ax
+	*** 000277	e8 18 ff 		call	_ftoncpy
+	*** 00027a	83 c4 0a 		add	sp,10
+;|***         // Write near buffer to file
+;|***         result = fwrite(buffer, 1, bytes_to_copy, file);
+; Line 92
+	*** 00027d	ff 76 fe 		push	WORD PTR [bp-2]	;file
+	*** 000280	ff b6 f4 fd 		push	WORD PTR [bp-524]	;bytes_to_copy
+	*** 000284	b8 01 00 		mov	ax,1
+	*** 000287	50 			push	ax
+	*** 000288	8d 86 fa fd 		lea	ax,WORD PTR [bp-518]	;buffer
+	*** 00028c	50 			push	ax
+	*** 00028d	e8 00 00 		call	_fwrite
+	*** 000290	83 c4 08 		add	sp,8
+	*** 000293	89 86 f8 fd 		mov	WORD PTR [bp-520],ax	;result
+;|***         if (result != bytes_to_copy) {
+; Line 93
+	*** 000297	2b d2 			sub	dx,dx
+	*** 000299	3b 86 f4 fd 		cmp	ax,WORD PTR [bp-524]	;bytes_to_copy
+	*** 00029d	75 06 			jne	$L20006
+	*** 00029f	3b 96 f6 fd 		cmp	dx,WORD PTR [bp-522]
+	*** 0002a3	74 0d 			je	$I269
+					$L20006:
+;|***             my_trace("Write error occurred!");
+; Line 94
+	*** 0002a5	b8 a3 00 		mov	ax,OFFSET DGROUP:$SG270
+	*** 0002a8	50 			push	ax
+	*** 0002a9	e8 40 fe 		call	_my_trace
+	*** 0002ac	83 c4 02 		add	sp,2
+;|***             break;
+; Line 95
+	*** 0002af	eb 15 			jmp	SHORT $FB267
+	*** 0002b1	90 			nop	
+					$I269:
+	*** 0002b2	8b 86 f4 fd 		mov	ax,WORD PTR [bp-524]	;bytes_to_copy
+	*** 0002b6	8b 96 f6 fd 		mov	dx,WORD PTR [bp-522]
+	*** 0002ba	01 46 fa 		add	WORD PTR [bp-6],ax	;bytes_written
+	*** 0002bd	11 56 fc 		adc	WORD PTR [bp-4],dx
+;|***         }
+;|***         bytes_written += bytes_to_copy;
+;|*** #ifdef DEBUGDUMP
+;|***         my_trace("written = %lu", bytes_written);
+;|*** #endif
+;|***         buf += bytes_to_copy;  // Increment far pointer
+; Line 101
+	*** 0002c0	01 46 06 		add	WORD PTR [bp+6],ax	;buf
+;|***     }
+; Line 102
+	*** 0002c3	e9 6d ff 		jmp	$FC266
+					$FB267:
+;|*** #ifdef DEBUGDUMP    
+;|***     my_trace("Successfully written %lu bytes to %s", bytes_written, filename);
+;|*** #endif
+;|***     fclose(file);
+; Line 106
+	*** 0002c6	ff 76 fe 		push	WORD PTR [bp-2]	;file
+	*** 0002c9	e8 00 00 		call	_fclose
+	*** 0002cc	83 c4 02 		add	sp,2
+;|*** }
+; Line 107
+	*** 0002cf	8b e5 			mov	sp,bp
+	*** 0002d1	5d 			pop	bp
+	*** 0002d2	c3 			ret	
+	*** 0002d3	90 			nop	
+
+_dumpbuf	ENDP
+;|*** 
+;|*** void changeext(char *filename, const char *ext) {
+; Line 109
+	PUBLIC	_changeext
+_changeext	PROC NEAR
+	*** 0002d4	55 			push	bp
+	*** 0002d5	8b ec 			mov	bp,sp
+	*** 0002d7	83 ec 02 		sub	sp,2
+;	filename = 4
+;	ext = 6
+;	dot = -2
+;|***     char *dot = strchr(filename, '.');
+; Line 110
+	*** 0002da	b8 2e 00 		mov	ax,46
+	*** 0002dd	50 			push	ax
+	*** 0002de	ff 76 04 		push	WORD PTR [bp+4]	;filename
+	*** 0002e1	e8 00 00 		call	_strchr
+	*** 0002e4	83 c4 04 		add	sp,4
+	*** 0002e7	89 46 fe 		mov	WORD PTR [bp-2],ax	;dot
+;|***     if (!dot) {
+; Line 111
+	*** 0002ea	0b c0 			or	ax,ax
+	*** 0002ec	75 14 			jne	$I276
+;|***         dot = filename + strlen(filename);
+; Line 112
+	*** 0002ee	ff 76 04 		push	WORD PTR [bp+4]	;filename
+	*** 0002f1	e8 00 00 		call	_strlen
+	*** 0002f4	83 c4 02 		add	sp,2
+	*** 0002f7	03 46 04 		add	ax,WORD PTR [bp+4]	;filename
+	*** 0002fa	89 46 fe 		mov	WORD PTR [bp-2],ax	;dot
+;|***         *dot = '.';
+; Line 113
+	*** 0002fd	8b d8 			mov	bx,ax
+	*** 0002ff	c6 07 2e 		mov	BYTE PTR [bx],46
+;|***     }  
+; Line 114
+;|***     strncpy(dot + 1, ext, 3);
+; Line 115
+					$I276:
+	*** 000302	b8 03 00 		mov	ax,3
+	*** 000305	50 			push	ax
+	*** 000306	ff 76 06 		push	WORD PTR [bp+6]	;ext
+	*** 000309	8b 46 fe 		mov	ax,WORD PTR [bp-2]	;dot
+	*** 00030c	40 			inc	ax
+	*** 00030d	50 			push	ax
+	*** 00030e	e8 00 00 		call	_strncpy
+	*** 000311	83 c4 06 		add	sp,6
+;|*** }
+; Line 116
+	*** 000314	8b e5 			mov	sp,bp
+	*** 000316	5d 			pop	bp
+	*** 000317	c3 			ret	
+
+_changeext	ENDP
+_TEXT	ENDS
+END
+;|*** 

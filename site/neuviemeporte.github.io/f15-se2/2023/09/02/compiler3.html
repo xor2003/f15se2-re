@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Hunting for the Right Compiler, Part 3 | neuviemeporte’s journal</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Hunting for the Right Compiler, Part 3" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="(…continued from Part 2)" />
+<meta property="og:description" content="(…continued from Part 2)" />
+<link rel="canonical" href="/f15-se2/2023/09/02/compiler3.html" />
+<meta property="og:url" content="/f15-se2/2023/09/02/compiler3.html" />
+<meta property="og:site_name" content="neuviemeporte’s journal" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-09-02T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Hunting for the Right Compiler, Part 3" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2023-09-02T00:00:00+00:00","datePublished":"2023-09-02T00:00:00+00:00","description":"(…continued from Part 2)","headline":"Hunting for the Right Compiler, Part 3","mainEntityOfPage":{"@type":"WebPage","@id":"/f15-se2/2023/09/02/compiler3.html"},"url":"/f15-se2/2023/09/02/compiler3.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="neuviemeporte&apos;s journal" /><link rel="stylesheet" href="/site.css">
+</head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">neuviemeporte&#39;s journal</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Hunting for the Right Compiler, Part 3</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2023-09-02T00:00:00+00:00" itemprop="datePublished">Sep 2, 2023
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>(…continued from  <a href="/f15-se2/2023/05/18/compiler2.html">Part 2</a>)</p>
+
+<p>“(…) <em>But there it was, just as the books said. You went in a circle, gave yourself endless trouble under the delusion that you were accomplishing something, and all the time you were simply describing some great silly arc that would turn back to where it had its beginning, like the riddling year itself.</em>” – Thomas Mann, <em>The Magic Mountain</em></p>
+
+<p>After writing up the previous part of the story of the futile compiler chase, I was pretty burned out. I had tried every compiler and option that could have conceivably been used by whoever modified the code of F15 SE2 for the 1991 scenario disk update before producing the final build and turning it over to manufacturing, yet that search turned out fruitless. The opcodes smelled of MSC 5.1. But it could not be forced to emit the specific sequence of <code class="language-plaintext highlighter-rouge">jmp short</code> instructions that was present in the original. Borland compilers could, but they produced differences elsewhere that likewise could not be made to go away. A classic catch-22.</p>
+
+<p>I wanted to make progress on the reconstruction so I gave up on trying to make it perfect. I implemented options in the <a href="https://github.com/neuviemeporte/mzretools">tool</a> that I use for comparing my reconstruction with the original, which let it skip a number of differing instructions in both executables and moved on. I was not very happy about it, but I was able to  finish <code class="language-plaintext highlighter-rouge">main()</code> and move on to other functions that way. I kept using MSC 5.1 because it seemed to produce the best matching code overall. Things seemed to be moving along until one day distaster struck. The next function to rewrite from assembly to C was supposed to be this one:</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">waitMdaCgaStatus</span> <span class="nv">proc</span> <span class="nv">near</span>
+<span class="nf">iter_count</span> <span class="err">=</span> <span class="kt">word</span> <span class="nv">ptr</span>  <span class="mi">4</span>
+                <span class="nf">push</span>    <span class="nb">bp</span>
+                <span class="nf">mov</span>     <span class="nb">bp</span><span class="p">,</span> <span class="nb">sp</span>
+<span class="nl">loop_begin:</span>
+                <span class="nf">mov</span>     <span class="nb">ax</span><span class="p">,</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">iter_count</span><span class="p">]</span> <span class="err">🟢</span> <span class="nb">ch</span><span class="nv">eck</span> <span class="nv">a</span> <span class="nv">loop</span> <span class="nv">counter</span>
+                <span class="nf">dec</span>     <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="nv">iter_count</span><span class="p">]</span>
+                <span class="nf">or</span>      <span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span>
+                <span class="nf">jz</span>      <span class="nv">short</span> <span class="nv">done</span> <span class="err">🟢</span> <span class="nv">counter</span> <span class="nv">is</span> <span class="nv">zero</span><span class="p">,</span> <span class="nv">we</span><span class="err">'</span><span class="nv">re</span> <span class="nv">done</span>
+                <span class="nf">les</span>     <span class="nb">bx</span><span class="p">,</span> <span class="nv">commAddr</span>
+                <span class="nf">cmp</span>     <span class="kt">word</span> <span class="nv">ptr</span> <span class="nb">es</span><span class="p">:[</span><span class="nb">bx</span><span class="o">+</span><span class="nv">COMM_SETUP_MONOCHROME_OFFSET</span><span class="p">],</span> <span class="mi">0</span> <span class="err">🟢</span> <span class="nb">ch</span><span class="nv">eck</span> <span class="nv">a</span> <span class="nv">flag</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">config</span>
+                <span class="nf">jz</span>      <span class="nv">short</span> <span class="nv">cgaStatusZero</span> <span class="c1">; 3da: CGA status register</span>
+<span class="nl">mdaStatusZero:</span>
+                <span class="nf">mov</span>     <span class="nb">ax</span><span class="p">,</span> <span class="mh">3BAh</span>        <span class="c1">; port 3ba: MDA status register</span>
+                <span class="nf">push</span>    <span class="nb">ax</span>
+                <span class="nf">call</span>    <span class="nv">_inp</span>
+                <span class="nf">add</span>     <span class="nb">sp</span><span class="p">,</span> <span class="mi">2</span>
+                <span class="nf">test</span>    <span class="nb">al</span><span class="p">,</span> <span class="mh">80h</span>
+                <span class="nf">jnz</span>     <span class="nv">short</span> <span class="nv">mdaStatusNonZero</span> <span class="err">🟢</span> <span class="nv">repeat</span> <span class="nv">until</span> <span class="nv">MDA</span> <span class="nv">status</span> <span class="nv">bit</span> <span class="nv">is</span> <span class="mi">1</span>
+                <span class="nf">jmp</span>     <span class="nv">short</span> <span class="nv">mdaStatusZero</span> <span class="c1">; port 3ba: MDA status register</span>
+<span class="nl">mdaStatusNonZero:</span>
+                <span class="nf">mov</span>     <span class="nb">ax</span><span class="p">,</span> <span class="mh">3BAh</span>
+                <span class="nf">push</span>    <span class="nb">ax</span>
+                <span class="nf">call</span>    <span class="nv">_inp</span>
+                <span class="nf">add</span>     <span class="nb">sp</span><span class="p">,</span> <span class="mi">2</span>
+                <span class="nf">test</span>    <span class="nb">al</span><span class="p">,</span> <span class="mh">80h</span>
+                <span class="nf">jz</span>      <span class="nv">short</span> <span class="nv">tryAgain</span> <span class="err">🟢</span> <span class="nv">repeat</span> <span class="nv">until</span> <span class="nv">bit</span> <span class="nv">is</span> <span class="mi">0</span>
+                <span class="nf">jmp</span>     <span class="nv">short</span> <span class="nv">mdaStatusNonZero</span>
+<span class="nl">tryAgain:</span>
+                <span class="nf">jmp</span>     <span class="nv">short</span> <span class="nv">loop_continue</span>
+<span class="nl">cgaStatusZero:</span>
+                <span class="nf">mov</span>     <span class="nb">ax</span><span class="p">,</span> <span class="mh">3DAh</span>        <span class="c1">; 3da: CGA status register</span>
+                <span class="nf">push</span>    <span class="nb">ax</span>
+                <span class="nf">call</span>    <span class="nv">_inp</span>
+                <span class="nf">add</span>     <span class="nb">sp</span><span class="p">,</span> <span class="mi">2</span>
+                <span class="nf">test</span>    <span class="nb">al</span><span class="p">,</span> <span class="mi">8</span>
+                <span class="nf">jnz</span>     <span class="nv">short</span> <span class="nv">cgaStatusNonZero</span> <span class="err">🟢</span> <span class="nv">repeat</span> <span class="nv">until</span> <span class="nv">CGA</span> <span class="nv">status</span> <span class="nv">bit</span> <span class="nv">is</span> <span class="mi">1</span>
+                <span class="nf">jmp</span>     <span class="nv">short</span> <span class="nv">cgaStatusZero</span> <span class="c1">; 3da: CGA status register</span>
+<span class="nl">cgaStatusNonZero:</span>
+                <span class="nf">mov</span>     <span class="nb">ax</span><span class="p">,</span> <span class="mh">3DAh</span>
+                <span class="nf">push</span>    <span class="nb">ax</span>
+                <span class="nf">call</span>    <span class="nv">_inp</span>
+                <span class="nf">add</span>     <span class="nb">sp</span><span class="p">,</span> <span class="mi">2</span>
+                <span class="nf">test</span>    <span class="nb">al</span><span class="p">,</span> <span class="mi">8</span>
+                <span class="nf">jz</span>      <span class="nv">short</span> <span class="nv">loop_continue</span> <span class="err">🟢</span> <span class="nv">repeat</span> <span class="nv">until</span> <span class="nv">MDA</span> <span class="nv">status</span> <span class="nv">bit</span> <span class="nv">is</span> <span class="mi">0</span>
+                <span class="nf">jmp</span>     <span class="nv">short</span> <span class="nv">cgaStatusNonZero</span>
+<span class="nl">loop_continue:</span>
+                <span class="nf">jmp</span>     <span class="nv">short</span> <span class="nv">loop_begin</span> <span class="err">🟢</span> <span class="nv">next</span> <span class="nv">loop</span> <span class="nv">iteration</span>
+<span class="nl">done:</span>
+                <span class="nf">mov</span>     <span class="nb">sp</span><span class="p">,</span> <span class="nb">bp</span>
+                <span class="nf">pop</span>     <span class="nb">bp</span>
+                <span class="nf">retn</span>
+<span class="nf">waitMdaCgaStatus</span> <span class="nv">endp</span></code></pre></figure>
+
+<p>This appears to be spinning in a loop, polling a bit from either the MDA or the CGA status register until it switches from 1 to 0. I think there may be a bug in there, but for now let’s just try to write a C equivalent. I can already smell trouble. Whenever I see a <code class="language-plaintext highlighter-rouge">jmp short</code>, especially around a loop, I get a nervous sweat.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span> <span class="nf">waitMdaCgaStatus</span><span class="p">(</span><span class="n">int16</span> <span class="n">iter</span><span class="p">)</span> 
+<span class="p">{</span>
+    <span class="k">while</span> <span class="p">(</span><span class="n">iter</span><span class="o">--</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">*</span><span class="n">FARPTR_CAST_OFFSET</span><span class="p">(</span><span class="n">int16</span><span class="p">,</span> <span class="n">commAddr</span><span class="p">,</span> <span class="n">COMM_SETUP_MONOCHROME_OFFSET</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">while</span> <span class="p">((</span><span class="n">inp</span><span class="p">(</span><span class="n">PORT_MDA_STATUS</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">MDA_STATUS_RETRACE</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{}</span>
+            <span class="k">while</span> <span class="p">((</span><span class="n">inp</span><span class="p">(</span><span class="n">PORT_MDA_STATUS</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">MDA_STATUS_RETRACE</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{}</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="k">while</span> <span class="p">((</span><span class="n">inp</span><span class="p">(</span><span class="n">PORT_CGA_STATUS</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">CGA_STATUS_RETRACE</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{}</span>
+            <span class="k">while</span> <span class="p">((</span><span class="n">inp</span><span class="p">(</span><span class="n">PORT_CGA_STATUS</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">CGA_STATUS_RETRACE</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Compile, link, compare. Well of course it does not match.</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="err">000004</span><span class="nf">EC</span>  <span class="mi">55</span>                <span class="nv">push</span> <span class="nb">bp</span>
+<span class="err">000004</span><span class="nf">ED</span>  <span class="mi">8</span><span class="nv">BEC</span>              <span class="nv">mov</span> <span class="nb">bp</span><span class="p">,</span><span class="nb">sp</span>
+<span class="err">000004</span><span class="nf">EF</span>  <span class="nv">EB47</span>              <span class="nv">jmp</span> <span class="nv">short</span> <span class="mh">0x538</span> <span class="err">🔴</span> <span class="nv">instead</span> <span class="nv">of</span> <span class="nb">ch</span><span class="nv">ecking</span> <span class="nv">the</span> <span class="s">`while`</span> <span class="nv">condition</span><span class="p">,</span> <span class="nv">jump</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">end</span>
+<span class="err">000004</span><span class="nf">F1</span>  <span class="mi">90</span>                <span class="nv">nop</span>
+<span class="err">000004</span><span class="nf">F2</span>  <span class="nv">C41E9005</span>          <span class="nv">les</span> <span class="nb">bx</span><span class="p">,[</span><span class="mh">0x590</span><span class="p">]</span>
+<span class="err">000004</span><span class="nf">F6</span>  <span class="mi">26837</span><span class="nv">F2400</span>        <span class="nv">cmp</span> <span class="kt">word</span> <span class="p">[</span><span class="nb">es</span><span class="p">:</span><span class="nb">bx</span><span class="o">+</span><span class="mh">0x24</span><span class="p">],</span><span class="kt">byte</span> <span class="o">+</span><span class="mh">0x0</span> <span class="err">🔴</span> <span class="nb">ch</span><span class="nv">eck</span> <span class="nv">the</span> <span class="s">`if`</span> <span class="nv">condition</span>
+<span class="err">000004</span><span class="nf">FB</span>  <span class="mi">741</span><span class="nv">F</span>              <span class="nv">jz</span> <span class="mh">0x51c</span>
+<span class="err">000004</span><span class="nf">FD</span>  <span class="nv">B8BA03</span>            <span class="nv">mov</span> <span class="nb">ax</span><span class="p">,</span><span class="mh">0x3ba</span>
+<span class="err">00000500</span>  <span class="err">50</span>                <span class="nf">push</span> <span class="nb">ax</span>
+<span class="err">00000501</span>  <span class="nf">E8BA09</span>            <span class="nv">call</span> <span class="mh">0xebe</span>
+<span class="err">00000504</span>  <span class="err">83</span><span class="nf">C402</span>            <span class="nv">add</span> <span class="nb">sp</span><span class="p">,</span><span class="kt">byte</span> <span class="o">+</span><span class="mh">0x2</span>
+<span class="err">00000507</span>  <span class="nf">A880</span>              <span class="nv">test</span> <span class="nb">al</span><span class="p">,</span><span class="mh">0x80</span>
+<span class="err">00000509</span>  <span class="err">74</span><span class="nf">F2</span>              <span class="nv">jz</span> <span class="mh">0x4fd</span>
+<span class="err">0000050</span><span class="nf">B</span>  <span class="nv">B8BA03</span>            <span class="nv">mov</span> <span class="nb">ax</span><span class="p">,</span><span class="mh">0x3ba</span>
+<span class="err">0000050</span><span class="nf">E</span>  <span class="mi">50</span>                <span class="nv">push</span> <span class="nb">ax</span>
+<span class="err">0000050</span><span class="nf">F</span>  <span class="nv">E8AC09</span>            <span class="nv">call</span> <span class="mh">0xebe</span>
+<span class="err">00000512</span>  <span class="err">83</span><span class="nf">C402</span>            <span class="nv">add</span> <span class="nb">sp</span><span class="p">,</span><span class="kt">byte</span> <span class="o">+</span><span class="mh">0x2</span>
+<span class="err">00000515</span>  <span class="nf">A880</span>              <span class="nv">test</span> <span class="nb">al</span><span class="p">,</span><span class="mh">0x80</span>
+<span class="err">00000517</span>  <span class="err">741</span><span class="nf">F</span>              <span class="nv">jz</span> <span class="mh">0x538</span>
+<span class="err">00000519</span>  <span class="nf">EBF0</span>              <span class="nv">jmp</span> <span class="nv">short</span> <span class="mh">0x50b</span>
+<span class="err">0000051</span><span class="nf">B</span>  <span class="mi">90</span>                <span class="nv">nop</span>
+<span class="err">0000051</span><span class="nf">C</span>  <span class="nv">B8DA03</span>            <span class="nv">mov</span> <span class="nb">ax</span><span class="p">,</span><span class="mh">0x3da</span>
+<span class="err">0000051</span><span class="nf">F</span>  <span class="mi">50</span>                <span class="nv">push</span> <span class="nb">ax</span>
+<span class="err">00000520</span>  <span class="nf">E89B09</span>            <span class="nv">call</span> <span class="mh">0xebe</span>
+<span class="err">00000523</span>  <span class="err">83</span><span class="nf">C402</span>            <span class="nv">add</span> <span class="nb">sp</span><span class="p">,</span><span class="kt">byte</span> <span class="o">+</span><span class="mh">0x2</span>
+<span class="err">00000526</span>  <span class="nf">A808</span>              <span class="nv">test</span> <span class="nb">al</span><span class="p">,</span><span class="mh">0x8</span>
+<span class="err">00000528</span>  <span class="err">74</span><span class="nf">F2</span>              <span class="nv">jz</span> <span class="mh">0x51c</span>
+<span class="err">0000052</span><span class="nf">A</span>  <span class="nv">B8DA03</span>            <span class="nv">mov</span> <span class="nb">ax</span><span class="p">,</span><span class="mh">0x3da</span>
+<span class="err">0000052</span><span class="nf">D</span>  <span class="mi">50</span>                <span class="nv">push</span> <span class="nb">ax</span>
+<span class="err">0000052</span><span class="nf">E</span>  <span class="nv">E88D09</span>            <span class="nv">call</span> <span class="mh">0xebe</span>
+<span class="err">00000531</span>  <span class="err">83</span><span class="nf">C402</span>            <span class="nv">add</span> <span class="nb">sp</span><span class="p">,</span><span class="kt">byte</span> <span class="o">+</span><span class="mh">0x2</span>
+<span class="err">00000534</span>  <span class="nf">A808</span>              <span class="nv">test</span> <span class="nb">al</span><span class="p">,</span><span class="mh">0x8</span>
+<span class="err">00000536</span>  <span class="err">75</span><span class="nf">F2</span>              <span class="nv">jnz</span> <span class="mh">0x52a</span>
+<span class="err">00000538</span>  <span class="err">8</span><span class="nf">B4604</span>            <span class="nv">mov</span> <span class="nb">ax</span><span class="p">,[</span><span class="nb">bp</span><span class="o">+</span><span class="mh">0x4</span><span class="p">]</span> <span class="err">🔴</span> <span class="nb">ch</span><span class="nv">eck</span> <span class="nv">the</span> <span class="s">`while`</span> <span class="nv">condition</span>
+<span class="err">0000053</span><span class="nf">B</span>  <span class="nv">FF4E04</span>            <span class="nv">dec</span> <span class="kt">word</span> <span class="p">[</span><span class="nb">bp</span><span class="o">+</span><span class="mh">0x4</span><span class="p">]</span>
+<span class="err">0000053</span><span class="nf">E</span>  <span class="mb">0B</span><span class="nv">C0</span>              <span class="nv">or</span> <span class="nb">ax</span><span class="p">,</span><span class="nb">ax</span>
+<span class="err">00000540</span>  <span class="err">75</span><span class="nf">B0</span>              <span class="nv">jnz</span> <span class="mh">0x4f2</span> <span class="err">🔴</span> <span class="nv">go</span> <span class="nv">back</span> <span class="nv">up</span>
+<span class="err">[</span><span class="nf">...</span><span class="p">]</span></code></pre></figure>
+
+<p>A familiar scenario repeats itself as with the previous loop - no matter what I try, the condition is placed at the end. I tried every single variant of the code, a <code class="language-plaintext highlighter-rouge">for</code>, a <code class="language-plaintext highlighter-rouge">do-while</code>, even a <code class="language-plaintext highlighter-rouge">goto</code>-based monstrosity. Same story. Optimization flags don’t have an influence except for <code class="language-plaintext highlighter-rouge">/Od</code> - disable optimizations. But in that case, the code is a complete mess that doesn’t look close to what I need either.</p>
+
+<p>The problem this time is that it’s not enough to skip a couple of instructions. An entire code block is moved elsewhere. Unless I am willing to make the tool search for a match (not mentioning how to approach checking if a moved section will behave the same in a different location), or increase the allowed skip count, there doesn’t seem to be anything else I can do, and pushing ahead against an ever-increasing number of divergences doesn’t look feasible anymore.</p>
+
+<p>I need to go back and figure out which compiler was used and with what flags. Without having that part down, I’m screwed. So I catch a deep breath and dive into it again.</p>
+
+<p>First thing I tried was getting rid of the suspense and putting the Watcom question out of the way. I could not locate a copy of Watcom C 6.0/7.0 which appear to best match the release date of the game, so I tried the next best thing with <a href="http://open-watcom.github.io/">OpenWatcom</a>. Hopefully they did not change the code generation too much in 30+ years? The code it produced didn’t look close at all. I tried several optimization variants but there were just too many differences all over. In particular, <code class="language-plaintext highlighter-rouge">test ax,ax</code> was used instead of <code class="language-plaintext highlighter-rouge">or ax,ax</code>, multiple registers were pushed in preambles of functions, arithmetic registers were used instead of immediate values in instructions etc. Scratch that off, at least until I can find a copy of the old version, but I don’t think it’s a likely target.</p>
+
+<p>The standalone versions of <a href="https://en.wikipedia.org/wiki/QuickC">QuickC</a> are still on the table. Version 1.01 was bundled with MSC 5.1 and I tried it in Part 2, but it produced horribly unoptimized code. Wikipedia says that QuickC was introduced as Microsoft’s answer to Borland’s Turbo C - an enthusiast-oriented compiler that is cheaper and a step down from the big-boy MSC. Turbo C produces quite neat code, so maybe the 2.x releases of Quick C are somewhat better if they want to compete with Turbo C? But at the same time it shoud not be too good, or I will end up with the same problems as with using the full-featured MSC right now. Well, no luck again, with no optimization flags it uses <code class="language-plaintext highlighter-rouge">mov ax,0</code> instead of <code class="language-plaintext highlighter-rouge">sub ax,ax</code> which I need. With <code class="language-plaintext highlighter-rouge">/Ot</code> it uses <code class="language-plaintext highlighter-rouge">xor ax,ax</code> (and signedness of the argument it’s creating does not matter). It also puts a <code class="language-plaintext highlighter-rouge">jmp short</code> to a loop condition at the end and does some other weird stuff. It’s not the right one.</p>
+
+<p>I had already tried MSC 5.0, 4.0 and 3.0 in hope that they perhaps differ somewhat in their generation of optimized code, but it turned out not to be the case. The difference is mainly in the language feature set supported by the newer versions - in particular, the older versions required function definitions to follow the ancient K&amp;R style and were missing library functions which are now considered standard, but they still optimize loops in exactly the same way. MSC 2.0 is a different case however. It is basically a rebranding of the <a href="https://en.wikipedia.org/wiki/Lattice_C">Lattice C</a> compiler before Microsoft made their own thing with 3.0, so I was expecting its output to differ. Rightly so, it turned out, however again - not in the way I needed. It put the outer loop condition in the expected place, but the jump sequence was all wrong, more like QuickC with optimizations disabled. This was an interesting excursion, however. I never worked with a compiler which did not support the <code class="language-plaintext highlighter-rouge">void</code> type before. Also, there were some limitations on the use of whitespace, and the compiler itself worked in two passes. There are two executables, <code class="language-plaintext highlighter-rouge">MC1.EXE</code> and <code class="language-plaintext highlighter-rouge">MC2.EXE</code>. The output of the first is a <code class="language-plaintext highlighter-rouge">.Q</code> or “quad” file, and the other turns it into the expected <code class="language-plaintext highlighter-rouge">.OBJ</code>.</p>
+
+<p>Now I’m really out of things to try. I mean, let’s be realistic, nobody at Microprose would decide it was a good idea to use an exotic compiler for a codebase that they’re just trying to tweak quickly and make a quick buck off of before the game is too old. So, no <a href="https://digitalmars.com/download/freecompiler.html">Digital Mars</a>, <a href="http://www.desmet-c.com/">DeSmet</a> or anything of that sort. But maybe still Turbo C? Maybe I missed something. I spent some time trying to beat Borland C++ 3.0 and Turbo C 2.0 into submission again, since the output of those looked most promising. I lost and got a beating instead, same with MSC 6.0 revisited.</p>
+
+<p>I was getting desperate, so I started reaching out to ex-Microprose employees that did not even work on F15 SE2 because I can’t get in touch with Andy Hollis. I was hoping I would learn something about how things were done at the company that could put me on the right track. Here’s what I was told by a person who worked on <a href="https://en.wikipedia.org/wiki/F-117A_Nighthawk_Stealth_Fighter_2.0">F117</a>, which was the next iteration of the same engine after F15 SE2 (which itself built on top of F19):</p>
+
+<ol>
+  <li>There was definitely no C++ used on the project. I was already suspecting as much, but it’s good to have it confirmed, because C++ would have complicated things.</li>
+  <li><a href="https://en.wikipedia.org/wiki/Sid_Meier">Sid</a> liked gotos. The mission generation code used gotos extensively. Good thing to know, the code could diverge from the clean patterns of control that pure C provides and I’ll know that a goto is always an option.</li>
+  <li>At that point in time, Microprose only used Microsoft C compilers/debuggers. After F117 they supposedly switched to Borland Turbo C, but the person I was talking to was “pretty sure” F-117 only used Microsoft C - so probably F15 did as well as the older game.</li>
+  <li>They were also sure that the graphics code in F117 came from F15 SE2. There was no graphics programmer on F117, and every new project grabbed the latest and greatest graphics code available from another project - which would be F15 SE2 at the time F117 was being made.</li>
+</ol>
+
+<p>Does that mean that what I’m seeing in the game binary is a product of MSC after all? But I tried everything I could with it. Or maybe the scenario disk version was an early pilot for the usage of Turbo C within the company? Grrr, so many possibilities. If I could just turn into a fly on the wall of a certain Maryland office building in 1991…</p>
+
+<p>I start developing paranoia. Maybe my binaries are compromised. Maybe the LZEXE packer tweaks some instructions inside the binary. Maybe the unpacker did. Maybe, maybe. I see opcodes in the shower and the kitchen sink. It’s probably MSC. No, it can’t be MSC. My wife starts giving me concerned looks. She knows how I get when I have a puzzle to solve.</p>
+
+<p>Let’s approach this from a different angle. Let’s say I’m working at Microprose in 1991, <a href="https://en.wikipedia.org/wiki/Bill_Stealey">Bill Stealey</a> comes in through the door and says “listen Junior, we need you to add a couple features to this game we released two years ago so we can squeeze a couple of extra bucks from it because Desert Storm just happened and I think we can capitalize off that. Make sure you don’t spend too much time, just get this over with quickly.”. What would I do?</p>
+
+<p>Well, I definitely would not switch to a different compiler, or touch the build system at all. I would go in, add my changes, build them with debug flags, test and debug them, then when it’s good, I would rebuild with optimizations enabled, pass it to the production department and call it a day. Wait, the debug flags… what were they again for MSC?</p>
+
+<p><img src="/images/cl_debug.png" alt="f15" class="center-image" /></p>
+
+<p>Doesn’t look useful, which is probably why I ignored them in the past. The game binary does not contain any symbol names that I can see. Meh, let’s try it anyway… holy shit!</p>
+
+<pre>
+ninja@dell:eaglestrike$ make verify
+--- build running cl from msc510
+cl /Gs <r>/Zi</r> /Id:\f15-se2 /DMSC_VER=5 /c /Foe:\start.obj f15-se2\start.c
+f15-se2\start.c
+f15-se2\start.c(104) : warning C4021: 'openShowPic' : too few actual parameters
+f15-se2\start.c(121) : warning C4021: 'openShowPic' : too few actual parameters
+f15-se2\start.c(152) : warning C4021: 'openShowPic' : too few actual parameters
+f15-se2\start.c(253) : warning C4021: 'openShowPic' : too few actual parameters
+--- build running link from msc510
+link /M /NOD start.obj start_o.obj slot.obj lowlvl.obj,d:\start.exe,,slibce.lib;
+../mzretools/debug/mzdiff ida/start.exe:0x10 build-f15-se2/start.exe:0x10 --verbose --loose --map map/start.map
+Comparing code between reference (entrypoint 1000:0010/010010) and target (entrypoint 1000:0010/010010) executables
+--- Now @1000:0010/010010, routine 1000:0010-1000:0482/000473: main, block 010010-010482/000473, target @1000:0010/010010
+1000:0010/010010: push bp                          == 1000:0010/010010: push bp
+1000:0011/010011: mov bp, sp                       == 1000:0011/010011: mov bp, sp
+<o>1000:0013/010013: sub sp, 0x1c                     =~ 1000:0013/010013: sub sp, 0xe</o>
+1000:0016/010016: push si                          == 1000:0016/010016: push si
+1000:0017/010017: mov word [0x628c], 0x0           ~= 1000:0017/010017: mov word [0x5a0], 0x0
+1000:001d/01001d: mov word [0x628a], 0x4f2         ~= 1000:001d/01001d: mov word [0x59e], 0x4f2
+1000:0023/010023: mov word [0x45fc], 0x0           ~= 1000:0023/010023: mov word [0x598], 0x0
+1000:0029/010029: mov word [0x45fa], 0x4f4         ~= 1000:0029/010029: mov word [0x596], 0x4f4
+1000:002f/01002f: mov word [bp-0x10], 0x0          ~= 1000:002f/01002f: mov word [bp-0x04], 0x0
+1000:0034/010034: mov word [bp-0x12], 0x4f0        ~= 1000:0034/010034: mov word [bp-0x06], 0x4f0
+1000:0039/010039: les bx, [bp-0x12]                =~ 1000:0039/010039: les bx, [bp-0x06]
+1000:003c/01003c: mov ax, es:[bx]                  == 1000:003c/01003c: mov ax, es:[bx]
+1000:003f/01003f: mov [0x77f4], ax                 ~= 1000:003f/01003f: mov [0x592], ax
+1000:0042/010042: mov word [0x77f2], 0x0           ~= 1000:0042/010042: mov word [0x590], 0x0
+1000:0048/010048: mov ax, es:[bx]                  == 1000:0048/010048: mov ax, es:[bx]
+1000:004b/01004b: mov [0x4606], ax                 ~= 1000:004b/01004b: mov [0x59c], ax
+[...]
+1000:00df/0100df: mov ax, 0x5                      == 1000:00df/0100df: mov ax, 0x5
+1000:00e2/0100e2: push ax                          == 1000:00e2/0100e2: push ax
+1000:00e3/0100e3: call far 0x16b50be9              ~= 1000:00e3/0100e3: call far 0x10f701b9
+1000:00e8/0100e8: add sp, 0x2                      == 1000:00e8/0100e8: add sp, 0x2
+1000:00eb/0100eb: sub ax, ax                       == 1000:00eb/0100eb: sub ax, ax
+1000:00ed/0100ed: push ax                          == 1000:00ed/0100ed: push ax
+<o>1000:00ee/0100ee: mov ax, 0x42                     =~ 1000:00ee/0100ee: mov ax, 0x5c</o>
+1000:00f1/0100f1: push ax                          == 1000:00f1/0100f1: push ax
+1000:00f2/0100f2: call 0x3312 (down)               ~= 1000:00f2/0100f2: call 0x5ea (down)
+1000:00f5/0100f5: add sp, 0x4                      == 1000:00f5/0100f5: add sp, 0x4
+1000:00f8/0100f8: call far 0x16b50c48              ~= 1000:00f8/0100f8: call far 0x10f70218
+1000:00fd/0100fd: call 0x185a (down)               ~= 1000:00fd/0100fd: call 0x616 (down)
+1000:0100/010100: mov byte [0x76e], 0x0            ~= 1000:0100/010100: mov byte [0x5b0], 0x0
+1000:0105/010105: cmp byte [0x76e], 0x78           ~= 1000:0105/010105: cmp byte [0x5b0], 0x78 😍😍😍
+1000:010a/01010a: jnb 0x11e (down)                 == 1000:010a/01010a: jnb 0x11e (down)
+1000:010c/01010c: call far 0x16b50c7a              ~= 1000:010c/01010c: call far 0x10f7024a
+1000:0111/010111: or ax, ax                        == 1000:0111/010111: or ax, ax
+1000:0113/010113: jnz 0x11c (down)                 == 1000:0113/010113: jnz 0x11c (down)
+1000:0115/010115: call far 0x16b50c7f              ~= 1000:0115/010115: call far 0x10f7024f
+1000:011a/01011a: jmp short 0x11e (down)           == 1000:011a/01011a: jmp short 0x11e (down) 😍😍😍
+1000:011c/01011c: jmp short 0x105 (up)             == 1000:011c/01011c: jmp short 0x105 (up) 😍😍😍
+1000:011e/01011e: cmp byte [0x76e], 0x78           ~= 1000:011e/01011e: cmp byte [0x5b0], 0x78 
+1000:0123/010123: jb 0x17c (down)                  == 1000:0123/010123: jb 0x17c (down)
+[...]
+</pre>
+
+<p>Using the <code class="language-plaintext highlighter-rouge">/Zi</code> option made the loop code with the superfluous <code class="language-plaintext highlighter-rouge">jmp short</code>-s match exactly even with a simple <code class="language-plaintext highlighter-rouge">for</code> loop - no questionable <code class="language-plaintext highlighter-rouge">goto</code>s required like when using Turbo C. What the hell does this option do exactly? Let’s consult the fine manual:</p>
+
+<p><img src="/images/msc_zi.png" alt="f15" class="center-image" /></p>
+
+<p>That explains everything. Unlike <code class="language-plaintext highlighter-rouge">/Od</code> which disables optimizations completely, <code class="language-plaintext highlighter-rouge">/Zi</code> just disables ones that make debugging difficult. And symbols are placed in the object files, not in the final executable which is why I can’t see them.</p>
+
+<p>The commit history on my git repo for the reconstruction shows that I first hit the problematic loop for which I was unable to write C code that would exactly match the game’s opcodes on 29th March. It’s the end of August and I finally figured it out. Everything works now, there were a couple of divergences which were easy to tweak into 100% matching code. It’s actually eerie watching mzdiff display no skips and large swaths of exactly equal instructions, with only the occasional offset difference in orange.</p>
+
+<p>So, did I just “waste” 5 months? No, I don’t think so. I learned a lot about how the compiler works and got a feel for the flow of opcodes and how they map to C code. I can now write easier conditions or loops as I read them. I can tell optimized from unoptimized code at a glance. It was extremely frustrating for a while, but the sense of satisfaction I got from finally finding the magic flag that somebody forgot to disable before making the final build is proportionally exhilarating. I managed to uncover a cool fact about the game, and it being (at least partially) built in debug mode means the instructions will be likely easier to follow.</p>
+
+<p>It’s my own fault really for not RTFM’ing more carefully and assuming only the <code class="language-plaintext highlighter-rouge">/O</code> options could influence optimizations, but you have to admit that the option descriptions in the output of the compiler are misleading, to put it mildly. I recall searching the manual for all occurences of “optimization” at some point, but this is a scanned document and text search does not always work on it. Or maybe it did find the occurence, but I glossed over it after seeing “symbols”? Well, no point in wondering now. The project is back on track, I’m churning out functions like mad. I’m looking forward to being done with <code class="language-plaintext highlighter-rouge">START.EXE</code> and moving onto <code class="language-plaintext highlighter-rouge">EGAME.EXE</code> in the near future.</p>
+
+  </div><a class="u-url" href="/f15-se2/2023/09/02/compiler3.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">neuviemeporte&#39;s journal</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">neuviemeporte&#39;s journal</li><li><a class="u-email" href="mailto:neuviemeporte@outlook.com">neuviemeporte@outlook.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/neuviemeporte"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">neuviemeporte</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Misadventures in 16bit reverse engineering, programming WTFs and general rants about the IT industry.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
