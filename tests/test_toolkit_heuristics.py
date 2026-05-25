@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from tools.adjust_function import add_shape_notes, heuristic_notes
+from tools.adjust_function import add_shape_notes, heuristic_notes  # noqa: E402
 
 
 def diff(status, ref_instr, tgt_instr):

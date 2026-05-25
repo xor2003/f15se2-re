@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import json
-import os
 import re
 from pathlib import Path
 
@@ -109,7 +108,6 @@ def routine_aliases(routine):
 
 
 def infer_status(routine, extract_idx, externs, preserves, c_owners):
-    name = routine["name"]
     aliases = routine_aliases(routine)
     key = (routine["segment"], routine["begin"], routine["end"])
     extracted = key in extract_idx or any(alias in extract_idx for alias in aliases)

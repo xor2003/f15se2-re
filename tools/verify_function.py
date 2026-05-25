@@ -184,8 +184,8 @@ def main():
     built_off = find_in_linker_map(name, linker_map)
     if built_off is None:
         print(f"Error: '_{name}' not found in {linker_map}")
-        print(f"  Make sure the function is declared PUBLIC / EXTRN in the asm "
-              f"so the linker emits it in the map.")
+        print("  Make sure the function is declared PUBLIC / EXTRN in the asm "
+              "so the linker emits it in the map.")
         sys.exit(1)
 
     print(f"Linker map:  _{name} at {built_off:#06x}")
@@ -203,11 +203,11 @@ def main():
         print(f"Result: MATCH ✓ ({size} bytes identical)")
         byte_match = True
     else:
-        print(f"Result: MISMATCH ✗")
+        print("Result: MISMATCH ✗")
         all_reloc = annotate_diff(ref_bytes, built_bytes)
         if all_reloc:
-            print(f"  (all differences are in relative branch/call operands, "
-                  f"likely a correct reconstruction at a different address)")
+            print("  (all differences are in relative branch/call operands, "
+                  "likely a correct reconstruction at a different address)")
         byte_match = False
 
     # ------------------------------------------------------------------ #
@@ -217,7 +217,7 @@ def main():
     # ------------------------------------------------------------------ #
     mzdiff_match = None
     if os.path.isfile(mzdiff_bin):
-        print(f"\n--- mzdiff instruction comparison ---")
+        print("\n--- mzdiff instruction comparison ---")
         ref_spec = f"{ref_exe}:{start:#x}-{end:#x}"
         # Point mzdiff directly at the built function using its known offset.
         # This is exact: no hex-pattern search, no BFS precondition.
@@ -261,14 +261,14 @@ def main():
     # - Bytes match exactly, OR
     # - mzdiff reports match (byte diffs are just data-segment relocations)
     if byte_match:
-        print(f"\n=== VERDICT: MATCH (bytes identical) ===")
+        print("\n=== VERDICT: MATCH (bytes identical) ===")
     elif mzdiff_match:
-        print(f"\n=== VERDICT: MATCH (instructions match, data-segment addresses differ) ===")
+        print("\n=== VERDICT: MATCH (instructions match, data-segment addresses differ) ===")
     elif mzdiff_match is False:
-        print(f"\n=== VERDICT: MISMATCH ===")
+        print("\n=== VERDICT: MISMATCH ===")
         sys.exit(1)
     else:
-        print(f"\n=== VERDICT: UNKNOWN (mzdiff not available or inconclusive) ===")
+        print("\n=== VERDICT: UNKNOWN (mzdiff not available or inconclusive) ===")
         sys.exit(1)
 
 

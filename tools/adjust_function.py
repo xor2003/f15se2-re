@@ -19,7 +19,6 @@ from correlation_analyzer import (  # noqa: E402
     find_cod_for_function,
     parse_c_functions,
     parse_cod_file,
-    parse_lst_file,
     parse_map_file,
     parse_mzdiff_output,
     summarize,

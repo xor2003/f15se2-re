@@ -13,7 +13,7 @@ THIS_DIR = Path(__file__).resolve().parent
 if str(THIS_DIR) not in sys.path:
     sys.path.insert(0, str(THIS_DIR))
 
-from donor_search import build_donor_report, build_support_symbol_report, render_context_text
+from donor_search import build_donor_report, build_support_symbol_report, render_context_text  # noqa: E402
 
 
 DEFAULT_PROMPT = "prompt.txt"
