@@ -1,7 +1,5 @@
 MZRE := mzretools
 MZRETOOLDIR := $(MZRE)/tools
-LST2ASM := $(MZRETOOLDIR)/lst2asm.py
-LST2CH := $(MZRETOOLDIR)/lst2ch.py
 DOSBUILD := $(MZRETOOLDIR)/dosbuild.sh
 DOSTEST := $(MZRETOOLDIR)/test.sh
 DISASM := $(MZRETOOLDIR)/disasm.sh
@@ -9,7 +7,6 @@ UASMDIR := UASM
 UASM := $(UASMDIR)/GccUnixR/uasm
 MZDIFF := $(MZRE)/debug/mzdiff
 MZHDR := $(MZRE)/debug/mzhdr
-LSTDIR := lst
 REASMDIR := reasm
 CONFDIR := conf
 TOOLDIR := tools
@@ -49,46 +46,38 @@ all: f15-se2
 # main executable, aka loader, replacement for f15.com and su.exe combined
 #
 MAIN_EXE := $(BUILDDIR)/f15.exe
-MAIN_SRCS := f15.c dosfunc.c biosfunc.c output.c overlay.c util.c
+MAIN_SRCS := f15.c dosfunc.c biosfunc.c output.c overlay.c f15util.c
 MAIN_OBJS := $(call cobj,$(BUILDDIR),$(MAIN_SRCS))
 
-$(MAIN_EXE): $(BUILDDIR) $(MAIN_OBJS)
+$(MAIN_EXE): | $(BUILDDIR)
+$(MAIN_EXE): $(MAIN_OBJS)
 	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(MAIN_OBJS) -o $@ -f "$(LINKFLAGS)"
 
 #
 # start.exe reconstruction (rc)
 #
 START_EXE := $(BUILDDIR)/start.exe
-START_LST := $(LSTDIR)/start.lst
-START_INC := $(LSTDIR)/start.inc
 START_CONF := $(CONFDIR)/start_rc.json
 START_BASE := start_rc.asm
 START_ASM := start4.asm $(START_BASE)
+COMMON_SRC := util.c
+COMMON_SRC2 := util2.c
+COMMON_OBJ := $(call cobj,$(BUILDDIR),$(COMMON_SRC))
+COMMON_OBJ2 := $(call cobj,$(BUILDDIR),$(COMMON_SRC2))
 START_SRC := start0.c start1.c start2.c start3.c
 START_BASEHDR = $(SRCDIR)/start.h
 START_COBJ := $(call cobj,$(BUILDDIR),$(START_SRC))
-START_OBJ := $(START_COBJ) $(call asmobj,$(BUILDDIR),$(START_ASM))
+START_OBJ := $(START_COBJ) $(COMMON_OBJ) $(COMMON_OBJ2) $(call asmobj,$(BUILDDIR),$(START_ASM))
 
 # reference and target entrypoints (offset of main()) for binary comparison
 START_VRF_REF := bin/start.exe
 START_VRF_REFEP := 0x10
 START_VRF_TGTEP := [558bec83ec1c56c706]
 
-# ----- Dependencies on the IDA listing commented out with start.exe is out of life support;
-# ----- modifications should be made to the assembly files directly as everything gets
-# ----- gradually moved over to C.
-# $(START_LST) $(START_INC): $(MZRETOOLDIR) $(LSTDIR)
-# 	touch $@
-
-# # generate C header file from ida listing
-# $(START_BASEHDR): $(START_LST) $(START_INC) $(START_CONF) $(LST2CH)
-# 	$(LST2CH) $< $(SRCDIR) $(START_CONF) --noc
-
-# # generate assembly for base object from ida listing
-# $(SRCDIR)/$(START_BASE): $(START_LST) $(START_INC) $(START_CONF) $(LST2ASM)
-# 	$(LST2ASM) $< $@ $(START_CONF) --noproc --nopreserve
-
 $(START_COBJ): $(START_BASEHDR)
+$(COMMON_OBJ) $(COMMON_OBJ2): $(SRCDIR)/util.h
+$(BUILDDIR)/util2.obj: MSC_CFLAGS := /Gs /Id:\f15-se2
+$(DEBUGDIR)/util2.obj: MSC_CFLAGS := /Gs /w /Id:\f15-se2 /DDEBUG
 $(BUILDDIR)/start2.obj: MSC_CFLAGS := /Gs /Id:\f15-se2
 $(BUILDDIR)/start4.obj: MSC_CFLAGS := /Gs /Zi /Id:\f15-se2
 
@@ -98,38 +87,17 @@ $(START_EXE): $(START_OBJ)
 
 # start.exe debug build
 START_DEBUG := $(DEBUGDIR)/start.exe
-START_DBG_OBJ := $(call cobj,$(DEBUGDIR),$(START_SRC)) $(call asmobj,$(DEBUGDIR),$(START_ASM)) $(DEBUGDIR)/debug.obj
-$(START_DBG_OBJ): $(START_BASEHDR)
 $(START_DEBUG): MSC_CFLAGS += /DDEBUG
-$(START_DEBUG): UASMFLAGS += -DDEBUG
+START_DBG_OBJ := $(call cobj,$(DEBUGDIR),$(START_SRC)) $(call asmobj,$(DEBUGDIR),$(START_ASM)) $(call cobj,$(DEBUGDIR),$(COMMON_SRC)) $(call cobj,$(DEBUGDIR),$(COMMON_SRC2)) $(DEBUGDIR)/debug.obj
+$(START_DBG_OBJ): $(START_BASEHDR)
+$(START_DBG_OBJ): UASMFLAGS += -DDEBUG
 $(START_DEBUG): $(DEBUGDIR) $(START_DBG_OBJ)
-	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(START_DBG_OBJ) -o $@ -f "$(LINKFLAGS)"
+	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(START_DBG_OBJ) -o $@ -f "$(LINKFLAGS)" -l "slibce.lib"
 	@if [ -n "$(F15_TESTDIR)" ]; then \
 	    echo "Copying $@ to $(F15_TESTDIR)"; \
 	    cp $@ "$(F15_TESTDIR)"; \
 		ls -l $(F15_TESTDIR)/start.exe; \
 	fi
-
-#
-# start.exe reassembly (re)
-#
-STARTRE_EXE := $(BUILDDIR)/start_re.exe
-STARTRE_CONF := $(CONFDIR)/start_re_conf.py
-STARTRE_ASM := $(SRCDIR)/start_re.asm
-STARTRE_OBJ := $(BUILDDIR)/start_re.obj
-
-# the reassembly file is created from the IDA listing file by the Python cleanup/tweak script
-$(STARTRE_ASM): $(START_LST) $(STARTRE_CONF) $(LST2ASM)
-	$(LST2ASM) $^ $@ $(STARTRE_CONF)
-
-$(STARTRE_EXE): UASMFLAGS += -Sp=1 -nt=startCode1
-$(STARTRE_EXE): $(STARTRE_OBJ)
-	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $^ -o $@ -f "$(LINKFLAGS)"
-	$(DISASM) $@ > $(REASMDIR)/start_re.dis
-	$(MZHDR) $@ > $(REASMDIR)/start_re_hdr.txt
-	xxd -o -$$((1024+0x6b50)) -s $$((1024+0x6b50)) $@ > $(REASMDIR)/start_re_data.hex
-	xxd -o -$$((`$(MZHDR) $@ -l`)) -s $$((`$(MZHDR) $@ -l`)) $@ > $(REASMDIR)/start_re.hex
-	diff -q $(REASMDIR)/start.hex $(REASMDIR)/start_re.hex
 
 #
 # egame.exe reconstruction (rc)
@@ -147,15 +115,7 @@ EGAME_OBJ := $(EGAME_COBJ) $(call asmobj,$(BUILDDIR),$(EGAME_ASM))
 $(EGAME_COBJ): $(EGAME_BASEHDR)
 $(EGAME_EXE): | $(BUILDDIR)
 $(EGAME_EXE): $(EGAME_OBJ)
-	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(EGAME_OBJ) -o $@ -f "$(LINKFLAGS)"
-
-# generate C header file from ida listing
-$(EGAME_BASEHDR): $(EGAME_LST) $(EGAME_INC) $(EGAME_CONF) $(LST2CH)
-	$(LST2CH) $< $(SRCDIR) $(EGAME_CONF) --noc
-
-# generate assembly for base object from ida listing
-$(SRCDIR)/$(EGAME_BASE): $(EGAME_LST) $(EGAME_INC) $(EGAME_CONF) $(LST2ASM)
-	$(LST2ASM) $< $@ $(EGAME_CONF) --stub
+	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(EGAME_OBJ) -o $@ -f "$(LINKFLAGS)" -l "slibce.lib"
 
 $(EGAME_COBJ): $(EGAME_BASEHDR)
 $(BUILDDIR)/egame2.obj: MSC_CFLAGS := /Fc /Gs /Id:\f15-se2
@@ -166,13 +126,66 @@ EGAME_VRF_REF := bin/egame.exe
 EGAME_VRF_REFEP := 0x10
 EGAME_VRF_TGTEP := [558bec83ec??c746]
 
+# egame.exe debug build
+EGAME_DEBUG := $(DEBUGDIR)/egame.exe
+$(EGAME_DEBUG): MSC_CFLAGS += /DDEBUG
+EGAME_DBG_OBJ := $(call asmobj,$(DEBUGDIR),$(EGAME_ASM)) $(call cobj,$(DEBUGDIR),$(EGAME_SRC)) $(DEBUGDIR)/dbglite.obj $(DEBUGDIR)/dbgio.obj
+$(EGAME_DBG_OBJ): $(EGAME_BASEHDR)
+$(EGAME_DBG_OBJ): UASMFLAGS += -DDEBUG
+$(EGAME_DEBUG): $(DEBUGDIR) $(EGAME_DBG_OBJ)
+	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(EGAME_DBG_OBJ) -o $@ -f "$(LINKFLAGS)" -l "slibce.lib"
+	@if [ -n "$(F15_TESTDIR)" ]; then \
+	    echo "Copying $@ to $(F15_TESTDIR)"; \
+	    cp $@ "$(F15_TESTDIR)"; \
+		ls -l $(F15_TESTDIR)/egame.exe; \
+	fi
+
+#
+# end.exe reconstruction (rc)
+#
+END_EXE := $(BUILDDIR)/end.exe
+END_BASE := end_rc.asm
+END_ASM := $(END_BASE)
+END_SRC := end0.c end1.c end2.c end3.c
+END_BASEHDR = $(SRCDIR)/end.h
+END_COBJ := $(call cobj,$(BUILDDIR),$(END_SRC))
+END_OBJ := $(END_COBJ) $(COMMON_OBJ) $(COMMON_OBJ2) $(call asmobj,$(BUILDDIR),$(END_ASM))
+$(END_COBJ): $(END_BASEHDR)
+$(END_EXE): | $(BUILDDIR)
+$(END_EXE): $(END_OBJ)
+	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(END_OBJ) -o $@ -f "$(LINKFLAGS)"
+
+$(END_COBJ): $(END_BASEHDR)
+$(BUILDDIR)/end1.obj: MSC_CFLAGS := /Gs /Id:\f15-se2
+$(BUILDDIR)/end2.obj: MSC_CFLAGS := /Od /Id:\f15-se2
+$(BUILDDIR)/end3.obj: MSC_CFLAGS := /Gs /Os /Id:\f15-se2
+
+# reference and target entrypoints for binary comparison
+END_VRF_REF := bin/end.exe
+END_VRF_REFEP := 0x10
+END_VRF_TGTEP := [558bec83ec0e56c746]
+
+# end.exe debug build
+END_DEBUG := $(DEBUGDIR)/end.exe
+$(END_DEBUG): MSC_CFLAGS += /DDEBUG
+END_DBG_OBJ := $(call cobj,$(DEBUGDIR),$(END_SRC)) $(call asmobj,$(DEBUGDIR),$(END_ASM)) $(call cobj,$(DEBUGDIR),$(COMMON_SRC)) $(call cobj,$(DEBUGDIR),$(COMMON_SRC2)) $(DEBUGDIR)/debug.obj
+$(END_DBG_OBJ): $(END_BASEHDR)
+$(END_DBG_OBJ): UASMFLAGS += -DDEBUG
+$(END_DEBUG): $(DEBUGDIR) $(END_DBG_OBJ)
+	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $(END_DBG_OBJ) -o $@ -f "$(LINKFLAGS)" -l "slibce.lib"
+	@if [ -n "$(F15_TESTDIR)" ]; then \
+	    echo "Copying $@ to $(F15_TESTDIR)"; \
+	    cp $@ "$(F15_TESTDIR)"; \
+		ls -l $(F15_TESTDIR)/end.exe; \
+	fi
+
 #
 # unit test executables
 #
 TEST_EXE := $(DEBUGDIR)/test.exe
 TEST_SRCS := test.c start1.c start2.c start3.c
 TEST_ASMS := start4.asm start_rc.asm
-TEST_OBJS := $(call cobj,$(DEBUGDIR),$(TEST_SRCS)) $(call asmobj,$(DEBUGDIR),$(TEST_ASMS))
+TEST_OBJS := $(call cobj,$(DEBUGDIR),$(TEST_SRCS)) $(call asmobj,$(DEBUGDIR),$(TEST_ASMS)) $(call cobj,$(DEBUGDIR),$(COMMON_SRC)) $(call cobj,$(DEBUGDIR),$(COMMON_SRC2)) $(DEBUGDIR)/debug.obj
 TEST_LIBS := slibce.lib
 
 $(TEST_EXE): MSC_CFLAGS := /Gs /w /Id:\f15-se2 /DDEBUG
@@ -232,12 +245,15 @@ $(HELLO_EXE): LINKFLAGS := /M /I
 $(HELLO_EXE): $(HELLO_OBJ)
 	@$(DOSBUILD) link $(LINK_TOOLCHAIN) -i $^ -o $@ -f "$(LINKFLAGS)" -l "$(HELLO_LIB)"
 
-f15-se2: $(BUILDDIR) $(TOOLCHAIN_DIR) $(UASM) $(MAIN_EXE) $(START_EXE) $(EGAME_EXE) $(TEST_EXE)
+f15-se2: $(BUILDDIR) $(TOOLCHAIN_DIR) $(UASM) $(MAIN_EXE) $(START_EXE) $(EGAME_EXE) $(END_EXE) $(TEST_EXE)
 
 start: $(START_EXE)
 egame: $(EGAME_EXE)
+end: $(END_EXE)
 
-debug: $(DEBUGDIR) $(START_DEBUG)
+debug: $(DEBUGDIR) $(START_DEBUG) $(END_DEBUG) $(EGAME_DEBUG)
+debug-end: $(DEBUGDIR) $(END_DEBUG)
+debug-egame: $(DEBUGDIR) $(EGAME_DEBUG)
 
 clean:
 	-rm -rf $(BUILDDIR)
@@ -260,7 +276,7 @@ hello: $(HELLO_EXE)
 f15-se2-test: $(BUILDDIR) $(MAIN_EXE)
 	$(DOSTEST) $(MAIN_EXE)
 
-$(BUILDDIR) $(DEBUGDIR) $(LSTDIR) $(TOOLDIR):
+$(BUILDDIR) $(DEBUGDIR) $(TOOLDIR):
 	mkdir -p $@
 
 $(TOOLCHAIN_DIR):
@@ -276,7 +292,7 @@ $(UASMDIR)/Makefile:
 $(MZDIFF):
 	cd $(MZRE) && ./build.sh
 
-$(DEBUGDIR)/%.obj $(BUILDDIR)/%.obj: $(SRCDIR)/%.c $(HDRS)
+$(BUILDDIR)/%.obj: $(SRCDIR)/%.c $(HDRS) | $(BUILDDIR)
 	@$(DOSBUILD) cc $(C_TOOLCHAIN) -i $< -o $@ -f "$(MSC_CFLAGS)"
 
 $(DEBUGDIR)/%.obj $(BUILDDIR)/%.obj: $(SRCDIR)/%.asm
@@ -285,16 +301,12 @@ $(DEBUGDIR)/%.obj $(BUILDDIR)/%.obj: $(SRCDIR)/%.asm
 
 reasm: $(STARTRE_EXE)
 
-verify: verify-start verify-egame
+verify: verify-start verify-egame verify-end
 verify-debug: VERIFY_FLAGS += --debug
 verify-debug: verify-start
 
 $(START_VRF_REF):
-	@echo "---> Place start.exe with md5sum cf6e997ed4582cf82db6ec37d2b1a6fd into bin/"
-	@exit 1
-
-$(EGAME_VRF_REF):
-	@echo "---> Place egame.exe with md5sum ffc191b1caeafc3b6f435795f8ea868e into bin/"
+	@echo "---> Place start.exe (unpacked with tools/unp) with md5sum cf6e997ed4582cf82db6ec37d2b1a6fd into bin/"
 	@exit 1
 
 $(BUILDDIR)/egame_rebuilt.map: $(EGAME_EXE)
@@ -302,6 +314,10 @@ $(BUILDDIR)/egame_rebuilt.map: $(EGAME_EXE)
 
 verify-start: $(MZDIFF) $(START_EXE) $(START_VRF_REF)
 	$(MZDIFF) $(START_VRF_REF):$(START_VRF_REFEP) $(START_EXE):$(START_VRF_TGTEP) $(VERIFY_FLAGS) --map map/start.map --asm
+
+$(EGAME_VRF_REF):
+	@echo "---> Place egame.exe (unpacked with tools/unp) with md5sum ffc191b1caeafc3b6f435795f8ea868e into bin/"
+	@exit 1
 
 verify-egame: $(MZDIFF) $(EGAME_EXE) $(EGAME_VRF_REF)
 	$(MZDIFF) $(EGAME_VRF_REF):$(EGAME_VRF_REFEP) $(EGAME_EXE):$(EGAME_VRF_TGTEP) $(VERIFY_FLAGS) --map map/egame.map

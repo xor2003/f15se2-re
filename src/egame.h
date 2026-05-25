@@ -3,6 +3,7 @@
 #include "inttype.h"
 #include "struct.h"
 #include "comm.h"
+#include "pointers.h"
 
 #include <stdio.h>
 
@@ -61,9 +62,9 @@ void __cdecl gfxInit();
 // ==== seg000:0x2e2 ====
 int loadF15DgtlBin();
 // ==== seg000:0x334 ====
-int sub_10334();
+int sub_10334(int arg_0);
 // ==== seg000:0x688 ====
-int setupOverlaySlots();
+int setupOverlaySlots(uint16 addr);
 // ==== seg000:0x720 ====
 int UpdatePlayerAndWorldState();
 // ==== seg000:0x14e8 ====
@@ -71,9 +72,9 @@ int sub_114E8();
 // ==== seg000:0x14fc ====
 int countermeasures();
 // ==== seg000:0x1636 ====
-int sub_11636();
+void sub_11636();
 // ==== seg000:0x1676 ====
-int sub_11676();
+void sub_11676();
 // ==== seg000:0x1841 ====
 int sub_11841();
 // ==== seg000:0x18d5 ====
@@ -91,19 +92,19 @@ int SetupWeaponDisplay();
 // ==== seg000:0x1b37 ====
 int PrepareToExit();
 // ==== seg000:0x1bc3 ====
-int sub_11BC3();
+void sub_11BC3(int arg_0, unsigned int arg_2);
 // ==== seg000:0x1bfd ====
-int sub_11BFD();
+void sub_11BFD(int arg_0, int arg_2);
 // ==== seg000:0x1c21 ====
 int sub_11C21();
 // ==== seg000:0x1d10 ====
-int sub_11D10();
+void sub_11D10(int arg_0, int arg_2);
 // ==== seg000:0x1d6e ====
-int placeString();
+void placeString();
 // ==== seg000:0x1e0e ====
 int InitializeCockpitData();
 // ==== seg000:0x1f3e ====
-int sub_11F3E();
+void sub_11F3E();
 // ==== seg000:0x2049 ====
 int moveDataFar();
 // ==== seg000:0x206d ====
@@ -115,15 +116,15 @@ int setCommWorldbufPtr();
 // ==== seg000:0x21c6 ====
 int callLoad3DAll();
 // ==== seg000:0x21ca ====
-int sub_121CA();
+void sub_121CA(int, int, int, long, long, long, int, int, int, int);
 // ==== seg000:0x2278 ====
-int sub_12278();
+int sub_12278(int arg_0);
 // ==== seg000:0x229a ====
-int copySomeMem();
+void copySomeMem(int arg_0);
 // ==== seg000:0x22b8 ====
-int sub_122B8();
+int sub_122B8(int param_0, int param_1, int param_2, int param_3, int param_4, int param_5, int param_6, int param_7);
 // ==== seg000:0x26b4 ====
-int sub_126B4();
+uint32 sub_126B4(int level, uint32 coord);
 // ==== seg000:0x273e ====
 int process3dg();
 // ==== seg000:0x2874 ====
@@ -135,45 +136,45 @@ void __cdecl load3DT(char *);
 // ==== seg000:0x2e54 ====
 int load3DG();
 // ==== seg000:0x2f8c ====
-int __cdecl printError(char *);
+int __cdecl printError(const char *);
 // ==== seg000:0x2faf ====
 int __cdecl strcpyFromDot(char *arg_0, char *arg_2);
 // ==== seg000:0x2fda ====
 int sub_12FDA();
 // ==== seg000:0x3224 ====
-int sub_13224();
+void sub_13224(char *a, int b, char c);
 // ==== seg000:0x3266 ====
 int sub_13266();
 // ==== seg000:0x32ba ====
 int sub_132BA();
 // ==== seg000:0x345e ====
-int sub_1345E();
+void sub_1345E(char *, int, int, int);
 // ==== seg000:0x34ac ====
 int sub_134AC();
 // ==== seg000:0x3638 ====
-int sub_13638();
+void sub_13638(int *, int *, int *, int *);
 // ==== seg000:0x3694 ====
-int sub_13694();
+void sub_13694(int, int, int *, int *);
 // ==== seg000:0x36d2 ====
-int sub_136D2();
+void sub_136D2(char far *, int, int);
 // ==== seg000:0x374a ====
 int sub_1374A();
 // ==== seg000:0x378e ====
-int sub_1378E();
+void sub_1378E(int, int);
 // ==== seg000:0x3816 ====
-int sub_13816();
+int sub_13816(int arg_0, int arg_1);
 // ==== seg000:0x3922 ====
 int sub_13922();
 // ==== seg000:0x3932 ====
-int sub_13932();
+void sub_13932(char*, int, int, int, int, int, int, int);
 // ==== seg000:0x39aa ====
 int sub_139AA();
 // ==== seg000:0x39c0 ====
-int sub_139C0();
+int sub_139C0(int arg_0);
 // ==== seg000:0x3a6c ====
-int sub_13A6C();
+void sub_13A6C(int, int, int);
 // ==== seg000:0x3a90 ====
-int sub_13A90();
+void sub_13A90(int arg_0, int arg_2, int arg_4);
 // ==== seg000:0x3aee ====
 int setupDac();
 // ==== seg000:0x3b2f ====
@@ -181,7 +182,7 @@ int FixedPointMul();
 // ==== seg000:0x3b86 ====
 int sub_13B86();
 // ==== seg000:0x3b96 ====
-int sub_13B96();
+int sub_13B96(int arg_0);
 // ==== seg000:0x3ba2 ====
 int sub_13BA2();
 // ==== seg000:0x3bc1 ====
@@ -221,13 +222,13 @@ int sub_13EE3();
 // ==== seg000:0x3f72 ====
 int otherKeyDispatch();
 // ==== seg000:0x51f9 ====
-int sub_151F9();
+void sub_151F9(int param_1, int param_2);
 // ==== seg000:0x5237 ====
 int sub_15237();
 // ==== seg000:0x5411 ====
 int UpdateRotationMatrix();
 // ==== seg000:0x543b ====
-int sub_1543B();
+unsigned sub_1543B(int, int);
 // ==== seg000:0x54b7 ====
 int sub_154B7();
 // ==== seg000:0x5540 ====
@@ -239,11 +240,11 @@ int ProcessPlayerInputAndAI();
 // ==== seg000:0x5fdb ====
 int UpdateThrottleState();
 // ==== seg000:0x606c ====
-int sub_1606C();
+void sub_1606C(void);
 // ==== seg000:0x60d3 ====
 int sub_160D3();
 // ==== seg000:0x613b ====
-int sub_1613B();
+void sub_1613B(void);
 // ==== seg000:0x6172 ====
 int sub_16172();
 // ==== seg000:0x6346 ====
@@ -251,9 +252,9 @@ int DisplayMessageAndWaitKey();
 // ==== seg000:0x660e ====
 int sub_1660E();
 // ==== seg000:0x66be ====
-int sub_166BE();
+void sub_166BE();
 // ==== seg000:0x6742 ====
-int sub_16742();
+int routine_191();
 // ==== seg000:0x67b4 ====
 int sub_167B4();
 // ==== seg000:0x7594 ====
@@ -271,7 +272,7 @@ int sub_187EA();
 // ==== seg000:0x89aa ====
 int sub_189AA();
 // ==== seg000:0x8a44 ====
-int sub_18A44();
+void sub_18A44(void);
 // ==== seg000:0x8aa6 ====
 int sub_18AA6();
 // ==== seg000:0x8df4 ====
@@ -283,15 +284,15 @@ int UpdateFlightModelAndHUD();
 // ==== seg000:0x94d0 ====
 int SetHUDMessage();
 // ==== seg000:0x957a ====
-int sub_1957A();
+void sub_1957A(int arg_0);
 // ==== seg000:0x9595 ====
 int InitHUD();
 // ==== seg000:0x95c9 ====
 int RenderScene();
 // ==== seg000:0x9875 ====
-int zoomIn();
+void zoomIn(void);
 // ==== seg000:0x98b4 ====
-int zoomOut();
+void zoomOut(void);
 // ==== seg000:0x98fa ====
 int TransformXCoordinate();
 // ==== seg000:0x9915 ====
@@ -305,23 +306,25 @@ int GetObjectScreenPosition();
 // ==== seg000:0x9adb ====
 int UpdateObjectAI();
 // ==== seg000:0x9b98 ====
-int sub_19B98();
+void sub_19B98();
 // ==== seg000:0x9be1 ====
 int sub_19BE1();
 // ==== seg000:0x9c0c ====
 int sub_19C0C();
 // ==== seg000:0x9c84 ====
-int sub_19C84();
+void sub_19C84();
 // ==== seg000:0x9d86 ====
-int sub_19D86();
+int sub_19D86(int arg_0, int arg_1, int arg_2, int arg_3);
 // ==== seg000:0x9db0 ====
-int sub_19DB0();
+void __cdecl sub_19DB0(int, int, int, int);
 // ==== seg000:0x9e44 ====
 void __cdecl sub_19E44(int);
 // ==== seg000:0x9e5d ====
 void __cdecl DrawHUDElement(int, int, int, int);
 // ==== seg000:0x9e94 ====
 int sub_19E94();
+// ==== seg000:0x9ea0 ====
+void routine_328(int, int, int);
 // ==== seg000:0x9eb6 ====
 int sub_19EB6();
 // ==== seg000:0x9fad ====
@@ -331,29 +334,29 @@ int ClearMessageArea();
 // ==== seg000:0xa030 ====
 int __cdecl DisplayMessageBottom(int, char *);
 // ==== seg000:0xa0cb ====
-int __cdecl drawSomeStrings(char *, int, int, int);
+int __cdecl drawSomeStrings(const char *, int, int, int);
 // ==== seg000:0xa0fe ====
-int draw2Strings();
+void draw2Strings(const char*, int, int, int);
 // ==== seg000:0xa13a ====
-int __cdecl drawString(int *, char *, int, int, int);
+int __cdecl drawStringCentered(int *, const char *, int, int, int);
 // ==== seg000:0xa183 ====
-int sub_1A183();
+void sub_1A183(int, int, int, int);
 // ==== seg000:0xa1b1 ====
 int sub_1A1B1();
 // ==== seg000:0xa1e4 ====
-int tempStrcpy();
+void tempStrcpy(char *arg_0);
 // ==== seg000:0xa204 ====
-int sub_1A204();
+void sub_1A204(char *arg_0);
 // ==== seg000:0xa224 ====
-int sub_1A224();
+int routine_260(int param_1, int param_2);
 // ==== seg000:0xa25c ====
 int MakeRotationMatrix();
 // ==== seg000:0xa740 ====
 int sub_1A740();
 // ==== seg000:0xa7c4 ====
-int sub_1A7C4();
+void sub_1A7C4();
 // ==== seg000:0xa872 ====
-int sub_1A872();
+void sub_1A872();
 // ==== seg000:0xa8c8 ====
 int TransformAndProjectObject_2();
 // ==== seg000:0xa934 ====
@@ -367,25 +370,25 @@ int sub_1A9F8();
 // ==== seg000:0xb147 ====
 int sub_1B147();
 // ==== seg000:0xc1b9 ====
-int sub_1C1B9();
+void sub_1C1B9(int, int, int, int);
 // ==== seg000:0xc2f8 ====
-int sub_1C2F8();
+void sub_1C2F8(void);
 // ==== seg000:0xc371 ====
-int __cdecl sub_1C371(char *, int);
+void __cdecl sub_1C371(char *, int, int);
 // ==== seg000:0xc40b ====
-int sub_1C40B();
+void sub_1C40B(int param_1);
 // ==== seg000:0xc488 ====
-int sub_1C488();
+void sub_1C488(int param_1, int param_2, int param_3);
 // ==== seg000:0xc661 ====
-int sub_1C661();
+long sub_1C661();
 // ==== seg000:0xc6be ====
 int MatMul();
 // ==== seg000:0xc7a2 ====
-int sub_1C7A2();
+int sub_1C7A2(int arg_0);
 // ==== seg000:0xc7c6 ====
 int sub_1C7C6();
 // ==== seg000:0xc7ea ====
-int sub_1C7EA();
+void sub_1C7EA();
 // ==== seg000:0xc82d ====
 int LoadDigitalSoundBin();
 // ==== seg000:0xc864 ====
@@ -415,7 +418,7 @@ int cosX();
 // ==== seg000:0xd1c8 ====
 int abs_word();
 // ==== seg000:0xd1e8 ====
-int sub_1D1E8();
+void sub_1D1E8(void);
 // ==== seg000:0xd200 ====
 int randlmul();
 // ==== seg000:0xd21e ====
@@ -423,27 +426,27 @@ int sub_1D21E();
 // ==== seg000:0xd260 ====
 int keyDispatch();
 // ==== seg000:0xd9db ====
-int selectMissile();
+void selectMissile();
 // ==== seg000:0xda35 ====
 int makeSound();
 // ==== seg000:0xda5f ====
-int sub_1DA5F();
+void sub_1DA5F(int arg_0);
 // ==== seg000:0xda8d ====
-int sub_1DA8D();
+void sub_1DA8D(void);
 // ==== seg000:0xdaae ====
-int sub_1DAAE();
+void sub_1DAAE(void);
 // ==== seg000:0xdb2b ====
 int SetDifficultyParameters();
 // ==== seg000:0xdb9c ====
 int sub_1DB9C();
 // ==== seg000:0xdbe0 ====
-int sub_1DBE0();
+void sub_1DBE0(void);
 // ==== seg000:0xdd4c ====
 int __cdecl openFileWrapper(char *, int);
 // ==== seg000:0xdd5e ====
 int sub_1DD5E();
 // ==== seg000:0xdd70 ====
-int closeFileWrapper();
+int closeFileWrapper(int handle);
 // ==== seg000:0xdd7e ====
 int sub_1DD7E();
 // ==== seg000:0xdd92 ====
@@ -453,17 +456,17 @@ int sub_1DDAA();
 // ==== seg000:0xddc4 ====
 int __cdecl openFile(char *, int);
 // ==== seg000:0xde1b ====
-int createFile();
+int createFile(int arg_0, int arg_1);
 // ==== seg000:0xde72 ====
-int closeFile();
+int closeFile(int arg_0);
 // ==== seg000:0xde94 ====
-int readFile1();
+int readFile1(int arg_0, int arg_1, int arg_2);
 // ==== seg000:0xdebf ====
-int readFile2();
+int readFile2(int arg_0, int arg_1, int arg_2, int arg_3);
 // ==== seg000:0xdf16 ====
 int read512FromFileIntoBuf();
 // ==== seg000:0xdf4f ====
-int sub_1DF4F();
+int sub_1DF4F(int arg_0, int arg_1, int arg_2, int arg_3, int arg_4);
 // ==== seg000:0xdfbc ====
 int openBlitClosePic();
 // ==== seg000:0xe0aa ====
@@ -646,9 +649,9 @@ int ReadJoystick();
 // ==== seg002:0xc4e ====
 int sub_226BE();
 // ==== seg002:0xcaa ====
-int far restoreJoystickData();
+int far restoreJoystickData(uint8 FAR *ptr);
 // ==== seg002:0xcbe ====
-int far copyJoystickData();
+int far copyJoystickData(uint8 FAR *ptr);
 // ==== seg003:0x6 ====
 int far setInt9Handler();
 // ==== seg003:0x56 ====
@@ -659,7 +662,7 @@ int CustomInt9Handler();
 extern uint8 unk_328B0[];
 extern int16 word_328B2;
 extern uint8 unk_328B6[];
-extern uint8 aMsRunTimeLibraryCopyr[];
+extern char aMsRunTimeLibraryCopyr[];
 extern uint8 unk_328F0[];
 extern uint8 aRegn_xxx[];
 extern uint8 aLb_xxx[];
@@ -786,7 +789,7 @@ extern uint8 aS[];
 extern int16 word_3374A;
 extern uint8 aOnPatrol[];
 extern uint8 aF15StrikeEagle[];
-extern uint8 aAt[];
+extern char aAt[];
 extern uint8 jmp_0[];
 extern uint8 jmp_1[];
 extern uint8 jmp_2[];
@@ -879,28 +882,28 @@ extern int16 sign3dg;
 extern uint8 unk_33E1A[];
 extern int16 word_3401A;
 extern uint8 a_3d3[];
-extern uint8 aRb[];
+extern char aRb[];
 extern char aOpenErrorOn_3d3[];
 extern char aBadObjFileFormat_[];
 extern char aObjectDataTooBig_[];
-extern uint8 aRb_0[];
+extern char aRb_0[];
 extern char aPhoto_3d3[];
 extern char aPleaseInsertF15DiskB[];
-extern uint8 aRb_1[];
+extern char aRb_1[];
 extern char aPhoto_3d3_0[];
 extern char aObjdataOverflow[];
 extern uint8 a_3dt[];
-extern uint8 aRb_2[];
+extern char aRb_2[];
 extern char aOpenErrorOn_3dt[];
 extern char aBadTileFileFormat_[];
 extern char aTooManyTiles_[];
 extern char aTooMuchTileData[];
 extern uint8 a_3dg[];
-extern uint8 aRb_3[];
+extern char aRb_3[];
 extern uint8 aPleaseInsertScenarioD[];
-extern uint8 unk_34121[];
+extern char unk_34121[];
 extern uint8 aPressAKeyWhenReady[];
-extern uint8 aBadGridFileFormat_[];
+extern char aBadGridFileFormat_[];
 extern int16 word_34150;
 extern int16 word_34152;
 extern int16 word_34156;
@@ -1262,8 +1265,8 @@ extern uint8 aHitBy[];
 extern uint8 aIneffective[];
 extern uint8 aHitBy_0[];
 extern uint8 aA[];
-extern uint8 aSecond_Target[];
-extern uint8 aPrimaryTarget_0[];
+extern char aSecond_Target[];
+extern char aPrimaryTarget_0[];
 extern uint8 a0[];
 extern uint8 aFired[];
 extern int16 word_38202;
@@ -1299,11 +1302,11 @@ extern int16 word_383EE;
 extern int16 word_383F0;
 extern int16 word_383F2;
 extern int16 word_383F4;
-extern uint8 aStallWarning[];
+extern char aStallWarning[];
 extern char aAccel[];
 extern char aTraining[];
 extern char aAutopilot[];
-extern uint8 aPressAnyKeyToP[];
+extern char aPressAnyKeyToP[];
 extern uint8 aTac[];
 extern uint8 aTrackcam[];
 extern uint8 aAhead[];
@@ -1315,16 +1318,17 @@ extern int16 word_38460;
 extern uint8 aDestroyedByGun[];
 extern uint8 aHitByGunfire[];
 extern uint8 aDestroyedByG_0[];
-extern uint8 aAt_0[];
+extern char aAt_0[];
 extern uint8 aPrimaryTarget[];
 extern uint8 aSecondaryTarget[];
 extern uint8 aNoTarget[];
 extern uint8 aNoTarget_0[];
 extern uint8 aMissileLock[];
 extern uint8 aRange[];
+extern uint8 aDot[];
 extern uint8 aKm[];
-extern uint8 a_3d3_0[];
-extern uint8 aRb_4[];
+extern char a_3d3_0[];
+extern char aRb_4[];
 extern char aOpenErrorOn_3d3_0[];
 extern char byte_3850E;
 extern char a15flt_xxx[];
@@ -1688,4 +1692,83 @@ extern int16 word_3C8BE;
 extern int16 word_3C8C0;
 extern int16 word_3C8C2;
 extern size_t size3d3_7;
+extern int16 word_339B4[];
+extern int16 word_3419C[];
+extern int16 var_218;
+extern int16 var_219;
+extern int16 var_279;
+extern int8 var_83[];
+extern int16 var_282;
+extern int16 var_220;
+extern int *var_564;
+extern int *var_565;
+extern int16 var_569;
+extern int16 var_570;
+extern int16 var_571;
+extern int16 var_572;
+extern int16 var_573;
+extern int16 var_574;
+extern int16 var_575;
+extern int16 var_576;
+extern int16 var_577;
+extern int16 var_578;
+extern int16 var_579;
+extern int16 var_580;
+extern int16 var_581;
+extern int16 var_582;
+extern int16 var_583;
+extern int16 var_584;
+extern uint8 var_585;
+extern uint8 var_586;
+extern int16 var_591;
+extern uint8 var_456;
+extern int16 var_383;
+extern int16 var_673;
+extern int16 var_592;
+extern int16 *var_134;
+extern int16 var_135;
+extern int16 var_595;
+extern int16 var_600;
+extern int16 var_349;
+extern int16 var_350;
+#define var_351 (*(int16 *)((char *)&var_349 + 6))
+#define var_352 (*(int16 *)((char *)&var_349 + 8))
+#define var_353 (*(int16 *)((char *)&var_349 + 10))
+#define var_354 (*(int16 *)((char *)&var_349 + 12))
+extern int16 var_654;
+extern int16 var_660;
+extern int16 var_661;
+extern int16 var_662;
+extern int16 var_663;
+extern int16 var_664;
+extern int16 var_669;
+extern int16 var_670;
+extern int16 var_671;
+extern int16 var_672;
+extern int16 var_674;
+extern int16 var_686;
+extern uint8 var_730;
+extern int16 var_143;
+extern uint8 var_190;
+extern int16 var_194;
+extern int16 var_195;
+extern int16 var_196;
+extern int16 var_197;
+extern int16 var_198;
+extern int16 var_200;
+extern int16 var_201;
+extern int16 var_216;
+extern int16 var_257;
+extern int16 var_258;
+extern int16 var_259;
+extern int16 var_260;
+extern int16 var_255;
+extern int16 var_261;
+extern int16 var_315;
+extern uint8 var_316;
+extern int16 var_665;
+
+extern int rand();
+extern long _aNlmul(long, long);
+
 #endif // F15_SE2_EGAME

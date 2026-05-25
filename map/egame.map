@@ -71,24 +71,24 @@ routine_288: seg000 NEAR 39c0-3a6b R39c0-3a6b
 routine_289: seg000 NEAR 3a6c-3a8f R3a6c-3a8f
 routine_290: seg000 NEAR 3a90-3aa7 R3a90-3aa7
 setupDac: seg000 NEAR 3aee-3b2e R3aee-3b2e assembly
-routine_161: seg000 NEAR 3b2f-3b44 R3b2f-3b44
-routine_157: seg000 NEAR 3b86-3b95 R3b86-3b95
-routine_158: seg000 NEAR 3b96-3ba1 R3b96-3ba1
-routine_241: seg000 NEAR 3ba2-3bc0 R3ba2-3bc0
-routine_234: seg000 FAR 3bc1-3bc4 R3bc1-3bc4
-routine_318: seg000 FAR 3bc5-3bc8 R3bc5-3bc8
-routine_360: seg000 NEAR 3bc9-3bcc R3bc9-3bcc
-routine_320: seg000 NEAR 3bcd-3beb R3bcd-3beb
-installCBreakHandler: seg000 NEAR 3bec-3c0e R3bec-3c0e
+sub_13B2F: seg000 NEAR 3b2f-3b44 R3b2f-3b44 assembly
+sub_13B86: seg000 NEAR 3b86-3b95 R3b86-3b95 assembly
+sub_13B96: seg000 NEAR 3b96-3ba1 R3b96-3ba1 assembly
+sub_13BA2: seg000 NEAR 3ba2-3bc0 R3ba2-3bc0 assembly
+sub_13BC1: seg000 FAR 3bc1-3bc4 R3bc1-3bc4 assembly
+sub_13BC5: seg000 FAR 3bc5-3bc8 R3bc5-3bc8 external
+sub_13BC9: seg000 NEAR 3bc9-3bcc R3bc9-3bcc external
+sub_13BCD: seg000 NEAR 3bcd-3beb R3bcd-3beb external
+installCBreakHandler: seg000 NEAR 3bec-3c0e R3bec-3c0e assembly
 restoreCBreakHandler: seg000 NEAR 3c0f-3c1f R3c0f-3c1f assembly
 getInterruptHandler: seg000 NEAR 3c20-3c2b R3c20-3c2b assembly
 sub_13C3B: seg000 NEAR 3c3b-3c46 R3c3b-3c46 assembly
 sub_13C47: seg000 NEAR 3c47-3c76 R3c47-3c76 assembly
-setTimerIrqHanlder: seg000 NEAR 3c78-3cb5 R3c78-3cb5 assembly
-restoreTimerIrqHanlder: seg000 NEAR 3cb6-3cd6 R3cb6-3cd6 assembly
+setTimerIrqHandler: seg000 NEAR 3c78-3cb5 R3c78-3cb5 assembly
+restoreTimerIrqHandler: seg000 NEAR 3cb6-3cd6 R3cb6-3cd6 assembly
 sub_13DF2: seg000 NEAR 3df2-3e86 R3df2-3e86 assembly
 manipulateTimer: seg000 NEAR 3e87-3edb R3e87-3edb assembly
-routine_338: seg000 NEAR 3edc-3ee2 R3edc-3ee2
+getTimeOfDay: seg000 NEAR 3edc-3ee2 R3edc-3ee2 assembly
 otherKeyDispatch: seg000 NEAR 3f72-51f8 R3f72-41e8 U41e9-41ea R41eb-51f8
 routine_159: seg000 NEAR 51f9-5236 R51f9-5236
 routine_160: seg000 NEAR 5237-5410 R5237-5410
@@ -206,23 +206,27 @@ sub_1DD7E: seg000 NEAR dd7e-dd91 Rdd7e-dd91
 sub_1DD92: seg000 NEAR dd92-dda8 Rdd92-dda8
 sub_1DDAA: seg000 NEAR ddaa-ddc3 Rddaa-ddc3
 openFile: seg000 NEAR ddc4-de1a Rddc4-de1a Rdf80-dfbb assembly
+createFile: seg000 NEAR de1b-de71 Rde1b-de71 assembly
+sub_1DF4F: seg000 NEAR df4f-df7f Rdf4f-df7f assembly
 closeFile: seg000 NEAR de72-de92 Rde72-de92 assembly
+readFile1: seg000 NEAR de94-debd Rde94-debd assembly
+readFile2: seg000 NEAR debf-deeb Rdebf-deeb assembly
 openBlitClosePic: seg000 NEAR dfbc-dff4 Rdfbc-dff4
 picBlit: seg000 NEAR e0aa-e11b Re0aa-e11b assembly
-routine_95: seg000 NEAR e260-e260 Re260-e260
+nullsub_1: seg000 NEAR e260-e260 Re260-e260 assembly
 sub_1E262: seg000 NEAR e262-e28b Re262-e28b assembly
-routine_118: seg000 NEAR e28c-e2d2 Re28c-e2d2
-routine_287: seg000 NEAR e2d3-e308 Re2d3-e308
-routine_119: seg000 NEAR e309-e381 Re309-e381
-routine_199: seg000 NEAR e382-e430 Re382-e430
+sub_1E28C: seg000 NEAR e28c-e2d2 Re28c-e2d2 assembly
+sub_1E2D3: seg000 NEAR e2d3-e308 Re2d3-e308 assembly
+sub_1E309: seg000 NEAR e309-e381 Re309-e381 assembly
+sub_1E382: seg000 NEAR e382-e430 Re382-e430 assembly
 # ================ libc ===========================
 start: seg000 NEAR e432-e4e3 Re432-e4e3 external
 cinit: seg000 NEAR e4e4-e5a7 Re4e4-e5a7 Reda6-edab external
 exit: seg000 NEAR e5a8-e5be Re5a8-e5be external
 _exit: seg000 NEAR e5bf-e603 Re5bf-e603 external
 _ctermsub: seg000 NEAR e604-e630 Re604-e630 external
-routine_13: seg000 NEAR e631-e63f Re631-e63f external
-routine_12: seg000 NEAR e640-e652 Re640-e652 external
+sub_1E631: seg000 NEAR e631-e63f Re631-e63f external
+sub_1E640: seg000 NEAR e640-e652 Re640-e652 external
 chkstk: seg000 NEAR e654-e669 Re654-e669 external
 fclose: seg000 NEAR e66a-e723 Re66a-e723 external
 fopen: seg000 NEAR e724-e74b Re724-e74b external
@@ -419,8 +423,8 @@ var_4: seg000 VAR 3d01
 var_5: seg000 VAR 3d67
 var_6: seg000 VAR 3d69
 var_7: seg000 VAR 5c23
-var_8: seg003 VAR 0185
-var_9: seg003 VAR 0187
+var_8: seg003 VAR 0185 external
+var_9: seg003 VAR 0187 external
 var_10: Data3 VAR 002f
 var_11: Data1 VAR 0001
 var_12: Data1 VAR 0002
