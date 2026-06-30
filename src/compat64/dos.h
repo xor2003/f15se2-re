@@ -13,7 +13,11 @@
 #define interrupt
 #define _interrupt
 #define __interrupt
+/* Avoid redefining `register` in C++ builds. MSVC's STL headers reject this macro.
+ * The C keyword is effectively a no-op on modern compilers, so no compatibility gap. */
+#if !defined(__cplusplus)
 #define register
+#endif
 
 // FP_SEG/FP_OFF: In 64-bit builds, far pointers don't exist.
 // Use reinterpret_cast to provide lvalue access to the high/low 16-bit words of a 32-bit-sized pointer slot.
