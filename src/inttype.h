@@ -58,4 +58,11 @@ typedef int bool;
 
 #endif
 
+static inline int abs16Compat(int value) {
+    enum { INTTYPE_SIGNED_WORD_MIN = -0x8000 };
+    /* MSC 16-bit abs(-32768) overflows and leaves the value negative. */
+    value = (int16)value;
+    return value == INTTYPE_SIGNED_WORD_MIN ? INTTYPE_SIGNED_WORD_MIN : (value < 0 ? -value : value);
+}
+
 #endif /* INTTYPE_H */

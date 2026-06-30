@@ -9,5 +9,7 @@ void seedRandom() {
 }
 
 int randMul(uint16 arg) {
-    return (rand() * (long)arg) >> 0xf;
+    /* DOS rand() is 15-bit; mask host rand() so native builds keep the same
+     * scaling range and bit pattern. */
+    return ((rand() & 0x7fff) * (long)arg) >> 0xf;
 }

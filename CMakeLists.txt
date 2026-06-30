@@ -122,6 +122,39 @@ add_executable(f15 ${F15_SOURCES})
 add_executable(start ${START_SOURCES})
 add_executable(egame ${EGAME_SOURCES})
 add_executable(end ${END_SOURCES})
+add_executable(fixed_math_tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixed_math_tests.cpp
+)
+add_executable(original_fixed_math_compare_tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/original_fixed_math_compare_tests.cpp
+    ${SRC_DIR}/eg3dmath.c
+    ${SRC_DIR}/eg3dproj.c
+    ${SRC_DIR}/egmath.c
+    ${SRC_DIR}/egflight.c
+    ${SRC_DIR}/eg3drast.c
+    ${SRC_DIR}/egthreat.c
+    ${SRC_DIR}/egcombat.c
+    ${SRC_DIR}/egtarget.c
+    ${SRC_DIR}/egtgt2.c
+    ${SRC_DIR}/egframe.c
+    ${SRC_DIR}/eg3dcam.c
+    ${SRC_DIR}/eg3dmap.c
+    ${SRC_DIR}/egtacmap.c
+    ${SRC_DIR}/egkeys.c
+    ${SRC_DIR}/egmain.c
+    ${SRC_DIR}/eghudm.c
+    ${SRC_DIR}/egstubs.c
+    ${SRC_DIR}/enmain.c
+    ${SRC_DIR}/enmisc.c
+    ${SRC_DIR}/enbrief.c
+    ${SRC_DIR}/strand.c
+    ${SRC_DIR}/stgen.c
+    ${SRC_DIR}/stterr.c
+    ${SRC_DIR}/stparse.c
+    ${SRC_DIR}/shared/filepic.c
+    ${SRC_DIR}/shared/miscimpl.c
+    ${SRC_DIR}/shared/textfmt.c
+)
 
 # Treat .c files as C++17 (decompiled code uses C++ features)
 function(configure_f15_target target_name)
@@ -194,3 +227,131 @@ configure_f15_target(egame ${EGAME_SOURCES})
 configure_f15_target(end ${END_SOURCES})
 
 target_compile_definitions(f15 PRIVATE DEBUG)
+
+target_include_directories(fixed_math_tests PRIVATE ${SRC_DIR})
+target_compile_features(fixed_math_tests PRIVATE cxx_std_17)
+target_include_directories(original_fixed_math_compare_tests PRIVATE
+    ${SRC_DIR}
+    ${SRC_DIR}/compat64
+)
+target_compile_features(original_fixed_math_compare_tests PRIVATE cxx_std_17)
+target_compile_definitions(original_fixed_math_compare_tests PRIVATE BUGFIX NO_ASM)
+set_source_files_properties(
+    ${SRC_DIR}/eg3dmath.c
+    ${SRC_DIR}/eg3dproj.c
+    ${SRC_DIR}/egmath.c
+    ${SRC_DIR}/egflight.c
+    ${SRC_DIR}/eg3drast.c
+    ${SRC_DIR}/egthreat.c
+    ${SRC_DIR}/egcombat.c
+    ${SRC_DIR}/egtarget.c
+    ${SRC_DIR}/egtgt2.c
+    ${SRC_DIR}/egframe.c
+    ${SRC_DIR}/eg3dcam.c
+    ${SRC_DIR}/eg3dmap.c
+    ${SRC_DIR}/egtacmap.c
+    ${SRC_DIR}/egkeys.c
+    ${SRC_DIR}/egmain.c
+    ${SRC_DIR}/eghudm.c
+    ${SRC_DIR}/egstubs.c
+    ${SRC_DIR}/enmain.c
+    ${SRC_DIR}/enmisc.c
+    ${SRC_DIR}/enbrief.c
+    ${SRC_DIR}/strand.c
+    ${SRC_DIR}/stgen.c
+    ${SRC_DIR}/stterr.c
+    ${SRC_DIR}/stparse.c
+    ${SRC_DIR}/shared/filepic.c
+    ${SRC_DIR}/shared/miscimpl.c
+    ${SRC_DIR}/shared/textfmt.c
+    PROPERTIES LANGUAGE CXX
+)
+set_source_files_properties(${SRC_DIR}/eg3dmath.c PROPERTIES COMPILE_DEFINITIONS
+    "sine=original_sine;cosine=original_cosine;fixedMulQ14=original_fixedMulQ14;shiftLongLeftInPlace=original_shiftLongLeftInPlace;shiftLongRightInPlace=original_shiftLongRightInPlace"
+)
+set_source_files_properties(${SRC_DIR}/eg3dproj.c PROPERTIES COMPILE_DEFINITIONS
+    "scaleCoordToLod=original_scaleCoordToLod"
+)
+set_source_files_properties(${SRC_DIR}/egmath.c PROPERTIES COMPILE_DEFINITIONS
+    "fixedMulQ14=original_fixedMulQ14;sine=original_sine;cosine=original_cosine;clampRange=original_clampRange;clampValue=original_clampValue;rangeApprox=original_rangeApprox;computeBearing=original_computeBearing;sinMul=original_sinMul;cosMul=original_cosMul;signOf=original_signOf;randomRange=original_randomRange;readAxisInput=original_readAxisInput;shapeDataOffset=original_shapeDataOffset"
+)
+set_source_files_properties(${SRC_DIR}/egflight.c PROPERTIES COMPILE_DEFINITIONS
+    "UpdateThrottleState=original_UpdateThrottleState;applyRotationDelta=original_applyRotationDelta;computeAttitudeAngles=original_computeAttitudeAngles;fixedMulQ14=original_fixedMulQ14;sine=original_sine;cosine=original_cosine;clampRange=original_clampRange;clampValue=original_clampValue;rangeApprox=original_rangeApprox;computeBearing=original_computeBearing;signOf=original_signOf;randomRange=original_randomRange;signedRatio16=original_signedRatio16;valueToAngle=original_valueToAngle;complementAngle=original_complementAngle;isqrt=original_isqrt"
+)
+set_source_files_properties(${SRC_DIR}/egtarget.c PROPERTIES COMPILE_DEFINITIONS
+    "buildRangeString=original_buildRangeString"
+)
+set_source_files_properties(${SRC_DIR}/egthreat.c PROPERTIES COMPILE_DEFINITIONS
+    "computeThreatRangeBearing=original_computeThreatRangeBearing;computeThreatScore=original_computeThreatScore"
+)
+set_source_files_properties(${SRC_DIR}/egcombat.c PROPERTIES COMPILE_DEFINITIONS
+    "bombTarget=original_bombTarget;samCanAcquireTarget=original_samCanAcquireTarget"
+)
+set_source_files_properties(${SRC_DIR}/egtgt2.c PROPERTIES COMPILE_DEFINITIONS
+    "computeLoftAngle=original_computeLoftAngle;computeMapTargetRange=original_computeMapTargetRange;computeSimObjectRange=original_computeSimObjectRange;computeTargetBearing=original_computeTargetBearing;findWaypointEntry=original_findWaypointEntry;getTargetSymbol=original_getTargetSymbol;isTargetOverWater=original_isTargetOverWater;rotateVectorComponent=original_rotateVectorComponent;fixedMulQ14=original_fixedMulQ14;rangeApprox=original_rangeApprox;computeBearing=original_computeBearing"
+)
+set_source_files_properties(${SRC_DIR}/egframe.c PROPERTIES COMPILE_DEFINITIONS
+    "appendMapEvent=original_appendMapEvent;applyGravityFall=original_applyGravityFall;countermeasures=original_countermeasures;drawWeaponSelectMarker=original_drawWeaponSelectMarker;resetSimObjectLocks=original_resetSimObjectLocks;scheduleEventCheck=original_scheduleEventCheck;scheduleTimedEvent=original_scheduleTimedEvent;tickMessageTimers=original_tickMessageTimers;updateBulletsAndFire=original_updateBulletsAndFire;updateTracerParticles=original_updateTracerParticles"
+)
+set_source_files_properties(${SRC_DIR}/eg3dcam.c PROPERTIES COMPILE_DEFINITIONS
+    "setViewPosition=original_setViewPosition"
+)
+set_source_files_properties(${SRC_DIR}/eghudm.c PROPERTIES COMPILE_DEFINITIONS
+    "hudSine=original_hudSine;hudPitchScale=original_hudPitchScale;drawClipLineGlobal=original_drawClipLineGlobal;hudComplex=original_hudComplex;hudRotateLadder=original_hudRotateLadder"
+)
+set_source_files_properties(${SRC_DIR}/egstubs.c PROPERTIES COMPILE_DEFINITIONS
+    "drawCenteredLabelBox=original_drawCenteredLabelBox"
+)
+set_source_files_properties(${SRC_DIR}/enmain.c PROPERTIES COMPILE_DEFINITIONS
+    "main=original_end_main;end_main=original_end_main;checkQuitFlag=original_checkQuitFlag"
+)
+set_source_files_properties(${SRC_DIR}/enmisc.c PROPERTIES COMPILE_DEFINITIONS
+    "setupWorldBufPtr=original_setupWorldBufPtr"
+)
+set_source_files_properties(${SRC_DIR}/eg3dmap.c PROPERTIES COMPILE_DEFINITIONS
+    "addTileEntry=original_addTileEntry;aspectScaleY=original_aspectScaleY;buildVertexSignMask=original_buildVertexSignMask;computeTileBounds=original_computeTileBounds;lookupTileEntry=original_lookupTileEntry;worldToTileIndex=original_worldToTileIndex"
+)
+set_source_files_properties(${SRC_DIR}/egtacmap.c PROPERTIES COMPILE_DEFINITIONS
+    "mapXToScreen=original_mapXToScreen;mapYToScreen=original_mapYToScreen;objectToScreen=original_objectToScreen;plotMapObject=original_plotMapObject;setDrawColor=original_setDrawColor;tempStrcpy=original_tempStrcpy;setTimedMessage=original_setTimedMessage"
+)
+set_source_files_properties(${SRC_DIR}/egkeys.c PROPERTIES COMPILE_DEFINITIONS
+    "exitSlowMotion=original_exitSlowMotion;makeSound=original_egkeys_makeSound;recalcTimeScale=original_recalcTimeScale;selectMissile=original_selectMissile"
+)
+set_source_files_properties(${SRC_DIR}/egmain.c PROPERTIES COMPILE_DEFINITIONS
+    "main=original_egame_main;egame_main=original_egame_main;doNothing3=original_doNothing3;doNothing4=original_doNothing4"
+)
+set_source_files_properties(${SRC_DIR}/enbrief.c PROPERTIES COMPILE_DEFINITIONS
+    "mapToScreenX=original_mapToScreenX;mapToScreenY=original_mapToScreenY;isPointInRect=original_isPointInRect;formatFlightTime=original_formatFlightTime;computeMissionResult=original_computeMissionResult;calcMissionScore=original_calcMissionScore"
+)
+set_source_files_properties(${SRC_DIR}/strand.c PROPERTIES COMPILE_DEFINITIONS
+    "randMul=original_randMul;seedRandom=original_startSeedRandom"
+)
+set_source_files_properties(${SRC_DIR}/stgen.c PROPERTIES COMPILE_DEFINITIONS
+    "approxDistance=original_approxDistance;itemDistance=original_itemDistance;positionUnit=original_positionUnit;setMoveDstComm7A=original_setMoveDstComm7A;getItemCoordStr=original_getItemCoordStr;formatGridRef=original_formatGridRef;calcBearing=original_calcBearing;clampValue=original_startClampValue;buildTargetLabel=original_buildTargetLabel;doNothing=original_doNothing"
+)
+set_source_files_properties(${SRC_DIR}/stterr.c PROPERTIES COMPILE_DEFINITIONS
+    "scaleCoordByLevel=original_scaleCoordByLevel;lookupGridCell=original_lookupGridCell"
+)
+set_source_files_properties(${SRC_DIR}/stparse.c PROPERTIES COMPILE_DEFINITIONS
+    "replaceExtension=original_replaceExtension"
+)
+set_source_files_properties(${SRC_DIR}/shared/filepic.c PROPERTIES COMPILE_DEFINITIONS
+    "mystrcpy=original_mystrcpy"
+)
+set_source_files_properties(${SRC_DIR}/shared/miscimpl.c PROPERTIES COMPILE_DEFINITIONS
+    "installCBreakHandler=original_installCBreakHandler;restoreCbreakHandler=original_restoreCbreakHandler;mystrcat=original_mystrcat;mystrlen=original_mystrlen;nearmemset=original_nearmemset"
+)
+set_source_files_properties(${SRC_DIR}/shared/textfmt.c PROPERTIES COMPILE_DEFINITIONS
+    "drawStringCentered=original_sharedDrawStringCentered;stringWidth=original_stringWidth;my_ltoa=original_my_ltoa;my_itoa=original_my_itoa"
+)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(original_fixed_math_compare_tests PRIVATE -ffunction-sections -fdata-sections)
+    target_link_options(original_fixed_math_compare_tests PRIVATE -Wl,--gc-sections)
+endif()
+
+enable_testing()
+add_test(NAME fixed_math_tests COMMAND fixed_math_tests)
+add_test(NAME original_fixed_math_compare_tests COMMAND original_fixed_math_compare_tests)
+add_test(NAME original_binary_function_harness
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/mzretools/original_binary_function_harness.py
+)

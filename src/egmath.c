@@ -252,8 +252,8 @@ int clampValue(int value, int minVal, int maxVal) { /* Original: rng2(x,a,b). Pl
 int rangeApprox(int deltaX, int deltaY) { /* Original: xydist(x,y). Fast 2D distance approximation capped at 0x7fff. */
     enum { XYDIST_MAX = 0x7FFF };
     long dist;
-    deltaX = abs(deltaX);
-    deltaY = abs(deltaY);
+    deltaX = abs16Compat(deltaX);
+    deltaY = abs16Compat(deltaY);
     /* Fast 2D distance approximation: max(abs) + half of min(abs). */
     if (deltaX > deltaY)
         dist = (long)(deltaY >> 1) + (long)deltaX;
@@ -277,13 +277,13 @@ int computeBearing(int deltaX, int deltaY) {
         if (deltaX > 0) return BEARING_EAST;
         return BEARING_WEST;
     }
-    if (abs(deltaX) > abs(deltaY)) {
-        numer = (long)abs(deltaY) << 0xe;
-        denom = abs(deltaX);
+    if (abs16Compat(deltaX) > abs16Compat(deltaY)) {
+        numer = (long)abs16Compat(deltaY) << 0xe;
+        denom = abs16Compat(deltaX);
         swapped = 1;
     } else {
-        numer = (long)abs(deltaX) << 0xe;
-        denom = abs(deltaY);
+        numer = (long)abs16Compat(deltaX) << 0xe;
+        denom = abs16Compat(deltaY);
         swapped = 0;
     }
     ratio = numer / (long)denom;
@@ -335,7 +335,8 @@ void seedRng(void) {
 // ==== seg000:0xd200 randomRange ====
 int randomRange(int maxVal) { /* Original: rnd(Max). Deterministic ((long)Max * rand()) >> 15 range scaling. */
     enum { RAND_SCALE_SHIFT = 15 };
-    return (int)(((long)rand() * (long)maxVal) >> RAND_SCALE_SHIFT);
+    /* DOS rand() is 15-bit; mask host rand() to preserve native behavior. */
+    return (int)(((long)(rand() & 0x7fff) * (long)maxVal) >> RAND_SCALE_SHIFT);
 }
 
 // ==== seg000:0xd21e ====

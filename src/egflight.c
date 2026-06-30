@@ -739,7 +739,7 @@ int isqrt(int value) { /* Original: Sqrt(N). Return integer square root using Ne
     int quotient;
     int guess;
     /* Integer square root using Newton iteration seeded from value >> 2. */
-    value = abs(value);
+    value = abs16Compat(value);
     if (value < 4) {
         return 1;
     }
@@ -747,7 +747,7 @@ int isqrt(int value) { /* Original: Sqrt(N). Return integer square root using Ne
     do {
         quotient = value / guess;
         guess = (guess + quotient) >> 1;
-    } while (abs(guess - quotient) > 1);
+    } while (abs16Compat(guess - quotient) > 1);
     return guess;
 }
 
