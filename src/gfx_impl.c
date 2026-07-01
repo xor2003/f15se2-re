@@ -13,6 +13,10 @@
 /* dos_alloc is provided by lowlvl.asm (start.exe) or dosfunc.c (f15.exe) */
 extern uint16 dos_alloc(uint16 size);
 
+enum {
+    GFX_SCANLINE_WIDTH = 320,
+};
+
 /* File-scope object used only for its address: FP_SEG of its far pointer
  * yields f15.exe's DGROUP segment, recorded in GfxState.f15DataSeg so the
  * const tables below (palettes, font tables) can be reached via far pointer
@@ -234,17 +238,17 @@ int gfx_getPageSeg_impl(uint16 page) {
 void gfx_fillRow_impl(uint16 rowOffset, uint16 srcBuf, uint16 rowNum) {
     GfxState FAR *s = gfx_getState();
     const uint8 *src = (const uint8 *)(size_t)srcBuf; /* near ptr, caller's DS */
-    int copyWidth = 320;
+    int copyWidth = GFX_SCANLINE_WIDTH;
     if (g_nearReadBuffer.source && srcBuf == g_nearReadBuffer.writeOffset) {
         src = g_nearReadBuffer.source;
-        if (g_nearReadBuffer.byteCount && g_nearReadBuffer.byteCount < 320)
+        if (g_nearReadBuffer.byteCount && g_nearReadBuffer.byteCount < GFX_SCANLINE_WIDTH)
             copyWidth = g_nearReadBuffer.byteCount;
     }
     uint8 FAR *dst;
     int col;
     (void)rowNum;
     dst = (uint8 FAR *)MK_FP(s->curPageSeg, rowOffset);
-    for (col = 0; col < 320; col++) {
+    for (col = 0; col < GFX_SCANLINE_WIDTH; col++) {
         dst[col] = (col < copyWidth) ? src[col] : 0;
     }
 }
