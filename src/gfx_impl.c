@@ -158,6 +158,24 @@ void gfx_clearPage_impl(uint16 seg) {
     }
 }
 
+static struct {
+    uint16 writeOffset;
+    const uint8 *source;
+    uint16 byteCount;
+} g_nearReadBuffer;
+
+void FAR CDECL gfx_setNearReadBuffer(uint16 dstNearOffset, const uint8 *source, uint16 byteCount) {
+    g_nearReadBuffer.writeOffset = dstNearOffset;
+    g_nearReadBuffer.source = source;
+    g_nearReadBuffer.byteCount = byteCount;
+}
+
+void FAR CDECL gfx_clearNearReadBuffer(void) {
+    g_nearReadBuffer.writeOffset = 0;
+    g_nearReadBuffer.source = (const uint8 *)0;
+    g_nearReadBuffer.byteCount = 0;
+}
+
 /* ---- Slot 0x0e: gfx_setPageN ---- */
 void FAR CDECL gfx_setPageN(uint16 pageNum) {
     GfxState FAR *s = gfx_getState();
@@ -216,12 +234,19 @@ int gfx_getPageSeg_impl(uint16 page) {
 void gfx_fillRow_impl(uint16 rowOffset, uint16 srcBuf, uint16 rowNum) {
     GfxState FAR *s = gfx_getState();
     const uint8 *src = (const uint8 *)(size_t)srcBuf; /* near ptr, caller's DS */
+    int copyWidth = 320;
+    if (g_nearReadBuffer.source && srcBuf == g_nearReadBuffer.writeOffset) {
+        src = g_nearReadBuffer.source;
+        if (g_nearReadBuffer.byteCount && g_nearReadBuffer.byteCount < 320)
+            copyWidth = g_nearReadBuffer.byteCount;
+    }
     uint8 FAR *dst;
     int col;
     (void)rowNum;
     dst = (uint8 FAR *)MK_FP(s->curPageSeg, rowOffset);
-    for (col = 0; col < 320; col++)
-        dst[col] = src[col];
+    for (col = 0; col < 320; col++) {
+        dst[col] = (col < copyWidth) ? src[col] : 0;
+    }
 }
 
 /* Slot 0x35: DI = rowOffset. In MCGA the row is already in the page (fillRow

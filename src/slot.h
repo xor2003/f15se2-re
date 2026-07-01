@@ -61,6 +61,8 @@ int FAR CDECL gfx_getFreeMem();                                                 
 void FAR CDECL gfx_fillRow();                                                                                                     /* slot 0x33: no-op in MCGA */
 void FAR CDECL gfx_fillRow2();                                                                                                    /* slot 0x34: no-op in MCGA */
 void FAR CDECL gfx_copyRow();                                                                                                     /* slot 0x35: retf */
+void FAR CDECL gfx_setNearReadBuffer(uint16 dstNearOffset, const uint8* source, uint16 byteCount);
+void FAR CDECL gfx_clearNearReadBuffer(void);
 void FAR CDECL gfx_nop36();                                                                                                       /* slot 0x36: retf */
 void FAR CDECL gfx_nop37();                                                                                                       /* slot 0x37: retf */
 int FAR CDECL gfx_getPageSeg();                                                                                                   /* slot 0x38: returns pageSegs[idx] */
